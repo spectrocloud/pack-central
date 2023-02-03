@@ -1,0 +1,18 @@
+{
+  "addonType":"logging",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/fluentbit"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Fluentbit",
+  "eol": "",
+  "group": "",
+  "charts": [
+    "charts/fluent-bit.tgz"
+  ],
+  "layer": "addon",
+  "name": "fluentbit",
+  "version": "1.3.5"
+}

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.mysql.name }}-client
+data:
+  MYSQL_HOST: {{ .Values.mysql.name }}-0.{{ .Values.mysql.svcName }}.{{ .Release.Namespace }}.svc.cluster.local
+  MYSQL_PORT: "{{ .Values.mysql.port }}"
+
+

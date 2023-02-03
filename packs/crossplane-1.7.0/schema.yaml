@@ -1,0 +1,2 @@
+# charts.kube-prometheus-stack.grafana.adminPassword:
+#   schema: '{{ required | format "${password}" | hints "Enter the password to be set for Grafana web application" }}'

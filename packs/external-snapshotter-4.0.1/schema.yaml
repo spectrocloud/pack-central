@@ -1,0 +1,10 @@
+manifests.vsclass.apiVersion:
+  schema: '{{ required | format "${list:[v1,v1beta1]}" }}'
+manifests.vsclass.deletionPolicy:
+  schema: '{{ required | format "${list:[Delete,Retain]}" }}'
+manifests.vsclass.driver:
+  schema: '{{ required | format "${string}" }}'
+manifests.vsclass.isDefaultClass:
+  schema: '{{ required | format "${boolean}" }}'
+manifests.vsclass.name:
+  schema: '{{ required | format "${string}" }}'

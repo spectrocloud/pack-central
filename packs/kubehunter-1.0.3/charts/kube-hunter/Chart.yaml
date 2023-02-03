@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: "312"
+description: A Helm chart for Kube-hunter
+home: https://github.com/aquasecurity/kube-hunter
+icon: https://raw.githubusercontent.com/aquasecurity/kube-hunter/master/kube-hunter.png
+keywords:
+- kubernetes
+- kube-hunter
+- security
+maintainers:
+- email: cedric@desaintmartin.fr
+  name: desaintmartin
+- email: liz@lizrice.com
+  name: lizrice
+name: kube-hunter
+sources:
+- https://github.com/aquasecurity/kube-hunter/blob/master/job.yaml
+version: 1.0.3

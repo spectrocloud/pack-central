@@ -1,0 +1,13 @@
+global:
+  splunk:
+    hec:
+      token: my-hec-token
+      host: my-hec-host
+      port: my-hec-port
+      indexName: main
+
+
+splunk-kubernetes-metrics:
+  splunk:
+    hec:
+      indexName: my-metrics-index

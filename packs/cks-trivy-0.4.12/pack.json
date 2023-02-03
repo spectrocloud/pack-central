@@ -1,0 +1,13 @@
+{
+    "addonType":"security",
+    "cloudTypes": [
+      "all"
+    ],
+    "charts": [
+      "charts/trivy-0.4.12.tgz"
+    ],
+    "displayName": "Trivy",    
+    "layer":"addon",
+    "name": "trivy",
+    "version": "0.4.12"
+  }

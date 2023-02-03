@@ -1,0 +1,57 @@
+# Creates a temporary administrative service account for the purpose of
+# running an elevated job that can create the ops-portal super user
+{{- if .Values.secrets.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "opsportal.fullname" . }}-temp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote }}
+    app.kubernetes.io/instance: {{.Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "opsportal.fullname" . }}-admin
+  labels:
+    app.kubernetes.io/name: {{ template "opsportal.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade,post-delete"
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "opsportal.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ template "opsportal.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade,post-delete"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: {{ template "opsportal.fullname" . }}-temp
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "opsportal.fullname" . }}-admin
+{{- end }}

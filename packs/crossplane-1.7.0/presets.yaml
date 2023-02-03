@@ -1,0 +1,43 @@
+presets:
+  - name: "aws-jet-provider"
+    displayName: "Enable AWS Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "crossplane/provider-jet-aws:main"
+  - name: "azure-jet-provider"
+    displayName: "Enable Azure Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "crossplane/provider-jet-azure:main"
+  - name: "gcp-jet-provider"
+    displayName: "Enable GCP Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "crossplane/provider-jet-gcp:main"
+  - name: "aws-gcp-azure-provider"
+    displayName: "Enable AWS, GCP, Azure Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "crossplane/provider-jet-gcp:main"
+              - "crossplane/provider-jet-azure:main"
+              - "crossplane/provider-jet-aws:main"

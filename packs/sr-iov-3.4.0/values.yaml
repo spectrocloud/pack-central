@@ -1,0 +1,71 @@
+pack:
+  namespace: "kube-system"
+
+manifests:
+  sriov:
+    config:
+      type: sriov
+      cniVersion: 0.3.1
+      name: sriov-network
+      ipam:
+        type: host-local
+        subnet: 10.56.217.0/24
+        routes:
+          - dst: 0.0.0.0/0
+        gateway: 10.56.217.1
+
+  sriov-cni:
+    spec:
+      template:
+        spec:
+          containers:
+            name: kube-sriov-cni
+            image: ghcr.io/k8snetworkplumbingwg/sriov-cni:v2.7.0
+            imagePullPolicy: IfNotPresent
+
+  configmap:
+    config:
+      resourceList:
+        - resourceName: intel_sriov_netdevice
+          selectors:
+            vendors:
+              - '8086'
+            devices:
+              - 154c
+              - 10ed
+              - '1889'
+            drivers:
+              - i40evf
+              - iavf
+              - ixgbevf
+        - resourceName: intel_sriov_dpdk
+          selectors:
+            vendors:
+              - '8086'
+            devices:
+              - 154c
+              - 10ed
+              - '1889'
+            drivers:
+              - vfio-pci
+            pfNames:
+              - enp0s0f0
+              - enp2s2f1
+        - resourceName: mlnx_sriov_rdma
+          selectors:
+            vendors:
+              - 15b3
+            devices:
+              - '1018'
+            drivers:
+              - mlx5_ib
+            isRdma: true
+        - resourceName: ct6dx_vdpa_vhost
+          selectors:
+            vendors:
+              - 15b3
+            devices:
+              - 101e
+            drivers:
+              - mlx5_core
+            vdpaType: vhost

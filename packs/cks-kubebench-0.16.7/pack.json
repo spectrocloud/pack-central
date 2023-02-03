@@ -1,0 +1,13 @@
+{
+    "addonType": "security",
+    "kubeManifests": [
+      "manifests/job.yaml"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Kubebench",
+    "layer":"addon",
+    "name": "kubebench",
+    "version": "0.16.7"
+  }

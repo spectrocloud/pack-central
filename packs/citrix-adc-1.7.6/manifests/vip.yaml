@@ -1,0 +1,114 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: vips.citrix.com
+spec:
+  group: citrix.com
+  version: v1
+  names:
+    kind: vip
+    plural: vips
+    singular: vip
+  scope: Namespaced
+  subresources:
+    status: {}
+  additionalPrinterColumns:
+    - name: Status
+      type: string
+      description: "Current Status of the CRD"
+      JSONPath: .status.state
+    - name: Message
+      type: string
+      description: "Status Message"
+      JSONPath: .status.status_message
+  additionalPrinterColumns:
+  - JSONPath: .spec.ipaddress
+    name: VIP
+    type: string
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            ipaddress:
+              type: string
+            name:
+              type: string
+            kind:
+              type: string
+              enum: ["service", "ingress"]
+            description:
+              type: string
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: citrix-adc
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citrix-ipam-controller
+  namespace: {{ .Values.namespace }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: citrix-ipam-controller
+  namespace: {{ .Values.namespace }}
+rules:
+ - apiGroups:
+   - citrix.com
+   resources:
+   - vips
+   verbs:
+   - '*'
+ - apiGroups:
+   - apiextensions.k8s.io
+   resources:
+   - customresourcedefinitions
+   verbs:
+   - '*'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: citrix-ipam-controller
+subjects:
+- kind: ServiceAccount
+  name: citrix-ipam-controller
+  namespace: {{ .Values.namespace }}
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: citrix-ipam-controller
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citrix-ipam-controller
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: citrix-ipam-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: citrix-ipam-controller
+    spec:
+      serviceAccountName: citrix-ipam-controller
+      containers:
+      - name: citrix-ipam-controller
+        image: quay.io/citrix/citrix-ipam-controller:latest
+        env:
+        # This IPAM controller takes environment variable VIP_RANGE. IPs in this range are used to assign values for IP range
+        - name: "VIP_RANGE"
+          value: '{{ .Values.addresses | toJson }}'

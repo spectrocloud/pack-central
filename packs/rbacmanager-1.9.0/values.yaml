@@ -1,0 +1,43 @@
+pack:
+  #The namespace (on the target cluster) to install this chart
+  #When not found, a new namespace will be created
+  namespace: "rbac-manager"
+
+charts:
+  rbac-manager:
+    rbacBindings:
+      - name: cluster-admins
+        subjects:
+          - kind: User
+            name: useradmin@spectrocloud.com
+          - kind: Group
+            name: https://dev-123456.okta.com#123456
+        clusterRoleBindings:
+          - clusterRole: cluster-admin
+      - name: admin-team
+        subjects:
+          - kind: ServiceAccount
+            name: default
+            namespace: default
+          - kind: User
+            name: userrw@spectrocloud.com
+          - kind: Group
+            name: https://dev-98765.okta.com#98765
+        clusterRoleBindings:
+          - clusterRole: ns-get-list-watch-role
+        roleBindings:
+          - clusterRole: edit
+            namespaceSelector:
+              matchLabels:
+                admin: access
+      - name: view-team
+        subjects:
+          - kind: User
+            name: userr@spectrocloud.com
+          - kind: Group
+            name: https://dev-111111.okta.com#11111
+        roleBindings:
+          - clusterRole: view
+            namespaceSelector:
+              matchLabels:
+                view: access

@@ -1,0 +1,39 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "rbac-manager.fullname" . }}
+  labels:
+    app: {{ template "rbac-manager.name" . }}
+    chart: {{ template "rbac-manager.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+  - apiGroups:
+      - rbacmanager.reactiveops.io
+    resources:
+      - rbacdefinitions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+      - authorization.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - "" # core
+    resources:
+      - serviceaccounts
+    verbs:
+      - '*'
+  - apiGroups:
+      - "" # core
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch

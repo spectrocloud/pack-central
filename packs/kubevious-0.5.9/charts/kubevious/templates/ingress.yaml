@@ -1,0 +1,48 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubevious
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: kubevious
+{{- if .Values.ingress.labels }}
+{{ toYaml .Values.ingress.labels | indent 4 }}
+{{- end }}
+  annotations:
+    kubernetes.io/ingress.allow-http: "true"
+{{- if .Values.ingress.class }}
+    kubernetes.io/ingress.class: {{ .Values.ingress.class }}
+{{- end }}
+{{- if .Values.ingress.staticIpName }}
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.ingress.staticIpName }}
+{{- end }}
+{{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+{{- end }}
+{{- if eq .Values.provider "gke" }}
+{{- if .Values.ingress.domain }}
+    networking.gke.io/managed-certificates: kubevious-certificate
+{{- end }}
+{{- end }}
+spec:
+  rules:
+  - http:
+      paths:
+        - backend:
+            serviceName: {{ .Values.ui.svcName }}
+            servicePort: {{ .Values.ui.port }}
+    {{- if .Values.ingress.domain }}
+    host: {{ .Values.ingress.domain }}
+    {{- end}}
+  {{- if .Values.ingress.tlsSecretName }}
+  tls:
+  {{- if .Values.ingress.domain }}
+  - hosts: 
+    - {{ .Values.ingress.domain }}
+  {{- end}}
+  {{- if .Values.ingress.tlsSecretName }}
+    secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end}}
+  {{- end}}
+{{- end }}

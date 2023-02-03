@@ -1,0 +1,351 @@
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace | quote }}
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-password-secret
+  namespace: {{ .Values.namespace | quote }}
+type: Opaque
+stringData:
+  password: {{ .Values.authPassword }}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-namespaced-resources___operator
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-namespaced-resources___developer
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      # - "bindings"
+      - "configmaps"
+      - "endpoints"
+      # - "limitranges"
+      - "persistentvolumeclaims"
+      - "pods"
+      - "pods/log"
+      - "pods/portforward"
+      - "podtemplates"
+      - "replicationcontrollers"
+      - "resourcequotas"
+      - "secrets"
+      # - "serviceaccounts"
+      - "services"
+      # - "controllerrevisions"
+      # - "statefulsets"
+      # - "localsubjectaccessreviews"
+      # - "horizontalpodautoscalers"
+      # - "cronjobs"
+      # - "jobs"
+      # - "leases"
+      - "events"
+      - "daemonsets"
+      - "deployments"
+      - "replicasets"
+      - "ingresses"
+      - "networkpolicies"
+      - "poddisruptionbudgets"
+      # - "rolebindings"
+      # - "roles"
+    verbs:
+      - "*"
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-namespaced-resources___read-only
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "configmaps"
+      - "endpoints"
+      - "persistentvolumeclaims"
+      - "pods"
+      - "pods/log"
+      - "pods/portforward"
+      - "podtemplates"
+      - "replicationcontrollers"
+      - "resourcequotas"
+      - "secrets"
+      - "services"
+      - "statefulsets"
+      - "cronjobs"
+      - "jobs"
+      - "events"
+      - "daemonsets"
+      - "deployments"
+      - "replicasets"
+      - "ingresses"
+      - "networkpolicies"
+      - "poddisruptionbudgets"
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-cluster-resources___read-only
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "componentstatuses"
+      - "namespaces"
+      - "nodes"
+      - "persistentvolumes"
+      - "mutatingwebhookconfigurations"
+      - "validatingwebhookconfigurations"
+      - "customresourcedefinitions"
+      - "apiservices"
+      - "tokenreviews"
+      - "selfsubjectaccessreviews"
+      - "selfsubjectrulesreviews"
+      - "subjectaccessreviews"
+      - "certificatesigningrequests"
+      - "runtimeclasses"
+      - "podsecuritypolicies"
+      - "clusterrolebindings"
+      - "clusterroles"
+      - "priorityclasses"
+      - "csidrivers"
+      - "csinodes"
+      - "storageclasses"
+      - "volumeattachment"
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-cluster-resources___admin
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "componentstatuses"
+      - "namespaces"
+      - "nodes"
+      - "persistentvolumes"
+      - "mutatingwebhookconfigurations"
+      - "validatingwebhookconfigurations"
+      - "customresourcedefinitions"
+      - "apiservices"
+      - "tokenreviews"
+      - "selfsubjectaccessreviews"
+      - "selfsubjectrulesreviews"
+      - "subjectaccessreviews"
+      - "certificatesigningrequests"
+      - "runtimeclasses"
+      - "podsecuritypolicies"
+      - "clusterrolebindings"
+      - "clusterroles"
+      - "priorityclasses"
+      - "csidrivers"
+      - "csinodes"
+      - "storageclasses"
+      - "volumeattachment"
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: permission-manager-service-account-rolebinding
+  namespace: {{ .Values.namespace | quote }}
+roleRef:
+  kind: Role
+  name: permission-manager-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: permission-manager-service-account
+    namespace: {{ .Values.namespace | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: permission-manager-service-account-rolebinding
+roleRef:
+  kind: ClusterRole
+  name: permission-manager-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: permission-manager-service-account
+    namespace: {{ .Values.namespace | quote }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: permission-manager-service-account
+  namespace: {{ .Values.namespace | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: permission-manager-cluster-role
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "permissionmanagerusers"
+      - "clusterrolebindings"
+      - "clusterroles"
+      - "rolebindings"
+      - "roles"
+      - "certificatesigningrequests"
+      - "certificatesigningrequests/approval"
+      # Adding signers for k8s v1.18 and above
+      - "signers"
+    verbs:
+      - "*"
+
+  - apiGroups:
+      - ""
+    resources:
+      - "namespaces"
+    verbs: ["get", "list"]
+
+---
+
+apiVersion: "apiextensions.k8s.io/v1beta1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "permissionmanagerusers.permissionmanager.user"
+spec:
+  group: "permissionmanager.user"
+  version: "v1alpha1"
+  scope: "Cluster"
+  names:
+    plural: "permissionmanagerusers"
+    singular: "permissionmanageruser"
+    kind: "Permissionmanageruser"
+  validation:
+    openAPIV3Schema:
+      required: ["spec"]
+      properties:
+        spec:
+          required: ["name"]
+          properties:
+            name:
+              type: "string"
+              minimum: 2
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Values.namespace | quote }}
+  name: permission-manager-deployment
+  labels:
+    app: permission-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: permission-manager
+  template:
+    metadata:
+      labels:
+        app: permission-manager
+    spec:
+      serviceAccountName: permission-manager-service-account
+      containers:
+        - name: permission-manager
+          image: quay.io/sighup/permission-manager:1.5.0
+          ports:
+            - containerPort: 4000
+          env:
+            - name: PORT
+              value: "4000"
+            - name: CLUSTER_NAME
+              value: {{ .Spectro.cluster | quote }}
+            - name: CONTROL_PLANE_ADDRESS
+            # apiServer returned by palette does not have protocol info
+            {{- if hasPrefix "https://" .Spectro.apiServer }}
+              value: {{ .Spectro.apiServer | quote }}
+            {{- else}}
+              value: {{ printf "%s%s" "https://" .Spectro.apiServer | quote }}
+            {{- end}}
+            - name: BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-password-secret
+                  key: password
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.namespace | quote }}
+  name: permission-manager-service
+spec:
+  type: {{ .Values.serviceType | quote }}
+  selector:
+    app: permission-manager
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 4000
+
+---
+
+{{- if .Values.ingress.enabled }}
+{{- $ingressPath := .Values.ingress.path }}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: permission-manager-ingress
+  namespace: {{ .Values.namespace | quote }}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+  tls:
+  {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+      - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+  {{- end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $ingressPath | quote }}
+            backend:
+              serviceName: permission-manager-service
+              servicePort: 80
+  {{- end }}
+{{- end }}

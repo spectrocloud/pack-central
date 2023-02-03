@@ -1,0 +1,13 @@
+{
+  "addonType": "registry",
+  "charts": [
+    "charts/harbor-1.8.0.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Harbor",
+  "layer":"addon",
+  "name": "harbor",
+  "version": "1.8.0"
+}

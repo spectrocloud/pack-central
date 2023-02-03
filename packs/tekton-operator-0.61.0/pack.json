@@ -1,0 +1,17 @@
+{
+    "name": "tekton-operator",
+    "displayName": "Tekton Operator",
+    "annotations": {
+        "docsURL": "https://github.com/tektoncd/operator",
+        "description": "Tekton Operator"
+    },
+    "version": "0.61.0",
+    "charts": [
+        "charts/tekton-operator-0.61.0.tgz"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}

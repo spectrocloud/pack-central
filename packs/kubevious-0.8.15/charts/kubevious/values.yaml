@@ -1,0 +1,178 @@
+# Default values for kubevious.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+cluster:
+  domain: cluster.local
+###
+### INGRESS
+###
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.allow-http: "true"
+  hosts:
+    - host: ""
+      paths: [""]
+  tls: []
+###
+### KUBEVIOUS BACKEND
+###
+kubevious:
+  # Do not modify replicaCount
+  replicaCount: 1
+  image:
+    repository: kubevious/kubevious
+    tag: 0.8.20
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  service:
+    type: ClusterIP
+    port: 4001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  log:
+    level: info
+###
+### KUBEVIOUS PARSER
+###
+parser:
+  # Do not modify replicaCount
+  replicaCount: 1
+  image:
+    repository: kubevious/parser
+    tag: 0.8.15
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  service:
+    type: ClusterIP
+    port: 4002
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  log:
+    level: info
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+###
+### UI
+###
+ui:
+  # Do not modify replicaCount
+  replicaCount: 1
+  image:
+    repository: kubevious/ui
+    tag: 0.8.13
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 25m
+      memory: 50Mi
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+###
+### MYSQL
+###
+mysql:
+  external:
+    enabled: false
+    host: ""
+    port: ""
+    database: ""
+    user: ""
+    password: ""
+  image:
+    repository: mysql
+    tag: 8.0.22
+    pullPolicy: IfNotPresent
+  db_name: kubevious
+  db_user: "kubevious"
+  generate_passwords: false
+  db_password: ""
+  root_password: ""
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: "10Gi"
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: "3306"
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1000Mi
+      # limits:
+      #   cpu: 1000m
+      #   memory: 2Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+###
+### WORLDVIOUS
+###
+worldvious:
+  ## Disables version check. As a part of the version check, Kubevious deployments
+  ## are added to the leaderboard at https://worldvious.io. Reporting is anonymized
+  ## to the nearest city. No IP address is stored or logged. We calculate the SHA256
+  ## hash of the IP address and use it as a key. As a part of this request, we also
+  ## added news notification and a feedback request mechanism.
+  opt_out_version_check: false
+  ## Disables automatic exception and error reporting.
+  opt_out_error_report: false
+  ## Disables periodic reporting of cluster metrics, such as: number of nodes, pods,
+  ## ingresses, configmaps, etc. The number of pods and nodes would appear on the
+  ## https://worldvious.io leaderboard. Those are the same counters you would see in
+  ## the console log of kubevious and parser pods.
+  opt_out_counters_report: false
+  ## Disables periodic reporting of internal time metrics. In conjunction with counters
+  ## reporting, this would help identify internal bottlenecks and improve overall
+  ## performance. Those are the same metrics you would see in the console log of kubevious
+  ## and parser pods.
+  opt_out_metrics_report: false
+  ## Opt out from all of the above reportings.
+  opt_out_all: false

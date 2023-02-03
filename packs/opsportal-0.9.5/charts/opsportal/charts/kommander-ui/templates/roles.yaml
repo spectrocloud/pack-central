@@ -1,0 +1,120 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ template "kommander.fullname" . }}-limited"
+  labels:
+    app: "{{ template "kommander.fullname" . }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.name }}"
+    heritage: "{{ .Release.Service }}"
+rules:
+  - apiGroups:
+      - kommander.mesosphere.io
+      - workspaces.kommander.mesosphere.io
+      - authorizedlister.workspaces.kommander.mesosphere.io
+      - kubeaddons.mesosphere.io
+      - dex.mesosphere.io
+      - dispatch.d2iq.io
+      - tekton.dev
+      - types.kubefed.io
+      - core.kubefed.io
+      - "rbac.authorization.k8s.io"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - "authorization.k8s.io"
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - users
+      - groups
+    verbs:
+      - impersonate
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - nodes
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "metrics.k8s.io"
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "kommander.fullname" . }}-system-discovery
+  labels:
+    app: {{ template "kommander.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.name }}"
+    heritage: "{{ .Release.Service }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:discovery
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "kommander.fullname" . }}-sa
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "kommander.fullname" . }}-limited
+  labels:
+    app: {{ template "kommander.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.name }}"
+    heritage: "{{ .Release.Service }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "kommander.fullname" . }}-limited
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "kommander.fullname" . }}-sa
+    namespace: {{ .Release.Namespace }}

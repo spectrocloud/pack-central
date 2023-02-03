@@ -1,0 +1,2 @@
+References:
+- Manifest: https://github.com/tektoncd/chains/releases/tag/v0.12.0

@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevious-redis.config" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+data:
+  REDIS_HOST: "{{ include "kubevious-redis.host" . }}"
+  REDIS_PORT: "{{ include "kubevious-redis.port" . }}"

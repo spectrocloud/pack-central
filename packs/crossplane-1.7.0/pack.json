@@ -1,0 +1,14 @@
+{
+    "addonType": "system app",
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Crossplane",
+    "charts": [
+      "charts/crossplane-1.7.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "crossplane",
+    "version": "1.7.0"
+  }
+  

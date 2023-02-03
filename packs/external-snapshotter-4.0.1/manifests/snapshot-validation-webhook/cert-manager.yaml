@@ -1,0 +1,27 @@
+# Generate TLS certificate & key for snapshot validation webhook
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app: snapshot-validation
+  name: snapshot-validation-selfsigned-issuer
+  namespace: kube-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app: snapshot-validation
+  name: snapshot-validation-webhook-service-cert
+  namespace: kube-system
+spec:
+  dnsNames:
+  - snapshot-validation-service.kube-system.svc
+  - snapshot-validation-service.kube-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: snapshot-validation-selfsigned-issuer
+  secretName: snapshot-validation-webhook-secret

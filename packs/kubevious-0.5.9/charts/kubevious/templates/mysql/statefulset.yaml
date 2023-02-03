@@ -1,0 +1,94 @@
+---
+# source: https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.mysql.name }}
+spec:
+  selector:
+    matchLabels:
+      k8s-app: {{ .Values.mysql.name }}
+  serviceName: {{ .Values.mysql.svcName }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: {{ .Values.mysql.name }}
+    spec:
+      initContainers:
+      - name: init-mysql
+        image: {{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          echo "[mysqld]" > /mnt/conf.d/server-id.cnf
+          echo "server-id=1" >> /mnt/conf.d/server-id.cnf
+          cp /mnt/config-map/master.cnf /mnt/conf.d/
+        volumeMounts:
+        - name: conf
+          mountPath: /mnt/conf.d
+        - name: config-map
+          mountPath: /mnt/config-map
+      containers:
+      - name: mysql
+        image: {{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}
+        env:
+        - name: MYSQL_DATABASE
+          value: kubevious
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "1"
+        ports:
+        - name: mysql
+          containerPort: {{ .Values.mysql.port }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            cpu: {{ .Values.mysql.cpu }}
+            memory: {{ .Values.mysql.memory }}
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            # Check we can execute queries over TCP (skip-networking is off).
+            command: ["mysql", "-h", "127.0.0.1", "-e", "SELECT 1"]
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 1
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: {{ .Values.mysql.name }}-conf
+      - name: init-script
+        configMap:
+          name: {{ .Values.mysql.name }}-init-script
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+{{- if .Values.mysql.storageClass }}
+{{- if (eq "-" .Values.mysql.storageClass) }}
+      storageClassName: ""
+{{- else }}
+      storageClassName: "{{ .Values.mysql.storageClass }}"
+{{- end }}
+{{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.mysql.storage }}

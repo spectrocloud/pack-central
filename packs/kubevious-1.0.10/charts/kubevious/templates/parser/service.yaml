@@ -1,0 +1,18 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubevious-parser.service.name" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-parser.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.parser.service.type }}
+  ports:
+    - port: {{ .Values.parser.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/component: {{ include "kubevious-parser.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}

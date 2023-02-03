@@ -1,0 +1,57 @@
+{
+  "addonType": "logging",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/splunk",
+    "commit_msg": "Splunk connect for Kubernetes"
+  },
+  "charts": [
+    "charts/splunk-connect-for-kubernetes.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Splunk Connect for Kubernetes",
+  "layer":"addon",
+  "name": "splunk",
+  "version": "1.4.3",
+  "constraints": {
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 200,
+        "components": [
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-logging.resources.requests.cpu",
+            "scheduleType": "all"
+          },
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-objects.resources.requests.cpu",
+            "scheduleType": "all"
+          },
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-metrics.resources.requests.cpu",
+            "scheduleType": "all"
+          }
+        ]
+      },
+      {
+        "type": "memory",
+        "minLimit": 256,
+        "components": [
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-logging.resources.requests.memory",
+            "scheduleType": "all"
+          },
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-objects.resources.requests.memory",
+            "scheduleType": "all"
+          },
+          {
+            "resourceRequestParamRef": "charts.splunk-connect-for-kubernetes.splunk-kubernetes-metrics.resources.requests.memory",
+            "scheduleType": "all"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "ingressSupported": "true"
+  },
+  "charts": [
+    "charts/wordpress.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "WordPress",
+  "layer":"addon",
+  "name": "wordpress-chart",
+  "version": "5.4.1"
+}

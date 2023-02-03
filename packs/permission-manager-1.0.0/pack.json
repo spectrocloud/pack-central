@@ -1,0 +1,63 @@
+{
+  "addonType":"authentication",
+  "annotations": {
+    "ingressSupported": "true",
+    "docsURL": "https://docs.spectrocloud.com/integrations/permission-manager"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Permission Manager",
+  "kubeManifests": [
+    "manifests/permission-manager.yaml"
+  ],
+  "layer": "addon",
+  "name": "permission-manager",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",        
+        "minVersion": "",
+        "maxVersion": "1.21.49",
+        "type": "optional"    
+      },
+      {
+        "packName": "kubernetes-eksd",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21.49",
+        "type": "optional"
+      },       
+      {
+        "packName": "kubernetes-tke",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.20.49",
+        "type": "optional"
+      },      
+      {
+        "packName": "kubernetes-eks",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21",
+        "type": "optional"
+      },
+      {
+        "packName": "kubernetes-konvoy",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21.49",
+        "type": "optional"
+      },      
+      {
+        "packName": "kubernetes-aks",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21",
+        "type": "optional"
+      }  
+    ]
+  }      
+}

@@ -1,0 +1,17 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubevious-redis.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.redis.service.type }}
+  ports:
+    - port: {{ .Values.redis.service.port }}
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}

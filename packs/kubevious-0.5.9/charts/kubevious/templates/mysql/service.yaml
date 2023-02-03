@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.mysql.svcName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: {{ .Values.mysql.svcName }}
+spec:
+  selector:
+    k8s-app: {{ .Values.mysql.name }}
+  clusterIP: None
+  ports:
+  - targetPort: {{ .Values.mysql.port }}
+    protocol: TCP
+    port: {{ .Values.mysql.port }}

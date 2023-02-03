@@ -1,0 +1,57 @@
+landing:
+  enabled: true
+  replicas: 1
+  resources: {}
+  # requests:
+  #   memory: "128Mi"
+  #   cpu: "100m"
+  # limits:
+  #   memory: "256Mi"
+  #   cpu: "200m"
+
+# these secrets are created via hooks
+secrets:
+  create: true
+  name: ops-portal-credentials
+  image:
+    repository: "mesosphere/kubeaddons-addon-initializer"
+    tag: "v0.2.0"
+
+# We need to override certain values from default kommander values here
+kommander-ui:
+  enabled: true
+
+  # Mode must be either production|konvoy, konvoy forcing ui in "konvoy mode"
+  mode: konvoy
+
+  displayName: Konvoy Cluster
+
+  ### This must match the serviceName set in the ingress backend below
+  service:
+    name: opsportal
+
+  ingress:
+    enabled: true
+    traefikFrontendRuleType: PathPrefixStrip
+    path: /ops/portal
+    extraAnnotations:
+      traefik.ingress.kubernetes.io/priority: "1"
+      traefik.ingress.kubernetes.io/auth-type: forward
+      traefik.ingress.kubernetes.io/auth-url: http://traefik-forward-auth-kubeaddons.kubeaddons.svc.cluster.local:4181/
+      traefik.ingress.kubernetes.io/auth-response-headers: X-Forwarded-User,Impersonate-User,Impersonate-Group
+
+opsportalRBAC:
+  enabled: true
+  path: /ops/portal
+  graphqlPath: /ops/portal/graphql
+  ## traefik-forward-auth 2.0 introduces RBAC support and now requires that users, regardless of whitelist,
+  ## be allowed access to a resource via explicit RBAC policy. Upon upgrade, whitelisted users would no longer
+  ## have access to ops portal resources unless an appropriate role binding existed. To prevent breakage,
+  ## the allowAllAuthenticated option, when true, will result in the group `system:allauthenticated` being bound to
+  ## to the opsportal-admin role. This mimics the existing security policy where any authenticated and whitelisted user
+  ## has full access to the opsportal. This option will be removed in the 0.3 release of this chart.
+  allowAllAuthenticated: false
+
+kibanaRBAC:
+  enabled: true
+  path: /ops/portal/kibana

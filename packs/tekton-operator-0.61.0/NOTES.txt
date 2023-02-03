@@ -1,0 +1,2 @@
+References:
+- Chart archive: https://github.com/tektoncd/operator/releases/download/tekton-operator-0.61.0/tekton-operator-0.61.0.tgz

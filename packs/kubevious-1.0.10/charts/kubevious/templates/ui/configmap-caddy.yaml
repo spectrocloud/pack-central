@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevious-ui.caddyConfig" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-ui.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+data:
+  Caddyfile: |
+    {
+      admin :5555
+    }
+
+    :80 {
+
+        handle /api/v1/* {
+            reverse_proxy {{ include "kubevious-backend.service.name" . }}:{{ .Values.backend.service.port }}
+        }
+
+        handle /socket/* {
+            reverse_proxy {{ include "kubevious-backend.service.name" . }}:{{ .Values.backend.service.port }}
+        }
+
+        handle /* {
+            root * /caddy/www
+            try_files {path} /index.html
+            file_server
+        }
+
+    }

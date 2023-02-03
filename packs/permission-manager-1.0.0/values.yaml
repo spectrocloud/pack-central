@@ -1,0 +1,31 @@
+manifests:
+  permission-manager:
+
+    #Namespace under which permission-manager will be deployed
+    namespace: "permission-manager"
+
+    #Login password for permission-manager
+    authPassword: "welcome123"
+
+    serviceType: "LoadBalancer"
+
+    #Ingress config
+    ingress:
+
+      enabled: false
+
+      #Ingress host
+      hosts:
+        - perm-mgr.example.com
+
+      #Ingress paths
+      path: "/"
+
+      #Ingress annotations
+      annotations:
+        #kubernetes.io/ingress.class: nginx
+
+      tls: []
+      #  - secretName: perm-mgr-tls
+      #    hosts:
+      #      - perm-mgr.example.com

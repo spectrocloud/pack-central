@@ -1,0 +1,116 @@
+{{- if .Values.landing.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: opsportal-landing
+  name: opsportal-landing
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: opsportal-landing
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: opsportal-landing
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: Path
+  name: opsportal-landing
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              serviceName: opsportal-landing
+              servicePort: 80
+            path: /ops/landing
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: opsportal-landing
+  name: opsportal-landing
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.landing.replicas }}
+  selector:
+    matchLabels:
+      app: opsportal-landing
+  template:
+    metadata:
+      labels:
+        app: opsportal-landing
+    spec:
+      containers:
+        - name: opsportal-landing
+          image: nginx:1.18-alpine
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{ with .Values.landing.resources }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: landing-html
+              mountPath: /usr/share/nginx/html
+            - name: landing-conf
+              mountPath: /etc/nginx
+      volumes:
+        - name: landing-html
+          configMap:
+            name: opsportal-landing-html
+        - name: landing-conf
+          configMap:
+            name: opsportal-landing-conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: opsportal-landing-html
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: opsportal-landing
+data:
+  index.html: |
+    <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="ie=edge"><title>D2iQ Konvoy</title><link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,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"><style>*{box-sizing:border-box}html,body{color:#1B2029;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica','Arial',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-size:14px;font-weight:400;height:100%;margin:0;padding:0}#app{height:100%;background-color:#F7F8F9;display:flex;align-items:center;justify-content:center}.landing-container{display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px}.card{width:100%;text-align:center;background-color:white;padding:32px;border:1px solid #DADDE2;border-radius:4px;margin:24px 0}.heading{font-weight:500;font-size:18px;margin:0;padding-bottom:8px}.button{display:block;background-color:#E1E3E7;border-radius:4px;padding:10px 18px;margin-top:16px;color:inherit;text-decoration:none;cursor:pointer;font-weight:500}.button:hover{background-color:#cacccf}.logo{width:48px;height:48px}.brand-link{color:#4B3499;text-decoration:none;font-size:12px}.brand-link:hover{color:#432e89}.privacy{font-size:12px;margin-top:12px;color:#76797E;text-align:center}.link{color:inherit}.link:hover{color:#6a6c71}</style></head><body><div id="app"><div class="landing-container"><div class="logo"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 145"> <g> <g> <path fill="#31006f" d="M94 86.2c-4.3 0-7.8 3.5-7.8 7.8v15.7c0 4.3 3.5 7.8 7.8 7.8 1.6 0 3.1-.5 4.4-1.4l-7.3-7.3 5.5-5.5 5.2 5.2V94.1c0-4.4-3.5-7.9-7.8-7.9zM51 27.4h-7.9v31.3H51c4.3 0 7.7-3.5 7.8-7.8V35.3c0-4.3-3.5-7.8-7.8-7.9z" /> <path fill="#31006f" d="M0 0v145h145V0H0zm66.6 86.2H54.9v31.3h11.8v7.8H35.3v-7.8H47V86.2H35.3v-7.8h31.4v7.8zm0-35.2c0 8.6-7 15.6-15.6 15.7H35.3v-47H51c8.6 0 15.6 7 15.6 15.6V51zm11.8 2c0-7.6 6.1-13.7 13.7-13.8H96c3.2 0 5.9-2.6 5.9-5.9 0-3.2-2.6-5.9-5.9-5.9H78.4v-7.8H96c7.6.4 13.4 6.8 13.1 14.3-.3 7.1-6 12.7-13.1 13.1h-3.9c-3.2 0-5.9 2.6-5.9 5.9v5.9h23.5v7.8H78.3l.1-13.6zm31.5 74.8l-5.9-5.9c-6.7 5.5-16.6 4.6-22.1-2.1-2.3-2.8-3.6-6.3-3.6-10V94.1c.2-8.7 7.4-15.5 16.1-15.3 8.3.2 15.1 6.9 15.3 15.3v15.7c0 1.9-.3 3.8-1 5.6l6.8 6.8-5.6 5.6z" /> </g> </g> </svg></div><div class="card"><h1 class="heading">Welcome to Konvoy!</h1> <a href="/ops/portal/" class="button">Launch Console</a> <a href="/token" class="button">Generate Kubectl Token</a> <a href="/token/plugin" class="button">Credentials Plugin Instructions</a></div> <a class="brand-link" target="_blank" href="https://d2iq.com/">D2iQ</a><div class="privacy"> By logging in you understand that we will process personal information in accordance with our <a href="https://d2iq.com/privacy-policy" target="_blank" class="link">Privacy Policy</a><div></div></div></div></div></body></html>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsportal-landing-conf
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: opsportal-landing
+data:
+  nginx.conf: |
+    worker_processes 1;
+    error_log /dev/stdout info;
+    events {
+        worker_connections 1024;
+    }
+    http {
+      server {
+        access_log /dev/stdout;
+        listen 80;
+        root /usr/share/nginx/html;
+        location / {
+            try_files $uri /index.html;
+        }
+        location = /index.html {
+            expires 30s;
+        }
+      }
+    }
+{{- end }}

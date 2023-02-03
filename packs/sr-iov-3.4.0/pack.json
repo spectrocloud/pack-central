@@ -1,0 +1,23 @@
+{
+  "name": "sr-iov",
+  "cloudTypes": ["aws", "edge"],
+  "displayName": "SR-IOV",
+  "kubeManifests": [
+    "manifests/sriov.yaml",
+    "manifests/configmap.yaml",
+    "manifests/sriov-cni.yaml"
+  ],
+  "layer": "addon",
+  "addonType": "system app",
+  "version": "3.4.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "cni-multus",
+        "layer": "addon",
+        "minVersion": "3.4",
+        "type": "required"
+      }
+    ]
+  }
+}

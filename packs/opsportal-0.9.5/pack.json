@@ -1,0 +1,15 @@
+{
+  "addonType": "system app",
+  "annotations": {
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/opsportal-0.9.5.tgz"
+  ],
+  "displayName": "OpsPortal",
+  "layer":"addon",
+  "name": "konvoy-opsportal",
+  "version": "0.9.5"
+}

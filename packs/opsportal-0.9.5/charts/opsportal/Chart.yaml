@@ -1,0 +1,12 @@
+apiVersion: v1
+appVersion: 1.5.0
+description: OpsPortal Chart
+home: https://github.com/mesosphere/charts
+maintainers:
+- name: hectorj2f
+- name: alejandroEsc
+- name: jr0d
+- name: dkoshkin
+- name: gracedo
+name: opsportal
+version: 0.9.5

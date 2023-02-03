@@ -1,0 +1,13 @@
+manifests:
+  nfs:
+    namespace: kube-system
+    # nfs server IP/dns
+    server: 10.10.157.163
+    # nfs server export path
+    path: /mnt/nfs
+kubeadmconfig:
+  preKubeadmCommands:
+  - echo "Executing pre kubeadm config commands to install nfs-common"
+  - apt update
+  - apt install -y nfs-common
+

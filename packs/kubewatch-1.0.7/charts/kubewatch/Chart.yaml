@@ -1,0 +1,21 @@
+apiVersion: v1
+appVersion: 0.0.4
+description: Kubewatch notifies your slack rooms when changes to your cluster occur
+engine: gotpl
+home: https://github.com/bitnami-labs/kubewatch
+icon: https://bitnami.com/assets/stacks/kubewatch/img/kubewatch-stack-220x234.png
+keywords:
+- kubernetes
+- slack
+- hipchat
+- mattermost
+- flock
+maintainers:
+- email: casey@monax.io
+  name: compleatang
+- email: containers@bitnami.com
+  name: Bitnami
+name: kubewatch
+sources:
+- https://github.com/bitnami/bitnami-docker-kubewatch
+version: 1.0.7

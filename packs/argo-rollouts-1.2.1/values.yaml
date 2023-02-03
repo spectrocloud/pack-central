@@ -1,0 +1,6 @@
+manifests:
+  install:
+    #Namespace to install argo-rollouts
+    namespace: "argo-rollouts"
+
+
