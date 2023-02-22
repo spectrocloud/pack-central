@@ -3,7 +3,9 @@
     "displayName": "TrilioVault",
     "annotations": {
         "docsURL": "https://docs.trilio.io/kubernetes/overview/readme",
-        "description": "TrilioVault for Kubernetes"
+        "description": "TrilioVault for Kubernetes",
+        "source": "community",
+        "contributor" : "spectrocloud"
     },
     "version": "2.9.1",
     "charts": [

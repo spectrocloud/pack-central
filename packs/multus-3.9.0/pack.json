@@ -1,5 +1,7 @@
 {
   "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "ansibleRoles": [],
   "commit_msg": "Updated supported cloudTypes",

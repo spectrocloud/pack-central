@@ -2,7 +2,9 @@
   "addonType": "logging",
   "annotations": {
     "docsURL": "https://docs.spectrocloud.com/integrations/splunk",
-    "commit_msg": "Splunk connect for Kubernetes"
+    "commit_msg": "Splunk connect for Kubernetes",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "charts": [
     "charts/splunk-connect-for-kubernetes.tgz"

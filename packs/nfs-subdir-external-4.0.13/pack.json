@@ -1,5 +1,8 @@
 {
-  "annotations": {},
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
   "cloudTypes": [
     "maas",
     "edge",

@@ -3,7 +3,9 @@
     "displayName": "Tekton Operator",
     "annotations": {
         "docsURL": "https://github.com/tektoncd/operator",
-        "description": "Tekton Operator"
+        "description": "Tekton Operator",
+        "source": "community",
+        "contributor" : "spectrocloud"
     },
     "version": "0.61.0",
     "charts": [
