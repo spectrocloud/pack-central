@@ -1,0 +1,35 @@
+# This is an example of using insecure configurations
+global:
+  splunk:
+    hec:
+      token: my-hec-token
+      host: my-hec-host
+      port: my-hec-port
+      indexName: main
+      # connection to splunk is insecure
+      insecureSSL: true
+  kubernetes:
+    clusterName: "cluster_name"
+
+splunk-kubernetes-objects:
+  # RBAC is disabled
+  rbac:
+    create: false
+
+  kubernetes:
+      # connection to kubernetes is insecure
+      insecureSSL: true
+
+
+splunk-kubernetes-metrics:
+  # RBAC is disabled
+  rbac:
+    create: false
+
+  # do not create service account
+  serviceAccount:
+    create: false
+
+  splunk:
+    hec:
+      indexName: my-metrics-index

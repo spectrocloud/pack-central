@@ -1,0 +1,20 @@
+{
+  "addonType":"ingress",
+  "annotations": {
+    "ingressCapability": "true",
+     "source": "community",
+     "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Ambassador",
+  "eol": "",
+  "group": "",
+  "charts": [
+    "charts/ingress-ambassador.tgz"
+  ],
+  "layer":"addon",
+  "name": "ambassador",
+  "version": "6.6.0"
+}

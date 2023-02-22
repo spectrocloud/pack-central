@@ -1,0 +1,25 @@
+manifests:
+  vip:
+    # VIP address pool (see wiki for ranges)
+    addresses:
+    - 10.10.190.20 - 10.10.190.29
+
+    # The namespace to create the VIPs
+    namespace: "citrix-system"
+
+  citrix-k8s-ingress-controller:
+
+    # The namespace to create the lb/ingress operator
+    namespace: "citrix-system"
+
+    # Cluster prefix
+    clusterPrefix: s2
+
+    # The IP address (NSIP/SNIP) for Citrix ADC
+    nsip: "10.10.182.10"
+
+    # Credentials for Citrix ADC. When left blank, default credentials will be applied from manifests.
+    # Support for reading secrets from secret management tools like HashiCorp Vault is in roadmap.
+    username: ""
+    password: ""
+

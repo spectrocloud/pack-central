@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapshot-validation-deployment
+  namespace: kube-system
+  labels:
+    app: snapshot-validation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-validation
+  template:
+    metadata:
+      labels:
+        app: snapshot-validation
+    spec:
+      containers:
+      - name: snapshot-validation
+        image: k8s.gcr.io/sig-storage/snapshot-validation-webhook:v4.0.0
+        imagePullPolicy: Always
+        args: ['--tls-cert-file=/etc/snapshot-validation-webhook/certs/tls.crt', '--tls-private-key-file=/etc/snapshot-validation-webhook/certs/tls.key']
+        ports:
+        - containerPort: 443
+        volumeMounts:
+          - name: snapshot-validation-webhook-certs
+            mountPath: /etc/snapshot-validation-webhook/certs
+            readOnly: true
+      volumes:
+        - name: snapshot-validation-webhook-certs
+          secret:
+            secretName: snapshot-validation-webhook-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshot-validation-service
+  namespace: kube-system
+spec:
+  selector:
+    app: snapshot-validation
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443

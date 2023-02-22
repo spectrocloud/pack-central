@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: setup-falcon-agent
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: setup-falcon-agent
+  template:
+    metadata:
+      name: setup-falcon-agent
+      labels:
+        app: setup-falcon-agent
+    spec:
+      initContainers:
+        - name: falcon-install-unit
+          image: gcr.io/spectro-images-public/debian:buster
+          command:
+            - sh
+            - -c
+            - |
+              set -x
+
+              # Add unit file to install the agent
+              cat >/etc/systemd/system/setup-falcon-agent.service <<EOF
+              [Unit]
+              Description=Install the CrowdStrike Falcon agent
+
+              [Service]
+              Type=oneshot
+              ExecStart=/bin/sh -c "yum install -y {{ .Values.agentPackageUrl }}; sudo /opt/CrowdStrike/falconctl -s --cid={{ .Values.customerId }}; systemctl enable falcon-sensor; systemctl start falcon-sensor"
+
+              [Install]
+              WantedBy=multi-user.target
+              EOF
+
+              systemctl daemon-reload
+              systemctl enable setup-falcon-agent.service
+              systemctl start setup-falcon-agent.service
+
+              # Check and print agent install status
+              systemctl status falcon-sensor
+
+          volumeMounts:
+            - name: etc-systemd
+              mountPath: /etc/systemd/system
+            - name: bin-systemctl
+              mountPath: /bin/systemctl
+            - name: libgcrypt
+              mountPath: /usr/lib/x86_64-linux-gnu/libgcrypt.so.11
+            - name: run-systemd
+              mountPath: /run/systemd
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      containers:
+        - name: pause
+          image: gcr.io/google_containers/pause
+      volumes:
+        # To write install service file
+        - name: etc-systemd
+          hostPath:
+            path: /etc/systemd/system
+            type: Directory
+        # systemctl command
+        - name: bin-systemctl
+          hostPath:
+            path: /bin/systemctl
+            type: File
+        # Required lib for systemctl
+        - name: libgcrypt
+          hostPath:
+            path: /lib64/libgcrypt.so.11
+            type: File
+        # systemd's runtime socket
+        - name: run-systemd
+          hostPath:
+            path: /run/systemd
+            type: Directory

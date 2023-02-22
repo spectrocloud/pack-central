@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubevious-mysql.fullname" . }}-conf
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+data:
+  master.cnf: |
+    # Apply this config only on the master.
+    [mysqld]
+    log-bin
+  slave.cnf: |
+    # Apply this config only on slaves.
+    [mysqld]
+    super-read-only

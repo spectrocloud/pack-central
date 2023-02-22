@@ -1,0 +1,16 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/minio"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Minio",
+  "charts": [
+    "charts/minio.tgz"
+  ],
+  "layer":"addon",
+  "name": "minio",
+  "version": "8.0.10"
+}

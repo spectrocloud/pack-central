@@ -1,0 +1,5 @@
+dependencies:
+  - name: kommander-ui
+    version: "6.100.1"
+    repository: "https://mesosphere.github.io/kommander-ui/charts"
+    condition: kommander-ui.enabled

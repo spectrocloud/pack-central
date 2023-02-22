@@ -1,0 +1,58 @@
+{
+  "addonType":"system app",
+  "cloudTypes": ["all"],
+  "displayName": "Kubeflow Serving",
+  "kubeManifests": [
+    "manifests/base_manifests.yaml",
+    "manifests/serving_manifests.yaml"
+  ],
+  "layer": "addon",
+  "name": "kubeflow-serving",
+  "version": "1.5",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",        
+        "minVersion": "",
+        "maxVersion": "1.21.10",
+        "type": "optional"    
+      },
+      {
+        "packName": "kubernetes-aks",
+        "layer": "k8s",        
+        "minVersion": "",
+        "maxVersion": "1.21",
+        "type": "optional"    
+      },      
+      {
+        "packName": "kubernetes-eksd",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21.6",
+        "type": "optional"
+      },            
+      {
+        "packName": "kubernetes-eks",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21",
+        "type": "optional"
+      },
+      {
+        "packName": "kubernetes-konvoy",
+        "layer": "k8s",
+        "minVersion": "",
+        "maxVersion": "1.21.6",
+        "type": "optional"
+      },
+      {
+        "packName": "kubernetes-tke",
+        "layer": "k8s",        
+        "minVersion": "",
+        "maxVersion": "1.20.6",
+        "type": "optional"    
+      }      
+    ]
+  }        
+}

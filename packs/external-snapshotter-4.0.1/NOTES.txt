@@ -1,0 +1,3 @@
+References:
+- Manifests: https://github.com/kubernetes-csi/external-snapshotter/tree/v4.0.1/deploy/kubernetes
+- Test Snapshot Validation Webhook using: https://github.com/kubernetes-csi/external-snapshotter/blob/master/examples/kubernetes/invalid-snapshot-v1.yaml

@@ -1,0 +1,7 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.controlPlaneName }}
+spec:
+{{ toYaml .Values.spec | indent 2 }}

@@ -1,0 +1,69 @@
+                                                              NKXW              
+                                                           WXx:,;oKW            
+                                                          Nk;.....,oKW          
+                                                          No'.......,oKW        
+                                                           Nkc'.......,o0W      
+                                                        WKxkNNkc'.......,oKW    
+                                                        Kc.'ckNNkc'.......,oKW  
+                                    WWWNNNNWW          Nk;...'ckNNkc'.......cK  
+                              WX0kdocc:::::clodk0NW  NOc'......'ckNNkc'...'cON  
+                           N0dc;'...............:ONNOc'..........'ckNNkl:ckN    
+                        WKx:'.................'c0WKl'...........,,;oX  WNW      
+                      WKd;.....................;d0X0d;........;d0KXW            
+                     Nk:.........................'ckXKx;....;xXW                
+                    Xd,............................':kXKo,:xXW                  
+                   Xo'...............................'l0NKXNXW                  
+                  Wd'..................................;kXOc:O                  
+                  Nkooooooooooooooooooooooooooooooooooooxkdod0W                 
+             WNK0000000000000000000000000000000000KK0000KKK0000KKXW             
+             Kl,''''''''''''''''''''''''''''''''''''''''''''''''';xW            
+             NkdoooooooooooooooooooooooooooooooooooooooooooooooooxKW            
+                WNKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKNW                
+                Nd,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,dN                
+                Nl....................''''....................oN                
+                Nl................';ok000Oko;.................oN                
+                Nl...............'oXWKkxxkKWXo'...............oN                
+                Nl...............lXWO;....;kWXl...............oN                
+                Nl..............'dWWd'.....lNWd'.............'oN                
+                WKOkkkkkkkkkkkkkOXWWKOkkkkkKW XOOOOOOOOOOOOOOOKW                
+
+Kubevious v{{- .Chart.Version }} installed!
+
+{{- if .Values.ingress.enabled }}
+  {{- range $host := .Values.ingress.hosts }}
+    {{- range .paths }}
+      {{- if $host.host }}
+Visit http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ . }} to access Kubevious
+      {{- else }}
+Access Kubevious by this command:
+$  echo "Visit http://"$(kubectl get ingress kubevious-ui -n kubevious -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+      {{- end }}
+    {{- end }}
+  {{- end }}
+It may take some time for Ingress to be up and running.
+
+Alternatively, you can also access Kubevious by setting up port forwarding
+$  kubectl port-forward $(kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/component={{ include "kubevious-ui.fullname" . }}" -o jsonpath="{.items[0].metadata.name}") 8080:80 -n {{ .Release.Namespace }} 
+and visiting http://127.0.0.1:8080
+{{- else if contains "NodePort" (include "kubevious-ui.service.type" .) }}
+Access Kubevious by this command:
+$  echo "Visit http://"$(kubectl get nodes -n {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")":"$(kubectl get -n {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kubevious-ui.service.name" . }})
+
+Alternatively, you can also access Kubevious by setting up port forwarding
+$  kubectl port-forward $(kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/component={{ include "kubevious-ui.fullname" . }}" -o jsonpath="{.items[0].metadata.name}") 8080:80 -n {{ .Release.Namespace }} 
+and visiting http://127.0.0.1:8080
+{{- else if contains "LoadBalancer" (include "kubevious-ui.service.type" .) }}
+Access Kubevious by this command:
+$  echo "Visit http://"$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kubevious-ui.service.name" . }} -o jsonpath="{.status.loadBalancer.ingress[0].ip}" )":"{{ .Values.ui.service.port }}
+
+NOTE: It may take a few minutes for the LoadBalancer IP to be available. You can watch the status of by running:
+$  kubectl get -n {{ .Release.Namespace }} svc -w {{ include "kubevious-ui.service.name" . }}
+
+Alternatively, you can also access Kubevious by setting up port forwarding
+$  kubectl port-forward $(kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/component={{ include "kubevious-ui.fullname" . }}" -o jsonpath="{.items[0].metadata.name}") 8080:80 -n {{ .Release.Namespace }} 
+and visiting http://127.0.0.1:8080
+{{- else if contains "ClusterIP" (include "kubevious-ui.service.type" .) }}
+Access Kubevious by setting up port forwarding
+$  kubectl port-forward $(kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/component={{ include "kubevious-ui.fullname" . }}" -o jsonpath="{.items[0].metadata.name}") 8080:80 -n {{ .Release.Namespace }} 
+and visiting http://127.0.0.1:8080
+{{- end }}

@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubevious-guard.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-guard.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ include "kubevious-guard.fullname" . }}
+      {{- include "kubevious.match-labels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.guard.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app.kubernetes.io/component: {{ include "kubevious-guard.fullname" . }}
+        {{- include "kubevious.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.guard.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.guard.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.guard.securityContext | nindent 12 }}
+          image: "{{ .Values.guard.image.repository }}:{{ .Values.guard.image.tag }}"
+          imagePullPolicy: {{ .Values.guard.image.pullPolicy }}
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "{{ .Values.guard.log.level }}"
+            - name: SERVER_PORT
+              value: "4004"          
+            - name: BACKEND_BASE_URL
+              value: {{ include "kubevious-backend.baseUrl" . }}
+{{- if .Values.guard.v8MaxOldSpace }}
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size={{ .Values.guard.v8MaxOldSpace }}"
+{{- end }}              
+          envFrom:
+            - configMapRef:
+                name: {{ include "kubevious-mysql.config" . }}
+            - secretRef:
+                name: {{ include "kubevious-mysql.secret" . }}
+            - configMapRef:
+                name: {{ include "kubevious-redis.config" . }}
+            - secretRef:
+                name: {{ include "kubevious-worldvious.secret" . }}
+            - configMapRef:
+                name: {{ include "kubevious-worldvious.config" . }}
+          ports:
+            - name: http
+              containerPort: 4004
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.guard.resources | nindent 12 }}
+      serviceAccountName: {{ include "kubevious-guard.serviceAccountName" . }}
+      {{- with .Values.guard.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.guard.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.guard.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

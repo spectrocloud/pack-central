@@ -1,0 +1,15 @@
+{
+  "ansibleRoles": [], 
+  "cloudTypes": [
+    "vsphere"
+  ],  
+  "displayName": "Antrea",
+  "eol": "", 
+  "group": "", 
+  "charts": [
+    "charts/antrea-1.9.0.tgz"
+  ],
+  "layer": "cni",
+  "name": "antrea",
+  "version": "1.9.0"
+}

@@ -1,0 +1,10 @@
+manifests.prisma-cloud.accessToken:
+  schema: '{{ required | format "${password}" | hints "Enter the Access token to use for downloading Console / Defender images" }}'
+
+manifests.prisma-cloud.licenseKey:
+  schema: '{{ required | format "${string}" | hints "Enter the License Key to use for Prisma Cloud Compute Edition (self-hosted) " }}'
+
+manifests.prisma-cloud.consoleSvcType:
+  schema: '{{ required | format "${list:[LoadBalancer,ClusterIP,NodePort]}" | hints "Enter the Service type for Prisma Cloud Console" }}'
+
+

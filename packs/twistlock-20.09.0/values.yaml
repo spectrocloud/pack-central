@@ -1,0 +1,39 @@
+manifests:
+  prisma-cloud:
+
+    # The namespace used to deploy prisma-cloud resources
+    namespace: prismacloud
+
+    # Service type for Prisma Cloud Console; Supported values are ClusterIP, NodePort, and LoadBalancer
+    consoleSvcType: LoadBalancer
+
+    # The max timeout (in seconds) to wait for the Console service to be ready
+    consoleSvcTimeout: 600s
+
+    # Prisma Cloud Console service User. When left empty, admin will be the Username
+    consoleUser: ""
+
+    # Prisma Cloud Console service Password. When left empty, welcome123 will be the Password
+    consolePassword: ""
+
+    # When provided, Defender will connect to this Console address. Example: https://127.0.0.1:8083
+    externalConsoleAddr: ""
+
+    # Address that Defenders use to communicate with Prisma Cloud Console. Example: prismacloud-console.company.com
+    clusterAddr: ""
+
+    # Access token to use for downloading Console / Defender images
+    accessToken: ""
+
+    # The license key to use for Prisma Cloud Console (self-hosted) 
+    licenseKey: ""
+
+    # Prisma Cloud Compute Edition bits URL
+    releaseUrl: https://cdn.twistlock.com/releases/f801n066/prisma_cloud_compute_edition_20_09_365.tar.gz
+
+    # Prisma Cloud CA certificate file to use for Defender deployment
+    # Copy paste the ca cert contents
+    tlscacert: |-
+
+
+

@@ -1,0 +1,16 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "true"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/thanos-10.5.3.tgz"
+  ],
+  "displayName": "Thanos",
+  "layer":"addon",
+  "name": "thanos",
+  "version": "10.5.3"
+}

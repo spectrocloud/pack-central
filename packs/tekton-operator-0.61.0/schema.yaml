@@ -1,0 +1,8 @@
+pack.namespace:
+  schema: '{{ required | format "${string}" }}'
+
+# We must use 'tekton-operator', otherwise the release name generated
+# by Atop causes tekton-operator.fullname (_helpers.tpl) to resolve as
+# 'tekton-operator-tekton-operator', which breaks various Tekton components. 
+charts.tekton-operator.fullnameOverride:
+  schema: '{{ readonly }}'

@@ -1,0 +1,22 @@
+{
+  "addonType":"load balancer",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/citrix-ipam"
+  },
+  "cloudTypes": [
+    "vsphere",
+    "openstack",
+    "maas",
+    "edge",
+    "libvirt"
+  ],
+  "commit_msg": "Add support for openstack & MaaS cloud types",
+  "displayName": "Citrix ADC",
+  "layer":"addon",
+  "name": "lb-citrix-adc",
+  "version": "1.7.6",
+  "kubeManifests": [
+    "manifests/vip.yaml",
+    "manifests/citrix-k8s-ingress-controller.yaml"
+  ]
+}

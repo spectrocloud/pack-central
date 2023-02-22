@@ -1,0 +1,45 @@
+apiVersion: rbacmanager.reactiveops.io/v1beta1
+kind: RBACDefinition
+metadata:
+  name: team-access
+  namespace: rbac-manager
+rbacBindings:
+  - name: cluster-admins
+    subjects:
+      - kind: User
+        name: arvind@spectrocloud.com
+      - kind: Group
+        name: https://dev-13018903.okta.com#00g2gb4xa76kaII9e5d7
+    clusterRoleBindings:
+      - clusterRole: cluster-admin
+  - name: admin-team
+    subjects:
+      - kind: ServiceAccount
+        name: default
+        namespace: default
+      - kind: User
+        name: rishi+rw@spectrocloud.com
+      - kind: Group
+        name: https://dev-13018903.okta.com#00g15ykchmpz8S6lS5d7
+    clusterRoleBindings:
+      - clusterRole: ns-get-list-watch-role
+    roleBindings:
+      - clusterRole: edit
+        namespaceSelector:
+          matchLabels:
+            admin: access
+  - name: view-team
+    subjects:
+      - kind: User
+        name: rishi+r@spectrocloud.com
+      - kind: Group
+        name: https://dev-13018903.okta.com#00g15x4vtt3B6QsVm5d7
+    roleBindings:
+      - clusterRole: view
+        namespaceSelector:
+          matchLabels:
+            view: access
+
+
+
+  #- clusterRole: ns-get-list-watch-role

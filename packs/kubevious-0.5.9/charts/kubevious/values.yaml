@@ -1,0 +1,53 @@
+ingress:
+  annotations: {}
+  class: null
+  domain: null
+  enabled: false
+  labels: {}
+  staticIpName: null
+  tls: false
+  tlsSecretName: null
+kubevious:
+  cpu: 100m
+  image:
+    pullPolicy: IfNotPresent
+    repository: kubevious/kubevious
+    tag: 0.5.3
+  memory: 200Mi
+  name: kubevious
+  port: 4000
+  svcName: kubevious-svc
+  svcType: ClusterIP
+mysql:
+  cpu: 50m
+  image:
+    pullPolicy: IfNotPresent
+    repository: mysql
+    tag: 8.0.19
+  memory: 500Mi
+  name: kubevious-mysql
+  port: 3306
+  storage: 10Gi
+  storageClass: null
+  svcName: kubevious-mysql-svc
+parser:
+  cpu: 100m
+  image:
+    pullPolicy: IfNotPresent
+    repository: kubevious/parser
+    tag: 0.5.13
+  memory: 200Mi
+  name: kubevious-parser
+  port: 4500
+provider: none
+ui:
+  cpu: 25m
+  image:
+    pullPolicy: IfNotPresent
+    repository: kubevious/ui
+    tag: 0.5.8
+  memory: 100Mi
+  name: kubevious-ui
+  port: 3000
+  svcName: kubevious-ui-svc
+  svcType: LoadBalancer

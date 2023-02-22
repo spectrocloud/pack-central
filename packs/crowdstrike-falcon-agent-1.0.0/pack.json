@@ -1,0 +1,13 @@
+{
+  "addonType":"system app",
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "Falcon Sensor",
+  "kubeManifests": [
+    "manifests/install-falcon.yaml"
+  ],
+  "layer": "addon",
+  "name": "falcon-sensor",
+  "version": "1.0.0"
+}

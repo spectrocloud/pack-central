@@ -1,0 +1,4 @@
+namespace: default
+controlPlaneName: default-istio
+spec:
+  profile: default

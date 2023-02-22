@@ -1,0 +1,67 @@
+{{- if .Values.opsportalRBAC.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opsportal-admin
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+- nonResourceURLs:
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/"}}
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/" }}/*
+  verbs:
+  - get
+  - head
+  - post
+  - put
+  - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opsportal-view
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- nonResourceURLs:
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/"}}
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/" }}/*
+  verbs:
+  - get
+  - head
+# Posting to graphql is required for ops portal viewing
+- nonResourceURLs:
+  - {{ .Values.opsportalRBAC.graphqlPath | trimSuffix "/"}}
+  verbs:
+  - get
+  - head
+  - post
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opsportal-edit
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- nonResourceURLs:
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/"}}
+  - {{ .Values.opsportalRBAC.path | trimSuffix "/" }}/*
+  verbs:
+  - get
+  - head
+  - post
+  - put
+{{- end }}

@@ -1,0 +1,252 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace | default "prismacloud" }}
+---
+apiVersion: v1
+kind: ServiceAccount # Service Account for managing twistlock setup
+metadata:
+  name: prismacloud-setup
+  namespace: {{ .Values.namespace | default "prismacloud" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: prisma-cloud-setup
+  name: prismacloud-setup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: prismacloud-setup
+    namespace: {{ .Values.namespace | default "prismacloud" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+  name: prisma-cloud-setup
+  namespace: {{ .Values.namespace | default "prismacloud" }}
+  labels:
+    app.kubernetes.io/name: prisma-cloud
+spec:
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prisma-cloud
+    spec:
+      serviceAccountName: prismacloud-setup
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: alpine:3.12.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOME
+              value: /tmp
+          workingDir: /tmp
+          command:
+            - /bin/sh
+            - -exc
+            - |
+
+              check_connectivity() {
+                conn_response=""
+                while [ -z "$conn_response" ]; do
+                  conn_response=$(curl \
+                                --write-out '%{http_code}' \
+                                --insecure \
+                                --output /dev/null \
+                                "$1/api/v1/_ping" || true)
+                  if [ "$conn_response" -ne 200 ]; then
+                    echo "$(date) Prisma Cloud Console service is not available, will retry in 10s ... API Response code : $conn_response"
+                    sleep 10
+                    conn_response=""
+                  fi
+                done
+              }
+
+              # POST request
+              execute_post_req() {
+                response=$(curl -X POST \
+                                --write-out '%{http_code}' \
+                                --insecure \
+                                --output /dev/null \
+                                -d "$1" \
+                                -u "$3" \
+                                -H "Content-Type: application/json;charset=UTF-8" \
+                                "$2")
+                if [ "$response" -ne 200 ] ; then
+                  echo "Error : $2 API execution failed. Received code : $response"
+                  exit 0
+                fi
+              }
+
+              # GET request
+              execute_get_req() {
+                response=$(curl --insecure -u "$2" "$1")
+                echo "$response"
+              }
+
+              admin_user={{ .Values.consoleUser | default "admin" }}
+              admin_pwd={{ .Values.consolePassword | default "welcome123" }}
+              namespace={{ .Values.namespace | default "prismacloud" }}
+              external_console_addr="{{ default "" .Values.externalConsoleAddr }}"
+              console_svc_endpoint=""
+              console_svc=""
+
+              # Pre-check for binary
+              wget -S --spider {{ .Values.releaseUrl }} 2>&1 | grep -q '200 OK' && echo "Binary file exists" || { echo "Error: Failed to download Prisma Cloud binary. Check releaseUrl value."; exit 1; }
+
+              # Install kubectl
+              apk update && apk add --no-cache curl
+              curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+              mv kubectl /usr/bin/kubectl && chmod +x /usr/bin/kubectl
+
+              if [ -f /etc/ssl/prismacloud/ca.crt ]; then
+                echo "Prismacloud tlscacert exists"
+              fi
+
+              ###### 1. Download the twistlock bits
+              echo "Downloading prisma-cloud bits"
+              wget -O prisma_cloud_compute_edition.tar.gz {{ .Values.releaseUrl }}
+
+              # Extract twistlock and cfg file to generate manifests
+              tar -xvzf prisma_cloud_compute_edition.tar.gz linux/twistcli twistlock.cfg
+
+              [[ ! -f linux/twistcli ]] && { echo "linux/twistcli binary not found. Check prisma_cloud_compute_edition.tar.gz binary downloaded."; ls -ltr; sleep 10; exit 1;}
+
+              # Check if Defender should connect to an external Console
+              if [ -z "$external_console_addr" ]; then
+
+                #### Setup Prisma Cloud Console in the cluster ####
+                echo "Setting up Prisma Cloud Console in the cluster"
+
+                ###### 2. Use twistcli and generate Kubernetes manifest for Console
+                linux/twistcli console export kubernetes --registry-token {{ .Values.accessToken }} --service-type LoadBalancer
+
+                console_file=/tmp/twistlock_console.yaml
+                if [ ! -f $console_file ]; then
+                  # When manifest file doesn't exist, all further actions will fail
+                  echo "Error : $console_file does not exist."
+                  exit 1
+                fi
+
+                ###### 3. Deploy kubernetes manifest for Console
+                kubectl apply -f $console_file || true
+                sleep 10
+
+                # Wait for the Console service to be available (max timeout is 10m)
+                kubectl wait --timeout={{ .Values.consoleSvcTimeout | default "600s" }} --for=condition=ready pod -l name=twistlock-console --namespace "$namespace"
+
+                # Get the service IP / LoadBalancer info
+                while [ -z "$console_svc_endpoint" ]; do
+
+                  echo "$(date) Waiting for Console service to get an Loadbalcner IP / name ..."
+                  console_svc_endpoint=$(kubectl get service twistlock-console --namespace "$namespace" -o json -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                  if [ -z "$console_svc_endpoint" ]; then
+                    console_svc_endpoint=$(kubectl get service twistlock-console --namespace "$namespace" -o json -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                  fi
+
+                  [ -z "$console_svc_endpoint" ] && sleep 10
+                done
+
+                # Construct the svc endpoint with protocol, ip and port number
+                console_svc="https://$console_svc_endpoint:8083"
+
+                # Connectivity check. Prisma Cloud Console takes 3-5 mins to come up. Check if svc is responding before executing further requests
+                check_connectivity "$console_svc"
+
+                # Signup for a new account
+                signup_data='{"username":"{{ .Values.consoleUser | default "admin" }}","password":"{{ .Values.consolePassword | default "welcome123" }}"}'
+                execute_post_req $signup_data "${console_svc}/api/v1/signup?project=Central+Console" "$admin_user:$admin_pwd"
+
+                # Authenticate the user account
+                execute_post_req $signup_data "${console_svc}/api/v1/authenticate?project=Central+Console" "$admin_user:$admin_pwd"
+
+                # Update license for console
+                license_data='{"key":"{{ .Values.licenseKey }}"}'
+                execute_post_req $license_data "${console_svc}/api/v1/settings/license?project=Central+Console" "$admin_user:$admin_pwd"
+
+                # Set cluster address to twistlock-console (default address). This will be used while generating defender manifest
+                console_svc_endpoint="twistlock-console"
+
+              else    #### Connecting to an external Prisma Cloud Console
+
+                echo "Using external Prisma Cloud Console ${external_console_addr}"
+                console_svc="${external_console_addr}"
+                console_svc_endpoint="{{ default "" .Values.clusterAddr }}"
+
+                if [ -z "$console_svc_endpoint" ]; then
+
+                  # Special handling. When cluster address is left blank, extract cluster addr from external console addr
+                  # Cluster address will be in the format https://<ip_hostname>:<portname>
+                  console_svc_endpoint=$(echo "$external_console_addr" | cut -d '/' -f 3 | cut -d ":" -f 1)
+                  echo "Cluster address extracted from external console address is ${console_svc_endpoint}"
+                  if [ -z "${console_svc_endpoint}" ]; then
+                    # When external console address input is invalid, use external console address as it is
+                    echo "Warning ! External console address input is not in expected format, using external console address as it is"
+                    console_svc_endpoint=$external_console_addr
+                  fi
+                  echo "Cluster address is empty, setting it to $console_svc_endpoint"
+
+                fi
+
+                # Connectivity check. Make sure Console is reachable
+                check_connectivity "$console_svc"
+
+              fi
+
+              echo "Prisma Cloud Console endpoint is ${console_svc}"
+
+              ###### 5. Using twistcli, generate manifest for container Defender & install
+
+              echo "Fetching Prisma Cloud Defender manifest"
+              # Download the Kubernetes manifest for Console
+              linux/twistcli defender export kubernetes --cri \
+                  --address "${console_svc}" \
+                  --user $admin_user \
+                  --password '{{ .Values.consolePassword | default "welcome123" }}' \
+                  --cluster-address "${console_svc_endpoint}" \
+                  --cluster '{{ .Spectro.cluster }}'
+                  {{- if .Values.tlscacert }}
+                  --tlscacert /etc/ssl/prismacloud/ca.crt
+                  {{- end }}
+
+              defender_file=/tmp/defender.yaml
+              if [ ! -f $defender_file ]; then
+                # When manifest file doesn't exist, all further actions will fail
+                echo "Error : $defender_file does not exist."
+                exit 1
+              fi
+
+              # Install Defender manifest on the cluster
+              echo "Installing Prisma Cloud Defender manifest on the cluster"
+              kubectl apply -f $defender_file || true
+
+              echo "**** Primsa Cloud setup complete ! ****"
+{{- if .Values.tlscacert }}
+          volumeMounts:
+            - name: tls-ca-cert
+              mountPath: "/etc/ssl/prismacloud"
+              readOnly: true
+      volumes:
+        - name: tls-ca-cert
+          secret:
+            secretName: tls-ca-cert
+{{- end}}
+---
+{{- if .Values.tlscacert }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tls-ca-cert
+  namespace: {{ .Values.namespace | default "prismacloud" }}
+type: Opaque
+data:
+  ca.crt: {{ .Values.tlscacert | b64enc | quote }}
+{{- end}}

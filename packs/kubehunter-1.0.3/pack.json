@@ -1,0 +1,13 @@
+{
+  "addonType":"monitoring",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KubeHunter",
+  "charts": [
+    "charts/kube-hunter.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubehunter",
+  "version": "1.0.3"
+}

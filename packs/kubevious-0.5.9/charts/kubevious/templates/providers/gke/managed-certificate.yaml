@@ -1,0 +1,15 @@
+{{- if eq .Values.provider "gke" }}
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.domain }}
+---
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: kubevious-certificate
+  namespace: {{ .Release.Namespace }}
+spec:
+  domains:
+    - {{ .Values.ingress.domain }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,26 @@
+presets:
+  - name: "enable-ingress"
+    displayName: "Enable"
+    group: "Ingress"
+    remove: []
+    add: |
+      charts:
+        argo-cd:
+          server:
+            service:
+              type: ClusterIP
+            ingress:
+              enabled: true
+
+  - name: "disable-ingress"
+    displayName: "Disable"
+    group: "Ingress"
+    remove: []
+    add: |
+      charts:
+        argo-cd:
+          server:
+            service:
+              type: LoadBalancer
+            ingress:
+              enabled: false

@@ -1,0 +1,5 @@
+charts.splunk-connect-for-kubernetes.global.splunk.hec.host:
+  schema: '{{ required | format "${string}" | hints "Enter the Splunk host to forward information from this Kubernetes cluster" }}'
+
+charts.splunk-connect-for-kubernetes.global.splunk.hec.token:
+  schema: '{{ required | format "${string}" | hints "Enter the Splunk HEC token to use for authentication" }}'

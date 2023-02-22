@@ -1,0 +1,9 @@
+{{- if .Values.rbacBindings }}
+apiVersion: rbacmanager.reactiveops.io/v1beta1
+kind: RBACDefinition
+metadata:
+  name: team-access
+  namespace: rbac-manager
+rbacBindings:
+{{ toYaml .Values.rbacBindings | indent 2 }}
+{{- end }}

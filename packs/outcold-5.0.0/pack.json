@@ -1,0 +1,17 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/collectord",
+    "prerequisitesRequired": "true"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Outcold Solutions",
+  "kubeManifests": [
+    "manifests/collectorforkubernetes.yaml"
+  ],
+  "layer":"addon",
+  "name": "outcold-monitoring",
+  "version": "5.0.0"
+}

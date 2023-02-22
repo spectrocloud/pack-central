@@ -1,0 +1,25 @@
+{
+    "name": "external-snapshotter",
+    "displayName": "CSI Snapshotter",
+    "annotations": {
+        "description": "Container Storage Interface (CSI) Snapshotter"
+    },
+    "version": "4.0.1",
+    "kubeManifests": [
+        "manifests/volume-snapshot-crds.yaml",
+        "manifests/vsclass.yaml",
+        "manifests/csi-snapshotter/rbac-csi-snapshotter.yaml",
+        "manifests/csi-snapshotter/rbac-external-provisioner.yaml",
+        "manifests/csi-snapshotter/setup-csi-snapshotter.yaml",
+        "manifests/snapshot-controller/rbac-snapshot-controller.yaml",
+        "manifests/snapshot-controller/setup-snapshot-controller.yaml",
+        "manifests/snapshot-validation-webhook/cert-manager.yaml",
+        "manifests/snapshot-validation-webhook/snapshot-validation.yaml",
+        "manifests/snapshot-validation-webhook/validatingwebhookconfiguration.yaml"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}

@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kubevious-redis.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}
+      {{- include "kubevious.match-labels" . | nindent 6 }}
+  serviceName: {{ include "kubevious-redis.fullname" . }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: {{ include "kubevious-redis.fullname" . }}
+        {{- include "kubevious.base-labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.redis.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.redis.podSecurityContext | nindent 8 }}
+      containers:
+      - name: redis
+        image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+        ports:
+        - containerPort: 6379
+          protocol: TCP
+          name: redis
+        resources:
+          {{- toYaml .Values.redis.resources | nindent 12 }}
+      serviceAccountName: {{ include "kubevious-redis.serviceAccountName" . }}
+      {{- with .Values.redis.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

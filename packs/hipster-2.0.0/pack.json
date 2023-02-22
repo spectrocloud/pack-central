@@ -1,0 +1,14 @@
+{
+  "addonType":"system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "commit_msg": "Updated Hipster adservice to use tag v0.3.5",
+  "displayName": "Hipster Commerce",
+  "layer":"addon",
+  "name": "sapp-hipster",
+  "version": "2.0.0",
+  "kubeManifests": [
+    "manifests/hipster.yaml"
+  ]
+}

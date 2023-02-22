@@ -1,0 +1,5 @@
+charts.minio.accessKey:
+  schema: '{{ required | format "${password}" | hints "Enter the accessKey for Minio" }}'
+
+charts.minio.secretKey:
+  schema: '{{ required | format "${password}" | hints "Enter the secretKey for Minio" }}'

@@ -1,0 +1,18 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubevious.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.kubevious.service.type }}
+  ports:
+    - port: {{ .Values.kubevious.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/component: {{ include "kubevious.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}

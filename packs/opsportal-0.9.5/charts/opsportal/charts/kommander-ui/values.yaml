@@ -1,0 +1,77 @@
+image:
+  repository: mesosphere/kommander
+  defaultTag: "{{ .Chart.AppVersion }}"
+  # add this to override default tag: 1.184.0-beta.something
+  pullPolicy: IfNotPresent
+replicas: 1
+logoutRedirectPath: /ops/landing
+konvoyBasePath: /ops/portal
+clusterPollingIntervalFast: 10000
+clusterPollingIntervalMedium: 60000
+clusterPollingIntervalSlow: 120000
+clusterPollingStaggerFactor: 2
+hostPollingInterval: 3000
+kubeaddonsAddress: kommander-kubeaddons-kubeaddons-catalog
+kubecostEndpoint: http://kommander-kubeaddons-cost-analyzer.kommander.svc:9090
+kubecostWebUI: /ops/portal/kommander/kubecost/frontend/detail.html
+
+# Mode must be either production|konvoy
+mode: production
+
+displayName: Kommander Cluster
+
+# capability overrides, set to true to enable and false to disable
+impersonateUser: false
+showCost: false
+showCD: false
+
+# default files
+defaultRepositoryList: true
+
+extraInitContainers:
+
+env: {}
+
+# KCL utility service
+kclUtilityService: https://kommander-federation-utility-apiserver.kommander.svc
+utilityServiceName: kommander-federation-utility
+
+# example - iam.amazonaws.com/role: xyz
+podAnnotations: {}
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "1024Mi"
+    cpu: "1000m"
+
+readinessProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 15
+  timeoutSeconds: 10
+  failureThreshold: 6
+livenessProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 15
+  timeoutSeconds: 10
+  failureThreshold: 6
+
+### This must match the serviceName set in the ingress backend below
+service:
+  name: kommander
+
+ingress:
+  enabled: false
+
+tracing:
+  enabled: false
+  serviceName: kommander-ui
+  sampler: const
+  samplerParam: 1
+  # jaegerEndpoint: http://localhost:14268/api/traces
+
+utilityServiceCertMountpath: /etc/ssl/certs/kommander.pem
+# This can be overridden by the parent chart to use the same templated values as the federation utility apiserver
+utilityServiceCertSecret: kommander-federation-utility-apiserver-tls

@@ -1,0 +1,21 @@
+manifests:
+  kubevirt-operator:
+    # # Enable Emulation (when no nested virtualization enabled)
+    useEmulation: false
+  kubevirt-cr:
+    contents: |
+      apiVersion: kubevirt.io/v1
+      kind: KubeVirt
+      metadata:
+        name: kubevirt
+        namespace: kubevirt
+      spec:
+        certificateRotateStrategy: {}
+        configuration:
+          developerConfiguration:
+            featureGates: []
+        customizeComponents: {}
+        imagePullPolicy: IfNotPresent
+        infra:
+        workloadUpdateStrategy: {}
+

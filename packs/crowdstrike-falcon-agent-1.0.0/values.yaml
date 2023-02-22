@@ -1,0 +1,9 @@
+manifests:
+  # This pack helps install the CrowdStrike Falcon agent on the nodes
+  install-falcon:
+
+    # Public URL to download the Falcon sensor. Example https://example.s3-us-west-1.amazonaws.com/falcon-sensor-6.20.0-11707.amzn2.x86_64.rpm
+    agentPackageUrl: ""
+
+    # CustomerID (cid) to use for Falcon Sensor registration
+    customerId: ""

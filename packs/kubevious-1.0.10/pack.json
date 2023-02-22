@@ -1,0 +1,71 @@
+{
+  "addonType":"monitoring",
+  "annotations": {
+    "ingressSupported": "true",
+    "docsURL": "https://docs.spectrocloud.com/integrations/kubevious"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Kubevious",
+  "charts": [
+    "charts/kubevious-1.0.10.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubevious",
+  "version": "1.0.10",
+  "constraints": {
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 512,
+        "components": [
+          {
+            "resourceRequestParamRef": "charts.kubevious.kubevious.resources.requests.cpu",
+            "replicaCountParamRef": "charts.kubevious.kubevious.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.parser.resources.requests.cpu",
+            "replicaCountParamRef": "charts.kubevious.parser.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.ui.resources.requests.cpu",
+            "replicaCountParamRef": "charts.kubevious.ui.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.mysql.resources.requests.cpu",
+            "scheduleType": "worker"
+          }
+        ]
+      },
+      {
+        "type": "memory",
+        "minLimit": 1636,
+        "components": [
+          {
+            "resourceRequestParamRef": "charts.kubevious.kubevious.resources.requests.memory",
+            "replicaCountParamRef": "charts.kubevious.kubevious.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.parser.resources.requests.memory",
+            "replicaCountParamRef": "charts.kubevious.parser.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.ui.resources.requests.memory",
+            "replicaCountParamRef": "charts.kubevious.ui.replicaCount",
+            "scheduleType": "worker"
+          },
+          {
+            "resourceRequestParamRef": "charts.kubevious.mysql.resources.requests.memory",
+            "scheduleType": "worker"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+apiVersion: snapshot.storage.k8s.io/{{ .Values.apiVersion }}
+kind: VolumeSnapshotClass
+metadata:
+  name: {{ .Values.name | quote }}
+  annotations:
+    {{- if .Values.isDefaultClass }}
+    snapshot.storage.kubernetes.io/is-default-class: {{ .Values.isDefaultClass | quote }}
+    {- end}
+driver: {{ .Values.driver | quote }}
+deletionPolicy: {{ .Values.deletionPolicy | quote }}
+parameters:
+  {{- range $key, $val := .Values.parameters }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}

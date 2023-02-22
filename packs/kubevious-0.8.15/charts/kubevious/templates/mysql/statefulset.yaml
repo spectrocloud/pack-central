@@ -1,0 +1,135 @@
+---
+# source: https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kubevious-mysql.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
+      {{- include "kubevious.match-labels" . | nindent 6 }}
+  serviceName: {{ include "kubevious-mysql.fullname" . }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
+        {{- include "kubevious.base-labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.kubevious.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.kubevious.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: init-mysql
+        image: {{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+          echo "[mysqld]" > /mnt/conf.d/server-id.cnf
+          echo "server-id=1" >> /mnt/conf.d/server-id.cnf
+          echo "[mysqld]" > /mnt/conf.d/bin-logs.cnf
+          echo "binlog_expire_logs_seconds=259200" >> /mnt/conf.d/bin-logs.cnf
+          cp /mnt/config-map/master.cnf /mnt/conf.d/
+        volumeMounts:
+        - name: conf
+          mountPath: /mnt/conf.d
+        - name: config-map
+          mountPath: /mnt/config-map
+      containers:
+      - name: mysql
+        image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MYSQL_DATABASE
+          value: "{{ .Values.mysql.db_name }}"
+        {{- if and (.Values.mysql.db_user) (not (eq .Values.mysql.db_user "root")) }}
+        - name: MYSQL_USER
+          value: "{{ .Values.mysql.db_user }}"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "kubevious-mysql.secret" . }}
+              key: MYSQL_PASS
+        {{- end }}
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "kubevious-mysql.secret-root" . }}
+              key: MYSQL_ROOT_PASSWORD
+        ports:
+        - name: mysql
+          containerPort: 3306
+        volumeMounts:
+        - name: "data"
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping"]
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            # Check we can execute queries over TCP (skip-networking is off).
+            command:
+              - bash 
+              - "-c" 
+              - | 
+                mysql -p$MYSQL_ROOT_PASSWORD -h 127.0.0.1 -e 'SELECT 1'
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 1
+        resources:
+          {{- toYaml .Values.kubevious.resources | nindent 12 }}
+      {{- with .Values.kubevious.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubevious.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubevious.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: {{ include "kubevious-mysql.fullname" . }}-conf
+      - name: init-script
+        configMap:
+          name: {{ include "kubevious-mysql.fullname" . }}-init-script
+{{- if .Values.mysql.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: "data"
+    spec:
+      accessModes: ["{{ .Values.mysql.persistence.accessMode }}"]
+{{- if .Values.mysql.persistence.storageClass }}
+      storageClassName: "{{ .Values.mysql.persistence.storageClass }}"
+{{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.mysql.persistence.size }}
+{{- else }}
+      - name: data
+        emptyDir: {}
+{{- end }}

@@ -1,0 +1,565 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: collectorforkubernetes
+  name: {{ .Values.namespace | quote }}
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: configurations.collectord.io
+spec:
+  group: collectord.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Cluster
+  names:
+    plural: configurations
+    singular: configuration
+    kind: Configuration
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: collectorforkubernetes
+  name: collectorforkubernetes
+  namespace: {{ .Values.namespace | quote }}
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: collectorforkubernetes-critical
+value: 1000000000
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: collectorforkubernetes
+  name: collectorforkubernetes
+rules:
+  - apiGroups: ['extensions']
+    resources: ['podsecuritypolicies']
+    verbs:     ['use']
+    resourceNames:
+      - privileged
+  - apiGroups:
+      - ""
+      - apps
+      - batch
+      - extensions
+      - monitoring.coreos.com
+      - etcd.database.coreos.com
+      - vault.security.coreos.com
+      - certmanager.k8s.io
+      - kafka.strimzi.io
+      - org.eclipse.che
+      - dynatrace.com
+      - nats.io
+      - syndesis.io
+      - collectord.io
+    resources:
+      - alertmanagers
+      - cronjobs
+      - daemonsets
+      - deployments
+      - endpoints
+      - events
+      - jobs
+      - namespaces
+      - nodes
+      - nodes/metrics
+      - nodes/proxy
+      - pods
+      - prometheuses
+      - replicasets
+      - replicationcontrollers
+      - scheduledjobs
+      - services
+      - statefulsets
+      - vaultservices
+      - etcdclusters
+      - challenges
+      - kafkas
+      - checlusters
+      - oneagents
+      - natsclusters
+      - syndesises
+      - persistentvolumeclaims
+      - configurations
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+    apiGroups: []
+    resources: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: collectorforkubernetes
+  name: collectorforkubernetes
+  namespace: {{ .Values.namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collectorforkubernetes
+subjects:
+  - kind: ServiceAccount
+    name: collectorforkubernetes
+    namespace: {{ .Values.namespace | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collectorforkubernetes
+  namespace: {{ .Values.namespace | quote }}
+  labels:
+    app: collectorforkubernetes
+data:
+  001-general.conf: |
+{{ .Values.general | indent 4 }}
+  002-daemonset.conf: |
+{{ .Values.daemonset | indent 4 }}
+  003-daemonset-master.conf: |
+{{ .Values.daemonset_master | indent 4 }}
+  004-addon.conf: |
+{{ .Values.addon | indent 4 }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collectorforkubernetes
+  namespace: {{ .Values.namespace | quote }}
+  labels:
+    app: collectorforkubernetes
+spec:
+  # Default updateStrategy is OnDelete. For collector RollingUpdate is suitable
+  # When you update configuration
+  updateStrategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      daemon: collectorforkubernetes
+
+  template:
+    metadata:
+      name: collectorforkubernetes
+      labels:
+        daemon: collectorforkubernetes
+        spectrocloud.com/connection: proxy
+
+    spec:
+
+      priorityClassName: collectorforkubernetes-critical
+
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      serviceAccountName: collectorforkubernetes
+      # We run this DaemonSet only for Non-Masters
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
+      tolerations:
+        - operator: "Exists"
+          effect: "NoSchedule"
+        - operator: "Exists"
+          effect: "NoExecute"
+      containers:
+        - name: collectorforkubernetes
+          # Collector version
+          image: docker.io/outcoldsolutions/collectorforkubernetes:5.15.303
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          # Define your resources if you need. Defaults should be fine for most.
+          # You can lower or increase based on your hosts.
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 192Mi
+          env:
+            - name: KUBERNETES_NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            # We store state in /data folder (file positions)
+            - name: collectorforkubernetes-state
+              mountPath: /data
+            # Configuration file deployed with ConfigMap
+            - name: collectorforkubernetes-config
+              mountPath: /config/
+              readOnly: true
+            # Cgroup filesystem to get metrics
+            - name: cgroup
+              mountPath: /rootfs/sys/fs/cgroup
+              readOnly: true
+            # Proc filesystem to get metrics
+            - name: proc
+              mountPath: /rootfs/proc
+              readOnly: true
+            # Location of docker root (for container logs and metadata)
+            - name: docker-root
+              mountPath: /rootfs/var/lib/docker/
+              readOnly: true
+              mountPropagation: HostToContainer
+            # Docker socket
+            - name: docker-unix-socket
+              mountPath: /rootfs/var/run/docker.sock
+              readOnly: true
+            # CRI-O socket (if using CRI-O runtime)
+            - name: crio-unix-socket
+              mountPath: /rootfs/var/run/crio/
+              readOnly: true
+            # Containerd socket (if using containerd runtime)
+            - name: containerd-unix-socket
+              mountPath: /rootfs/var/run/containerd/
+              readOnly: true
+            # Host logs location (including CRI-O logs)
+            - name: logs
+              mountPath: /rootfs/var/log/
+              readOnly: true
+            - name: run-logs
+              mountPath: /rootfs/run/log/
+              readOnly: true
+            # Application logs
+            - name: volumes-root
+              mountPath: /rootfs/var/lib/kubelet/
+              readOnly: true
+              mountPropagation: HostToContainer
+            # correct timezone
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+            {{- if .Values.secret.caCert }}
+            - name: collectorforkubernetes-ca
+              mountPath: /ssl
+              readOnly: true
+            {{- end}}
+      volumes:
+        # We store state directly on host, change this location, if
+        # your persistent volume is somewhere else
+        - name: collectorforkubernetes-state
+          hostPath:
+            path: /var/lib/collectorforkubernetes/data/
+        # Location of docker root (for container logs and metadata)
+        - name: docker-root
+          hostPath:
+            path: /var/lib/docker/
+        # Location of cgroups file system
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+        # Location of proc file system
+        - name: proc
+          hostPath:
+            path: /proc
+        # Host logs location (including CRI-O logs)
+        - name: logs
+          hostPath:
+            path: /var/log
+        - name: run-logs
+          hostPath:
+            path: /run/log
+        # Docker socket
+        - name: docker-unix-socket
+          hostPath:
+            path: /var/run/docker.sock
+        # CRI-O socket (if using CRI-O runtime)
+        - name: crio-unix-socket
+          hostPath:
+            path: /var/run/crio/
+        # containerd socket (if using containerd runtime)
+        - name: containerd-unix-socket
+          hostPath:
+            path: /var/run/containerd/
+        # Location for kubelet mounts, to autodiscover application logs
+        - name: volumes-root
+          hostPath:
+            path: /var/lib/kubelet/
+        # correct timezone
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        # configuration from ConfigMap
+        - name: collectorforkubernetes-config
+          configMap:
+            name: collectorforkubernetes
+            items:
+              - key: 001-general.conf
+                path: 001-general.conf
+              - key: 002-daemonset.conf
+                path: 002-daemonset.conf
+        {{- if .Values.secret.caCert }}
+        - name: collectorforkubernetes-ca
+          secret:
+            secretName: {{ .Values.secret.caCert }}
+        {{- end}}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collectorforkubernetes-master
+  namespace: {{ .Values.namespace | quote }}
+  labels:
+    app: collectorforkubernetes
+spec:
+  updateStrategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      daemon: collectorforkubernetes
+
+  template:
+    metadata:
+      name: collectorforkubernetes-master
+      labels:
+        daemon: collectorforkubernetes
+        spectrocloud.com/connection: proxy
+
+    spec:
+
+      priorityClassName: collectorforkubernetes-critical
+
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      serviceAccountName: collectorforkubernetes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+      tolerations:
+        - operator: "Exists"
+          effect: "NoSchedule"
+        - operator: "Exists"
+          effect: "NoExecute"
+      containers:
+        - name: collectorforkubernetes
+          image: docker.io/outcoldsolutions/collectorforkubernetes:5.15.303
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 192Mi
+          env:
+            - name: KUBERNETES_NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: collectorforkubernetes-state
+              mountPath: /data
+            - name: collectorforkubernetes-config
+              mountPath: /config/
+              readOnly: true
+            - name: cgroup
+              mountPath: /rootfs/sys/fs/cgroup
+              readOnly: true
+            - name: proc
+              mountPath: /rootfs/proc
+              readOnly: true
+            - name: docker-logs
+              mountPath: /rootfs/var/lib/docker/
+              readOnly: true
+              mountPropagation: HostToContainer
+            - name: docker-unix-socket
+              mountPath: /rootfs/var/run/docker.sock
+              readOnly: true
+            - name: crio-unix-socket
+              mountPath: /rootfs/var/run/crio/
+              readOnly: true
+            - name: containerd-unix-socket
+              mountPath: /rootfs/var/run/containerd/
+              readOnly: true
+            - name: logs
+              mountPath: /rootfs/var/log/
+              readOnly: true
+            - name: run-logs
+              mountPath: /rootfs/run/log/
+              readOnly: true
+            - name: k8s-certs
+              mountPath: /rootfs/etc/kubernetes/pki/
+              readOnly: true
+            - name: kubelet-root
+              mountPath: /rootfs/var/lib/kubelet/
+              readOnly: true
+              mountPropagation: HostToContainer
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+            {{- if .Values.secret.caCert }}
+            - name: collectorforkubernetes-ca
+              mountPath: /ssl
+              readOnly: true
+            {{- end}}
+      volumes:
+        - name: collectorforkubernetes-state
+          hostPath:
+            path: /var/lib/collectorforkubernetes/data/
+        - name: docker-logs
+          hostPath:
+            path: /var/lib/docker/
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: logs
+          hostPath:
+            path: /var/log
+        - name: run-logs
+          hostPath:
+            path: /run/log
+        - name: docker-unix-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: crio-unix-socket
+          hostPath:
+            path: /var/run/crio/
+        - name: containerd-unix-socket
+          hostPath:
+            path: /var/run/containerd/
+        - name: k8s-certs
+          hostPath:
+            path: /etc/kubernetes/pki/
+        - name: kubelet-root
+          hostPath:
+            path: /var/lib/kubelet/
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: collectorforkubernetes-config
+          configMap:
+            name: collectorforkubernetes
+            items:
+              - key: 001-general.conf
+                path: 001-general.conf
+              - key: 002-daemonset.conf
+                path: 002-daemonset.conf
+              - key: 003-daemonset-master.conf
+                path: 003-daemonset-master.conf
+        {{- if .Values.secret.caCert }}
+        - name: collectorforkubernetes-ca
+          secret:
+            secretName: {{ .Values.secret.caCert }}
+        {{- end}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collectorforkubernetes-addon
+  namespace: {{ .Values.namespace | quote }}
+  labels:
+    app: collectorforkubernetes
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      daemon: collectorforkubernetes
+
+  template:
+    metadata:
+      name: collectorforkubernetes-addon
+      labels:
+        daemon: collectorforkubernetes
+        spectrocloud.com/connection: proxy
+
+    spec:
+
+      priorityClassName: collectorforkubernetes-critical
+
+      serviceAccountName: collectorforkubernetes
+      containers:
+        - name: collectorforkubernetes
+          image: docker.io/outcoldsolutions/collectorforkubernetes:5.15.303
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          env:
+            - name: KUBERNETES_NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: collectorforkubernetes-state
+              mountPath: /data
+            - name: collectorforkubernetes-config
+              mountPath: /config/
+              readOnly: true
+            {{- if .Values.secret.caCert }}
+            - name: collectorforkubernetes-ca
+              mountPath: /ssl
+              readOnly: true
+            {{- end}}
+      volumes:
+        - name: collectorforkubernetes-state
+          hostPath:
+            path: /var/lib/collectorforkubernetes/data/
+        - name: collectorforkubernetes-config
+          configMap:
+            name: collectorforkubernetes
+            items:
+              - key: 001-general.conf
+                path: 001-general.conf
+              - key: 004-addon.conf
+                path: 004-addon.conf
+        {{- if .Values.secret.caCert }}
+        - name: collectorforkubernetes-ca
+          secret:
+            secretName: {{ .Values.secret.caCert }}
+        {{- end}}

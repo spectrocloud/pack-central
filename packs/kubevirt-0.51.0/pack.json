@@ -1,0 +1,14 @@
+{
+  "addonType":"system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KubeVirt",
+  "kubeManifests": [
+    "manifests/kubevirt-operator.yaml",
+    "manifests/kubevirt-cr.yaml"
+  ],
+  "layer": "addon",
+  "name": "kubevirt",
+  "version": "0.51.0"
+}

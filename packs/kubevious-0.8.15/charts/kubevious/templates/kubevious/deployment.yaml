@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubevious.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kubevious.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ include "kubevious.fullname" . }}
+      {{- include "kubevious.match-labels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.kubevious.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        app.kubernetes.io/component: {{ include "kubevious.fullname" . }}
+        {{- include "kubevious.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.kubevious.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.kubevious.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.kubevious.securityContext | nindent 12 }}
+          image: "{{ .Values.kubevious.image.repository }}:{{ .Values.kubevious.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.kubevious.image.pullPolicy }}
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "{{ .Values.kubevious.log.level }}"
+            - name: MYSQL_HOST
+              value: "{{ include "kubevious-mysql.fullname" . }}"
+            - name: MYSQL_PORT
+              value: "{{ .Values.mysql.service.port }}"
+            - name: MYSQL_DB
+              value: "{{ .Values.mysql.db_name }}"
+            - name: MYSQL_USER
+              value: "{{ .Values.mysql.db_user }}"
+          envFrom:
+            - configMapRef:
+                name: {{ include "kubevious-worldvious.config" . }}
+            - secretRef:
+                name: {{ include "kubevious-mysql.secret" . }}
+            - secretRef:
+                name: {{ include "kubevious-worldvious.secret" . }}
+          ports:
+            - name: http
+              containerPort: 4001
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.kubevious.resources | nindent 12 }}
+      {{- with .Values.kubevious.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubevious.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubevious.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

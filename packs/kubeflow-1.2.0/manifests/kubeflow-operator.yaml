@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kfdef-quota
+  namespace: kubeflow-operator
+spec:
+  hard:
+    count/kfdefs.kfdef.apps.kubeflow.org: "1"
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kfdefs.kfdef.apps.kubeflow.org
+spec:
+  group: kfdef.apps.kubeflow.org
+  names:
+    kind: KfDef
+    listKind: KfDefList
+    plural: kfdefs
+    singular: kfdef
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: KfDef is the Schema for the kfdefs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KfDefSpec defines the desired state of KfDef
+          type: object
+        status:
+          description: KfDefStatus defines the observed state of KfDef
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeflow-operator
+  namespace: kubeflow-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: null
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+  name: kubeflow-operator
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeflow-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubeflow-operator
+  namespace: kubeflow-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeflow-operator
+  namespace: kubeflow-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kubeflow-operator
+  template:
+    metadata:
+      labels:
+        name: kubeflow-operator
+    spec:
+      containers:
+      - command:
+        - kfctl
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: {{ .Values.registry }}/{{ .Values.repository }}:{{ .Values.tag }}
+        imagePullPolicy: Always
+        name: kubeflow-operator
+      serviceAccountName: kubeflow-operator

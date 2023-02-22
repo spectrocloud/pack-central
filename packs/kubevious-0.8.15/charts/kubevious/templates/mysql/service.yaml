@@ -1,0 +1,17 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kubevious-mysql.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.kubevious.service.type }}
+  ports:
+    - port: {{ .Values.mysql.service.port }}
+      targetPort: mysql
+      protocol: TCP
+      name: mysql
+  selector:
+    app.kubernetes.io/component: {{ include "kubevious-mysql.fullname" . }}
