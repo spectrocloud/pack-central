@@ -1,7 +1,7 @@
 # pack-central
 Repository for Spectrocloud Community Packs
 
-##packs
+## packs
 Parent folder for all packs
 
 Naming convention: Every pack directory will have the name in the format: "<pack name>-version"
