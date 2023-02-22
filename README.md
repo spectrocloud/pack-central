@@ -4,7 +4,7 @@ Repository for Spectrocloud Community Packs
 ## packs
 Parent folder for all packs
 
-Naming convention: Every pack directory will have the name in the format: "<pack name>-version"
+Naming convention: Every pack directory will have the name in the format: "pack name-version"
   '-' must be used as the separator in the pack directory name.
   
 ## Structure
