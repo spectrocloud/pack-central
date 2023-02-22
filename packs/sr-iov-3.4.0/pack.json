@@ -1,5 +1,9 @@
 {
   "name": "sr-iov",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },  
   "cloudTypes": ["aws", "edge"],
   "displayName": "SR-IOV",
   "kubeManifests": [

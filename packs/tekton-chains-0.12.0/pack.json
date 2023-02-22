@@ -3,7 +3,9 @@
     "displayName": "Tekton Chains",
     "annotations": {
         "docsURL": "https://github.com/tektoncd/chains",
-        "description": "Tekton Chains"
+        "description": "Tekton Chains",
+        "source": "community",
+        "contributor" : "spectrocloud"
     },
     "version": "0.12.0",
     "kubeManifests": [

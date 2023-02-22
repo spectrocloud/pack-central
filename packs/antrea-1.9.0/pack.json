@@ -1,5 +1,9 @@
 {
   "ansibleRoles": [], 
+  "annotations": {
+     "source": "community",
+     "contributor" : "spectrocloud"
+  },
   "cloudTypes": [
     "vsphere"
   ],  

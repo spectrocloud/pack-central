@@ -2,7 +2,9 @@
     "name": "external-snapshotter",
     "displayName": "CSI Snapshotter",
     "annotations": {
-        "description": "Container Storage Interface (CSI) Snapshotter"
+        "description": "Container Storage Interface (CSI) Snapshotter",
+        "source": "community",
+        "contributor" : "spectrocloud"   
     },
     "version": "4.0.1",
     "kubeManifests": [

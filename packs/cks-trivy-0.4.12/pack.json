@@ -1,5 +1,9 @@
 {
     "addonType":"security",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
     "cloudTypes": [
       "all"
     ],

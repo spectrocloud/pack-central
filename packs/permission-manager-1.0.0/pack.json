@@ -2,7 +2,9 @@
   "addonType":"authentication",
   "annotations": {
     "ingressSupported": "true",
-    "docsURL": "https://docs.spectrocloud.com/integrations/permission-manager"
+    "docsURL": "https://docs.spectrocloud.com/integrations/permission-manager",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

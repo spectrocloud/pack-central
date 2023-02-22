@@ -1,7 +1,9 @@
 {
   "addonType": "servicemesh",
   "annotations": {
-    "docsURL": "https://docs.spectrocloud.com/integrations/istio"
+    "docsURL": "https://docs.spectrocloud.com/integrations/istio",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

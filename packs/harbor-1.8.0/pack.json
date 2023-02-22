@@ -1,5 +1,9 @@
 {
   "addonType": "registry",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
   "charts": [
     "charts/harbor-1.8.0.tgz"
   ],

@@ -1,7 +1,9 @@
 {
   "addonType":"load balancer",
   "annotations": {
-    "docsURL": "https://docs.spectrocloud.com/integrations/citrix-ipam"
+    "docsURL": "https://docs.spectrocloud.com/integrations/citrix-ipam",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "vsphere",

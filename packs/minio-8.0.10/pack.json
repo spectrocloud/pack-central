@@ -1,7 +1,9 @@
 {
   "addonType":"system app",
   "annotations": {
-    "docsURL": "https://docs.spectrocloud.com/integrations/minio"
+    "docsURL": "https://docs.spectrocloud.com/integrations/minio",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

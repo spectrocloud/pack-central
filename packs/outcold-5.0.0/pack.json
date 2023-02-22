@@ -2,7 +2,9 @@
   "addonType": "monitoring",
   "annotations": {
     "docsURL": "https://docs.spectrocloud.com/integrations/collectord",
-    "prerequisitesRequired": "true"
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

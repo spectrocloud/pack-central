@@ -1,7 +1,9 @@
 {
   "addonType": "security",
   "annotations": {
-    "docsURL": "https://docs.spectrocloud.com/integrations/prisma-cloud"
+    "docsURL": "https://docs.spectrocloud.com/integrations/prisma-cloud",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

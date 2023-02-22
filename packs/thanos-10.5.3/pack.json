@@ -1,7 +1,9 @@
 {
   "addonType": "monitoring",
   "annotations": {
-    "ingressSupported": "true"
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

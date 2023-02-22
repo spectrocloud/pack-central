@@ -1,6 +1,8 @@
 {
   "addonType": "system app",
   "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"

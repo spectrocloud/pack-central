@@ -1,7 +1,9 @@
 {
     "addonType":"system app",
     "annotations": {
-      "ingressSupported": "true"
+      "ingressSupported": "true",
+      "source": "community",
+      "contributor" : "spectrocloud"
     },
     "charts": [
       "charts/argo-cd.tgz"
@@ -14,8 +16,5 @@
     "name": "argo-cd",
     "version": "3.26.7"
   }
-
-
-
 
 

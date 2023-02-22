@@ -1,7 +1,9 @@
 {
   "addonType":"logging",
   "annotations": {
-    "docsURL": "https://docs.spectrocloud.com/integrations/fluentbit"
+    "docsURL": "https://docs.spectrocloud.com/integrations/fluentbit",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "cloudTypes": [
     "all"
