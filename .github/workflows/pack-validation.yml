@@ -4,7 +4,7 @@
 # # or API.
  on:
    pull_request:
-     branches: [ test_gitactions ]
+     branches: [ main ]
  
 # # A workflow run is made up of one or more jobs that can run sequentially or in parallel
  jobs:
