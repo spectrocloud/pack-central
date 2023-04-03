@@ -1,0 +1,26 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "ansibleRoles": [],
+  "commit_msg": "Updated annotations",
+  "cloudTypes": [
+    "aws",
+    "vsphere",
+    "gcp",
+    "maas",
+    "edge",
+    "libvirt"
+  ],
+  "displayName": "Multus",
+  "eol": "",
+  "group": "",
+  "kubeManifests": [
+    "manifests/multus-daemonset.yaml"
+  ],
+  "layer": "addon",
+  "addonType": "system app",
+  "name": "cni-multus",
+  "version": "3.4.0"
+}
