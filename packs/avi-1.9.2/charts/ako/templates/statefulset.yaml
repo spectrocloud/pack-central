@@ -1,0 +1,290 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ako
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ako.labels" . | nindent 4 }}
+spec:
+  {{ if gt .Values.replicaCount 2.0 }}
+  {{ fail "ReplicaCount more than 2 is not supported." }}
+  {{ end }}
+  {{ if and (gt .Values.replicaCount 1.0) (eq .Values.AKOSettings.primaryInstance false) }}
+  {{ fail "ReplicaCount more than 1 is not supported for secondary AKO." }}
+  {{ end }}
+  replicas: {{ .Values.replicaCount }}
+  serviceName: ako
+  selector:
+    matchLabels:
+      {{- include "ako.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{ if .Values.AKOSettings.istioEnabled }}
+      annotations:
+        sidecar.istio.io/inject: "true"
+        traffic.sidecar.istio.io/includeInboundPorts: ""
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+        proxy.istio.io/config: |
+          proxyMetadata:
+            OUTPUT_CERTS: /etc/istio-output-certs
+        sidecar.istio.io/userVolume: '[{"name": "istio-certs", "emptyDir": {"medium":"Memory"}}]'
+        sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
+      {{ end }}
+      labels:
+        {{- include "ako.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: ako-sa
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{ if .Values.persistentVolumeClaim }}
+      volumes:
+      - name: ako-pv-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistentVolumeClaim }}
+      {{ end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{ if or .Values.persistentVolumeClaim .Values.AKOSettings.istioEnabled }}
+          volumeMounts:
+            {{ if .Values.persistentVolumeClaim}}
+          - mountPath: {{ .Values.mountPath }}
+            name: ako-pv-storage
+            {{ end }}
+            {{ if .Values.AKOSettings.istioEnabled }}
+          - mountPath: /etc/istio-output-certs/
+            name: istio-certs
+            {{ end }}
+          {{ end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","/var/pre_stop_hook.sh"]
+          env:
+          {{ if .Values.avicredentials.certificateAuthorityData  }}
+          - name: CTRL_CA_DATA
+            valueFrom:
+              secretKeyRef:
+                name: avi-secret
+                key: certificateAuthorityData
+            {{ end }}
+          - name: CTRL_IPADDRESS
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: controllerIP
+          - name: CTRL_VERSION
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: controllerVersion
+          - name: CNI_PLUGIN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: cniPlugin
+          - name: ISTIO_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: istioEnabled
+          - name: VIP_PER_NAMESPACE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: vipPerNamespace
+          - name: SHARD_VS_SIZE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: shardVSSize
+          - name: PASSTHROUGH_SHARD_SIZE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: passthroughShardSize
+          - name: FULL_SYNC_INTERVAL
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: fullSyncFrequency
+          - name: PRIMARY_AKO_FLAG
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: primaryInstance
+          - name: CLOUD_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: cloudName
+          - name: TENANT_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: tenantName
+          - name: CLUSTER_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: clusterName
+          - name: ENABLE_RHI
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableRHI
+          - name: ENABLE_EVH
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableEVH
+          - name: SERVICES_API
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: servicesAPI
+          - name: DEFAULT_DOMAIN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: defaultDomain
+          - name: DISABLE_STATIC_ROUTE_SYNC
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: disableStaticRouteSync
+           {{ if .Values.NetworkSettings.nsxtT1LR }}
+          - name: NSXT_T1_LR
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nsxtT1LR
+          {{ end }}
+          - name: NAMESPACE_SYNC_LABEL_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nsSyncLabelKey
+          - name: NAMESPACE_SYNC_LABEL_VALUE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nsSyncLabelValue
+          - name: DEFAULT_ING_CONTROLLER
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: defaultIngController
+          - name: SEG_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: serviceEngineGroupName
+          - name: BGP_PEER_LABELS
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: bgpPeerLabels
+          - name: NODE_NETWORK_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nodeNetworkList
+          - name: VIP_NETWORK_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: vipNetworkList
+          - name: AKO_API_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: apiServerPort
+          - name: SERVICE_TYPE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: serviceType
+          {{ if eq .Values.L7Settings.serviceType "NodePort" }}
+          - name: NODE_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nodeKey
+          - name: NODE_VALUE
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: nodeValue
+          {{ end }}
+          - name: AUTO_L4_FQDN
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: autoFQDN
+          {{ if .Values.persistentVolumeClaim }}
+          - name: USE_PVC
+            value: "true"
+          {{ end }}
+          - name: LOG_FILE_PATH
+            value: {{ .Values.mountPath }}
+          - name: LOG_FILE_NAME
+            value: {{ .Values.logFile }}
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MCI_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: enableMCI
+          - name: BLOCKED_NS_LIST
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: blockedNamespaceList
+          - name: IP_FAMILY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: ipFamily
+          - name: USE_DEFAULT_SECRETS_ONLY
+            valueFrom:
+              configMapKeyRef:
+                name: avi-k8s-config
+                key: useDefaultSecretsOnly
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port:  {{ default "8080" .Values.AKOSettings.apiServerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - ako
+            topologyKey: "kubernetes.io/hostname"
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
