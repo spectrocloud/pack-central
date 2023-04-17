@@ -12,6 +12,8 @@ To run AKO you need the following pre-requisites:
 * <i>**Step 2:**</i> Make sure a PG network is part of the NS IPAM configured in the vCenter
 * <i>**Step 3:**</i> Create Service Engine groups per AKO cluster
 
+Set Licensing to `Enterprise`.
+
 ## Kubernetes compatibility
 Kubernetes version 1.16 and above
 
