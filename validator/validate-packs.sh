@@ -176,6 +176,7 @@ validate_content(){
   else
     log_error "Image content verfiication failed for $pack_dir. Make sure you have image: array defined under images: section of values.yaml"
   fi
+  return $fail
 }
 
 get_pack_layer() {
