@@ -1,0 +1,29 @@
+{
+  "addonType": "servicemesh",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/istio"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Istio",
+  "charts": [
+    "charts/base-1.17.2.tgz",
+    "charts/istiod-1.17.2.tgz",
+    "charts/gateway-1.17.2.tgz",
+    "charts/kiali-1.66.1.tgz"
+  ],
+  "layer":"addon",
+  "name": "istio",
+  "version": "1.17.2",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "istio",
+        "layer": "addon",
+        "minVersion": "1.14.3",
+        "type": "upgrade"
+      }
+    ]
+  }
+}
