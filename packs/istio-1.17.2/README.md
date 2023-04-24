@@ -17,7 +17,11 @@ Please configure the following property to allow kiali to access the prometheus 
 Default value is - `http://prometheus.istio-system:9090/`
 
 ### Note:
-You don’t need to expose Prometheus outside the cluster. It is enough to provide the Kubernetes internal service URL. 
+**You don’t need to expose Prometheus outside the cluster. It is enough to provide the Kubernetes internal service URL. 
+
+**To upgrade or downgrade pack, please uninstall the pack and remove the crds using following command and then proceed installing the new pack.
+
+```kubectl get crd -oname | grep --color=never 'istio.io' | xargs kubectl delete```
 
 Kiali dashboard can be accessed using the following command:
 
