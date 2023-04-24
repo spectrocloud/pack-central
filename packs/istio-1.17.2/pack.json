@@ -21,7 +21,7 @@
       {
         "packName": "istio",
         "layer": "addon",
-        "minVersion": "1.14.3",
+        "minVersion": "1.17.2",
         "type": "upgrade"
       }
     ]
