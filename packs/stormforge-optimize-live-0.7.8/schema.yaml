@@ -1,0 +1,20 @@
+charts.optimize-live.imageCredentials.registry:
+  schema: '{{ required }}'
+charts.optimize-live.imageCredentials.username:
+  schema: '{{ required }}'
+charts.optimize-live.imageCredentials.password:
+  schema: '{{ required | format "${password}" }}'
+
+charts.optimize-live.stormforge.address: 
+  schema: '{{ required }}'
+
+charts.optimize-live.authorization.issuer:
+  schema: '{{ required }}'
+charts.optimize-live.authorization.clientID:
+  schema: '{{ required }}'
+charts.optimize-live.authorization.clientSecret:
+  schema: '{{ required | format "${password}" }}'
+
+charts.optimize-live.metricsURL:
+  schema: '{{ required }}'
+

@@ -1,0 +1,150 @@
+pack:
+  namespace: "stormforge-system"
+  content:
+    images:
+      - image: registry.stormforge.io/optimize-live/controller:0.0.26
+    charts:
+      - repo: https://registry.stormforge.io/chartrepo/library/
+        name: optimize-live
+        version: 0.7.8
+
+# Default values for optimize-live.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+charts:
+  optimize-live:
+    replicaCount: 1
+    tsdb:
+      image:
+        repository: registry.stormforge.io/optimize-live/tsdb
+        pullPolicy: IfNotPresent
+        tag: 0.0.16
+      resources:
+        limits:
+          cpu: 2500m    # CPU peaks during backlog filling
+          memory: 1000Mi
+        requests:
+          cpu: 150m
+          memory: 150Mi
+    applier:
+      image:
+        repository: registry.stormforge.io/optimize-live/applier
+        pullPolicy: IfNotPresent
+        tag: 0.0.11
+      resources:
+        limits:
+          cpu: 200m
+          memory: 200Mi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+    recommender:
+      image:
+        repository: registry.stormforge.io/optimize-live/recommender
+        pullPolicy: IfNotPresent
+        tag: 0.3.10
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+    grafana:
+      image:
+        repository: grafana/grafana-oss
+        pullPolicy: IfNotPresent
+        tag: 9.2.7
+    image:
+      repository: registry.stormforge.io/optimize-live/controller
+      pullPolicy: IfNotPresent
+      tag: 0.0.25
+    imagePullSecrets: []
+    nameOverride: ""
+    fullnameOverride: ""
+    defaultNamespace: stormforge-system
+    serviceAccount:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, a name is generated using the fullname template
+      name: ""
+    rbac:
+      clusterRole:
+        create: true
+        name: ""
+      clusterRoleBinding:
+        create: true
+        name: ""
+      # additional can be used to extend the permissions of the service account used for patching resources
+      # additional: |-
+      #   - apiGroups:
+      #     - optimize.stormforge.io
+      #     resources:
+      #     - lives/status
+      #     verbs:
+      #     - get
+      #     - list
+      #     - patch
+      #     - update
+      #     - watch
+    imageCredentials:
+      registry: registry.stormforge.io
+      username: ""
+      password: ""
+    stormforge:
+      address: https://api.stormforge.io/
+    authorization:
+      issuer: https://api.stormforge.io/
+      clientID: ""
+      clientSecret: ""
+    # metricsURL should be used to set the URL of the prometheus server
+    # that should be scraped to fetch metrics.
+    # When using DataDog or another external metrics provider, this field
+    # should be left at the default ""
+    metricsURL: "http://prometheus-operator-prometheus.monitoring:9090"
+    podAnnotations: {}
+    podSecurityContext: {}
+    securityContext:
+      runAsNonRoot: true
+    # extraEnvVars can be used to set things like:
+    # HTTP_PROXY/HTTPS_PROXY/NO_PROXY
+    # DD_API_KEY/DD_APP_KEY/DD_SITE
+    # This can also be set through the stormforge cli via
+    # `stormforge config set controller.<environment>.env.HTTP_PROXY http://my.proxy.example`
+    extraEnvVars: []
+    # These resource values most suit a 500-target setup
+    # If needing to unset resources, you can use "cpu: null" or "memory: null" in overrides when installing
+    resources:
+      limits:
+        cpu: 250m
+        memory: 500Mi
+      requests:
+        cpu: 150m
+        memory: 150Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 15
+      periodSeconds: 20
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    # Override the default storage class for pv creation
+    # It is strongly encouraged to use `xfs` as the backing filesystem
+    # to avoid inode exhaustion.
+    storageClass: ""
+     # pvcSize dictates how large of a PVC should be requested.
+     # This defaults to 10G
+    pvcSize: ""
+    debug: false

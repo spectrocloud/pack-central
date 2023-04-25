@@ -1,0 +1,14 @@
+{
+    "name": "stormforge-optimize-live",
+    "displayName": "Stormforge-Optimize-Live",
+    "layer": "addon",
+    "version": "0.7.8",
+    "cloudTypes": [
+        "all"
+    ],
+    "charts": [
+        "charts/optimize-live-0.7.8.tgz"
+    ],
+    "addonType": "monitoring",
+    "annotations": {}
+}
