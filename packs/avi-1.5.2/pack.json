@@ -1,0 +1,18 @@
+{
+  "addonType":"load balancer",
+  "annotations": {
+    "disabled": "false"
+  },
+  "cloudTypes": [
+    "vsphere"
+  ],
+  "charts": [
+    "charts/ako-1.5.2.tgz"
+  ],
+  "displayName": "Avi Kubernetes Operator",
+  "eol": "",
+  "group": "",
+  "layer":"addon",
+  "name": "avi",
+  "version": "1.5.2"
+}
