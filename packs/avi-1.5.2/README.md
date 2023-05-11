@@ -9,8 +9,7 @@ To run AKO you need the following pre-requisites:
     * <i>**Step 1b:**</i> [Performing the Avi Controller Initial setup](https://avinetworks.com/docs/latest/installing-avi-vantage-for-vmware-vcenter/#performing-the-avi-controller-initial-setup)
     * <i>**Step 1c:**</i> (For static IP assignment) [Configuring IP address pools](https://avinetworks.com/docs/latest/installing-avi-vantage-for-vmware-vcenter/#configuring-ip-address-pools)
     * <i>**Step 1d:**</i> [Verifying the Configuration](https://avinetworks.com/docs/latest/installing-avi-vantage-for-vmware-vcenter/#verifying-the-configuration)
-* <i>**Step 2:**</i> Make sure a PG network is part of the NS IPAM configured in the vCenter
-* <i>**Step 3:**</i> Create Service Engine groups per AKO cluster
+* <i>**Step 2:**</i> Create Service Engine groups per AKO cluster
 
 ## Kubernetes compatibility
 Kubernetes version 1.16 and above
@@ -35,6 +34,6 @@ The table lists commonly used parameters you can configure when adding this pack
 | avicredentials.password  | Controller password | Empty  | Yes  |
 
 ## References:
-* [AKO installation](https://avinetworks.com/docs/ako/1.9/ako-installation/)
-* [Github](https://github.com/vmware/load-balancer-and-ingress-services-for-kubernetes/tree/release-1.9.2)
-* [AKO](https://avinetworks.com/docs/ako/1.9/avi-kubernetes-operator/)
+* [AKO installation](https://avinetworks.com/docs/ako/1.5/ako-installation/)
+* [Github](https://github.com/vmware/load-balancer-and-ingress-services-for-kubernetes/tree/release-1.5.2)
+* [AKO](https://avinetworks.com/docs/ako/1.5/avi-kubernetes-operator/)

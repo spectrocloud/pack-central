@@ -9,7 +9,7 @@
   "charts": [
     "charts/ako-1.9.2.tgz"
   ],
-  "displayName": "AVI",
+  "displayName": "Avi Kubernetes Operator",
   "eol": "",
   "group": "",
   "layer":"addon",
