@@ -28,3 +28,9 @@ jobs:
     # Runs a single command using the runners shell
     - name: Display registry
       run: echo "Hello ${{ github.event.inputs.registry }}"
+
+    - name: Run script
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh
