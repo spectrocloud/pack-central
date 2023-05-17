@@ -10,7 +10,7 @@ You can
 
 OR
 
-Use them from the Spectro Cloud public registry on our [SaaS offering](https://console.spectrocloud.com)
+Use them from the Spectro Cloud public registry on our [SaaS offering](https://www.spectrocloud.com)
 
 ## How to collaborate
 
