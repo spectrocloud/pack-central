@@ -29,8 +29,14 @@ jobs:
     - name: Display registry
       run: echo "Hello ${{ github.event.inputs.registry }}"
 
+    - name: Checkout branch
+      uses: actions/checkout@main
+
     - name: Run script
+      env:
+        REGISTRY: ${{ secrets.PACK_REGISTRY_SERVER }}
+        CREDS: ${{ secrets.PACK_REGISTRY_CREDS }}
       shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/scripts
-        ./push_packs.sh
+        ./push_packs.sh "$REGISTRY"

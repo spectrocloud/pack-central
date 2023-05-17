@@ -17,10 +17,10 @@ comment_string=""
 SPECTRO_HOME="$HOME/spectroCLI"
 CLI_CONFIG="$HOME/.spectro"
 CONIG_JSON_FILE="config.json"
-PACKS_TOPLEVEL_DIRECTORY="packs"
+PACKS_TOPLEVEL_DIRECTORY="pack-central/packs"
 GIT_PACKS_DIRECTORY="${GITHUB_WORKSPACE}/${PACKS_TOPLEVEL_DIRECTORY}"
 
-if [[ ! $spectro_server ]]; then
+if [ ! $spectro_server ]; then
         echo "Usage: push_packs.sh <registry_server>"
         exit 1
 fi
@@ -45,32 +45,31 @@ setup_spectrocli(){
     log_error "Error occurred while downloading spectro CLI"
     exit $rc     
   fi	  
-  if [[ ! -f spectro ]]; then
+  if [ -f spectro ]; then
    chmod +x spectro
   else
     log_error "spectro binary not found in the downloaded" 	
     exit 127 
   fi  
 }
+setup_spectrocli
 
-create_config_json_template{}{
+create_config_json_template(){
  mkdir ${CLI_CONFIG}
- if [[ $? -ne 0 ]]; then
-  log_error "Error creating ${CLI_CONFIG}"
-  exit 1
- fi  
- cat > ${CONIG_JSON_FILE} << EOL
+ cd ${CLI_CONFIG}
+ cat > ${CONIG_JSON_FILE} << EOF
  {
         "auths": {
-                "%SERVER_IP%": {
-                        "auth": "%AUTH_KEY%",
+                "$REGISTRY": {
+                        "auth": "$CREDS",
                         "insecure": true
                 }
         },
-        "defaultRegistry": "%DEFAULT_URL%"
+        "defaultRegistry": "$REGISTRY"
  }
-EOL
+EOF
 }
+create_config_json_template
 
 # Add Stable Packs
 # shellcheck disable=SC2011
@@ -79,15 +78,15 @@ cd ${GITHUB_WORKSPACE}
 pack_list=$(ls -1d ${PACKS_TOPLEVEL_DIRECTORY}/*)
 for each_pack in ${pack_list}; do
    grep  '"commit_msg":' ${each_pack}/pack.json
-   if [[ $? -eq 0 ]]; then
+   if [ $? -eq 0 ]; then
        commit_msg=$(grep  '"commit_msg":' ${each_pack}/pack.json | cut -d : -f 2-)
        final_comment=${commit_msg}
    else
        final_comment=${comment}
    fi
    echo "$SPECTRO_HOME//spectro" pack push -m "${final_comment}" --registry-server "$spectro_server" --force ${each_pack}
-   "$SPECTRO_HOME/spectro" pack push -m "${final_comment}" --registry-server "$spectro_server" --force ${each_pack} 
-   if [[ $? -ne 0 ]]; then
+   $SPECTRO_HOME/spectro pack push -m "${final_comment}" --registry-server "$spectro_server" --force ${each_pack} 
+   if [ $? -ne 0 ]; then
      exit 2
    fi
 done   
