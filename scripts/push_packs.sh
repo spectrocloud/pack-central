@@ -17,7 +17,7 @@ comment_string=""
 SPECTRO_HOME="$HOME/spectroCLI"
 CLI_CONFIG="$HOME/.spectro"
 CONIG_JSON_FILE="config.json"
-PACKS_TOPLEVEL_DIRECTORY="pack-central/packs"
+PACKS_TOPLEVEL_DIRECTORY="packs"
 GIT_PACKS_DIRECTORY="${GITHUB_WORKSPACE}/${PACKS_TOPLEVEL_DIRECTORY}"
 
 if [ ! $spectro_server ]; then
