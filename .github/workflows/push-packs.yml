@@ -32,6 +32,22 @@ jobs:
     - name: Checkout branch
       uses: actions/checkout@main
 
+    - name: test if condition
+      env:
+      if ${{ inputs.registry == 'dev' }}
+        REGISTRY: ${{ secrets.DEV_REGISTRY_SERVER }}
+        CREDS: ${{ secrets.DEV_REGISTRY_CREDS }}
+      if ${{ inputs.registry == 'stage' }}
+        REGISTRY: ${{ secrets.STAGE_REGISTRY_SERVER }}
+        CREDS: ${{ secrets.STAGE_REGISTRY_CREDS }}
+      if ${{ inputs.registry == 'prod' }}
+        REGISTRY: ${{ secrets.PROD_REGISTRY_SERVER }}
+        CREDS: ${{ secrets.PROD_REGISTRY_CREDS }}
+      shell: bash
+      run: |
+        echo $REGISTRY
+        echo $CREDS
+
     - name: Run script
       env:
         REGISTRY: ${{ secrets.PACK_REGISTRY_SERVER }}
