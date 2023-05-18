@@ -33,14 +33,16 @@ jobs:
       uses: actions/checkout@main
 
     - name: test if condition
+      if: ${{ inputs.registry == 'dev' }}
       env:
-      if ${{ inputs.registry == 'dev' }}
         REGISTRY: ${{ secrets.DEV_REGISTRY_SERVER }}
         CREDS: ${{ secrets.DEV_REGISTRY_CREDS }}
-      if ${{ inputs.registry == 'stage' }}
+      if: ${{ inputs.registry == 'stage' }}
+      env:
         REGISTRY: ${{ secrets.STAGE_REGISTRY_SERVER }}
         CREDS: ${{ secrets.STAGE_REGISTRY_CREDS }}
-      if ${{ inputs.registry == 'prod' }}
+      if: ${{ inputs.registry == 'prod' }}
+      env:
         REGISTRY: ${{ secrets.PROD_REGISTRY_SERVER }}
         CREDS: ${{ secrets.PROD_REGISTRY_CREDS }}
       shell: bash
@@ -56,3 +58,4 @@ jobs:
       run: |
         cd ${GITHUB_WORKSPACE}/scripts
         ./push_packs.sh "$REGISTRY"
+
