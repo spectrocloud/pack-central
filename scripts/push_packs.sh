@@ -10,6 +10,7 @@ COLOR_RESET='\033[0m'
 
 SPECTRO_CLI_URL="https://software.spectrocloud.com/spectro-registry/v3.3.0/cli/linux/spectro"
 spectro_server=$1
+spectro_server_creds=$2
 
 comment="Generic Pack Change"
 comment_string=""
@@ -60,12 +61,12 @@ create_config_json_template(){
  cat > ${CONIG_JSON_FILE} << EOF
  {
         "auths": {
-                "$REGISTRY": {
-                        "auth": "$CREDS",
+                "$spectro_server": {
+                        "auth": "$spectro_server_creds",
                         "insecure": true
                 }
         },
-        "defaultRegistry": "$REGISTRY"
+        "defaultRegistry": "$spectro_server"
  }
 EOF
 }

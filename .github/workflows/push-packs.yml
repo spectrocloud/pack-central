@@ -39,22 +39,22 @@ jobs:
       shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/scripts
-#        ./push_packs.sh "$REGISTRY"
+        ./push_packs.sh ${{ secrets.DEV_REGISTRY_SERVER }} ${{ secrets.DEV_REGISTRY_CREDS }}
 
     - name: Push to Dev
       if: ${{ inputs.registry == 'dev' }}
       run: |
-        echo ${{ secrets.DEV_REGISTRY_SERVER }}
-        echo ${{ secrets.DEV_REGISTRY_CREDS }}
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh ${{ secrets.DEV_REGISTRY_SERVER }} ${{ secrets.DEV_REGISTRY_CREDS }}
 
     - name: Push to Stage
       if: ${{ inputs.registry == 'stage' }}
       run: |
-        echo ${{ secrets.STAGE_REGISTRY_SERVER }}
-        echo ${{ secrets.STAGE_REGISTRY_CREDS }}
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh ${{ secrets.STAGE_REGISTRY_SERVER }} ${{ secrets.STAGE_REGISTRY_CREDS }}
 
     - name: Push to Prod
       if: ${{ inputs.registry == 'prod' }}
       run: |
-        echo ${{ secrets.PROD_REGISTRY_SERVER }}
-        echo ${{ secrets.PROD_REGISTRY_CREDS }}
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh ${{ secrets.PROD_REGISTRY_SERVER }} ${{ secrets.PROD_REGISTRY_CREDS }}
