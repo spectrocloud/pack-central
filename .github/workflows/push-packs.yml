@@ -32,24 +32,6 @@ jobs:
     - name: Checkout branch
       uses: actions/checkout@main
 
-    - name: test if condition
-      if: ${{ inputs.registry == 'dev' }}
-      env:
-        REGISTRY: ${{ secrets.DEV_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.DEV_REGISTRY_CREDS }}
-      if: ${{ inputs.registry == 'stage' }}
-      env:
-        REGISTRY: ${{ secrets.STAGE_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.STAGE_REGISTRY_CREDS }}
-      if: ${{ inputs.registry == 'prod' }}
-      env:
-        REGISTRY: ${{ secrets.PROD_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.PROD_REGISTRY_CREDS }}
-      shell: bash
-      run: |
-        echo $REGISTRY
-        echo $CREDS
-
     - name: Run script
       env:
         REGISTRY: ${{ secrets.PACK_REGISTRY_SERVER }}
@@ -57,5 +39,22 @@ jobs:
       shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/scripts
-        ./push_packs.sh "$REGISTRY"
+#        ./push_packs.sh "$REGISTRY"
 
+   - name: Push to Dev
+     if: ${{ inputs.registry == 'dev' }}
+     run: |
+       echo ${{ secrets.DEV_REGISTRY_SERVER }}
+       echo ${{ secrets.DEV_REGISTRY_CREDS }}
+
+   - name: Push to Stage
+     if: ${{ inputs.registry == 'stage' }}
+     run: |
+       echo ${{ secrets.STAGE_REGISTRY_SERVER }}
+       echo ${{ secrets.STAGE_REGISTRY_CREDS }}
+
+   - name: Push to Prod
+     if: ${{ inputs.registry == 'prod' }}
+     run: |
+       echo ${{ secrets.PROD_REGISTRY_SERVER }}
+       echo ${{ secrets.PROD_REGISTRY_CREDS }}
