@@ -33,14 +33,16 @@ jobs:
       uses: actions/checkout@main
 
     - name: test if condition
-      env:
       if: ${{ inputs.registry == 'dev' }}
+      env:
         REGISTRY: ${{ secrets.DEV_REGISTRY_SERVER }}
         CREDS: ${{ secrets.DEV_REGISTRY_CREDS }}
       if: ${{ inputs.registry == 'stage' }}
+      env:
         REGISTRY: ${{ secrets.STAGE_REGISTRY_SERVER }}
         CREDS: ${{ secrets.STAGE_REGISTRY_CREDS }}
       if: ${{ inputs.registry == 'prod' }}
+      env:
         REGISTRY: ${{ secrets.PROD_REGISTRY_SERVER }}
         CREDS: ${{ secrets.PROD_REGISTRY_CREDS }}
       shell: bash
