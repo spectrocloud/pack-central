@@ -32,15 +32,6 @@ jobs:
     - name: Checkout branch
       uses: actions/checkout@main
 
-    - name: Run script
-      env:
-        REGISTRY: ${{ secrets.PACK_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.PACK_REGISTRY_CREDS }}
-      shell: bash
-      run: |
-        cd ${GITHUB_WORKSPACE}/scripts
-        ./push_packs.sh ${{ secrets.DEV_REGISTRY_SERVER }} ${{ secrets.DEV_REGISTRY_CREDS }}
-
     - name: Push to Dev
       if: ${{ inputs.registry == 'dev' }}
       run: |
