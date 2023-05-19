@@ -1,9 +1,6 @@
-# This is a basic workflow that is manually triggered
 
 name: Push Packs
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
 on:
   workflow_dispatch:
     # Inputs the workflow accepts.
@@ -16,46 +13,32 @@ on:
         # Input has to be provided for the workflow to run
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
   push-packs:
-    # The type of runner that the job will run on
+    environment: stage
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Runs a single command using the runners shell
     - name: Display registry
       run: echo "Hello ${{ github.event.inputs.registry }}"
 
     - name: Checkout branch
       uses: actions/checkout@main
 
-    - name: test if condition
+    - name: Push to Dev
       if: ${{ inputs.registry == 'dev' }}
-      env:
-        REGISTRY: ${{ secrets.DEV_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.DEV_REGISTRY_CREDS }}
-      if: ${{ inputs.registry == 'stage' }}
-      env:
-        REGISTRY: ${{ secrets.STAGE_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.STAGE_REGISTRY_CREDS }}
-      if: ${{ inputs.registry == 'prod' }}
-      env:
-        REGISTRY: ${{ secrets.PROD_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.PROD_REGISTRY_CREDS }}
-      shell: bash
-      run: |
-        echo $REGISTRY
-        echo $CREDS
-
-    - name: Run script
-      env:
-        REGISTRY: ${{ secrets.PACK_REGISTRY_SERVER }}
-        CREDS: ${{ secrets.PACK_REGISTRY_CREDS }}
-      shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/scripts
-        ./push_packs.sh "$REGISTRY"
+        ./push_packs.sh ${{ secrets.DEV_REGISTRY_SERVER }} ${{ secrets.DEV_REGISTRY_CREDS }}
 
+    - name: Push to Stage
+      if: ${{ inputs.registry == 'stage' }}
+      run: |
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh ${{ secrets.STAGE_REGISTRY_SERVER }} ${{ secrets.STAGE_REGISTRY_CREDS }}
+
+    - name: Push to Prod
+      if: ${{ inputs.registry == 'prod' }}
+      run: |
+        cd ${GITHUB_WORKSPACE}/scripts
+        ./push_packs.sh ${{ secrets.PROD_REGISTRY_SERVER }} ${{ secrets.PROD_REGISTRY_CREDS }}
