@@ -15,7 +15,7 @@ on:
 
 jobs:
   push-packs:
-    env: staging
+    env: stage
     runs-on: ubuntu-latest
 
     steps:
