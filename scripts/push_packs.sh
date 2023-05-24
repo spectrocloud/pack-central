@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 COLOR_RESET='\033[0m'
 
 SPECTRO_CLI_URL="https://software.spectrocloud.com/spectro-registry/v3.3.0/cli/linux/spectro"
-spectro_server_list=$1
+spectro_server_string=$1
 spectro_server_creds=$2
 
 comment="Generic Pack Change"
@@ -95,6 +95,7 @@ push_packs() {
 }
 
 
+spectro_server_list=$(echo ${spectro_server_string} | tr "," " ")
 for each_server in $spectro_server_list; do
   spectro_server=${each_server}
   create_config_json_template 
