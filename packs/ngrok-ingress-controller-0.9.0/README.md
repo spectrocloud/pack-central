@@ -4,7 +4,7 @@ An Add-on Pack for Spectro Cloud to use the ngrok Kubernetes Ingress Controller.
 
 # Versions Supported
 
-**0.7.0**
+**0.9.0**
 
 ## Prerequisites
 
@@ -22,8 +22,8 @@ Refer to the [ngrok documentation](https://ngrok.com/docs/using-ngrok-with/k8s/#
 |-----------|-------------|---------|
 | fullnameOverride | String to fully override the resource naming | "ngrok-ingress-controller" |
 | replicaCount | Number of replicas to deploy | 2 |
-| credentials.apiKey | For testing, a ngrok apiKey secret can be set in the pack configuration | "" |
-| credentials.authtoken | For testing, a ngrok authtoken secret can be set in the pack configuration | "" |
+| credentials.apiKey | A ngrok apiKey secret can be set in the pack configuration | "" |
+| credentials.authtoken | A ngrok authtoken secret can be set in the pack configuration | "" |
 
 ## Usage
 
@@ -31,7 +31,7 @@ For production use the cluster must be setup with a secret named `ngrok-ingress-
 * AUTHTOKEN
 * API\_KEY
 
-Example: 
+Example of creating the secret directly in the cluster, if not specified in the pack configuration as described above: 
 
 ```bash
 kubectl --namespace ngrok-ingress-controller create secret generic ngrok-ingress-controller-credentials \

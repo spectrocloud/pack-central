@@ -1,0 +1,5 @@
+charts.kubernetes-ingress-controller.credentials.apiKey:
+  schema: '{{ format "${password}" | hints "The ngrok apiKey to use for the ngrok ingress controller" }}'
+
+charts.kubernetes-ingress-controller.credentials.authtoken:
+  schema: '{{ format "${password}" | hints "The ngrok authtoken to use for the ngrok ingress controller" }}'
