@@ -6,12 +6,13 @@ on:
     # Inputs the workflow accepts.
     inputs:
       registry:
-        # Friendly description to be shown in the UI instead of 'name'
-        description: 'Push packs to registry'
-        # Default value if no value is explicitly provided
-        default: 'stage'
-        # Input has to be provided for the workflow to run
-        required: true
+        type: choice
+        description: Registry Environment
+        options:
+        - dev
+        - stage
+        - prod
+
 
 jobs:
   push-packs:
