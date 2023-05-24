@@ -21,7 +21,7 @@ CONFIG_JSON_FILE="config.json"
 PACKS_TOPLEVEL_DIRECTORY="packs"
 GIT_PACKS_DIRECTORY="${GITHUB_WORKSPACE}/${PACKS_TOPLEVEL_DIRECTORY}"
 
-if [ ! $spectro_server ]; then
+if [ ! $spectro_server_string ]; then
         echo "Usage: push_packs.sh <registry_server>"
         exit 1
 fi
