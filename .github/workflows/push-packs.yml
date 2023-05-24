@@ -1,5 +1,5 @@
 
-name: Push Packs
+name: Push Packs to ${{ github.event.inputs.registry }} Registry
 
 on:
   workflow_dispatch:
