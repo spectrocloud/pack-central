@@ -1,0 +1,5 @@
+manifests.aws-eks-oidc.issuerURL:
+  schema: '{{ required | format "${string}" | hints "Issuer URL for OIDC" }}'
+
+manifests.aws-eks-oidc.clientID:
+  schema: '{{ required | format "${string}" | hints "Client/Audience ID for OIDC" }}'

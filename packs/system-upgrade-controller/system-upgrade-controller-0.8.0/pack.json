@@ -1,0 +1,18 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "commit_msg": "",
+  "displayName": "System Upgrade Controller",
+  "layer":"addon",
+  "name": "suc",
+  "version": "0.8.0",
+  "kubeManifests": [
+    "manifests/suc.yaml"
+  ]
+}

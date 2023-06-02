@@ -1,0 +1,17 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "Qualys Cloud Agent",
+  "kubeManifests": [
+    "manifests/install-qualys.yaml"
+  ],
+  "layer": "addon",
+  "name": "qualys-agent",
+  "version": "1.0.0"
+}

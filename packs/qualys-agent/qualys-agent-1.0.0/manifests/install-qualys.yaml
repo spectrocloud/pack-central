@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: setup-qualys-agent
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: setup-qualys-agent
+  template:
+    metadata:
+      name: setup-qualys-agent
+      labels:
+        app: setup-qualys-agent
+    spec:
+      initContainers:
+        - name: qualys-install-unit
+          image: gcr.io/spectro-images-public/debian:buster
+          command:
+            - sh
+            - -c
+            - |
+              set -x
+
+              # Add unit file to install the agent
+              cat >/etc/systemd/system/setup-qualys-agent.service <<EOF
+              [Unit]
+              Description="Install the Qualys agent"
+
+              [Service]
+              Type=oneshot
+              ExecStart=/bin/sh -c "rpm -ivh {{ .Values.agentPackageUrl }}; systemctl stop qualys-cloud-agent; sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh ActivationId={{ .Values.activationId }} CustomerId={{ .Values.customerId }}"
+
+              [Install]
+              WantedBy=multi-user.target
+              EOF
+
+              systemctl daemon-reload
+              systemctl enable setup-qualys-agent.service
+              systemctl start setup-qualys-agent.service
+
+              # Check and print agent install status
+              systemctl status qualys-cloud-agent
+
+          volumeMounts:
+            - name: etc-systemd
+              mountPath: /etc/systemd/system
+            - name: bin-systemctl
+              mountPath: /bin/systemctl
+            - name: libgcrypt
+              mountPath: /usr/lib/x86_64-linux-gnu/libgcrypt.so.11
+            - name: run-systemd
+              mountPath: /run/systemd
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      containers:
+        - name: pause
+          image: gcr.io/google_containers/pause
+      volumes:
+        # To write install service file
+        - name: etc-systemd
+          hostPath:
+            path: /etc/systemd/system
+            type: Directory
+        # systemctl command
+        - name: bin-systemctl
+          hostPath:
+            path: /bin/systemctl
+            type: File
+        # Required lib for systemctl
+        - name: libgcrypt
+          hostPath:
+            path: /lib64/libgcrypt.so.11
+            type: File
+        # systemd's runtime socket
+        - name: run-systemd
+          hostPath:
+            path: /run/systemd
+            type: Directory

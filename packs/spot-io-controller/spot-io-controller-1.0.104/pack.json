@@ -1,0 +1,22 @@
+{
+    "addonType":"system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "cloudTypes": [
+      "aws",
+      "eks"
+    ],
+    "annotations": {
+        "docsURL": "https://docs.spot.io/ocean/getting-started/",
+        "description": "A Helm chart for Ocean Controller"
+    },
+    "displayName": "Spot.io Controller (Helm)",
+    "charts": [
+        "charts/spotinst-kubernetes-cluster-controller-1.0.104.tgz"
+    ],
+    "layer": "addon",
+    "name": "spotinst-kubernetes-cluster-controller",
+    "version": "1.0.104"
+}

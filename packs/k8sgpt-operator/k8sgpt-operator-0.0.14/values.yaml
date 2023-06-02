@@ -1,0 +1,68 @@
+pack:
+  content:
+    charts:
+      - repo: https://charts.k8sgpt.ai
+        name: k8sgpt/k8sgpt-operator
+        version: 0.0.14
+    images:
+      - image: ghcr.io/k8sgpt-ai/k8sgpt-operator:v0.0.14
+      - image: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
+
+  namespace: k8sgpt-operator-system
+
+charts:
+  k8sgpt-operator:
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+    controllerManager:
+      kubeRbacProxy:
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        image:
+          repository: gcr.io/kubebuilder/kube-rbac-proxy
+          tag: v0.14.1
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+      manager:
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        image:
+          repository: ghcr.io/k8sgpt-ai/k8sgpt-operator
+          tag: v0.0.14
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      replicas: 1
+    kubernetesClusterDomain: cluster.local
+    metricsService:
+      ports:
+      - name: https
+        port: 8443
+        protocol: TCP
+        targetPort: https
+      type: ClusterIP
+
+manifests:
+  k8sgpt:
+    model: "ggml-gpt4all-j.bin"
+    backend: "localai"
+    baseUrl: "http://local-ai-local-ai.local-ai.svc.cluster.local:8080/v1"
+    noCache: false
+    enableAI: true
+    openAiApiKey: ""

@@ -1,0 +1,20 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "K8sGPT Operator",
+  "layer": "addon",
+  "name": "k8sgpt-operator",
+  "charts": [
+    "charts/k8sgpt-operator-0.0.14.tgz"
+  ],
+  "kubeManifests": [
+    "manifests/k8sgpt.yaml"
+  ],
+  "version": "0.0.14"
+}

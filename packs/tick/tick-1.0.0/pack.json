@@ -1,0 +1,18 @@
+{
+  "addonType":"spectro",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Tick",
+  "kubeManifests": [
+    "manifests/tick.yaml",
+    "manifests/audit.yaml"
+  ],
+  "layer": "addon",
+  "name": "spectro-tick",
+  "version": "1.0.0"
+}

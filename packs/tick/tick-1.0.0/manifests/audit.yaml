@@ -1,0 +1,18 @@
+apiVersion: cluster.spectrocloud.com/v1alpha1
+kind: Audit
+metadata:
+  name: audit1
+  namespace: tick-system
+spec:
+  # Add fields here
+  cluster:
+    env: Spectro
+    # Kube hunter expects only the hostname, but palette gives host:port format
+    # Split the string and extract hostname alone
+    {{- $apiServer := splitList ":" .Spectro.apiServer }}
+    apiServerEndpoint: {{ first $apiServer }}
+  drivers:
+    - driver: kube-bench
+    - driver: kube-hunter
+    - driver: sunobuoy
+

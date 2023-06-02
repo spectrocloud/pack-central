@@ -1,0 +1,27 @@
+manifests:
+  aws-eks-oidc:
+
+    # Cluster-ADMIN - the "group" mapped to cluster Admins
+    clusterAdminTeam: "SuperAdmin"
+
+    # The Issuer URL (BASE of .well-known/)
+    # e.g: https://dev-6428100.okta.com/oauth2/default
+    issuerURL: ""
+
+    # The Client ID (generally audience)
+    # e.g: 0oa4fe1y3zjc2W2nc5d6
+    clientID: ""
+
+    # The claim to map user name to
+    # e.g: email, sub, ...
+    usernameClaim: "email"
+
+    # The claim to map groups from
+    # e.g: groups
+    groupsClaim: "groups"
+
+    # The cloud account name
+    cloudAccountName: "aws-eks"
+
+    # The cluster name (do not modify)
+    clusterName: "{{ .spectro.system.cluster.name }}"

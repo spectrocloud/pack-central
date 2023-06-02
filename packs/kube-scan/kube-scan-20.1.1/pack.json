@@ -1,0 +1,17 @@
+{
+  "addonType":"monitoring",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Kube-Scan",
+  "kubeManifests": [
+    "manifests/kube-scan.yaml"
+  ],
+  "layer": "addon",
+  "name": "kube-scan",
+  "version": "20.1.1"
+}

@@ -1,0 +1,8 @@
+manifests.install-qualys.agentPackageUrl:
+  schema: '{{ required | format "${string}" | hints "Public URL to download the Qualys agent" }}'
+
+manifests.install-qualys.customerId:
+  schema: '{{ required | format "${password}" | hints "CustomerID to use for agent registration" }}'
+
+manifests.install-qualys.activationId:
+  schema: '{{ required | format "${password}" | hints "ActivationID to use for agent registration" }}'

@@ -1,0 +1,66 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ .Values.clusterAdminTeam }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eks-config
+spec:
+  template:
+    spec:
+      containers:
+      - name: eks
+        image: amazon/aws-cli:2.2.5
+        command:
+        - sh
+        - -xc
+        args:
+        - |
+          aws eks associate-identity-provider-config \
+          --cluster-name {{ .Values.clusterName }} \
+          --oidc identityProviderConfigName=oidc,issuerUrl={{.Values.issuerURL}},clientId={{.Values.clientID}},usernameClaim={{.Values.usernameClaim}},usernamePrefix=-,groupsClaim={{.Values.groupsClaim}}
+          echo "DONE!"
+        volumeMounts:
+        - name: credentials
+          mountPath: "/root/.aws/credentials"
+          subPath: credentials
+        - name: config
+          mountPath: "/root/.aws/config"
+          subPath: config
+      initContainers:
+      - name: configure
+        image: k8s.gcr.io/busybox:latest
+        envFrom:
+        - secretRef:
+            name: {{ .Values.cloudAccountName }}
+        command:
+        - sh
+        - -c
+        - |
+          cat > /work-dir/config <<-EOF
+          [default]
+          source_profile = default
+          role_arn = $arn
+          external_id = $externalId
+          EOF
+        volumeMounts:
+        - name: config
+          mountPath: "/work-dir"
+      volumes:
+      - name: credentials
+        secret:
+          secretName: capa-manager-bootstrap-credentials
+      - name: config
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 4

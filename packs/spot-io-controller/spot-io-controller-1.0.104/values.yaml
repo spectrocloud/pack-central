@@ -1,0 +1,151 @@
+pack:
+  namespace: kube-system
+
+charts:
+  # source: https://spotinst.github.io/spotinst-kubernetes-helm-charts
+  spotinst-kubernetes-cluster-controller:
+    # -- (Optional) configure the amount of replicas for the controller
+    replicas: 1
+
+    # Configuration.
+    spotinst:
+      # -- (Required) Spot Token.
+      # Ref: https://docs.spot.io/administration/api/create-api-token
+      token: ""
+      # -- (Required) Spot Account.
+      # Ref: https://docs.spot.io/administration/organizations?id=account
+      account: ""
+      # -- (Required) Unique identifier used by the Ocean Controller to connect
+      # between the Ocean backend and the Kubernetes cluster.
+      # Ref: https://docs.spot.io/ocean/tutorials/spot-kubernetes-controller/
+      clusterIdentifier: ""
+      # -- (Optional) Base URL.
+      baseUrl: ""
+      # -- (Optional) Proxy URL.
+      proxyUrl: ""
+      # -- (Optional) Disable auto update.
+      disableAutoUpdate: true
+      # -- (Optional) Enable CSR approval.
+      enableCsrApproval: false
+
+    # Secret.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/secret/
+    secret:
+      # -- (Optional) Use a Secret instead of a ConfigMap to store credentials. Disabled for backward compatibility.
+      enabled: true
+      # -- (Optional) Controls whether a Secret should be created.
+      create: true
+      # -- (Optional) Secret name.
+      name: spotinst-kubernetes-cluster-controller
+
+    # CA bundle.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/secret/
+    caBundleSecret:
+      # -- (Optional) Secret name.
+      name: spotinst-kubernetes-cluster-controller-ca-bundle
+
+    # Config Map.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/configmap/
+    configMap:
+      # -- (Optional) Controls whether a ConfigMap should be created.
+      create: true
+      # -- (Optional) ConfigMap name.
+      name: spotinst-kubernetes-cluster-controller-config
+
+    # Service Account.
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+    serviceAccount:
+      # -- (Optional) Controls whether a ServiceAccount should be created.
+      create: true
+      # -- (Optional) Service account name.
+      name: spotinst-kubernetes-cluster-controller
+
+    # -- (Optional) Resource requests and limits.
+    # Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    resources: {}
+      # If you do want to specify resources, uncomment the following lines,
+      # adjust them as necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #  cpu: 100m
+      #  memory: 128Mi
+      # requests:
+      #  cpu: 100m
+      #  memory: 128Mi
+
+    # Image.
+    # Ref: https://kubernetes.io/docs/concepts/containers/images/
+    image:
+      # -- (Optional) Image repository.
+      repository: gcr.io/spotinst-artifacts/kubernetes-cluster-controller:1.0.86
+      # -- (Optional) Image pull policy.
+      pullPolicy: IfNotPresent
+      # -- (Optional) Image pull secrets.
+      pullSecrets: []
+
+    # -- (Optional) DNS policy.
+    # Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+    dnsPolicy: Default
+
+    # -- (Optional) DNS config.
+    # Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+    dnsConfig: {}
+      # options:
+      # - name: ndots
+      #   value: "1"
+
+    # -- (Optional) Tolerations for nodes that have taints on them.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    tolerations:
+    - key: node.kubernetes.io/not-ready
+      effect: NoExecute
+      operator: Exists
+      tolerationSeconds: 150
+    - key: node.kubernetes.io/unreachable
+      effect: NoExecute
+      operator: Exists
+      tolerationSeconds: 150
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+
+    # Pod scheduling preferences.
+    # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+    affinity:
+      # -- (Optional) Node affinity.
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: NotIn
+              values:
+              - windows
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: Exists
+      # -- (Optional) Pod anti-affinity.
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                - spotinst-kubernetes-cluster-controller
+            topologyKey: kubernetes.io/hostname
+
+    # Metrics Server configuration.
+    metrics-server:
+      # -- (Optional) Specifies whether the metrics-server chart should be deployed.
+      deployChart: true
+      # -- (Optional) Arguments to pass to metrics-server on start up.
+      args:
+      - --logtostderr
+      # enable this if you have self-signed certificates, see: https://github.com/kubernetes-incubator/metrics-server
+      #  - --kubelet-insecure-tls

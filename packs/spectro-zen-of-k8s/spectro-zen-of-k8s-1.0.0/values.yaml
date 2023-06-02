@@ -1,0 +1,25 @@
+pack:
+  content:
+    images:
+      - image: gcr.io/spectro-images-public/release/spectro-zen-of-kubernetes:1.0.0
+      - image: gcr.io/spectro-images-public/release/spectro-zen-of-kubernetes-ui:1.0.0
+
+  namespace: hrm
+
+manifests:
+  hrm-ui:
+    # Rate (milliseconds) at which the UI queries the backend for heart rate data updates
+    refreshIntervalMs: 1000
+
+  hrm-server:
+    # Address of Bluetooth device
+    deviceAddress: ""
+
+    # Number of seconds to establish baseline heart rate
+    baselineSeconds: 5
+
+    # Sample rate (milliseconds) for heart rate data points
+    sampleRateMs: 500
+
+    # Log verbosity [0-10]; 0 being maximally verbose
+    logLevel: "0"

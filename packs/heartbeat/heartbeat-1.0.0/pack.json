@@ -1,0 +1,17 @@
+{
+  "addonType":"monitoring",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Heartbeat",
+  "charts": [
+    "charts/heartbeat.tgz"
+  ],
+  "layer": "addon",
+  "name": "heartbeat",
+  "version": "1.0.0"
+}

@@ -1,0 +1,17 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "AWS SSM Agent",
+  "kubeManifests": [
+    "manifests/aws-ssm-agent.yaml"
+  ],
+  "layer": "addon",
+  "name": "aws-ssm-agent",
+  "version": "1.0.0"
+}

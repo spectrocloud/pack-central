@@ -1,0 +1,90 @@
+manifests:
+  # Amazon Linux 2 doesn't have a provision to install ssm agent by default and will be fixed in future ami's
+  # https://github.com/aws/containers-roadmap/issues/593#issuecomment-823768607
+  # Meanwhile, this Daemonset will help install aws ssm agent into all nodes
+  aws-ssm-agent:
+    contents: |
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: eks-host-config
+        namespace: kube-system
+      spec:
+        selector:
+          matchLabels:
+            app: eks-host-config
+        template:
+          metadata:
+            name: eks-host-config
+            labels:
+              app: eks-host-config
+          spec:
+            initContainers:
+              - name: ssm-install-unit
+                image: gcr.io/spectro-images-public/debian:buster
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -x
+
+                    # Add unit file to install the SSM agent
+                    cat >/etc/systemd/system/install-ssm.service <<EOF
+                    [Unit]
+                    Description=Install the SSM agent
+
+                    [Service]
+                    Type=oneshot
+                    ExecStart=/bin/sh -c "yum install -y amazon-ssm-agent; systemctl enable amazon-ssm-agent; systemctl start amazon-ssm-agent"
+
+                    [Install]
+                    WantedBy=multi-user.target
+                    EOF
+
+                    systemctl daemon-reload
+                    systemctl enable install-ssm.service
+                    systemctl start install-ssm.service
+
+                    # Check and print SSM agent status
+                    systemctl status amazon-ssm-agent
+
+                volumeMounts:
+                  - name: etc-systemd
+                    mountPath: /etc/systemd/system
+                  - name: bin-systemctl
+                    mountPath: /bin/systemctl
+                  - name: libgcrypt
+                    mountPath: /usr/lib/x86_64-linux-gnu/libgcrypt.so.11
+                  - name: run-systemd
+                    mountPath: /run/systemd
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 256Mi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+            containers:
+              - name: pause
+                image: gcr.io/google_containers/pause
+            volumes:
+              # To write install-ssm.service file
+              - name: etc-systemd
+                hostPath:
+                  path: /etc/systemd/system
+                  type: Directory
+              # systemctl command
+              - name: bin-systemctl
+                hostPath:
+                  path: /bin/systemctl
+                  type: File
+              # Required lib for systemctl
+              - name: libgcrypt
+                hostPath:
+                  path: /lib64/libgcrypt.so.11
+                  type: File
+              # systemd's runtime socket
+              - name: run-systemd
+                hostPath:
+                  path: /run/systemd
+                  type: Directory

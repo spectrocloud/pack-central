@@ -1,0 +1,35 @@
+pack:
+  content:
+    images:
+      - image: gcr.io/google-samples/microservices-demo/cartservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/checkoutservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/frontend:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/paymentservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/productcatalogservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/cartservice:v0.6.0
+      - image: gcr.io/spectro-images-public/busybox:latest
+      - image: gcr.io/google-samples/microservices-demo/loadgenerator:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/currencyservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/shippingservice:v0.6.0
+      - image: gcr.io/spectro-images-public/redis:6.2.3-alpine
+      - image: gcr.io/google-samples/microservices-demo/adservice:v0.6.0
+      - image: gcr.io/google-samples/microservices-demo/emailservice:v0.6.0
+
+
+manifests:
+  hipster:
+    # Liveness probe default itmeout
+    timeout: 60
+
+    # Disable Tracing
+    disableTracing: true
+
+    # The namespace to create the app in
+    namespace: "hipster-app"
+
+    frontend:
+      replicas: 3
+    redis:
+      replicas: 3
+

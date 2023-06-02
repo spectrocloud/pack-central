@@ -1,0 +1,18 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "ingressCapability": "true",
+     "source": "community",
+     "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Hipster Commerce",
+  "layer":"addon",
+  "name": "sapp-hipster",
+  "version": "1.0.0",
+  "kubeManifests": [
+    "manifests/hipster.yaml"
+  ]
+}

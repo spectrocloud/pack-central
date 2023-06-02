@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hrm-server
+  namespace: hrm
+  labels:
+    app.kubernetes.io/name: hrm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hrm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hrm
+    spec:
+      hostNetwork: true
+      containers:
+      - command:
+        - /hrm
+        args:
+        - {{ .Values.deviceAddress | quote }}
+        - {{ .Values.logLevel | quote }}
+        env:
+        - name: BASELINE_SECONDS
+          value: {{ .Values.baselineSeconds | quote }}
+        - name: SAMPLE_RATE_MS
+          value: {{ .Values.sampleRateMs | quote }}
+        name: hrm
+        image: gcr.io/spectro-images-public/release/spectro-zen-of-kubernetes:1.0.0
+        ports:
+        - containerPort: 8081
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/run/dbus
+            name: dbus
+      volumes:
+        - name: dbus
+          hostPath:
+            path: /var/run/dbus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: hrm
+  name: heart-rate-server
+spec:
+  type: ClusterIP
+  ports:
+    - name: hrm
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: hrm
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hrm-server-ingress
+  namespace: hrm
+  annotations: {}
+spec:
+  ingressClassName: nginx
+  rules:
+  -  http:
+      paths:
+      - path: /hrm
+        pathType: Prefix
+        backend:
+          service:
+            name: heart-rate-server
+            port:
+              number: 8081

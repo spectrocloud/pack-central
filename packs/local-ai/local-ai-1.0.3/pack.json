@@ -1,0 +1,21 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "ansibleRoles": [],
+  "commit_msg": "",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "LocalAI",
+  "eol": "",
+  "group": "",
+  "charts": [
+    "charts/local-ai-1.0.3.tgz"
+  ],
+  "layer": "addon",
+  "addonType": "system app",
+  "name": "local-ai",
+  "version": "1.0.3"
+}

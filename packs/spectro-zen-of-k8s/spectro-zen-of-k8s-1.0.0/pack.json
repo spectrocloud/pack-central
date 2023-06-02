@@ -1,0 +1,23 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "ansibleRoles": [],
+  "commit_msg": "",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Spectro Zen of Kubernetes",
+  "eol": "",
+  "group": "",
+  "kubeManifests": [
+    "manifests/hrm.yaml",
+    "manifests/hrm-server.yaml",
+    "manifests/hrm-ui.yaml"
+  ],
+  "layer": "addon",
+  "addonType": "system app",
+  "name": "spectro-zen-of-k8s",
+  "version": "1.0.0"
+}

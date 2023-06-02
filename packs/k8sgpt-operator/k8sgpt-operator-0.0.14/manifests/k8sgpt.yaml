@@ -1,0 +1,22 @@
+apiVersion: core.k8sgpt.ai/v1alpha1
+kind: K8sGPT
+metadata:
+  name: k8sgpt
+spec:
+  model: {{ .Values.model | quote }}
+  backend: {{ .Values.backend | quote }}
+  baseUrl: {{ .Values.baseUrl | quote }}
+  noCache: {{ .Values.noCache }}
+  enableAI: {{ .Values.enableAI }}
+  version: v0.3.0
+  secret:
+    name: k8sgpt-backend-secret
+    key: openai-api-key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: k8sgpt-backend-secret
+type: Opaque
+stringData:
+  openai-api-key: {{ .Values.openAiApiKey | quote }}

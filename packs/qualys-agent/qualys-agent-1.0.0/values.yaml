@@ -1,0 +1,12 @@
+manifests:
+  # This pack helps install the Qualys agent on the nodes
+  install-qualys:
+
+    # Public URL to download the Qualys agent. Example https://example.s3-us-west-1.amazonaws.com/qualys-cloud-agent.x86_64.rpm
+    agentPackageUrl: ""
+
+    # CustomerID to use for agent registration
+    customerId: ""
+
+    # ActivationId to use for agent registration
+    activationId: ""

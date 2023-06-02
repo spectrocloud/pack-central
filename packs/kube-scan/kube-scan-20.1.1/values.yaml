@@ -1,0 +1,6 @@
+manifests:
+  kube-scan:
+
+    #Namespace to install kube-scan
+    namespace: "monitoring"
+

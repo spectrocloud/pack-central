@@ -1,0 +1,17 @@
+{
+  "addonType": "authentication",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "AWS EKS OIDC",
+  "kubeManifests": [
+    "manifests/aws-eks-oidc.yaml"
+  ],
+  "layer": "addon",
+  "name": "aws-eks-oidc",
+  "version": "1.0.0"
+}
