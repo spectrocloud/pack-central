@@ -5,7 +5,7 @@
     "ansibleRoles": [
     ],
     "cloudTypes": ["all"],
-    "displayName": "Kubecost Cloud",
+    "displayName": "Kubecost",
     "eol": " ",
     "group": " ",
     "kubeManifests": [
@@ -14,6 +14,6 @@
         "charts/cost-analyzer-1.103.3.tgz"
     ],
     "layer":"addon",
-    "name": "kubecost-cloud",
-    "version": "1.102.2"
+    "name": "cost-analyzer",
+    "version": "1.103.3"
 }
