@@ -1,0 +1,19 @@
+{
+    "addonType": "monitoring",
+    "annotations": {
+    },
+    "ansibleRoles": [
+    ],
+    "cloudTypes": ["all"],
+    "displayName": "Kubecost",
+    "eol": " ",
+    "group": " ",
+    "kubeManifests": [
+    ],
+    "charts": [
+        "charts/cost-analyzer-1.103.3.tgz"
+    ],
+    "layer":"addon",
+    "name": "cost-analyzer",
+    "version": "1.103.3"
+}
