@@ -7,7 +7,7 @@
         "all"
     ],
     "charts": [
-        "charts/workload-agent-live-2.0.3.tgz"
+        "charts/stormforge-agent-2.0.3.tgz"
     ],
     "addonType": "monitoring",
     "annotations": {}
