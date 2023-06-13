@@ -5,8 +5,11 @@ pack:
       - image: registry.stormforge.io/optimize-live/controller:0.0.26
     charts:
       - repo: https://registry.stormforge.io/chartrepo/library/
-        name: optimize-live
-        version: 0.7.8
+        name: stormforge-agent
+        version: 2.0.3
+      #- repo: https://registry.stormforge.io/chartrepo/library/
+      #  name: stormforge-applier
+      #  version: 2.0.3
 
 # Default values for optimize-live.
 # This is a YAML-formatted file.
@@ -20,16 +23,16 @@ charts:
 
     ### Required Configuration ###
 
-    stormforge: {}
     # The following required values will be supplied by `stormforge create auth`.
     #
     # ---
-    # stormforge:
-    #   address: "https://api.stormforge.io/"
-    # authorization:
-    #   clientID: "<CLIENT_ID>"
-    #   clientSecret: "<CLIENT_SECRET>"
-    #   issuer: "https://api.stormforge.io/"
+    stormforge:
+      address: "https://api.stormforge.io/"
+      clusterName:
+    authorization:
+      clientID:
+      clientSecret:
+      issuer: "https://api.stormforge.io/"
 
     ### End Required Configuration ###
 
