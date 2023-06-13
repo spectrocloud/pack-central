@@ -16,7 +16,7 @@ pack:
 # Declare variables to be passed into your templates.
 
 charts:
-  workload-agent-live:
+  stormforge-agent:
     ##
     # StormForge Agent Settings
     ##
