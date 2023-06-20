@@ -1,19 +1,17 @@
 {
-    "addonType": "monitoring",
-    "annotations": {
-    },
-    "ansibleRoles": [
-    ],
-    "cloudTypes": ["all"],
-    "displayName": "Kubecost",
-    "eol": " ",
-    "group": " ",
-    "kubeManifests": [
-    ],
-    "charts": [
-        "charts/cost-analyzer-1.103.3.tgz"
-    ],
+  "addonType": "monitoring",
+  "annotations": {
+    "source": "community",
+    "contributor" : "kubecost"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Kubecost",
+  "charts": [
+    "charts/cost-analyzer-1.103.3.tgz"
+  ],
     "layer":"addon",
-    "name": "cost-analyzer",
-    "version": "1.103.3"
+  "name": "cost-analyzer",
+  "version": "1.103.3"
 }
