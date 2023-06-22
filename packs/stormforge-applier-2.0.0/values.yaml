@@ -1,6 +1,8 @@
 pack:
   namespace: "stormforge-system"
   content:
+    images:
+      - image: registry.stormforge.io/optimize/applier:2.0.0-beta.9
     charts:
       - repo: https://registry.stormforge.io/chartrepo/library/
         name: stormforge-applier

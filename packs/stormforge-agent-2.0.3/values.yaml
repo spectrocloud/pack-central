@@ -1,6 +1,8 @@
 pack:
   namespace: "stormforge-system"
   content:
+    images:
+      - image: registry.stormforge.io/optimize/workload-agent:2.0.3
     charts:
       - repo: https://registry.stormforge.io/chartrepo/library/
         name: stormforge-agent
