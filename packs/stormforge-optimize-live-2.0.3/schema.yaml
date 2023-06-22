@@ -1,7 +1,0 @@
-charts.workload-agent-live.authorization.clientID:
-  schema: '{{ required }}'
-charts.workload-agent-live.authorization.clientSecret:
-  schema: '{{ required | format "${password}" }}'
-
-charts.workload-agent-live.stormforge.clusterName:
-  schema: '{{ required }}'

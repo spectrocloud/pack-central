@@ -1,6 +1,6 @@
 {
-    "name": "stormforge-optimize-live",
-    "displayName": "Stormforge-Optimize-Live",
+    "name": "stormforge-optimize-live-agent",
+    "displayName": "Stormforge Optimize Live Agent",
     "layer": "addon",
     "version": "2.0.3",
     "cloudTypes": [

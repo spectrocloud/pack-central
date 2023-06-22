@@ -1,0 +1,61 @@
+pack:
+  namespace: "stormforge-system"
+  content:
+    charts:
+      - repo: https://registry.stormforge.io/chartrepo/library/
+        name: stormforge-applier
+        version: 2.0.0-beta.9
+
+# Default values for optimize-live-applier Spectro Cloud Pack.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+charts:
+  applier:
+    # Default settings for Stormforge Applier
+    image:
+      repository: registry.stormforge.io/optimize/applier
+      pullPolicy: IfNotPresent
+      tag: "2.0.0-beta.9"
+    serviceAccount:
+      create: true
+      name: ""
+      annotations: {}
+    # Fill these in as needed
+    # extraEnvVars:
+    #   # Value here should be a parseable duration
+    #   # cf. https://pkg.go.dev/time#ParseDuration
+    #   - name: STORMFORGE_API_POLL_INTERVAL
+    #     value: 5s
+    #   - name: LOG_LEVEL
+    #     value: debug
+    rbac:
+      # This setting will aggregate the applier's custom ClusterRole to your cluster's edit role
+      useEditRole: true
+      create: true
+      additional: |-
+        # In this section, add any resources that you want the applier to patch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheuses
+          - alertmanagers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+        - apiGroups:
+          - optimize.stormforge.io
+          resources:
+          - lives
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
