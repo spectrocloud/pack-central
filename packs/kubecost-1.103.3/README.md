@@ -30,7 +30,7 @@ The Kubecost pack supports all the parameters exposed by the Kubecost Helm Chart
 
 # Usage
 
-The Kubecost pack works out-of-the-box and tou can optionally configure the pack values.yaml for your setup. Add the Kubecost pack to a cluster profile to get started with Kubecost. You can create a new cluster profile that has the Kubecost as an add-on pack or you can [update an existing cluster profile](/cluster-profiles/task-update-profile) by adding the Kubecost pack.
+The Kubecost pack works out-of-the-box and you can optionally configure the pack values.yaml for your setup. Add the Kubecost pack to a cluster profile to get started with Kubecost. You can create a new cluster profile that has the Kubecost as an add-on pack or you can [update an existing cluster profile](/cluster-profiles/task-update-profile) by adding the Kubecost pack.
 
 
 Once Kubecost is installed and exposed. You can now start monitoring your Kubernetes cluster cost and efficiency. Depending on your organization’s requirements and set up, you may have different options to expose Kubecost for internal access. You can check Kubecost documentation for [Ingress Examples](ingress-examples.md) as a reference for using Nginx ingress controller with basic auth.
