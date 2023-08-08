@@ -1,6 +1,0 @@
-dependencies:
-- name: kommander-ui
-  repository: https://mesosphere.github.io/kommander-ui/charts
-  version: 6.100.1
-digest: sha256:64fad8380c631da677fce1801928d3f3ced18630e860a00775cd91336890d8fa
-generated: "2021-12-03T11:21:22.433737+01:00"

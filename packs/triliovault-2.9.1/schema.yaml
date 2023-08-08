@@ -1,8 +1,0 @@
-pack.namespace:
-  schema: '{{ required | format "${string}" }}'
-charts.k8s-triliovault-operator.tag:
-  schema: '{{ readonly }}'
-charts.k8s-triliovault-operator.operator-webhook-init.repository:
-  schema: '{{ readonly }}'
-charts.k8s-triliovault-operator.k8s-triliovault-operator.repository:
-  schema: '{{ readonly }}'
