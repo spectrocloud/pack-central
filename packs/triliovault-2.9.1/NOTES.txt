@@ -1,2 +1,0 @@
-References:
-- TrilioVault chart archive: https://github.com/trilioData/triliovault--operator
