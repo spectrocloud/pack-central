@@ -1,0 +1,35 @@
+pack:
+  namespace: "appdynamics"
+  spectrocloud.com/install-priority: "2"
+  releaseNameOverride:
+    appdynamics-operators: operator
+
+charts:
+  appdynamics-operators:
+    global:
+      clusterName:
+
+    appdynamics-cloud-operator:
+      operatorPod:
+        image: appdynamics/appdynamics-cloud-operator:23.7.0-1078
+        imagePullPolicy: Always
+        imagePullSecrets: []
+        nodeSelector:
+          kubernetes.io/os: linux
+      kubeRbacProxy: {}
+
+    opentelemetry-operator:
+      nodeSelector:
+        kubernetes.io/os: linux
+      manager:
+        serviceAccount:
+          name: opentelemetry-operator
+
+    fso-agent-mgmt-client:
+      solution:
+        endpoint: 
+      oauth:
+        clientId: 
+        clientSecret: 
+        tokenUrl: 
+        tenantId: 
