@@ -4,6 +4,14 @@ pack:
   releaseNameOverride:
     appdynamics-collectors: collector
 
+  content:
+    images:
+      - image: [appdynamics/appdynamics-cloud-db-collector:23.6.0-780, appdynamics/appdynamics-cloud-k8s-monitoring:23.7.0-1679, ghcr.io/prometheus-community/windows-exporter:0.22.0, appdynamics/appdynamics-cloud-log-collector-agent:23.4.0-567, appdynamics/appdynamics-cloud-otel-collector:23.7.0-1005, appdynamics/appdynamics-cloud-otel-collector:23.7.0-1005-windows-amd64-nanoserver-ltsc2019]
+    charts:
+      - repo: https://appdynamics.jfrog.io/artifactory/appdynamics-cloud-helmcharts/
+        name: appdynamics-collectors
+        version: 1.12.622
+
 charts:
   appdynamics-collectors:
     global:
