@@ -18,6 +18,7 @@
   "constraints": {
     "dependencies": [
       {
+        "layer": "addon",
         "packName": "appdynamics-operator",
         "minVersion": "1.13.146",
         "maxVersion": "",
