@@ -1,6 +1,5 @@
 pack:
   namespace: "appdynamics"
-  spectrocloud.com/install-priority: "2"
   releaseNameOverride:
     appdynamics-operators: operator
 

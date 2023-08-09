@@ -14,5 +14,15 @@
   "displayName": "Appdynamics Collector",
   "layer":"addon",
   "name": "appdynamics-collector",
-  "version": "1.12.622"
+  "version": "1.12.622",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "appdynamics-operator",
+        "minVersion": "1.13.146",
+        "maxVersion": "",
+        "type": "required"
+      }
+    ]
+  }
 }

@@ -44,16 +44,4 @@ EOF"
 Deploy cert-manager required for installing Otel-Collector Operator:
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.0/cert-manager.yaml
 
-Update dependency to install Otel-Collector Operator:
-helm dependency update 
-
-Create Appd Namespace if not present
- kubectl create ns appdynamics
-
-Install appdynamics-operators chart locally:
-helm install <chart-name> . -f <path-to-values.yaml> -n appdynamics
-If you want to install using helm package then first download appdynamics-operators helm package:
-
-then use the package to install appdynamics-operators chart:
-
-helm install <chart-name> <appdynamics-operators-package-name.tgz> -f <path-to-values.yaml> -n appdynamics
+Now you can proceed with the installation of the Operator from the profile.
