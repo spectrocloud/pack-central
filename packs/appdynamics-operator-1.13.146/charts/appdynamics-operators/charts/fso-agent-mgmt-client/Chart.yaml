@@ -1,6 +1,0 @@
-apiVersion: v2
-appVersion: 23.6.0-73
-description: A Helm chart for Kubernetes
-name: fso-agent-mgmt-client
-type: application
-version: 23.6.0-73
