@@ -1,0 +1,50 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+** Please be patient while the chart is being deployed **
+
+The chart installs the following components
+
+1) AppDynamics OpenTelemetry Collector
+
+2) AppDynamics Cloud Infrastructure Collector
+	Enabled: {{ index .Values "appdynamics-cloud-k8s-monitoring" "install" "defaultInfraCollectors" }}
+	Description: Installs the Server Collector and Container Collector to monitor the host and container metrics
+
+3) AppDynamics Cloud Cluster Collector
+	Enabled: {{ index .Values "appdynamics-cloud-k8s-monitoring" "install" "clustermon" }}
+	Description: Installs the Cluster Collector to monitor the kubernetes metrics and events
+
+4) AppDynamics Cloud Log Collector
+	Enabled: {{ index .Values "appdynamics-cloud-k8s-monitoring" "install" "logCollector" }}
+	Description: Installs the Log Collector to collect the logs from applications running in kubernetes cluster
+
+5) AppDynamics Cloud Database Collector
+	Enabled: {{ index .Values "appdynamics-cloud-db-collector" "install" "dbCollector" }}
+	Description: Installs the DB Collector to collect metrics and monitors the Databases specified in DbConfigs
+
+
+
+THIRD PARTY LICENSE DISCLOSURE
+===============================
+
+AppDynamics OpenTelemetry Collector
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppDynamics_Distribution_for_OpenTelemetry_Collector-2380-1692516321.pdf
+
+AppDynamics Cloud Cluster Collector
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppDynamics_Cloud_Clustermon-2380-1692168734.pdf
+
+AppDynamics Cloud Infrastructure Collector
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/Appdynamics_infraagent_levitate-2370-1688749389.pdf
+
+AppDynamics Cloud Log Collector
+----------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/Appdynamics_Beats_Levitate-2380-1692687259.pdf
+
+AppDynamics Database Collector
+----------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppdynamicsDBCollectorAgent-2360-1687281534.pdf

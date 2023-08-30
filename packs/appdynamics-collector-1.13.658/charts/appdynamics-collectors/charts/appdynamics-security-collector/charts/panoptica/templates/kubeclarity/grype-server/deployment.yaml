@@ -1,0 +1,76 @@
+{{- if .Values.global.isContainerSecurityEnabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grype-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grype-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.grypeServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "grype-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "grype-server.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      securityContext:
+        {{- toYaml .Values.grypeServer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "grype-server.fullname" . }}
+          image: "{{ default .Values.global.registry .Values.grypeServer.image.registry }}/{{ .Values.grypeServer.image.repository }}:{{ .Values.grypeServer.image.tag }}"
+          args:
+            - run
+            - --log-level
+            - {{ .Values.grypeServer.logLevel }}
+          env:
+            - name: DB_ROOT_DIR
+              value: "/tmp/"
+  {{- if .Values.global.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: "{{ .Values.global.httpsProxy }}"
+  {{- end }}
+  {{- if .Values.global.httpProxy }}
+            - name: HTTP_PROXY
+              value: "{{ .Values.global.httpProxy }}"
+  {{- end }}
+          imagePullPolicy: {{ .Values.grypeServer.image.pullPolicy }}
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          securityContext:
+            {{- toYaml .Values.grypeServer.securityContext | nindent 12 }}
+          ports:
+            - containerPort: 9991
+            - containerPort: 8080
+          resources:
+            {{- toYaml .Values.grypeServer.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+      {{- with .Values.grypeServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grypeServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,39 @@
+{{ if .Values.install -}}
+{{- if and .Values.enablePrometheus (and .Values.targetAllocatorServiceAccount .Values.targetAllocatorServiceAccount.create) }}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appd-otel-collector-target-allocator-role
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - 'pods'
+  - 'nodes'
+  - 'endpoints'
+  - 'services'
+  verbs:
+  - 'get'
+  - 'list'
+  - 'watch'
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appd-otel-collector-target-allocator-rolebinding
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: appd-otel-collector-target-allocator-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "appdynamics-otel-collector.valueTargetAllocatorServiceAccount" . }}
+    namespace: {{ .Release.Namespace }}
+
+{{ end }}
+{{- end }}

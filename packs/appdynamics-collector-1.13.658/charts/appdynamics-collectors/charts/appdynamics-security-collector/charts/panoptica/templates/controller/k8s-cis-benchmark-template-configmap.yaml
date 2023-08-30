@@ -1,0 +1,84 @@
+{{- if .Values.global.k8sCisBenchmarkEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-cis-benchmark-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  config: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: k8s-cis-benchmark
+      labels:
+        k8s-cis-benchmark: k8s-cis-benchmark
+    spec:
+      activeDeadlineSeconds: 1200
+      ttlSecondsAfterFinished: 30
+      template:
+        spec:
+          hostPID: true
+          restartPolicy: Never
+          tolerations:
+            - operator: Exists
+          initContainers:
+            - name: init-k8s-cis-benchmark
+              image: "{{ default .Values.global.registry .Values.busybox.image.registry }}/{{ .Values.busybox.image.repository }}:{{ .Values.busybox.image.tag }}"
+              imagePullPolicy: {{ .Values.busybox.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.busybox.securityContext | nindent 16 }}
+              args:
+                - /bin/sh
+                - -c
+                - >
+                  set -x;
+                  while [ 1 ]; do
+                    nc {{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local 24235;
+                    if [ $? -eq 0 ]; then
+                      break;
+                    fi
+                    echo waiting for k8s CIS benchmark result forwarding server; sleep 5;
+                  done;
+          containers:
+            - name: k8s-cis-benchmark
+              image: {{ default .Values.global.registry .Values.k8sCISBenchmark.image.registry }}/{{ .Values.k8sCISBenchmark.image.repository }}:{{ .Values.k8sCISBenchmark.image.tag }}
+              env:
+              - name: K8S_NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: K8S_NODE_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+              - name: RPC_ADDRESS
+                value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:24235
+              command:
+                - k8s-cis-benchmark
+              volumeMounts:
+                - name: var-lib-kubelet
+                  mountPath: /var/lib/kubelet
+                  readOnly: true
+                - name: etc-systemd
+                  mountPath: /etc/systemd
+                  readOnly: true
+                - name: etc-kubernetes
+                  mountPath: /etc/kubernetes
+                  readOnly: true
+          volumes:
+            - name: var-lib-kubelet
+              hostPath:
+                path: "/var/lib/kubelet"
+            - name: etc-systemd
+              hostPath:
+                path: "/etc/systemd"
+            - name: etc-kubernetes
+              hostPath:
+                path: "/etc/kubernetes"
+          {{- with .Values.k8sCISBenchmark.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
