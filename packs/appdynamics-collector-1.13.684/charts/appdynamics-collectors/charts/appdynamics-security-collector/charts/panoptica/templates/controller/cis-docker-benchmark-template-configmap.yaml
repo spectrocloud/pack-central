@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cis-docker-benchmark-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  config: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      namespace: {{ default .Release.Namespace .Values.imageAnalysis.jobDefaultNamespace }}
+      labels:
+        app: cis-docker-benchmark
+        sidecar.istio.io/inject: "false"
+        kuma.io/sidecar-injection: "disabled"
+    spec:
+      activeDeadlineSeconds: 1200
+      ttlSecondsAfterFinished: 30
+      template:
+        metadata:
+          labels:
+            app: cis-docker-benchmark
+            sidecar.istio.io/inject: "false"
+            kuma.io/sidecar-injection: "disabled"
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: ensure-forwarding-server
+              image: "{{ default .Values.global.registry .Values.busybox.image.registry }}/{{ .Values.busybox.image.repository }}:{{ .Values.busybox.image.tag }}"
+              imagePullPolicy: {{ .Values.busybox.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.busybox.securityContext | nindent 16 }}
+              args:
+                - /bin/sh
+                - -c
+                - >
+                  set -x;
+                  while [ 1 ]; do
+                    nc {{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local 25235;
+                    if [ $? -eq 0 ]; then
+                      break;
+                    fi
+                    echo waiting for images analysis SBOM result forwarding server; sleep 5;
+                  done;
+          containers:
+            - name: cis-docker-benchmark
+              image: {{ default .Values.global.registry .Values.imageAnalysis.cisDockerBenchmark.image.registry }}/{{ .Values.imageAnalysis.cisDockerBenchmark.image.repository }}:{{ .Values.imageAnalysis.cisDockerBenchmark.image.tag }}
+              env:
+              - name: RESULT_SERVICE_ADDR
+                value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:25235
+              args:
+                - scan
+              volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-volume
+              securityContext:
+                {{- toYaml .Values.imageAnalysis.cisDockerBenchmark.securityContext | nindent 16 }}
+              resources:
+                {{- toYaml .Values.imageAnalysis.cisDockerBenchmark.resources | nindent 16 }}
+          volumes:
+          - name: tmp-volume
+            emptyDir: {}
+          securityContext:
+            {{- toYaml .Values.imageAnalysis.cisDockerBenchmark.podSecurityContext | nindent 12 }}
