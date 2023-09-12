@@ -1,7 +1,7 @@
 {
   "addonType":"system app",
   "cloudTypes": [
-    "vsphere"
+    "all"
   ],
   "annotations": {
     "docsURL": "https://github.com/NetApp/trident",

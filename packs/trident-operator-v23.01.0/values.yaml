@@ -6,7 +6,7 @@ pack:
       - image: docker.io/netapp/trident:23.01.0
       
     charts:
-      - repo: https://github.com/NetApp/trident/releases/download/v23.01.1/trident-installer-23.01.1.tar.gz
+      - repo: https://github.com/NetApp/trident/releases/download/v23.01.0/trident-installer-23.01.0.tar.gz
         name: trident-operator
         version: 23.01.0
 
@@ -14,8 +14,8 @@ pack:
   # When not found, a new namespace will be created
   namespace: trident-system
 
-  charts: 
-    trident-operator:
+charts: 
+  trident-operator:
     # Default values for standalone.
     # This is a YAML-formatted file.
 
