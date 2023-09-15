@@ -1,0 +1,59 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-selfsigned-ca
+  namespace: appdynamics
+spec:
+  isCA: true
+  commonName: my-selfsigned-ca
+  secretName: root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: ca-cert
+  namespace: appdynamics
+spec:
+  ca:
+    secretName: root-secret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: server-cert
+  namespace: appdynamics
+spec:
+  secretName: server-secret
+  issuerRef:
+    name: ca-cert
+    kind: Issuer
+  commonName: clustermon-service
+  dnsNames:
+    - appdynamics-otel-collector-service
+    - appdynamics-otel-collector-service.appdynamics.svc.cluster.local
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: client-cert
+  namespace: appdynamics
+spec:
+  secretName: client-secret
+  issuerRef:
+    name: ca-cert
+    kind: Issuer
+  commonName: client

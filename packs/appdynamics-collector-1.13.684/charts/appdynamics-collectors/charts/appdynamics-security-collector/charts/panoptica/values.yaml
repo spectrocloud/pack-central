@@ -1,0 +1,677 @@
+global:
+  # -- Override product name. Defaults to chart name.
+  productNameOverride: "portshift"
+  # -- Override detected cluster version.
+  kubeVersionOverride: ""
+  # @ignored
+  isManagedByHelm: true
+  # @ignored - used for helm lint testing to skip istio/vault chart verification
+  skipCrossChartsVerification: false
+  # -- Panoptica SaaS URL. Used to override default URL for local testing.
+  mgmtHostname: ""
+  # -- Indicates whether kubernetes security is enabled.
+  isContainerSecurityEnabled: true
+  # -- Indicates whether K8s CIS benchmark is enabled.
+  k8sCisBenchmarkEnabled: true
+  # -- Indicates whether SSH monitoring is enabled.
+  isSSHMonitorEnabled: true
+  # -- Indicates whether Deployer Policy enforcement is enabled.
+  validateDeployerPolicy: false
+  # -- Indicates whether K8s Events monitoring is enabled.
+  k8sEventsEnabled: true
+  # -- Indicates whether API security is enabled.
+  isAPISecurityEnabled: false
+  # -- Indicates whether connection enforcement is enabled. If true, make sure istio is installed by using panoptica istio chart or an upstream istio is already installed.
+  isConnectionEnforcementEnabled: false
+  # -- Indicates whether token injection feature is enabled. If true, make sure vault is installed by using panoptica vault chart.
+  tokenInjectionEnabled: false
+  # -- Indicates whether istio should provision workload certificates using a custom certificate authority that integrates with the Kubernetes CSR API.
+  isExternalCaEnabled: false
+  # -- Indicates whether installed in an OpenShift environment.
+  isOpenShift: false
+  # -- Proxy address to use for HTTP request if needed.
+  httpProxy: ""
+  # -- Proxy address to use for HTTPs request if needed. In most cases, this is the same as `httpProxy`.
+  httpsProxy: ""
+  # -- Registry for the Panoptica images. If replaced with a local registry need to make sure all images are pulled into the local registry.
+  registry: "gcr.io/eticloud/k8sec"
+  # -- Configures telemetry frequency (in seconds) for reporting duration.
+  sendTelemetriesIntervalSec: 30
+  # -- If false, connections on protected namespaces will be blocked if the controller is not responding.
+  connectionFailPolicyAllow: true
+  # -- If false, pods creation on protected namespaces will be blocked if the controller is not responding.
+  environmentFailurePolicyAllow: true
+  # -- Indicates whether TLS inspection is enabled. If true, the controller will be able to decrypt and re-encrypt HTTPS traffic for connections to be inspected via layer 7 attributes.
+  enableTlsInspection: false
+  # -- Placeholder used for tests.
+  dummyPlaceHolderForTest: false
+  # -- Indicates whether auto label is enabled. If true, new namespaces will be labeled with the protection label.
+  autoLabelEnabled: false
+  # -- If true, policies created via Panoptica CRDs will require deployer. See https://panoptica.readme.io/docs/deployers for more info about deployers.
+  automatedPolicyRequiresDeployer: true
+  # -- Indicates whether to identity pods whose templates originated from the Panoptica CD plugin. See `CD Pod template` section in https://panoptica.readme.io/docs/deploy-on-a-kubernetes-cluster for more info.
+  cdValidation: false
+  # -- Indicates whether to identity pods only if all images are signed by a trusted signer. See https://panoptica.readme.io/docs/trusted-signers for more info.
+  ciImageSignatureValidation: false
+  # -- Indicates whether to identity pods only if all image hashes are known to Panoptica. See `CI image hash validation` section in https://panoptica.readme.io/docs/deploy-on-a-kubernetes-cluster for more info.
+  ciImageValidation: false
+  # -- Indicates whether to identity pods only if all images are pulled from trusted registries. See `Restrict Registries` section in https://panoptica.readme.io/docs/deploy-on-a-kubernetes-cluster for more info.
+  restrictRegistries: false
+  # -- Indicates whether the controller should preserve the original source ip of inbound connections.
+  preserveOriginalSourceIp: false
+  # -- Allow labelling resources with custom key/value pairs.
+  extraLabels: {}
+#    key: value
+
+controller:
+  nameOverride: "portshift-agent"
+  fullnameOverride: "portshift-agent"
+
+  # -- Configure controller replica count number in case autoscaling is disabled.
+  replicaCount: 1
+
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: k8s_agent
+    tag: 55eb9b34d19c71da0cfd064383a3f8342e01f432
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets: []
+
+  # -- Logging level (debug, info, warning, error, fatal, panic).
+  logLevel: warning
+
+  secret:
+    # -- [Required] Shared secret used by the controller to communicate with the SaaS, should be extracted from SaaS after cluster creation.
+    sharedSecret: ""
+
+  # -- [Required] Controller identification, should be extracted from SaaS after cluster creation.
+  agentID: ""
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podSecurityContext:
+    fsGroup: 1001
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1001
+    runAsUser: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2048Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  pdb:
+    create: true
+    minAvailable: 1
+    # maxUnavailable: 1
+
+  # -- Node labels for controller pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  tolerations: []
+
+  affinity: {}
+
+  persistence:
+    # -- Enable persistence using Persistent Volume Claims
+    enabled: false
+    pvcSuffix: pvc-55eb9b34d19c71da0cfd064383a3f8342e01f432
+    accessMode: "ReadWriteOnce"
+    # -- The storage space that should be claimed from the persistent volume
+    size: 100Mi
+    # -- If defined, storageClassName will be set to the defined storageClass.
+    # If set to "-", storageClassName will be set to an empty string (""), which disables dynamic provisioning.
+    # If undefined or set to null (the default), no storageClassName spec is set,
+    # choosing 'standard' storage class available with the default provisioner (gcd-pd on GKE, hostpath on minikube, etc).
+    storageClass:
+
+apiclarity:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: apiclarity
+    tag: 9a09d167c27046e6d76a96e6e4f248f166b9fc8f
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets: []
+
+  # -- Logging level (debug, info, warning, error, fatal, panic).
+  logLevel: warning
+
+  traceWasmFilterSHA256: bf881f216b4f58c3dfe5c3fed269c849b5063b701854ff3110b165f7dcd7c80b
+
+  traceSource:
+    # -- Indicates whether istio supply traces.
+    istio: false
+    # -- Indicates whether external GWs supply traces.
+    external: false
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podSecurityContext:
+    fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1000
+    runAsUser: 1000
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1000Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+
+  # -- Node labels for pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  tolerations: []
+
+  affinity: {}
+
+  persistence:
+    accessMode: "ReadWriteOnce"
+    # -- The storage space that should be claimed from the persistent volume
+    size: 100Mi
+    # -- If defined, storageClassName will be set to the defined storageClass.
+    # If set to "-", storageClassName will be set to an empty string (""), which disables dynamic provisioning.
+    # If undefined or set to null (the default), no storageClassName spec is set,
+    # choosing 'standard' storage class available with the default provisioner (gcd-pd on GKE, hostpath on minikube, etc).
+    storageClass:
+
+  fuzzer:
+    # Indicates whether API security fuzz test is enabled.
+    enabled: false
+
+    image:
+      # -- Image registry, used to override global.registry if needed.
+      registry: ""
+      repository: scn-dast
+      tag: b0e698ea50aa701d22a1f8fbe549d45c340e0b91
+      pullPolicy: Always
+
+    # -- Configure fuzzer labels
+    labels:
+      app: fuzzer
+
+    debug: false
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+      runAsGroup: 1001
+      runAsUser: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      requests:
+        memory: "200Mi"
+        cpu: "100m"
+      limits:
+        memory: "1000Mi"
+        cpu: "200m"
+
+    # -- Node labels for pod assignment
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    affinity: {}
+
+apiclarity-postgresql:
+  image:
+    # -- Image registry, must be set to override the dependency registry.
+    registry: gcr.io/eticloud/k8sec
+    repository: bitnami/postgresql
+    tag: 14.4.0-debian-11-r4
+    pullPolicy: IfNotPresent
+
+    ## initdb parameters
+    # initdb:
+    ##  ConfigMap with scripts to be run at first boot
+    ##  NOTE: This will override initdb.scripts
+    # scriptsConfigMap
+    ##  Secret with scripts to be run at first boot (in case it contains sensitive information)
+    ##  NOTE: This can work along initdbScripts or initdbScriptsConfigMap
+    # scriptsSecret:
+    ## Specify the PostgreSQL username and password to execute the initdb scripts
+    # user:
+  # password:
+
+  ## Setup database name and password
+  auth:
+    existingSecret: apiclarity-postgresql-secret
+    database: apiclarity
+
+  ## Enable security context
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+
+  ## By default, postgresql full name includes the release name, we don't want it.
+  fullnameOverride: "apiclarity-postgresql"
+
+istio:
+  global:
+    # -- Indicates whether istio is already installed and not by Panoptica charts.
+    alreadyInstalled: false
+    # -- Indicates what version of istio is running, change only if `alreadyInstalled` is set to true.
+    version: "1.16.1"
+    # Indicates whether istio service information will be synced only to proxies in the same namespace.
+    serviceDiscoveryIsolationEnabled: false
+
+  expansion:
+    enabled: false
+
+kafkaAuthzInjector:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: kafka-authz
+    tag: e647ba66cf10897ee6e07a3d6d81b2148d0a47be
+    pullPolicy: Always
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1001
+    runAsUser: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+dnsDetector:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: gopassivedns
+    tag: 0c7330b51a07cdebe13e57b1d1a33134cbbe04ce
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      memory: 50Mi
+      cpu: 20m
+    limits:
+      memory: 100Mi
+      cpu: 200m
+
+seccompInstaller:
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+kubeclarity-runtime-scan:
+  # -- Scanner jobs and pods labels.
+  labels:
+    app: scanner
+    sidecar.istio.io/inject: "false"
+    kuma.io/sidecar-injection: "disabled"
+
+  # -- Node labels for scanner pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  # -- Scanner pods tolerations.
+  tolerations:
+#   - key: key1
+#     operator: Exists
+#     effect: NoSchedule
+#   - key: key1
+#     operator: Equal
+#     effect: NoSchedule
+#     value: "value1"
+
+  registry:
+    skipVerifyTlS: "false"
+    useHTTP: "false"
+
+  vulnerability-scanner:
+    image:
+      # -- Image registry, used to override global.registry if needed.
+      registry: ""
+      repository: kubeclarity-runtime-k8s-scanner
+      tag: 4f0c4f8acaa29a9d4220fae3b9bf4f30abb87b52
+      pullPolicy: Always
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+      runAsGroup: 1001
+      runAsUser: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      requests:
+        memory: 50Mi
+        cpu: 50m
+      limits:
+        memory: 1000Mi
+        cpu: 1000m
+
+  cis-docker-benchmark-scanner:
+    image:
+      # -- Image registry, used to override global.registry if needed.
+      registry: ""
+      repository: kubeclarity-cis-docker-benchmark-scanner
+      tag: 4f0c4f8acaa29a9d4220fae3b9bf4f30abb87b52
+      pullPolicy: Always
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+      runAsGroup: 1001
+      runAsUser: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      requests:
+        memory: 50Mi
+        cpu: 50m
+      limits:
+        memory: 1000Mi
+        cpu: 1000m
+
+k8sCISBenchmark:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: k8s-cis-benchmark
+    tag: 595b2bc627a9b191a8f0ec032196f824aa783d9c
+
+  # -- Node labels for pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+imageAnalysis:
+  # -- Scanner jobs namespace.
+  # If left blank, the scanner jobs will run in release namespace.
+  # If set, the scanner jobs will run in the given namespace unless the image requires image pull secrets which are located in a target pod
+  jobDefaultNamespace: ""
+
+  registry:
+    skipVerifyTlS: "false"
+    useHTTP: "false"
+
+  # -- Node labels for controller pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  sbom:
+    enabled: true
+    image:
+      # -- Image registry, used to override global.registry if needed.
+      registry: ""
+      repository: image-analyzer
+      tag: 06e343816b1ac0b160d682e7b6aa84750517ce7f
+
+    podSecurityContext:
+      fsGroup: 1001
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+      runAsGroup: 1001
+      runAsUser: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      requests:
+        memory: "50Mi"
+        cpu: "50m"
+      limits:
+        memory: "1000Mi"
+        cpu: "1000m"
+
+  cisDockerBenchmark:
+    enabled: true
+
+    image:
+      # -- Image registry, used to override global.registry if needed.
+      registry: ""
+      repository: cis-docker-benchmark
+      tag: ba3768df0217b6356cec526f161c8dcf834b270c
+
+    podSecurityContext:
+      fsGroup: 1001
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+      runAsGroup: 1001
+      runAsUser: 1001
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      requests:
+        memory: "50Mi"
+        cpu: "50m"
+      limits:
+        memory: "1000Mi"
+        cpu: "1000m"
+
+  # -- The max number of scanner jobs that will run in the cluster in parallel for image analysis in total
+  parallelScanners: 4
+
+sbomDb:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: kubeclarity-sbom-db
+    tag: 4f0c4f8acaa29a9d4220fae3b9bf4f30abb87b52
+    pullPolicy: Always
+
+  # -- Logging level (debug, info, warning, error, fatal, panic).
+  logLevel: warning
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: {}
+    # -- The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podSecurityContext:
+    fsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1000
+    runAsUser: 1000
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+  service:
+    type: ClusterIP
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1Gi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+
+  # -- Node labels for pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  affinity: {}
+
+grypeServer:
+  # -- Configure grype server replica count number.
+  replicaCount: 1
+
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: grype-server
+    tag: 4f0c4f8acaa29a9d4220fae3b9bf4f30abb87b52
+    pullPolicy: Always
+
+  # -- Logging level (debug, info, warning, error, fatal, panic).
+  logLevel: warning
+
+  podSecurityContext:
+    fsGroup: 1001
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1001
+    runAsUser: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+  service:
+    type: ClusterIP
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1G
+    requests:
+      cpu: 200m
+      memory: 200Mi
+
+  # -- Node labels for pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  affinity: {}
+
+busybox:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: yauritux/busybox-curl
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1001
+    runAsUser: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+upgrader:
+  image:
+    pullPolicy: Always
+
+  podSecurityContext:
+    fsGroup: 1001
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    runAsNonRoot: true
+    runAsGroup: 1001
+    runAsUser: 1001
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
+  resources:
+    requests:
+      memory: 50Mi
+      cpu: 50m
+    limits:
+      memory: 1000Mi
+      cpu: 1000m
+
+  # -- Node labels for pod assignment
+  nodeSelector:
+    kubernetes.io/os: linux
+
+vaultEnv:
+  image:
+    # -- Image registry, used to override global.registry if needed.
+    registry: ""
+    repository: bank-vaults/vault-env
+    tag: v1.21.0

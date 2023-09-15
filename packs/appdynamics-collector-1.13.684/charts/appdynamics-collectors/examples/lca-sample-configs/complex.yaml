@@ -1,0 +1,332 @@
+global:
+  clusterName: "ClusterName"
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: true
+    defaultInfraCollectors: true
+    logCollector: true
+  logCollectorConfig:
+    filebeatYaml: |-
+      filebeat.autodiscover:
+        providers:
+          - type: kubernetes
+            node: ${NODE_NAME}
+            labels.dedot: false
+            annotations.dedot: false
+            hints.enabled: true
+            hints.default_config.enabled: false
+            templates:
+              - condition:
+                  equals:
+                    kubernetes.container.name: log-gen-app-log4j
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^\d{4}-\d{2}-\d{2}'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: log4j
+                            pattern: "%d{yyyy-MM-dd'T'HH:mm:ss} %p %C{1.} [%t] %m%n"
+              - condition:
+                  equals:
+                    kubernetes.container.name: log-gen-app-log4j2
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^\d{4}-\d{2}-\d{2}'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: log4j
+                            pattern: "%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"
+              - condition:
+                  equals:
+                    kubernetes.container.name: log-gen-app-logback
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^\d{4}-\d{2}-\d{2}'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: logback
+                            pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+              - condition:
+                  equals:
+                    kubernetes.container.name: log-gen-app-grok
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^\d{4}-\d{2}-\d{2}'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: grok
+                            pattern:
+                              - '%{DATESTAMP:time} %{LOGLEVEL:severity} %{WORD:class}:%{NUMBER:line} - %{GREEDYDATA:data}'
+                              - '%{DATESTAMP_RFC2822:time} %{LOGLEVEL:severity} %{GREEDYDATA:data}'
+                              - '%{TOMCAT_DATESTAMP:time} \| %{LOGLEVEL:level} \| %{JAVACLASS:class} - %{JAVALOGMESSAGE:logmessage}'
+                              - '%{IP:clientIP} %{WORD:httpMethod} %{URIPATH:url}'
+                            timestamp_field: time
+                            timestamp_format: "yyyy-MM-dd HH:mm:ss,SSS"
+              - condition:
+                  equals:
+                    kubernetes.container.name: log-gen-app-json
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^{'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: json
+                            timestamp_field: "@timestamp"
+                            timestamp_pattern: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+              - condition:
+                  equals:
+                    kubernetes.container.name: kube-proxy
+                config:
+                  - type: filestream
+                    id: fsid-${data.kubernetes.pod.name}-${data.kubernetes.container.id}
+                    close_removed: false
+                    clean_removed: false
+                    paths:
+                      - /var/log/containers/${data.kubernetes.pod.name}*${data.kubernetes.container.id}.log
+                    parsers:
+                      - container:
+                          stream: all
+                          format: auto
+                      - multiline:
+                          type: pattern
+                          pattern: '^[a-z]|^[A-Z]'
+                          negate: true
+                          match: after
+                    prospector.scanner.symlinks: true
+                    processors:
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.pod.name
+                              to: fields.k8s.pod.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - copy_fields:
+                          fields:
+                            - from: kubernetes.deployment.name
+                              to: fields.k8s.workload.name
+                          fail_on_error: false
+                          ignore_missing: true
+                      - add_fields:
+                          target: _message_parser
+                          fields:
+                            type: infra
+      processors:
+        - add_cloud_metadata: ~
+        - add_kubernetes_metadata:
+            in_cluster: true
+            host: ${NODE_NAME}
+            matchers:
+              - logs_path:
+                  logs_path: "/var/log/containers/"
+        - rename:
+            fields:
+              - from: "kubernetes.namespace"
+                to: "kubernetes.namespace.name"
+              - from: "kubernetes"
+                to: "k8s"
+              - from: k8s.annotations.appdynamics.lca/filebeat.parser
+                to: "_message_parser"
+              - from: "cloud.instance.id"
+                to: "host.id"
+            ignore_missing: true
+            fail_on_error: false
+        - add_fields:
+            target: source
+            fields:
+              name: log-agent
+        - add_fields:
+            target: telemetry
+            fields:
+              sdk.name: log-agent
+        - script:
+            lang: javascript
+            source: >
+              function process(event) {
+                var podUID = event.Get("k8s.pod.uid");
+                if (podUID) {
+                  event.Put("internal.container.encapsulating_object_id", "ClusterName:" + podUID);
+                }
+                return event;
+              }
+        - drop_fields:
+            fields: ["agent", "stream", "ecs", "input", "orchestrator", "k8s.annotations.appdynamics", "k8s.labels", "k8s.node.labels", "cloud"]
+            ignore_missing: true
+      output.otlploggrpc:
+        include_resources:
+          - k8s
+          - source
+          - host
+          - container
+          - log
+          - telemetry
+          - internal
+          - os
+        hosts: ["${APPD_OTELCOL_GRPC_RECEIVER_HOST}:14317"]
+        worker: 1
+        max_bytes: 1000000
+        ssl.enabled: false
+        wait_for_ready: true
+        batch_size: 1000
+        summary_debug_logs_interval: 10s
+      filebeat.registry.path: registry1
+      filebeat.registry.file_permissions: 0640
+      path.data: /opt/appdynamics/logcollector-agent/data
+      logging:
+        level: info
+        to_files: false
+        files:
+          path: /opt/appdynamics/logcollector-agent/log
+          name: lca-log
+          keepfiles: 5
+          permissions: 0640
+        selectors: []
+        metrics:
+          enabled: false
+          period: 30s
+      monitoring:
+        enabled: false
+appdynamics-otel-collector:
+  clientId: <ClientId>
+  clientSecret: <ClientSec>
+  endpoint: <ClientEndPoint>
+  tokenUrl: <ClientTokenURL>

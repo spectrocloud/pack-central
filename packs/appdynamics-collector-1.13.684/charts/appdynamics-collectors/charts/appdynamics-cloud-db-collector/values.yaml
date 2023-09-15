@@ -1,0 +1,74 @@
+appdCloudAuth :
+# Example format
+  clientId: ""
+  # Either of clientSecret or ClientSecretEnvVar will be present
+  clientSecret: ""
+#  clientSecretEnvVar:
+#    valueFrom:
+#      secretKeyRef:
+#        name: ""
+#        key: ""
+  endpoint: ""
+  tokenUrl: ""
+
+install:
+  dbCollector: false
+  dbMonitoringConfigs: false
+
+dbcollectorServiceAccount: appdynamics-dbcollector
+
+# dbCollector Configs
+dbCollectorConfig:
+  logLevel: info
+# Enables profiling, Not intended for cust use
+  pprof:
+    enabled : false
+    port : 9811
+# Enables Metric for prometheus
+  metric:
+    enabled : false
+    port : 7000
+
+
+# each Object in the list will create a custom resource of dbconnection type
+dbMonitoringConfigs: []
+# Example
+#  - dbType: ""
+#    configName: ""
+#    # Optional collector configuration
+#    dbCollector:
+#      name: ""
+#      namespace: ""
+#    hostname: ""
+#    hostport: null
+#    username: ""
+#    password: ""
+#    # database is optional except for azure sql database
+#    database: ""
+#    # tlsConfig is optional
+#    tlsConfig:
+#      # hostNameInCertificate in tlsConfig is optional
+#      hostNameInCertificate: ""
+#      certSecretName: ""
+#    # environment is optional
+#    environment:
+#      platform: null
+
+
+dbCollectorPod:
+  image: appdynamics/appdynamics-cloud-db-collector:23.6.0-780
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1000Mi
+    requests:
+      cpu: 200m
+      memory: 750Mi
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  imagePullSecrets: []
+  affinity: {}
+  tolerations: []
+  securityContext: {}

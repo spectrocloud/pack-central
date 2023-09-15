@@ -1,0 +1,89 @@
+global:
+  clusterName: ""
+  tls:
+    appdCollectors:
+      enabled: false
+      secret: {}
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+appdynamics-cloud-db-collector:
+  appdCloudAuth: {}
+  install:
+    dbCollector: false
+    dbMonitoringConfigs: false
+  dbCollectorPod:
+    image: appdynamics/appdynamics-cloud-db-collector:23.6.0-780
+    imagePullPolicy: Always
+    imagePullSecrets: []
+  dbCollectorConfig:
+    pprof:
+      enabled : false
+      port : 0
+
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: true
+    defaultInfraCollectors: true
+    logCollector: false
+
+  clustermonConfig:
+    os: linux
+    filters:
+      entity:
+        excludeRegex: "kube-root-ca.crt|openshift-service-ca.crt"
+
+  servermonConfig:
+    os: [linux]
+
+  containermonConfig:
+    os: [linux]
+
+  clustermonPod:
+    image: appdynamics/appdynamics-cloud-k8s-monitoring:23.8.0-1713
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+  inframonPod:
+    image: appdynamics/appdynamics-cloud-k8s-monitoring:23.8.0-1713
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+  windowsExporterPod:
+    image: ghcr.io/prometheus-community/windows-exporter:0.23.1
+    imagePullPolicy: Always
+    imagePullSecrets: []
+    nodeSelector:
+      kubernetes.io/os: windows
+
+  logCollectorPod:
+    image: appdynamics/appdynamics-cloud-log-collector-agent:23.8.0-604
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+
+appdynamics-otel-collector:
+  install: true
+  spec:
+    image: appdynamics/appdynamics-cloud-otel-collector:23.8.0-1068
+    mode: daemonset
+    imagePullPolicy: Always
+  env:
+    windows:
+      spec:
+        image: appdynamics/appdynamics-cloud-otel-collector:23.8.0-1068-windows-amd64-nanoserver-ltsc2019
+
+appdynamics-security-collector:
+  enabled: false
+  panoptica:
+    controller:
+      agentID: ""
+      secret:
+        sharedSecret: ""
+
+appdynamics-otel-instrumentation:
+  enabled: true
