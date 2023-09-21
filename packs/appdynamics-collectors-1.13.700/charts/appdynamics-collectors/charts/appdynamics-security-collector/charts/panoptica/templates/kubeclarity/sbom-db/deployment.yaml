@@ -1,0 +1,63 @@
+{{- if .Values.global.isContainerSecurityEnabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sbom-db.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sbom-db.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "sbom-db.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sbom-db.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "sbom-db.serviceAccountName" . }}
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      securityContext:
+        {{- toYaml .Values.sbomDb.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "sbom-db.fullname" . }}
+          image: "{{ default .Values.global.registry .Values.sbomDb.image.registry }}/{{ .Values.sbomDb.image.repository }}:{{ .Values.sbomDb.image.tag }}"
+          imagePullPolicy: {{ .Values.sbomDb.image.pullPolicy }}
+          args:
+            - run
+            - --log-level
+            - {{ .Values.sbomDb.logLevel }}
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8081
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          securityContext:
+            {{- toYaml .Values.sbomDb.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.sbomDb.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+      {{- with .Values.sbomDb.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.sbomDb.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}

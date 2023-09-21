@@ -1,0 +1,39 @@
+apiVersion: v2
+appVersion: 1.13.700
+dependencies:
+- name: appdynamics-cloud-k8s-monitoring
+  repository: ""
+  version: 1.13.0
+- name: appdynamics-cloud-db-collector
+  repository: ""
+  version: 1.4.0
+- condition: appdynamics-otel-collector.enabled
+  name: appdynamics-otel-collector
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 23.8.0-1073
+- condition: appdynamics-security-collector.enabled
+  name: appdynamics-security-collector
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 1.0.15
+- condition: appdynamics-otel-instrumentation.enabled
+  name: appdynamics-otel-instrumentation
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 23.8.0-1092
+description: Helm Charts for installing Appdynamics Collectors
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+keywords:
+- appdynamics
+- cloud
+- collector
+- cluster
+- kubernetes
+- monitoring
+- pod
+- deployment
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-collectors
+type: application
+version: 1.13.700

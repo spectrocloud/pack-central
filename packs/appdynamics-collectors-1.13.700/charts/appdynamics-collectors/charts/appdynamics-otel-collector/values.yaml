@@ -1,0 +1,242 @@
+nameOverride: ""
+fullnameOverride: ""
+
+install: true
+
+# data endpoint
+endpoint: ""
+
+#oauth2client required settings
+clientId: ""
+clientSecretEnvVar: {}
+tokenUrl: ""
+
+labels: {}
+
+annotations:
+  "prometheus.io/scrape": "false"
+
+global:
+  clusterName: ""
+  tls:
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+# spec is the spec section for opentelemetry operator.
+spec:
+  image: appdynamics/appdynamics-cloud-otel-collector:23.8.0-1068
+  # based on the perf testing
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      cpu: 10m
+      memory: 256Mi
+
+
+# status is the status section for opentelemtry operator
+status: {}
+
+# config is the Collector configs. Other resources configs are in seperated sections below.
+config:
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+    zpages:
+      endpoint: 0.0.0.0:55679
+
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    otlp/lca:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14317
+        http:
+          endpoint: 0.0.0.0:14318
+
+  processors:
+    # https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
+    batch:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/traces:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/metrics:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/logs:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    k8sattributes:
+      passthrough: false
+    filter/appd:
+      logs:
+        include:
+          match_type: strict
+          resource_attributes:
+            - key: telemetry.sdk.name
+              value: infra-agent
+    filter/non_appd:
+      logs:
+        exclude:
+          match_type: strict
+          resource_attributes:
+            - key: telemetry.sdk.name
+              value: infra-agent
+  exporters:
+    otlphttp:
+      auth:
+        authenticator: oauth2client
+
+    logging:
+      verbosity: detailed
+
+  service:
+    extensions: [health_check, oauth2client]
+    pipelines:
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, batch/metrics] # according to doc, "The memory_limiter processor should be the 1st processor configured in the pipeline (immediately after the receivers)."
+        exporters: [otlphttp]
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch/traces]
+        exporters: [otlphttp]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, filter/non_appd, k8sattributes/logs, transform/logs, batch/logs]
+        exporters: [otlphttp]
+      logs/appd:
+        receivers: [otlp]
+        processors: [memory_limiter, filter/appd, batch]
+        exporters: [otlphttp]
+      logs/lca:
+        receivers: [otlp/lca]
+        processors: [memory_limiter]
+        exporters: [otlphttp]
+
+# extra otel collector configuration
+configOverride: {}
+
+# service expose collector for external traffics.
+service:
+  name: "appdynamics-otel-collector-service"
+  ports:
+    - name: http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    - name: grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: grpc-lca
+      port: 14317
+      protocol: TCP
+      targetPort: 14317
+  type: ClusterIP
+
+
+# serviceAccount is the serviceAccount associated with the collector, set serviceAccount.create to false if you don't need it
+serviceAccount:
+  annotations: {}
+  create: true
+  imagePullSecrets: []
+  #name: default to be the full name
+
+rbac:
+  create: true
+  rules:
+    # k8sattributes prcoessor needed rules.
+    - apiGroups: [""]
+      resources: ["pods", "namespaces"]
+      verbs: ["get", "watch", "list"]
+    - apiGroups: ["apps"]
+      resources: ["replicasets"]
+      verbs: ["get", "watch", "list"]
+
+# tracecontext propgation
+traceContextPropagation: true
+
+# enablePrometheus enable the prometheus related deployment, it will deploy a target allocator and a statefulset.
+enablePrometheus: false
+# enablePrometheus enable the filelog, it will deploy a daemonset to collector logs on each host.
+enableFileLog: false
+
+# targetAllocatorServiceAccount only enabled when enablePrometheus=true,
+# It will create a service account with a cluster role that have necessary permissions for the allocator to run.
+targetAllocatorServiceAccount:
+  annotations: {}
+  create: true
+  imagePullSecrets: []
+  #name: default to be the collector name with "-target-allocator" suffix, e.g. "my-collector-target-allocator"
+
+
+# deployment mode specific spec and config overrides.
+mode:
+  statefulset:
+    spec:
+      mode: statefulset
+  daemonset:
+    spec:
+      mode: daemonset
+
+# OS specific spec and config overrides.
+os: [linux]
+env:
+  linux:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: "linux"
+    # mode:
+      # statefulset: deployment and OS specific spec/config overrides    
+  windows:
+    spec:
+      image: appdynamics/appdynamics-cloud-otel-collector:23.8.0-1068-windows-amd64-nanoserver-ltsc2019
+      nodeSelector:
+        kubernetes.io/os: "windows"
+      livenessProbe:
+        initialDelaySeconds: 5
+
+filelogReceiverConfig:
+  includeLogsPath: ["/var/log/*/*/*/*log"]
+  excludeLogsPath: ["/var/log/pods/*otel-collector*/*/*.log"]
+  messageParserPattern: "timestamp"
+  messageParserType: "ABSOLUTE"
+
+instrumentation:
+  enable: true
+  insecure: true
+  metadata:
+    name: "auto-instrumentation"
+  spec:
+    propagators:
+      - tracecontext
+      - baggage
+      - b3
+    env: []
+    java:
+      env: []
+    nodejs:
+      env: []
+    python:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.28b1
+      env: []
+    dotnet: 
+      env: []
+  namespaces:

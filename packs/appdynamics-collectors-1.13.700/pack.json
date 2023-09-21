@@ -1,0 +1,29 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "false",
+    "source": "community",
+    "contributor": "appdynamics"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/appdynamics-collectors-1.13.700.tgz"
+  ],
+  "displayName": "Appdynamics Collector",
+  "layer": "addon",
+  "name": "appdynamics-collector",
+  "version": "1.13.700",
+  "constraints": {
+    "dependencies": [
+      {
+        "layer": "addon",
+        "packName": "appdynamics-operator",
+        "minVersion": "1.14.168",
+        "maxVersion": "",
+        "type": "required"
+      }
+    ]
+  }
+}

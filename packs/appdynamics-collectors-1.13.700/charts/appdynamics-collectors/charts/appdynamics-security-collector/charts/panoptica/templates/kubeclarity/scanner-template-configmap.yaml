@@ -1,0 +1,108 @@
+{{- if .Values.global.isContainerSecurityEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubeclarity-scanner-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubeclarity.labels" . | nindent 4 }}
+data:
+  config: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      labels:
+    {{- toYaml (index .Values "kubeclarity-runtime-scan" "labels") | nindent 8 }}
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 300
+      template:
+        metadata:
+          labels:
+    {{- toYaml (index .Values "kubeclarity-runtime-scan" "labels") | nindent 12 }}
+        spec:
+    {{- if (index .Values "kubeclarity-runtime-scan" "tolerations") }}
+          tolerations:
+    {{- toYaml (index .Values "kubeclarity-runtime-scan" "tolerations") | nindent 12 }}
+    {{- end}}
+          restartPolicy: Never
+          {{- with (index .Values "kubeclarity-runtime-scan" "nodeSelector") }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumes:
+          - name: tmp-volume
+            emptyDir: {}
+          securityContext:
+            fsGroup: 1001
+          containers:
+          - name: vulnerability-scanner
+            image: "{{ default .Values.global.registry (index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "image" "registry") }}/{{ index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "image" "repository" }}:{{ index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "image" "tag" }}"
+            imagePullPolicy: {{ index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "image" "pullPolicy" }}
+            volumeMounts:
+              - mountPath: /tmp
+                name: tmp-volume
+            args:
+            - scan
+            env:
+            - name: SBOM_DB_ADDR
+              value: {{ include "sbom-db.fullname" . }}.{{ .Release.Namespace }}:8080
+            - name: ANALYZER_LIST
+              value: "syft"
+            - name: SCANNERS_LIST
+              value: "grype"
+            - name: SCANNER_GRYPE_MODE
+              value: "REMOTE"
+            - name: REGISTRY_SKIP_VERIFY_TLS
+              value: {{ index .Values "kubeclarity-runtime-scan" "registry" "skipVerifyTlS" | quote }}
+            - name: REGISTRY_USE_HTTP
+              value: {{ index .Values "kubeclarity-runtime-scan" "registry" "useHTTP" | quote }}
+            - name: SCANNER_REMOTE_GRYPE_SERVER_ADDRESS
+              value: {{ include "grype-server.fullname" . }}.{{ .Release.Namespace }}:9991
+            - name: SCANNER_REMOTE_GRYPE_SERVER_TIMEOUT
+              value: "2m"
+  {{- if .Values.global.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: "{{ .Values.global.httpsProxy }}"
+  {{- end }}
+  {{- if .Values.global.httpProxy }}
+            - name: HTTP_PROXY
+              value: "{{ .Values.global.httpProxy }}"
+  {{- end }}
+  {{- if or .Values.global.httpProxy .Values.global.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:8888,{{ include "grype-server.fullname" . }}.{{ .Release.Namespace }}:9991,{{ include "sbom-db.fullname" . }}.{{ .Release.Namespace }}:8080
+  {{- end }}
+            securityContext:
+        {{- toYaml (index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "securityContext") | nindent 14 }}
+            resources:
+        {{- toYaml (index .Values "kubeclarity-runtime-scan" "vulnerability-scanner" "resources") | nindent 14 }}
+          - name: cis-docker-benchmark-scanner
+            image: "{{ default .Values.global.registry (index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "image" "registry") }}/{{ index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "image" "repository" }}:{{ index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "image" "tag" }}"
+            imagePullPolicy: {{ index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "image" "pullPolicy" }}
+            args:
+            - scan
+            env:
+            - name: TIMEOUT
+              value: "2m"
+            - name: REGISTRY_SKIP_VERIFY_TLS
+              value: {{ index .Values "kubeclarity-runtime-scan" "registry" "skipVerifyTlS" | quote }}
+            - name: REGISTRY_USE_HTTP
+              value: {{ index .Values "kubeclarity-runtime-scan" "registry" "useHTTP" | quote }}
+  {{- if .Values.global.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: "{{ .Values.global.httpsProxy }}"
+  {{- end }}
+  {{- if .Values.global.httpProxy }}
+            - name: HTTP_PROXY
+              value: "{{ .Values.global.httpProxy }}"
+  {{- end }}
+  {{- if or .Values.global.httpProxy .Values.global.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:8888
+  {{- end }}
+            securityContext:
+        {{- toYaml (index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "securityContext") | nindent 14 }}
+            resources:
+        {{- toYaml (index .Values "kubeclarity-runtime-scan" "cis-docker-benchmark-scanner" "resources") | nindent 14 }}
+{{- end }}

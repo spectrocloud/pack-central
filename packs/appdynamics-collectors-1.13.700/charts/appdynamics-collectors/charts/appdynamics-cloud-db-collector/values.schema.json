@@ -1,0 +1,383 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$ref": "#/definitions/Core",
+  "definitions": {
+    "Core": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "appdCloudAuth": {
+          "$ref": "#/definitions/AppdCloudAuth"
+        },
+        "install": {
+          "$ref": "#/definitions/Install"
+        },
+        "dbCollectorConfig": {
+          "$ref": "#/definitions/DBCollectorConfig"
+        },
+        "dbMonitoringConfigs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DBMonitoringConfig"
+          }
+        },
+        "dbCollectorPod": {
+          "$ref": "#/definitions/DBCollectorPod"
+        }
+      },
+      "required": [
+        "install"
+      ],
+      "title": "Core"
+    },
+    "AppdCloudAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clientId": {
+          "type": "string"
+        },
+        "clientSecret": {
+          "type": "string"
+        },
+        "clientSecretEnvVar": {
+          "$ref": "#/definitions/ClientSecretEnvVar"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "tokenUrl": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        { "required":
+        [ "clientSecret" ]
+        },
+        { "required":
+        [ "clientSecretEnvVar" ]
+        }
+      ],
+      "required": [
+        "clientId",
+        "endpoint",
+        "tokenUrl"
+      ],
+      "title": "AppdCloudAuth"
+    },
+    "ClientSecretEnvVar": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "valueFrom": {
+          "$ref": "#/definitions/ValueFrom"
+        }
+      },
+      "required": [
+        "valueFrom"
+      ],
+      "title": "ClientSecretEnvVar"
+    },
+    "ValueFrom": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "secretKeyRef": {
+          "$ref": "#/definitions/SecretKeyRef"
+        }
+      },
+      "required": [
+        "secretKeyRef"
+      ],
+      "title": "ValueFrom"
+    },
+    "SecretKeyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "name"
+      ],
+      "title": "SecretKeyRef"
+    },
+    "DBCollectorConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "type" : "string",
+          "enum": ["off", "error", "warn","info","debug","all"]
+        },
+        "pprof": {
+          "$ref": "#/definitions/Pprof"
+        },
+        "metric": {
+          "$ref": "#/definitions/metric"
+        }
+      },
+      "required": [
+        "pprof",
+        "metric",
+        "logLevel"
+      ],
+      "title": "DBCollectorConfig"
+    },
+    "Pprof": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": ["integer","null"]
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "Pprof"
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": ["integer","null"]
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "metric"
+    },
+    "DBCollectorPod": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/Resources"
+        },
+        "labels": {
+          "$ref": "#/definitions/Affinity"
+        },
+        "annotations": {
+          "$ref": "#/definitions/Affinity"
+        },
+        "nodeSelector": {
+          "$ref": "#/definitions/Affinity"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "affinity": {
+          "$ref": "#/definitions/Affinity"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "securityContext": {
+          "$ref": "#/definitions/Affinity"
+        }
+      },
+      "required": [
+        "image",
+        "imagePullPolicy"
+      ],
+      "title": "DBCollectorPod"
+    },
+    "Affinity": {
+      "type": "object",
+      "additionalProperties": false,
+      "title": "Affinity"
+    },
+    "Resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/Limits"
+        },
+        "requests": {
+          "$ref": "#/definitions/Limits"
+        }
+      },
+      "required": [
+        "limits",
+        "requests"
+      ],
+      "title": "Resources"
+    },
+    "Limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cpu",
+        "memory"
+      ],
+      "title": "Limits"
+    },
+    "DBMonitoringConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dbType": {
+          "type": "string",
+          "enum": ["sqlserver","mysql","mariadb","aurora-mysql","postgres"]
+        },
+        "configName": {
+          "type": "string"
+        },
+        "dbCollector": {
+          "$ref": "#/definitions/DbCollector"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "hostport": {
+          "type": ["null","integer"]
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "passwordSecretName": {
+          "type": "string"
+        },
+        "database": {
+          "type": ["null","string"]
+        },
+        "tlsConfig": {
+          "$ref": "#/definitions/TLSConfig"
+        },
+        "environment": {
+          "$ref": "#/definitions/Environment"
+        }
+      },
+      "required": [
+        "dbType",
+        "configName",
+        "hostname",
+        "hostport",
+        "username"
+      ],
+      "if": {
+        "properties": {
+          "dbType": { "enum": ["mysql", "mariadb","aurora-mysql"]}
+        }
+      },
+      "then": {
+        "not": {
+          "required": ["database"]
+        }
+      },
+      "oneOf": [
+        {
+          "required" : [
+            "password"
+          ]
+        },
+        {
+          "required" : [
+            "passwordSecretName"
+          ]
+        }
+      ],
+      "title": "DBMonitoringConfig"
+    },
+    "DbCollector": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "title": "DbCollector"
+    },
+    "Environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": ["null","string"],
+          "pattern":"^(?i)(azure|aws|self-hosted)$"
+        }
+      },
+      "title": "Environment"
+    },
+    "TLSConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hostNameInCertificate": {
+          "type": ["null","string"]
+        },
+        "certSecretName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "certSecretName"
+      ],
+      "title": "TLSConfig"
+    },
+    "Install": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dbCollector": {
+          "type": "boolean"
+        },
+        "dbMonitoringConfigs": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dbCollector",
+        "dbMonitoringConfigs"
+      ],
+      "title": "Install"
+    }
+  }
+}
