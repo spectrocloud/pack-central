@@ -1,0 +1,16 @@
+{{- if and .Values.global.isConnectionEnforcementEnabled .Values.istio.global.alreadyInstalled -}}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: disable-mtls-to-{{ include "product.name" . }}-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    owner: {{ include "product.name" . }}
+spec:
+  host: "{{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local"
+  exportTo:
+    - "*"
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+{{- end }}

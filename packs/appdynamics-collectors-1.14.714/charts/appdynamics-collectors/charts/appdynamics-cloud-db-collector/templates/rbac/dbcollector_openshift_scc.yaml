@@ -1,0 +1,24 @@
+{{ if or .Values.install.dbCollector .Values.install.dbMonitoringConfigs -}}
+{{ if .Capabilities.APIVersions.Has "security.openshift.io/v1/SecurityContextConstraints" -}}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: 'dbcollector-privileged-scc is a custom SCC for AppDynamics Cloud Database Collector'
+  name: dbcollector-privileged-scc
+  namespace: {{ .Release.Namespace }}
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.dbcollectorServiceAccount }}
+{{- end }}
+{{- end }}
