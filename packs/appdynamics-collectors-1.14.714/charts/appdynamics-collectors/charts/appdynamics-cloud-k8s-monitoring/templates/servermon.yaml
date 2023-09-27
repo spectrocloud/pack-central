@@ -1,0 +1,53 @@
+{{ if and .Values.install.defaultInfraCollectors (has "linux" .Values.servermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Servermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-servermon" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  os: linux
+  {{ with (mustMergeOverwrite .Values.servermonConfig .Values.servermonConfig.env.linux) -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+
+  {{ if .skipProviderCheck -}}
+  skipProviderCheck: {{ .skipProviderCheck | quote }}
+  {{- end }}
+
+  {{ if .exporterPort -}}
+  exporterPort: {{ .exporterPort }}
+  {{- end }}
+
+  {{- end }}
+{{- end }}
+---
+{{ if and .Values.install.defaultInfraCollectors (has "windows" .Values.servermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Servermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-servermon-windows" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  os: windows
+  {{ with (mustMergeOverwrite .Values.servermonConfig .Values.servermonConfig.env.windows) -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+
+  {{ if .skipProviderCheck -}}
+  skipProviderCheck: {{ .skipProviderCheck | quote }}
+  {{- end }}
+
+  {{ if .exporterPort -}}
+  exporterPort: {{ .exporterPort }}
+  {{- end }}
+
+  {{- end }}
+{{- end }}
