@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "Values",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object"
+    },
+    "operatorServiceAccount": {
+      "description": "serviceAccount name for Appdynamics cloud operator",
+      "type": "string"
+    },
+    "watchMode": {
+      "description": "changes the scope for certain resources to namespace or cluster scope",
+      "type": "string",
+      "enum": ["namespace","cluster"]
+    },
+    "enableOTelCRDManagement": {
+      "description": "enable OTel CRD management by Appdynamics cloud operator ",
+      "type": "boolean"
+    },
+    "operatorPod": {
+      "description": "configuration for Appdynamics cloud operator pod",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of Appdynamics cloud operator",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for Appdynamics cloud operator image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "kubeRbacProxy": {
+      "description": "configuration for kube-rbac-proxy container",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of kube-rbac-proxy",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for kube-rbac-proxy",
+          "type": "string"
+        }
+      }
+    },
+    "testFramework": {
+      "description": "test configuration for Appdynamics cloud operator",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "enable test for Appdynamics cloud operator",
+          "type": "boolean"
+        },
+        "image": {
+          "description": "image information of test container",
+          "type": "object",
+          "required": [
+            "repository",
+            "tag"
+          ],
+          "properties": {
+            "repository": {
+              "description": "image repository of test container",
+              "type": "string"
+            },
+            "tag": {
+              "description": "image tag of test container",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
