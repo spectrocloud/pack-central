@@ -1,0 +1,7 @@
+# apiVersion: trident.netapp.io/v1
+# kind: TridentBackendConfig
+# metadata:
+#   name: backend-config
+#   namespace: trident-system
+# spec:
+#   {{- toYaml .Values.tridentBackendConfigSpec | nindent 2 }}
