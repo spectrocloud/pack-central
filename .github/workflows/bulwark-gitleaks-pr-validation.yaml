@@ -12,15 +12,27 @@ jobs:
       image: gcr.io/spectro-dev-public/bulwark/gitleaks:latest
       env:
         REPO: ${{ github.event.repository.name }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITLEAKS_CONFIG: config.toml
     steps:
 
       - name: run-bulwark-gitleaks-scan
+        if: github.event.pull_request.head.repo.full_name == github.repository
         shell: sh
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
         run: /workspace/bulwark -name CodeSASTGitLeaks -target $REPO -tags "branch:$BRANCH,options:--log-opts origin..HEAD"
+
+      - name: run-bulwark-gitleaks-scan-from-fork
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        shell: sh
+        run: |
+          git clone https://github.com/${{ github.event.pull_request.head.repo.full_name }}.git -b ${BRANCH}
+          cd ${REPO}
+          git remote add scRepo https://github.com/${{ github.repository }}.git
+          git fetch scRepo
+          /workspace/bulwark -name CodeSASTGitLeaks -target pwd -tags "branch:$BRANCH,options:--log-opts HEAD..scRepo/${{ github.base_ref }}"
 
       - name: check-result
         shell: sh
