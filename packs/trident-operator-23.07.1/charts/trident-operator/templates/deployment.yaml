@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+{{- if .Values.deploymentAnnotations }}
+  annotations:
+{{ toYaml .Values.deploymentAnnotations | indent 4 }}
+{{- end }}
+  labels:
+    app: operator.trident.netapp.io
+  name: trident-operator
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: operator.trident.netapp.io
+      name: trident-operator
+  template:
+    metadata:
+    {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+    {{- end }}
+      labels:
+        app: operator.trident.netapp.io
+        name: trident-operator
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                    - arm64
+                    - amd64
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                    - linux
+{{- if .Values.nodeSelector }}
+{{- range $key, $value := .Values.nodeSelector}}
+                  - key: {{ $key }}
+                    operator: In
+                    values:
+                    - {{ $value }}
+ {{- end }} 
+ {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      serviceAccountName: trident-operator
+      containers:
+      - command:
+        - /trident-operator
+        {{- if .Values.operatorDebug }}
+        - -debug
+        {{- end }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: trident-operator
+        image: {{ include "trident-operator.image" $ }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        name: trident-operator

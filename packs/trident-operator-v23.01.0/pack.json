@@ -1,0 +1,17 @@
+{
+  "addonType":"system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "annotations": {
+    "docsURL": "https://github.com/NetApp/trident",
+    "description": "NetApp Trident"
+  },
+  "displayName": "Trident",
+  "charts": [
+      "charts/trident-operator-23.01.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "csi-trident",
+  "version": "23.01.0"
+}

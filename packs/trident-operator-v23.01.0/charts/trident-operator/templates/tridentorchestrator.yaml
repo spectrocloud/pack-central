@@ -1,0 +1,56 @@
+apiVersion: trident.netapp.io/v1
+kind: TridentOrchestrator
+metadata:
+  name: trident
+spec:
+  namespace: {{ .Release.Namespace }}
+  enableForceDetach: {{ include "trident.enableForceDetach" $ }}
+  debug: {{ include "trident.debug" $ }}
+  IPv6: {{ include "trident.IPv6" $ }}
+  k8sTimeout: {{ .Values.tridentK8sTimeout }}
+  httpRequestTimeout: {{ .Values.tridentHttpRequestTimeout }}
+  silenceAutosupport: {{ include "trident.silenceAutosupport" $ }}
+  autosupportImage: {{ include "trident.autosupportImage" $ }}
+  autosupportProxy: {{ .Values.tridentAutosupportProxy }}
+  logFormat: {{ include "trident.logFormat" $ }}
+  disableAuditLog: {{ include "trident.disableAuditLog" $ }}
+  probePort: {{ include "trident.probePort" $ }}
+  tridentImage: {{ include "trident.image" $ }}
+  {{- if .Values.imageRegistry }}
+  imageRegistry: {{ .Values.imageRegistry }}
+  {{- end }}
+  kubeletDir: {{ .Values.kubeletDir }}
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- if .Values.tridentControllerPluginNodeSelector }}
+  controllerPluginNodeSelector:
+    {{- range $key, $value := .Values.tridentControllerPluginNodeSelector }}
+      {{ $key }}: "{{ $value }}"
+      {{- end}}
+  {{- end }}
+  {{- if .Values.tridentControllerPluginTolerations }}
+  controllerPluginTolerations:
+    {{- range $value := .Values.tridentControllerPluginTolerations }}
+    - {{- range $k, $v := $value }}
+      {{ $k }}: "{{ $v }}"
+      {{- end}}
+    {{- end}}
+  {{- end }}
+  {{- if .Values.tridentNodePluginNodeSelector }}
+  nodePluginNodeSelector:
+    {{- range $key, $value := .Values.tridentNodePluginNodeSelector }}
+    {{ $key }}: "{{ $value }}"
+    {{- end}}
+  {{- end }}
+  {{- if .Values.tridentNodePluginTolerations }}
+  nodePluginTolerations:
+    {{- range $value := .Values.tridentNodePluginTolerations }}
+    - {{- range $k, $v := $value }}
+      {{ $k }}: "{{ $v }}"
+      {{- end}}
+    {{- end}}
+  {{- end }}
+  imagePullPolicy: {{ include "imagePullPolicy" $ }}
+  windows: {{ .Values.windows }}

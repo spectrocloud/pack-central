@@ -1,0 +1,11 @@
+# {{- if .Values.backendConfigStorageClass }}
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: trident-csi
+#   namespace: trident
+# provisioner: csi.trident.netapp.io
+# parameters:
+#   backendType: {{ .Values.backendType | quote }}
+#   csi.storage.k8s.io/fstype: ext4
+# {{- end }}
