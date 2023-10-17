@@ -1,0 +1,15 @@
+{{- define "appdynamics-otel-instrumentation.exporter" -}}
+exporter:
+  {{- $scheme := ternary "http://" "https://" .Values.exporter.insecure }}
+  endpoint: {{$scheme}}{{ dig .Values.exporter.protocol "endpoint" "0.0.0.0:4317" .Values.exporter  }}
+{{- end -}}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ .Values.name | default .Release.Name }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+{{ $spec := include "appdynamics-otel-instrumentation.exporter" . | fromYaml }}
+{{- merge .Values.spec $spec | toYaml | indent 2 }}
+

@@ -1,0 +1,41 @@
+{{- if .Values.install -}}
+{{- if .Values.enablePrometheus }}
+
+{{- if  (has "linux" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  annotations:
+{{- .Values.annotations | toYaml | nindent 4 }}
+  labels:
+{{- include "appdynamics-otel-collector.finalLabelsStatefulset" . | nindent 4 }}
+  name: {{ include "appdynamics-otel-collector-statefulset.fullname" . | trunc 42 | trimSuffix "-" }}
+spec:
+{{- include "appdynamics-otel-collector-statefulset-linux.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+---
+
+{{- if (has "windows" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  annotations:
+{{- .Values.annotations | toYaml | nindent 4 }}
+  labels:
+{{- include "appdynamics-otel-collector.finalLabelsStatefulset" . | nindent 4 }}
+  name: {{ include "appdynamics-otel-collector-statefulset-windows.fullname" . | trunc 42 | trimSuffix "-" }}
+spec:
+{{- include "appdynamics-otel-collector-statefulset-windows.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}
