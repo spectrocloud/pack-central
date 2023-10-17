@@ -1,0 +1,38 @@
+{{ if and .Values.install.defaultInfraCollectors (has "linux" .Values.containermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Containermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-containermon" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  os: linux
+  {{- include "getClusterID" . | nindent 2 }}
+  {{ with (mustMergeOverwrite .Values.containermonConfig .Values.containermonConfig.env.linux) -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+{{- end }}
+---
+{{ if and .Values.install.defaultInfraCollectors (has "windows" .Values.containermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Containermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-containermon-windows" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  os: windows
+  {{- include "getClusterID" . | nindent 2 }}
+  {{ with (mustMergeOverwrite .Values.containermonConfig .Values.containermonConfig.env.windows) -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+{{- end }}
+
