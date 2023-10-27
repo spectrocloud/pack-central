@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appdynamics-cloud-operator-clusterrole
+rules:
+- apiGroups:
+    - apiextensions.k8s.io
+  resources:
+    - customresourcedefinitions
+  verbs:
+    - get
+    - create
+    - update
+{{ if eq .Values.watchMode "cluster"}}
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+    - configmaps
+  verbs:
+    - get
+    - create
+    - update
+    - list
+    - watch
+    - delete
+- apiGroups:
+    - apps
+  resources:
+    - deployments
+    - daemonsets
+  verbs:
+    - get
+    - create
+    - update
+    - list
+    - watch
+{{ end }}
