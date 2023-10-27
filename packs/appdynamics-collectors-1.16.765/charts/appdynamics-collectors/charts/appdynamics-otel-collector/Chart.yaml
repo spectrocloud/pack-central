@@ -1,0 +1,8 @@
+apiVersion: v1
+appVersion: 23.10.0-1177
+description: AppDynamics distributed Opentelemetry Collector Helm chart for Kubernetes
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-otel-collector
+version: 23.10.0-1177
