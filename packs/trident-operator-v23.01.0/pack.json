@@ -1,5 +1,4 @@
 {
-  "addonType":"system app",
   "cloudTypes": [
     "vsphere",
     "maas",
