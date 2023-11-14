@@ -1,4 +1,5 @@
 {
+  "addonType":"system app",
   "cloudTypes": [
     "vsphere",
     "maas",
@@ -12,7 +13,7 @@
   "charts": [
       "charts/trident-operator-23.07.1.tgz"
   ],
-  "layer": "csi",
-  "name": "csi-trident",
+  "layer": "addon",
+  "name": "csi-trident-addon",
   "version": "23.07.1"
 }

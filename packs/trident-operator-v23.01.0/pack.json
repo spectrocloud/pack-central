@@ -1,7 +1,8 @@
 {
-  "addonType":"system app",
   "cloudTypes": [
-    "all"
+    "vsphere",
+    "maas",
+    "edge-native"
   ],
   "annotations": {
     "docsURL": "https://github.com/NetApp/trident",
@@ -11,7 +12,7 @@
   "charts": [
       "charts/trident-operator-23.01.0.tgz"
   ],
-  "layer": "addon",
+  "layer": "csi",
   "name": "csi-trident",
   "version": "23.01.0"
 }
