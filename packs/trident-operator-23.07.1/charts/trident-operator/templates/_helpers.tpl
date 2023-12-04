@@ -206,7 +206,12 @@ Trident image pull policy
 {{- else }}
 {{- "IfNotPresent" }}
 {{- end }}
-{{- define "trident-operator.CPIversion" -}}
+{{- end }}
+
+{{/*
+Vsphere CPI version selection
+*/}}
+{{- define "vsphere.cpiVersion" -}}
 {{- if semverCompare "~1.19.0" .Capabilities.KubeVersion.Version }}
           image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.19.1
 {{- else if semverCompare "~1.20.0" .Capabilities.KubeVersion.Version }}
