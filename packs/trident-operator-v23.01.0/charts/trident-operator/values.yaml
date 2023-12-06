@@ -110,3 +110,6 @@ enableForceDetach: false
 
 # excludePodSecurityPolicy excludes the operator pod security policy from creation.
 excludePodSecurityPolicy: false
+
+# enableVsphereCPI allows deploying vsphere related CPI on the cluster
+enableVsphereCPI: false
