@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-crd-validator" | trunc 63 }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: {{ printf "%s-%s" .Release.Name "appdynamics-crd-validator" | trunc 63 }}
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        {{- if .Values.operatorPod.labels -}}
+        {{- toYaml .Values.operatorPod.labels | nindent 8 }}
+        {{- end }}
+      {{- if .Values.operatorPod.annotations }}
+      annotations:
+        {{- toYaml .Values.operatorPod.annotations | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.operatorServiceAccount }}
+      restartPolicy: Never
+      containers:
+        - name: post-install-job
+          image: {{ .Values.operatorPod.image }}
+          imagePullPolicy: {{ .Values.operatorPod.imagePullPolicy }}
+          command: ["/crd-validator"]
+          env:
+            - name: MANAGE_OPEN_TELEMETRY_CRDS
+              value: {{ .Values.enableOTelCRDManagement | quote }}
+      imagePullSecrets:
+      {{- toYaml .Values.operatorPod.imagePullSecrets | nindent 8}}
+      {{- if .Values.operatorPod.nodeSelector }}
+      priorityClassName: {{ .Values.operatorPod.priorityClassName }}
+      nodeSelector:
+      {{- toYaml .Values.operatorPod.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.affinity }}
+      affinity:
+      {{- toYaml .Values.operatorPod.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.tolerations }}
+      tolerations:
+      {{- toYaml .Values.operatorPod.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.securityContext }}
+      securityContext:
+      {{- toYaml .Values.operatorPod.securityContext | nindent 8 }}
+      {{- end }}
