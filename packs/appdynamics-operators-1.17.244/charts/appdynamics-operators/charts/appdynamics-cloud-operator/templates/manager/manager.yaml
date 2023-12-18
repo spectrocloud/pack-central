@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-cloud-operator" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: appdynamics-cloud-operator
+spec:
+  selector:
+    matchLabels:
+      control-plane: appdynamics-cloud-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: appdynamics-cloud-operator
+        {{- if .Values.operatorPod.labels -}}
+        {{- toYaml .Values.operatorPod.labels | nindent 8 }}
+        {{- end }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        {{- if .Values.operatorPod.annotations -}}
+        {{- toYaml .Values.operatorPod.annotations | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: kube-rbac-proxy
+        image: {{ .Values.kubeRbacProxy.image | default "gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1" }}
+        imagePullPolicy: {{ .Values.kubeRbacProxy.imagePullPolicy | default "IfNotPresent" }}
+        args:
+        - "--secure-listen-address=0.0.0.0:8443"
+        - "--upstream=http://127.0.0.1:8080/"
+        - "--logtostderr=true"
+        - "--v=0"
+        ports:
+        - containerPort: 8443
+          name: https
+      - name: manager
+        args:
+        - --leader-elect
+        image: {{ .Values.operatorPod.image }}
+        imagePullPolicy: {{ .Values.operatorPod.imagePullPolicy }}
+        env:
+          - name: APPDYNAMICS_OPERATOR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MANAGE_OPEN_TELEMETRY_CRDS
+            value: {{ .Values.enableOTelCRDManagement | quote }}
+          - name: WATCH_CLUSTER
+            value: {{ eq .Values.watchMode "cluster" | quote }}
+          {{- if .Values.operatorPod.dev }}
+          {{- toYaml .Values.operatorPod.dev | nindent 10 }}
+          {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+        {{- toYaml .Values.operatorPod.resources | nindent 10 }}
+      priorityClassName: {{ .Values.operatorPod.priorityClassName }}
+      imagePullSecrets:
+      {{- toYaml .Values.operatorPod.imagePullSecrets | nindent 8}}
+      serviceAccountName: {{ .Values.operatorServiceAccount }}
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.operatorPod.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.operatorPod.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.affinity }}
+      affinity:
+      {{- toYaml .Values.operatorPod.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.tolerations }}
+      tolerations:
+      {{- toYaml .Values.operatorPod.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.operatorPod.securityContext }}
+      securityContext:
+      {{- toYaml .Values.operatorPod.securityContext | nindent 8 }}
+      {{- end }}
