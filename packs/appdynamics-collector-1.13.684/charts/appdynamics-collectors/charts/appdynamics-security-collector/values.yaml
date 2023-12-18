@@ -1,5 +1,0 @@
-panoptica:
-  controller:
-    agentID: ""
-    secret:
-      sharedSecret: ""
