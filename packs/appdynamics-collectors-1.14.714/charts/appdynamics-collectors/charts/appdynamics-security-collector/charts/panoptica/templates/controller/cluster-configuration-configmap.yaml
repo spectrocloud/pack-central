@@ -1,0 +1,101 @@
+{{- if and .Values.global.isConnectionEnforcementEnabled (not .Values.global.isContainerSecurityEnabled) }}
+{{- fail "Connection enforcement can only be enabled if K8s security is enabled!" }}
+{{- end }}
+{{- if and .Values.global.validateDeployerPolicy (not .Values.global.isContainerSecurityEnabled) }}
+{{- fail "Deployer Policy enforcement can only be enabled if K8s security is enabled!" }}
+{{- end }}
+{{- if and .Values.global.k8sEventsEnabled (not .Values.global.isContainerSecurityEnabled) }}
+{{- fail "K8s Events monitoring can only be enabled if K8s security is enabled!" }}
+{{- end }}
+{{- if and .Values.global.autoLabelEnabled (not .Values.global.isContainerSecurityEnabled) }}
+{{- fail "Namespace auto-labeling can only be enabled if K8s security is enabled!" }}
+{{- end }}
+{{- if and .Values.global.isContainerSecurityEnable .Values.global.ciImageSignatureValidation .Values.global.ciImageValidation }}
+{{- fail "Cluster cannot have both CI image validation and CI image signature validation enabled!" }}
+{{- end }}
+{{- if .Values.global.tokenInjectionEnabled}}
+{{- if not .Values.global.isAPISecurityEnabled }}
+{{- fail "Token injection cannot be enabled when API security is disabled!" }}
+{{- end }}
+{{- if not .Values.global.isContainerSecurityEnabled }}
+{{- fail "Token injection cannot be enabled when K8s security is disabled!" }}
+{{- end }}
+{{- if not .Values.global.skipCrossChartsVerification}}
+{{- $statefulset := (lookup "apps/v1" "StatefulSet" "securecn-vault" "vault") }}
+{{- if not $statefulset }}
+{{- fail "Token injection cannot be enabled when Panoptica vault chart is not deployed (missing vault statefulset in securecn-vault namespace), please first deploy the missing chart." }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.global.isConnectionEnforcementEnabled }}
+{{- if semverCompare ">1.16-0" .Values.istio.global.version }}
+{{- .Values.istio.global.version | printf "Maximun supported istio version is 1.16.x while istio.global.version is set to %s" | fail }}
+{{- end }}
+{{- if not .Values.global.skipCrossChartsVerification}}
+{{- if not .Values.istio.global.alreadyInstalled }}
+{{- $istiodDeployment := (lookup "apps/v1" "Deployment" "istio-system" "istiod") }}
+{{- if not $istiodDeployment }}
+{{- fail "Connection enforcement cannot be enabled when Panoptica istio chart is not deployed (missing istiod deployment in istio-system namespace), please first deploy the missing chart." }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.istio.global.alreadyInstalled .Values.global.enableTlsInspection }}
+{{- fail "TLS Inspection can't be enabled when using an upstream istio (istio.global.alreadyInstalled == true)" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-configuration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  config: |-
+    kubernetesSecurityEnabled: {{ .Values.global.isContainerSecurityEnabled }}
+    {{- if .Values.global.isContainerSecurityEnabled }}
+    enableConnectionsControl: {{ .Values.global.isConnectionEnforcementEnabled }}
+    validateDeployerPolicy: {{ .Values.global.validateDeployerPolicy }}
+    k8sEventsEnabled: {{ .Values.global.k8sEventsEnabled }}
+    cdValidation: {{ .Values.global.cdValidation }}
+    ciImageSignatureValidation: {{ .Values.global.ciImageSignatureValidation }}
+    ciImageValidation: {{ .Values.global.ciImageValidation }}
+    restrictRegistries: {{ .Values.global.restrictRegistries }}
+    tokenInjectionEnabled: {{ .Values.global.tokenInjectionEnabled }}
+    connectionFailPolicyAllow: {{ .Values.global.connectionFailPolicyAllow }}
+    environmentFailurePolicyAllow: {{ .Values.global.environmentFailurePolicyAllow }}
+    sshMonitorEnabled: {{ .Values.global.isSSHMonitorEnabled }}
+    {{- else }}
+    {{- /* If container security is disabled defaults values should be true (meaning fail-close is false)  */}}
+    connectionFailPolicyAllow: true
+    environmentFailurePolicyAllow: true
+    {{- end }}
+    apiSecurityEnabled: {{ .Values.global.isAPISecurityEnabled }}
+    {{- if .Values.global.isAPISecurityEnabled }}
+    enableFuzzTests: {{ .Values.apiclarity.fuzzer.enabled }}
+    installEnvoyTracingSupport: {{ .Values.apiclarity.traceSource.istio }}
+    supportExternalTraceSource: {{ .Values.apiclarity.traceSource.external }}
+    {{- end }}
+    autoLabelEnabled: {{ .Values.global.autoLabelEnabled }}
+    automatedPolicyRequiresDeployer: {{ .Values.global.automatedPolicyRequiresDeployer }}
+    httpsProxy: "{{ .Values.global.httpsProxy }}"
+    internalRegistry: "{{ .Values.global.registry }}"
+    isPersistent: {{ .Values.controller.persistence.enabled }}
+    minimalNumberOfControllerReplicas: {{ .Values.controller.autoscaling.minReplicas }}
+    {{- if and .Values.global.isContainerSecurityEnabled .Values.global.isConnectionEnforcementEnabled }}
+    preserveOriginalSourceIp: {{ .Values.global.preserveOriginalSourceIp }}
+    tlsInspectionEnabled: {{ .Values.global.enableTlsInspection }}
+    istioInstallationParameters:
+      isIstioAlreadyInstalled: {{ .Values.istio.global.alreadyInstalled }}
+      istioVersion: {{ .Values.istio.global.version }}
+    serviceDiscoveryIsolationEnabled: {{ .Values.istio.global.serviceDiscoveryIsolationEnabled }}
+    {{- $configmap := (lookup "v1" "ConfigMap" "istio-system" "cluster-configuration") }}
+    {{- if $configmap }}
+    {{- $config := get $configmap.data "config" }}
+    {{- $config | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    imageAnalysisConfiguration:
+      sbomEnabled: {{ .Values.imageAnalysis.sbom.enabled }}
+      cisDockerBenchmarkEnabled: {{ .Values.imageAnalysis.cisDockerBenchmark.enabled }}
+      parallelScannersNumber: {{ .Values.imageAnalysis.parallelScanners }}

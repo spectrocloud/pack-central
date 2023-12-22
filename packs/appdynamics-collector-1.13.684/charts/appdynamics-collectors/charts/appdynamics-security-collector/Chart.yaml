@@ -1,0 +1,15 @@
+apiVersion: v2
+appVersion: 1.0.15
+dependencies:
+- name: panoptica
+  repository: oci://us-docker.pkg.dev/eticloud/panoptica-public-registry
+  version: 1.208.0
+description: Helm Chart to deploy security collector as a deployment and corresponding
+  dbconfigs.
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-security-collector
+version: 1.0.15

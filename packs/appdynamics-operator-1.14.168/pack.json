@@ -1,0 +1,19 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "false",
+    "source": "community",
+    "contributor" : "appdynamics",
+    "system_state" : "deleted"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/appdynamics-operators-1.14.168.tgz"
+  ],
+  "displayName": "Appdynamics Operator",
+  "layer":"addon",
+  "name": "appdynamics-operator",
+  "version": "1.14.168"
+}

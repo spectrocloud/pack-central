@@ -1,0 +1,297 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.controller.autoscaling.enabled }}
+  replicas: {{ .Values.controller.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "controller.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      annotations:
+        checksum/scanner-template-config: {{ include (print $.Template.BasePath "/kubeclarity/scanner-template-configmap.yaml") . | sha256sum }}
+      {{- if and .Values.global.isAPISecurityEnabled .Values.global.isConnectionEnforcementEnabled (not .Values.istio.global.alreadyInstalled) }}
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+        traffic.sidecar.istio.io/includeInboundPorts: "24229,24226"
+        proxy.istio.io/config: |
+          holdApplicationUntilProxyStarts: true
+          proxyMetadata:
+            ISTIO_META_DNS_CAPTURE: "false"
+            ISTIO_META_INSECURE_STACKDRIVER_ENDPOINT: ""
+            TLS_INTERCEPTION: "false"
+      {{- end }}
+      labels:
+        {{- include "controller.selectorLabels" . | nindent 8 }}
+      {{- if and .Values.global.isAPISecurityEnabled .Values.global.isConnectionEnforcementEnabled (not .Values.istio.global.alreadyInstalled) }}
+        sidecar.istio.io/inject: "true"
+      {{- end }}
+    spec:
+      {{- with .Values.controller.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "controller.serviceAccountName" . }}
+      initContainers:
+        {{- if .Values.global.isAPISecurityEnabled }}
+        - name: init-apiclarity
+          image: "{{ default .Values.global.registry .Values.busybox.image.registry }}/{{ .Values.busybox.image.repository }}:{{ .Values.busybox.image.tag }}"
+          imagePullPolicy: {{ .Values.busybox.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.busybox.securityContext | nindent 12 }}
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -sw '%{http_code}' "http://{{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}:8081/healthz/ready" -o /dev/null) -ne 200 ]; do
+                echo waiting for apiclarity; sleep 2;
+              done;
+        {{- end }}
+        {{- if .Values.global.isContainerSecurityEnabled }}
+        - name: init-sbom-db
+          image: "{{ default .Values.global.registry .Values.busybox.image.registry }}/{{ .Values.busybox.image.repository }}:{{ .Values.busybox.image.tag }}"
+          imagePullPolicy: {{ .Values.busybox.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.busybox.securityContext | nindent 12 }}
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -sw '%{http_code}' "http://{{ include "sbom-db.fullname" . }}.{{ .Release.Namespace }}:8081/healthz/ready" -o /dev/null) -ne 200 ]; do
+                echo waiting for sbom database; sleep 2;
+              done;
+        - name: init-grype-server
+          image: "{{ default .Values.global.registry .Values.busybox.image.registry }}/{{ .Values.busybox.image.repository }}:{{ .Values.busybox.image.tag }}"
+          imagePullPolicy: {{ .Values.busybox.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.busybox.securityContext | nindent 12 }}
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -sw '%{http_code}' "http://{{ include "grype-server.fullname" . }}.{{ .Release.Namespace }}:8080/healthz/ready" -o /dev/null) -ne 200 ]; do
+                echo "waiting for grype-server to be ready";
+                sleep 15;
+              done
+        {{- end }}
+      containers:
+        - name: {{ include "controller.fullname" . }}
+          image: "{{ default .Values.global.registry .Values.controller.image.registry }}/{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          args:
+            - run
+            - --log-level
+            - {{ .Values.controller.logLevel }}
+          env:
+            - name: AGENT_ID
+              value: {{ required "Agent ID is required!" .Values.controller.agentID | quote }}
+            - name: MANAGEMENT_HOST
+              value: {{ .Values.global.mgmtHostname | quote }}
+            - name: SEND_TELEMETRIES_INTERVAL_SEC
+              value: {{ .Values.global.sendTelemetriesIntervalSec | quote }}
+            {{- if .Values.global.validateDeployerPolicy }}
+            - name: ENABLE_DEPLOYER_POLICY
+              value: "true"
+            {{- end }}
+            {{- if .Values.global.k8sEventsEnabled }}
+            - name: ENABLE_K8S_EVENTS
+              value: "true"
+            {{- end }}
+            {{- if .Values.controller.persistence.enabled }}
+            - name: AGENT_PERSISTENT_PATH
+              value: "/{{ include "controller.fullname" . }}"
+            - name: IS_PERSISTENT
+              value: "true"
+            {{- end }}
+            {{- if .Values.global.autoLabelEnabled }}
+            - name: ENABLE_NAMESPACE_AUTO_LABEL
+              value: "true"
+            {{- end }}
+            {{- if and .Values.global.tokenInjectionEnabled .Values.global.isContainerSecurityEnabled }}
+            - name: API_TOKEN_INJECTION_ENABLED
+              value: "true"
+            - name: VAULT_ENV_IMAGE
+              value: {{ default .Values.global.registry .Values.vaultEnv.image.registry }}/{{ .Values.vaultEnv.image.repository }}:{{ .Values.vaultEnv.image.tag }}
+            - name: VAULT_ENV_LOG_SERVER
+              value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:9514
+            {{- end }}
+            {{- if .Values.global.isOpenShift }}
+            - name: IS_OPENSHIFT
+              value: "true"
+            {{- end }}
+            - name: CONNECTION_EVENT_FORWARDING_SERVICE_ADDRESS
+              value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:24234
+            - name: SBOM_DB_ADDRESS
+              value: {{ include "sbom-db.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:8080
+            - name: SCANNER_JOB_TEMPLATE_CONFIG_MAP_NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: CIS_BENCHMARK_CONFIG_MAP_NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: POD_NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPLOYMENT_NAME
+              value: {{ include "controller.fullname" . }}
+            - name: SERVICE_NAME
+              value: {{ include "controller.fullname" . }}
+            - name: SA_NAME
+              value: {{ include "controller.serviceAccountName" . }}
+            - name: PRODUCT_NAME
+              value: {{ include "product.name" . }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_TEMPLATE_HASH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['pod-template-hash']
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "controller.fullname" . }}
+                  key: SHARED_SECRET
+            - name: CONNECTION_FAILURE_POLICY_ALLOW
+              value: {{ .Values.global.connectionFailPolicyAllow | quote }}
+            - name: VALIDATING_FAILURE_POLICY_ALLOW
+              value: {{ .Values.global.environmentFailurePolicyAllow | quote }}
+            {{- if not .Values.global.enableTlsInspection }}
+            - name: DISABLE_TLS_INTERCEPTION
+              value: "true"
+            {{- end }}
+            {{- if .Values.global.isAPISecurityEnabled }}
+            - name: TRACE_SUPPORT_ENABLED
+              value: "true"
+            - name: TRACE_WASM_FILTER_SHA256
+              value: {{ .Values.apiclarity.traceWasmFilterSHA256 }}
+            - name: APICLARITY_BACKEND_ADDRESS
+              value: {{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}:8443
+            - name: TRACE_SAMPLING_MANAGER_GRPC_ADDRESS
+              value: {{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}:9991
+            {{- if .Values.apiclarity.traceSource.external }}
+            - name: SUPPORT_EXTERNAL_TRACE_SOURCE
+              value: "true"
+            - name: APICLARITY_EXPOSED_SERVICE_NAME
+              value: "{{ include "apiclarity.fullname" . }}-external"
+            {{- end }}
+            {{- end }}
+            - name: K8S_CIS_BENCHMARK_ENABLED
+              value: {{ .Values.global.k8sCisBenchmarkEnabled | quote }}
+            - name: CONTAINER_SECURITY_ENABLED
+              value: {{ .Values.global.isContainerSecurityEnabled | quote }}
+            - name: SSH_MONITOR_ENABLED
+              value: {{ .Values.global.isSSHMonitorEnabled | quote }}
+            {{- if not .Values.global.isConnectionEnforcementEnabled }}
+            - name: CONNECTION_ENFORCEMENT
+              value: "Disabled"
+            {{- end }}
+            {{- if .Values.global.dummyPlaceHolderForTest }}
+            - name: AGENT_VERSION_FOR_TEST
+              value: 1.1.1
+            {{- end }}
+            {{- if .Values.global.httpsProxy }}
+            - name: https_proxy
+              value: "{{ .Values.global.httpsProxy }}"
+            {{- end }}
+            {{- if .Values.global.httpProxy }}
+            - name: http_proxy
+              value: "{{ .Values.global.httpProxy }}"
+            {{- end }}
+            - name: IS_ISTIO_ALREADY_INSTALLED
+              value: {{ .Values.istio.global.alreadyInstalled | quote }}
+            {{- if .Values.global.isExternalCaEnabled }}
+            - name: EXTERNAL_CA_SIGNER_NAME
+              value: "{{ include "product.name" . }}.io/signer"
+            {{- end }}
+            - name: ETI_GCR_REPO
+              value: {{ .Values.global.registry | quote }}
+            - name: FUZZER_IMAGE_REPO
+              value: "{{ default .Values.global.registry .Values.apiclarity.fuzzer.image.registry }}/{{ .Values.apiclarity.fuzzer.image.repository }}"
+            - name: IS_MANAGED_BY_HELM
+              value: {{ .Values.global.isManagedByHelm | quote }}
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          volumeMounts:
+            {{- if .Values.global.isAPISecurityEnabled }}
+            - mountPath: /etc/certs
+              name: certs
+              readOnly: true
+            - mountPath: /etc/root-ca
+              name: root-ca
+              readOnly: true
+            {{- end }}
+            {{- if not .Values.controller.persistence.enabled }}
+            - mountPath: /tmp
+              name: tmp-volume
+            {{- else }}
+            - name: {{ include "controller.fullname" . }}
+              mountPath: /{{ include "controller.fullname" . }}
+            {{- end }}
+      volumes:
+      {{- if .Values.global.isAPISecurityEnabled }}
+        - name: certs
+          secret:
+            secretName: {{ include "controller.fullname" . }}-tls
+        - name: root-ca
+          configMap:
+            name: {{ include "product.name" . }}-root-ca.crt
+      {{- end }}
+      {{- if not .Values.controller.persistence.enabled }}
+        - name: tmp-volume
+          emptyDir: {}
+      {{- else }}
+        - name: {{ include "controller.fullname" . }}
+          persistentVolumeClaim:
+            {{- if .Values.global.dummyPlaceHolderForTest }}
+            claimName: {{ include "product.name" . }}-pvc-for-test
+            {{- else }}
+            claimName: {{ include "product.name" . }}-{{ .Values.controller.persistence.pvcSuffix }}
+            {{- end }}
+      {{- end }}
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}

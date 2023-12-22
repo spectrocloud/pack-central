@@ -1,0 +1,18 @@
+{{- if .Values.instrumentation.enable -}}
+{{ range $key, $value :=  (include "auto-instrumentation.namespaces.inst" . )| fromYaml }}
+
+---
+
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+{{- with $value }}
+{{- .metadata | toYaml | nindent 2 }}
+{{- end }}
+spec:
+{{- with $value }}
+{{- .spec | toYaml | nindent 2 }}
+{{- end }}
+
+{{- end }}
+{{- end }}

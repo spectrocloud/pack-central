@@ -1,0 +1,22 @@
+{{- if .Values.global.isContainerSecurityEnabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sbom-db.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sbom-db.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.sbomDb.service.type }}
+  ports:
+    - name: healthz
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: backend
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    {{- include "sbom-db.selectorLabels" . | nindent 4 }}
+{{- end }}

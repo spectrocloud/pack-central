@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "Values",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "description": "name of cluster",
+          "type": "string"
+        },
+        "clusterId": {
+          "description": "The uid of kube-system namespace, required when helm lookup is not supported",
+          "type": "string"
+        }
+      }
+    },
+    "install": {
+      "description": "contain flags to control installation of cluster collector, infra collector and log collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clustermon": {
+          "type": "boolean"
+        },
+        "defaultInfraCollectors": {
+          "type": "boolean"
+        },
+        "logCollector": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "clustermon",
+        "defaultInfraCollectors",
+        "logCollector"
+      ]
+    },
+    "clustermonServiceAccount": {
+      "description": "serviceAccount name for clustermon",
+      "type": "string"
+    },
+    "inframonServiceAccount": {
+      "description": "serviceAccount name for inframon",
+      "type": "string"
+    },
+    "logCollectorServiceAccount": {
+      "description": "serviceAccount name for log collector",
+      "type": "string"
+    },
+    "clustermonConfig": {
+      "description": "configuration for clustermon",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "logLevel": {
+          "description": "log level for cluster collector",
+          "type": "string"
+        },
+        "filters": {
+          "description": "filters based on namespace, entity and label for monitoring K8s objects",
+          "type": "object"
+        },
+        "ingressControllers": {
+          "description": "ingressControllers property",
+          "type": "object"
+        },
+        "events": {
+          "description": "configuration for collecting events",
+          "type": "object"
+        }
+      }
+    },
+    "infraManagerConfig": {
+      "description": "configuration for infra manager",
+      "type": "object"
+    },
+    "servermonConfig": {
+      "description": "configuration for servermon",
+      "type": "object"
+    },
+    "containermonConfig": {
+      "description": "configuration for containermon",
+      "type": "object"
+    },
+    "logCollectorConfig": {
+      "description": "configuration for log collector",
+      "type": "object"
+    },
+    "clustermonPod": {
+      "description": "configuration for clustermon pod",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of cluster collector",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for cluster collector image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "inframonPod": {
+      "description": "configuration for inframon pod",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of infra manager",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for infra manager image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "windowsExporterPod": {
+      "description": "configuration for windowsExporter pod",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of windows exporter",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for windows exporter image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "logCollectorPod": {
+      "description": "configuration for log collector pod",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "image": {
+          "description": "image URL of log collector",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for log collector image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    }
+  }
+}

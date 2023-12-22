@@ -1,0 +1,23 @@
+apiVersion: v2
+appVersion: 23.8.0
+dependencies:
+- condition: opentelemetry-operator.enabled
+  name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.23.0
+description: Helm chart for Appdynamics Cloud Operator
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+keywords:
+- appdynamics
+- operator
+- cluster
+- kubernetes
+- monitoring
+- pod
+- deployment
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-cloud-operator
+version: 1.14.0

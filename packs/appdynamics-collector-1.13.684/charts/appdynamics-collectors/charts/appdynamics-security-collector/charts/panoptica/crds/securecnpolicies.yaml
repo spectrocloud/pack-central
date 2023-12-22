@@ -1,0 +1,44 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: securecnpolicies.securecn.io
+spec:
+  group: securecn.io
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                deploymentName:
+                  type: string
+                to:
+                  type: object
+                  properties:
+                    internal:
+                      type: array
+                      items:
+                        type: string
+                    external:
+                      type: boolean
+                from:
+                  type: object
+                  properties:
+                    internal:
+                      type: array
+                      items:
+                        type: string
+                    external:
+                      type: boolean
+  scope: Namespaced
+  names:
+    plural: securecnpolicies
+    singular: securecnpolicy
+    kind: SecureCNPolicy
+    shortNames:
+      - scnp

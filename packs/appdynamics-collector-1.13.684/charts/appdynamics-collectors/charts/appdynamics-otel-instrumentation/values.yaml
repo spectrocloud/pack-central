@@ -1,0 +1,32 @@
+# Default values for appdynamics-otel-instrumentation.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+name: appd-instrumentation
+#namespace: appdynamics
+
+# exporter configuration - default grpc with insecure
+exporter:
+  protocol: grpc
+  insecure: true
+  grpc:
+    endpoint: appdynamics-otel-collector-service.appdynamics.svc.cluster.local:4317
+  http:
+    endpoint: appdynamics-otel-collector-service.appdynamics.svc.cluster.local:4318
+
+spec:
+  # environment variables (common)
+  env: []
+  # sampling info (todo)
+  # common resource attributes
+  resource:
+    addK8sUIDAttributes: false
+    resourceAttributes: {}
+  # trace propogators
+  propagators:
+    - tracecontext
+
+  # tracer level configuration - uncomment to enable instrumentation for the language
+  #java:
+  #python:
+  #nodejs:
+  #dotnet:

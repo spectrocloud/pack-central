@@ -1,0 +1,72 @@
+{{ if .Values.install.clustermon -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appdynamics-clustermon-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  - services
+  - events
+  - namespaces
+  - nodes
+  - nodes/proxy
+  - pods
+  - resourcequotas
+  - persistentvolumeclaims
+  - persistentvolumes
+{{- if .Values.clustermonConfig.configurations.enabled }}
+  - configmaps
+  - secrets
+{{- end }}
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling.k8s.io
+  resources:
+  - verticalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+{{- end }}
