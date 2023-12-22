@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 1.208.0
+dependencies:
+- alias: apiclarity-postgresql
+  condition: global.isAPISecurityEnabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.6.12
+description: Charts for Panoptica deployments.
+name: panoptica
+type: application
+version: 1.208.0

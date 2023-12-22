@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.controller.service.type }}
+  ports:
+    - name: grpc-image-analysis-sbom-result-forwarding-server
+      port: 25235
+      protocol: TCP
+      targetPort: 25235
+  {{- if .Values.global.k8sCisBenchmarkEnabled }}
+    - name: grpc-k8s-cis-benchmark-result-forwarding-server
+      port: 24235
+      protocol: TCP
+      targetPort: 24235
+  {{- end }}
+  {{- if .Values.global.isContainerSecurityEnabled }}
+  {{- if .Values.global.isConnectionEnforcementEnabled }}
+    - name: {{ include "product.name" . }}-agent-sidecars
+      port: 24225
+      protocol: TCP
+      targetPort: 24225
+    - name: grpc-{{ include "product.name" . }}-agent-inbound-ext-auth-server
+      port: 24229
+      protocol: TCP
+      targetPort: 24229
+    - name: grpc-{{ include "product.name" . }}-agent-outbound-ext-auth-server
+      port: 24226
+      protocol: TCP
+      targetPort: 24226
+    - name: grpc-istio-adapter-server
+      port: 24227
+      protocol: TCP
+      targetPort: 24227
+    - name: grpc-connection-event-forwarding-server
+      port: 24234
+      protocol: TCP
+      targetPort: 24234
+    - name: grpc-{{ include "product.name" . }}-agent-kafka-authz-server
+      port: 24231
+      protocol: TCP
+      targetPort: 24231
+    - name: http-agent-kafka-opa-server
+      port: 8181
+      protocol: TCP
+      targetPort: 8181
+  {{- end }}
+    - name: {{ include "product.name" . }}-agent-webhook-server
+      port: 443
+      protocol: TCP
+      targetPort: 8443
+    - name: grpc-{{ include "product.name" . }}-agent-cd-server
+      port: 24230
+      protocol: TCP
+      targetPort: 24230
+    - name: http-runtime-scan-results
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: grpc-{{ include "product.name" . }}-agent-dns-exporter-server
+      port: 24232
+      protocol: TCP
+      targetPort: 24232
+  {{- if .Values.global.tokenInjectionEnabled }}
+    - name: vault-env-log-server
+      port: 9514
+      protocol: UDP
+      targetPort: 9514
+  {{- end }}
+  {{- end }}
+  {{- if .Values.global.isAPISecurityEnabled }}
+    - name: http-wasm-filter-file-server
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: http-apiclarity-notification-server
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+  {{- end }}
+  selector:
+    {{- include "controller.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,24 @@
+{{ if .Values.install.defaultInfraCollectors -}}
+{{ if .Capabilities.APIVersions.Has "security.openshift.io/v1/SecurityContextConstraints" -}}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: 'inframon-privileged-scc is a custom SCC for AppDynamics Cloud Infrastructure Collector'
+  name: inframon-privileged-scc
+  namespace: {{ .Release.Namespace }}
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.inframonServiceAccount }}
+{{- end }}
+{{- end }}

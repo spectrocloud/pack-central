@@ -1,0 +1,28 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+** Please be patient while the chart is being deployed **
+
+AppDynamics OpenTelemetry Collectors are listening for OTLP traffic at service "{{ .Values.service.name }}". 
+
+The following components are enabled for logs, metrics and traces.
+
+{{.Values.config.service | toYaml }}
+
+
+Check the release status by running:
+   kubectl --namespace {{ .Release.Namespace }} get pods | grep -i {{ .Release.Name }}
+
+For details about OpenTelemetry Collector configuration, please go to
+https://docs.appdynamics.com/latest/en/application-monitoring/appdynamics-for-opentelemetry/configure-the-opentelemetry-collector
+
+
+THIRD PARTY LICENSE DISCLOSURE
+===============================
+AppDynamics OpenTelemetry Collector
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppDynamics_Distribution_for_OpenTelemetry_Collector-2380-1692516321.pdf
+
+
+

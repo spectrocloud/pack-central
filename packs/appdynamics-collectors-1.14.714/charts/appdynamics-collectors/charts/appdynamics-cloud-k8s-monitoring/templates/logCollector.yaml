@@ -1,0 +1,67 @@
+{{$linux :="linux"}}
+{{$windows :="windows"}}
+{{ if and (.Values.install.logCollector) (has $linux .Values.logCollectorConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: LogCollector
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-log-collector" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- template "podConfigs" (mustMergeOverwrite .Values.logCollectorPod .Values.logCollectorPod.env.linux) }}
+  os: {{$linux}}
+  serviceAccountName: {{ .Values.logCollectorServiceAccount}}
+  rollingUpdateMaxUnavailable: {{ .Values.logCollectorPod.rollingUpdateMaxUnavailable}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  {{ if (coalesce .Values.logCollectorConfig.env.linux.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) -}}
+  filebeatYaml: {{ (coalesce .Values.logCollectorConfig.env.linux.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) | quote }}
+  {{ else -}}
+  {{$data := dict "osVal" $linux "Values" .Values }}
+  filebeatYaml: |- 
+    {{- include "filebeatYml" $data | nindent 8}}
+  {{- end }}
+{{- end }}
+---
+{{ if and (.Values.install.logCollector) (has $windows .Values.logCollectorConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: LogCollector
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-log-collector-windows" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- template "podConfigs" (mustMergeOverwrite .Values.logCollectorPod .Values.logCollectorPod.env.windows) }}
+  os: {{$windows}}
+  serviceAccountName: {{ .Values.logCollectorServiceAccount}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  {{ if (coalesce .Values.logCollectorConfig.env.windows.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) -}}
+  filebeatYaml: |-
+    {{- (coalesce .Values.logCollectorConfig.env.windows.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) | nindent 8 }}
+  {{ else -}}
+  {{$data := dict "osVal" $windows "Values" .Values }}
+  filebeatYaml: |-
+    {{- include "filebeatYml" $data| nindent 8}} # filebeatYml change this when splified/defualt config
+  {{- end }}
+{{- end }}

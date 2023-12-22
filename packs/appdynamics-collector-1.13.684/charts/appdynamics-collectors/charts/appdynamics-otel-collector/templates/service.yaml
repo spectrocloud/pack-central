@@ -1,0 +1,66 @@
+{{- if .Values.install -}}
+{{/*Global Servce*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+{{- include "appdynamics-otel-collector.labels" . | nindent 4 }}
+  name: {{ .Values.service.name }}
+spec:
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    {{- include "appdynamics-otel-collector.selectorLabels" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+  ports:
+{{- .Values.service.ports | toYaml | nindent 2}}
+{{- if .Values.service.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+{{- end}}
+
+---
+
+{{/*Daemonset Servce*/}}
+{{/*Only enabled when both deployments are required*/}}
+{{- if and .Values.enablePrometheus .Values.enableFileLog -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+{{- include "appdynamics-otel-collector.labels" . | nindent 4 }}
+  name: {{ .Values.service.name }}-ds
+spec:
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    {{- include "appdynamics-otel-collector.selectorLabelsDaemonset" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+  ports:
+{{- .Values.service.ports | toYaml | nindent 2}}
+{{- if .Values.service.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+{{- end}}
+{{- end}}
+
+---
+
+{{/*Statefulset Servce*/}}
+{{/*Only enabled when both deployments are required*/}}
+{{- if and .Values.enablePrometheus .Values.enableFileLog -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+{{- include "appdynamics-otel-collector.labels" . | nindent 4 }}
+  name: {{ .Values.service.name }}-ss
+spec:
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    {{- include "appdynamics-otel-collector.selectorLabelsStatefulset" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+  ports:
+{{- .Values.service.ports | toYaml | nindent 2}}
+{{- if .Values.service.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+{{- end}}
+{{- end}}
+
+{{- end}}

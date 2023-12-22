@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: 23.6.0
+description: Helm Chart to deploy dbcollector as a deployment and corresponding dbconfigs.
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+keywords:
+- appdynamics
+- database
+- dbcollector
+- dbconfig
+- kubernetes
+- monitoring
+- pod
+- deployment
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-cloud-db-collector
+version: 1.4.0
