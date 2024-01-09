@@ -1,0 +1,11 @@
+# required 
+global:
+  clusterName: "my-cluster"
+endpoint: "https://data.appdynamics.com"
+clientId: "dummy"
+clientSecret: "dummy"
+tokenUrl: "dummy"
+enablePrometheus: true
+# Replicas must set to enable the collector deployment, you can also set minReplicas and maxReplicas to enable autoscaling
+spec: 
+  replicas: 2

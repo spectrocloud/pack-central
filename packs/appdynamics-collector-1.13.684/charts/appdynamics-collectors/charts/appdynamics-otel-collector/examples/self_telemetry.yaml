@@ -1,0 +1,10 @@
+# required 
+endpoint: "https://data.appdynamics.com"
+clientId: "dummy"
+clientSecret: "dummy"
+tokenUrl: "dummy"
+
+# self telemetry
+selfTelemetry: true
+# selfTelemetryServiceName: "appd-otel-collector1"
+# selfTelemetryServiceNamespace: "otelcol1"
