@@ -1,0 +1,42 @@
+suite: test configmap
+values:
+  - ./values/values.yaml
+templates:
+  - configmap.yaml
+chart:
+  version: 0.1.0+test
+  appVersion: 0.1.0
+release:
+  name: "fso-agent"
+tests:
+  - it: should pass all kinds of assertion
+    template: configmap.yaml
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isAPIVersion:
+          of: v1
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: ^.*-client$
+      - notMatchRegex:
+          path: metadata.name
+          pattern: ^.*-foobar$
+      - equal:
+          path: metadata.namespace
+          value: appdynamics
+      - notEqual:
+          path: metadata.namespace
+          value: default
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: fso-agent
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: fso-agent-mgmt-client
+            app.kubernetes.io/version: 0.1.0
+            helm.sh/chart: fso-agent-mgmt-client-0.1.0_test
+

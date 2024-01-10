@@ -1,0 +1,30 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+** Please be patient while the chart is being deployed **
+
+The chart installs the Orchestration Client version: {{ .Values.image.tag | default .Chart.AppVersion }}.
+This Orchestration Client enable managing the Life Cycle of other FSO Agents.
+
+Orchestration Client uses Open Agent Management Protocol (OpAMP)  to communicate with the service to enabling
+the managing the Life Cycle(LC) of Full Stack Observatory (FSO) agents.
+
+OpAMP: https://github.com/open-telemetry/opamp-spec/blob/main/specification.md
+
+Orchestration Client is installed with following permissions in the cluster:
+
+  {{- range $role := .Values.clusterRole }}
+    {{- with $role.apiGroup}}
+  - apiGroups:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $role.resources }}
+    resources:
+    {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- with $role.verbs }}
+    verbs:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}

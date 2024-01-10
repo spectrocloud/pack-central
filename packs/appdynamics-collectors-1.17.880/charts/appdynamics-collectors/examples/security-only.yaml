@@ -1,0 +1,15 @@
+appdynamics-otel-collector:
+  install: false
+
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: false
+    defaultInfraCollectors: false
+
+appdynamics-security-collector:
+  enabled: true
+  panoptica:
+    controller:
+      agentID: "xxxx"
+      secret:
+        sharedSecret: "xxxx"

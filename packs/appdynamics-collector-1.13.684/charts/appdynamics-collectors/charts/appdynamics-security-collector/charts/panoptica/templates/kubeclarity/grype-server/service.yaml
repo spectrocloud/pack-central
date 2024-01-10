@@ -1,0 +1,21 @@
+{{- if .Values.global.isContainerSecurityEnabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grype-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grype-server.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.grypeServer.service.type }}
+  ports:
+    - name: grype-server
+      port: 9991
+      protocol: TCP
+    - name: health
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    {{- include "grype-server.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,46 @@
+{{ if .Values.install.dbCollector -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+# Kind will match the Kind section in generated CRD at Operator
+kind: DbCollector
+# Release is picked up from the command
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-db-collector" | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  # spec for dbCollector here
+  {{- template "podConfigs" .Values.dbCollectorPod }}
+
+  {{ with .Values.appdCloudAuth -}}
+  # CIS credentials
+  clientId: {{ .clientId }}
+  # either clientSecret will be present
+  {{ if .clientSecret -}}
+  clientSecret: {{ .clientSecret }}
+  {{ else }}
+  # if clientSecret is not present then clientSecretKeyRef is expected
+  clientSecretVarSource: {{ .clientSecretEnvVar.valueFrom }}
+  {{- end }}
+  endpoint: {{ .endpoint }}
+  tokenUrl: {{ .tokenUrl }}
+
+  {{- end }}
+
+  {{ with .Values.dbCollectorConfig -}}
+  # Profiling flag and port
+  pprofEnable: {{ .pprof.enabled }}
+  {{ if .pprof.enabled -}}
+  pprofPort: {{ .pprof.port }}
+  {{- end }}
+  # Prometheus flag and port
+  metricEnable: {{ .metric.enabled }}
+  {{ if .metric.enabled -}}
+  metricPort: {{ .metric.port }}
+  {{- end }}
+  # Log level
+  logLevel : {{ .logLevel }}
+  {{- end }}
+  {{ if ne .Values.dbCollectorPod.image "appdynamics/appdynamics-cloud-db-collector:23.2.0-539"}}
+  # Mount path for generated config
+  configMountPath: /opt/appdynamics/appddbcol/conf/generated
+  {{ end }}
+  {{ end -}}

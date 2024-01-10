@@ -1,0 +1,34 @@
+apiVersion: v2
+appVersion: 1.17.244
+dependencies:
+- condition: appdynamics-cloud-operator.enabled
+  name: appdynamics-cloud-operator
+  repository: ""
+  version: 1.17.0
+- condition: opentelemetry-operator.enabled
+  name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.43.0
+- condition: appdynamics-smartagent.enabled
+  name: appdynamics-smartagent
+  repository: https://artifactory.bare.appdynamics.com/artifactory/cosmosx-helm
+  version: 23.10.125
+description: Helm Charts for installing Appdynamics Operators
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+keywords:
+- appdynamics
+- cloud
+- operator
+- cluster
+- kubernetes
+- monitoring
+- pod
+- deployment
+- orchestration
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-operators
+type: application
+version: 1.17.244

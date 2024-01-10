@@ -49,7 +49,7 @@ By contributing to this repository, you acknowledge that you have read and agree
 
 ## Pull Request guidelines
 * Be sure to test your functionality by uploading the pack to your own pack registry before raising the pull request.
-* Please give a brief account of the pack functionality. You can add usage instructions and document the nuances for using the pack as part of the README.md file within the pack.
+* Use the [README template](templates/README-template.md) to create a README.md file for your pack that includes a brief overview of the pack functionality, prerequisites, and usage instructions. Each pack version should have its own README.md file. An [example README.md](templates/README-example.md) is also available to provide you with a better understanding of the structure and content you need to include.
 * Mention the list of container images being used by your pack as part images section in values.yaml file of the pack. This will help us in identifying the images to run security scans.
 * Typically you should get a response within 72 hours of raising your pull request. Make sure you watchout for any review comments and handle them.
 * Once your PR is merged, it will be deployed to the Spectro Cloud public pack registry.

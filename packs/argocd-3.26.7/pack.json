@@ -3,7 +3,8 @@
     "annotations": {
       "ingressSupported": "true",
       "source": "community",
-      "contributor" : "spectrocloud"
+      "contributor" : "spectrocloud",
+      "system_state": "deprecated"
     },
     "charts": [
       "charts/argo-cd.tgz"
@@ -14,7 +15,17 @@
     "displayName": "Argo CD",
     "layer":"addon",
     "name": "argo-cd",
-    "version": "3.26.7"
+    "version": "3.26.7",
+    "constraints": {
+      "dependencies": [
+        {
+          "packName": "argo-cd",
+          "layer": "addon",
+          "maxVersion": "3.26.7",
+          "type": "upgrade"
+        }
+      ]
+    }
   }
 
 

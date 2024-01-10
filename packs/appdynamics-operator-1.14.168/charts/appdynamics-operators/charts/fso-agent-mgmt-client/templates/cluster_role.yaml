@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "fso-agent-mgmt-client.fullname" . }}
+  labels:
+    {{- include "fso-agent-mgmt-client.labels" . | nindent 4 }}
+rules:
+  {{- range $role := .Values.clusterRole }}
+    {{- with $role.apiGroup}}
+  - apiGroups:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $role.resources }}
+    resources:
+    {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- with $role.verbs }}
+    verbs:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}

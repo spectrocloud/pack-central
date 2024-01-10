@@ -1,0 +1,8 @@
+global:
+  clusterName: test
+
+appdynamics-otel-collector:
+  client_id: client-id-test
+  client_secret: client-secret-test
+  token_url: token-url-test
+  endpoint: endpoint-test

@@ -1,0 +1,66 @@
+{{- if not .Values.global.isManagedByHelm }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: upgrader-job-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  config: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: upgrader
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: upgrader
+    spec:
+      activeDeadlineSeconds: 1200
+      ttlSecondsAfterFinished: 30
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "product.name" . }}-upgrader
+          containers:
+            - name: upgrader
+              imagePullPolicy: {{ .Values.upgrader.image.pullPolicy }}
+              args:
+                - run
+                - --log-level
+                - {{ .Values.controller.logLevel }}
+              env:
+                - name: AGENT_ID
+                  value: {{ required "Agent ID is required!" .Values.controller.agentID | quote }}
+                - name: MANAGEMENT_HOST
+                  value: {{ .Values.global.mgmtHostname | quote }}
+                - name: SHARED_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "controller.fullname" . }}
+                      key: SHARED_SECRET
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: XDG_CACHE_HOME
+                  value: /tmp
+              securityContext:
+                {{- toYaml .Values.upgrader.securityContext | nindent 16 }}    
+              resources:
+                {{- toYaml .Values.upgrader.resources | nindent 16 }}
+              volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-volume
+          volumes:
+            - name: tmp-volume
+              emptyDir: {}
+          securityContext:
+            {{- toYaml .Values.upgrader.podSecurityContext | nindent 12 }}
+          {{- with .Values.upgrader.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

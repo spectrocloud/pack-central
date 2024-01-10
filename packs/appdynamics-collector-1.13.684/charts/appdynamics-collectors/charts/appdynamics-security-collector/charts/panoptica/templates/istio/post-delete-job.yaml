@@ -1,0 +1,153 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "controller.fullname" . }}-post-delete
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+data:
+  uninstall.sh: |-
+    #!/bin/sh -x
+
+    kubectl delete destinationrules.networking.istio.io --all-namespaces -l owner={{ include "product.name" . }} --ignore-not-found
+    kubectl delete peerauthentications.security.istio.io --all-namespaces -l owner={{ include "product.name" . }} --ignore-not-found
+    kubectl delete serviceentries.networking.istio.io --all-namespaces -l owner={{ include "product.name" . }} --ignore-not-found
+    kubectl delete virtualservices.networking.istio.io --all-namespaces -l owner={{ include "product.name" . }} --ignore-not-found
+    kubectl delete envoyfilter.networking.istio.io --all-namespaces -l owner={{ include "product.name" . }} --ignore-not-found
+    kubectl delete secrets --all-namespaces --field-selector type=istio.io/custom-id --ignore-not-found
+    kubectl delete secrets --all-namespaces --field-selector type=istio.io/key-and-cert --ignore-not-found
+    
+    function refresh_all_pods() {
+        kubectl -n $1 rollout restart deployments
+        kubectl -n $1 rollout restart daemonsets
+        kubectl -n $1 rollout restart statefulsets
+    }
+
+    function refresh_all_connections_only_protected_namespaces() {
+        PROTECTED_NAMESPACE_LIST=$(kubectl get ns -l SecureApplication-protected=connections-only -o jsonpath='{.items[*].metadata.name}')
+        echo "Refreshing pods in all connections-only protected namespaces"
+        for namespace_name in $PROTECTED_NAMESPACE_LIST ; do
+            refresh_all_pods $namespace_name
+        done
+    }
+
+    function refresh_all_full_protected_namespaces() {
+        PROTECTED_NAMESPACE_LIST=$(kubectl get ns -l SecureApplication-protected=full -o jsonpath='{.items[*].metadata.name}')
+        echo "Refreshing pods in all full protected namespaces"
+        for namespace_name in $PROTECTED_NAMESPACE_LIST ; do
+            refresh_all_pods $namespace_name
+        done
+    }
+
+    function refresh_all_protected_namespaces() {
+        refresh_all_connections_only_protected_namespaces
+        refresh_all_full_protected_namespaces
+    }
+
+    refresh_all_protected_namespaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "controller.fullname" . }}-post-delete
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["list", "delete"]
+  - apiGroups: ["networking.istio.io"]
+    resources: ["destinationrules", "serviceentries", "virtualservices", "envoyfilters"]
+    verbs: ["list", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["peerauthentications"]
+    verbs: ["list", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "daemonsets", "deployments"]
+    verbs: ["list", "patch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "controller.fullname" . }}-post-delete
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "controller.fullname" . }}-post-delete
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "controller.fullname" . }}-post-delete
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "controller.fullname" . }}-post-delete
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "controller.fullname" . }}-post-delete
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: {{ include "controller.fullname" . }}-post-delete
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "controller.fullname" . }}-post-delete
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: kubectl
+          image: cgr.dev/chainguard/kubectl:1.26.1
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/sh", "-c", "/opt/uninstall.sh" ]
+          volumeMounts:
+            - name: uninstall-script
+              mountPath: /opt/uninstall.sh
+              subPath: uninstall.sh
+      volumes:
+        - name: uninstall-script
+          configMap:
+            name: {{ include "controller.fullname" . }}-post-delete
+            items:
+            - key: uninstall.sh
+              path: uninstall.sh
+              mode: 0777
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}
