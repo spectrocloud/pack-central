@@ -5,7 +5,10 @@
   ],
   "annotations": {
     "docsURL": "https://github.com/hashicorp/consul-k8s",
-    "description": "HashiCorp Consul"
+    "description": "HashiCorp Consul",
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
   },
   "displayName": "Consul",
   "charts": [
