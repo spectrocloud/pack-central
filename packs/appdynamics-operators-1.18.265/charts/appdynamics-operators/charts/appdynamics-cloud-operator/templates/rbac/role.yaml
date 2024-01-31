@@ -1,0 +1,189 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: appdynamics-cloud-operator-customresource-clusterrole
+rules:
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - clustermons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - clustermons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - clustermons/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbcollectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbcollectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbcollectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - dbconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - containermons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - containermons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - containermons/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - inframons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - inframons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - inframons/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - logcollectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - logcollectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - logcollectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - servermons
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - servermons/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.appdynamics.com
+  resources:
+  - servermons/status
+  verbs:
+  - get
+  - patch
+  - update

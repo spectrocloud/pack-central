@@ -1,0 +1,109 @@
+affinity: {}
+agent:
+  namespace: agent
+  type: smartagent
+clusterRole:
+- apiGroup:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - pods
+  - pods/logs
+  - pods/status
+  - namespaces
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+- apiGroup:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+- apiGroup:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - admin
+  - edit
+  - view
+  resources:
+  - roles
+  verbs:
+  - bind
+- apiGroup:
+  - apps
+  - extensions
+  resources:
+  - deployments
+  - deployments/status
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+fullnameOverride: ""
+global:
+  clusterId: ""
+  clusterName: appdynamics
+image:
+  pullPolicy: IfNotPresent
+  registry: appdynamics
+  repository: appdynamics-smartagent
+  tag: 24.1.0-1431
+imagePullSecrets: []
+nameOverride: ""
+nodeSelector:
+  kubernetes.io/os: linux
+oauth:
+  clientId: ""
+  clientSecret: ""
+  clientSecretEnvVar: {}
+  scopes: ""
+  tenantId: ""
+  tokenUrl: ""
+podAnnotations: {}
+podSecurityContext: {}
+proxy:
+  httpProxy: ""
+  httpsProxy: ""
+  noProxy: ""
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+securityContext: {}
+serviceAPIExtension: /rest/agent/service
+serviceAccount:
+  annotations: {}
+  create: true
+  name: appd-smartagent
+solution:
+  endpoint: ""
+tls:
+  caFile: ""
+  certFile: ""
+  insecure: true
+  keyFile: ""
+tolerations: []
