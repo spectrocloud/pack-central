@@ -1,0 +1,165 @@
+{{- if .Values.global.isAPISecurityEnabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apiclarity.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "apiclarity.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "apiclarity.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      {{- if and .Values.global.isConnectionEnforcementEnabled (not .Values.istio.global.alreadyInstalled) }}
+      annotations:
+        traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+        traffic.sidecar.istio.io/includeInboundPorts: "9000"
+        proxy.istio.io/config: |
+          holdApplicationUntilProxyStarts: true
+          proxyMetadata:
+            ISTIO_META_DNS_CAPTURE: "false"
+            ISTIO_META_INSECURE_STACKDRIVER_ENDPOINT: ""
+            TLS_INTERCEPTION: "false"
+      {{- end }}
+      labels:
+        {{- include "apiclarity.selectorLabels" . | nindent 8 }}
+      {{- if and .Values.global.isConnectionEnforcementEnabled (not .Values.istio.global.alreadyInstalled) }}
+        sidecar.istio.io/inject: "true"
+      {{- end }}
+    spec:
+      {{- with .Values.apiclarity.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "apiclarity.serviceAccountName" . }}
+      initContainers:
+        - name: apiclarity-wait-for-db
+          image: "{{ index .Values "apiclarity-postgresql" "image" "registry" }}/{{ index .Values "apiclarity-postgresql" "image" "repository" }}:{{ index .Values "apiclarity-postgresql" "image" "tag" }}"
+          imagePullPolicy: {{ index .Values "apiclarity-postgresql" "image" "pullPolicy" }}
+          command: ['sh', '-c', 'until pg_isready -h {{ include "apiclarity.fullname" . }}-postgresql -p 5432 -U "postgres" -d "dbname={{ index .Values "apiclarity-postgresql" "auth" "database" }}";
+            do echo waiting for database; sleep 2; done;']
+          securityContext:
+            runAsUser: 1001
+          resources:
+            limits:
+              cpu: 200m
+              memory: 1000Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+      containers:
+        - name: apiclarity
+          image: "{{ default .Values.global.registry .Values.apiclarity.image.registry }}/{{ .Values.apiclarity.image.repository }}:{{ .Values.apiclarity.image.tag }}"
+          imagePullPolicy: {{ .Values.apiclarity.image.pullPolicy }}
+          args:
+            - run
+            - --log-level
+            - {{ .Values.apiclarity.logLevel }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # space separated list of response headers to ignore when reconstructing the spec
+            - name: RESPONSE_HEADERS_TO_IGNORE
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "apiclarity.fullname" . }}-headers-to-ignore-configmap'
+                  key: response.headers
+            # space separated list of request headers to ignore when reconstructing the spec
+            - name: REQUEST_HEADERS_TO_IGNORE
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{ include "apiclarity.fullname" . }}-headers-to-ignore-configmap'
+                  key: request.headers
+            - name: TRACE_SAMPLING_ENABLED
+              value: "true"
+            - name: DB_NAME
+              value: {{ index .Values "apiclarity-postgresql" "auth" "database" }}
+            - name: DB_HOST
+              value: "{{ include "apiclarity.fullname" . }}-postgresql"
+            - name: DB_PORT_NUMBER
+              value: "5432"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ index .Values "apiclarity-postgresql" "auth" "existingSecret" }}
+                  key: postgres-password
+            - name: STATE_BACKUP_FILE_NAME
+              value: /apiclarity/state.gob
+            - name: ENABLE_TLS
+              value: "true"
+            - name: ROOT_CERT_FILE_PATH
+              value: /etc/root-ca/ca.crt
+            - name: TLS_SERVER_CERT_FILE_PATH
+              value: /etc/certs/server.crt
+            - name: TLS_SERVER_KEY_FILE_PATH
+              value: /etc/certs/server.key
+            - name: NOTIFICATION_BACKEND_PREFIX
+              value: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:8082
+            - name: FUZZER_JOB_TEMPLATE_CONFIG_MAP_NAME
+              value: "{{ include "apiclarity.fullname" . }}-fuzzer-template"
+            - name: FUZZER_DEPLOYMENT_TYPE
+              value: "configmap"
+            - name: DIFFER_SEND_NOTIFICATION_INTERVAL_SEC
+              value: {{ .Values.global.sendTelemetriesIntervalSec | quote }}
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8081
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+          securityContext:
+            {{- toYaml .Values.apiclarity.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.apiclarity.resources | nindent 12 }}
+          volumeMounts:
+            - name: apiclarity
+              mountPath: '/apiclarity'
+            - name: certs
+              mountPath: /etc/certs
+              readOnly: true
+            - name: root-ca
+              mountPath: /etc/root-ca
+              readOnly: true
+      volumes:
+        - name: apiclarity
+          persistentVolumeClaim:
+            claimName: {{ include "apiclarity.fullname" . }}
+        - name: certs
+          secret:
+            secretName: apiclarity-tls
+        - name: root-ca
+          configMap:
+            name: {{ include "product.name" . }}-root-ca.crt
+      {{- with .Values.apiclarity.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiclarity.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiclarity.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.apiclarity.podSecurityContext | nindent 8 }}
+{{- end }}

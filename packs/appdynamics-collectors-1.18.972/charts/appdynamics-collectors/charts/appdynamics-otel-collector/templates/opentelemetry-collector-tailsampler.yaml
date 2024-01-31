@@ -1,0 +1,41 @@
+{{- if .Values.install -}}
+{{- if and .Values.presets.tailsampler.enable (contains "sampler" .Values.presets.tailsampler.deploy_mode) }}
+
+{{- if  (has "linux" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  annotations:
+{{- .Values.annotations | toYaml | nindent 4 }}
+  labels:
+{{- include "appdynamics-otel-collector.tailsampler.finalLabels" . | nindent 4 }}
+  name: {{ include "appdynamics-otel-collector.tailsampler.fullname" .}}
+spec:
+{{- include "appdynamics-otel-collector.tailsampler.linux.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+---
+
+{{- if (has "windows" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  annotations:
+{{- .Values.annotations | toYaml | nindent 4 }}
+  labels:
+{{- include "appdynamics-otel-collector.tailsampler.finalLabels" . | nindent 4 }}
+  name: {{ include "appdynamics-otel-collector.tailsampler.windows.fullname" .}}
+spec:
+{{- include "appdynamics-otel-collector.tailsampler.windows.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}
