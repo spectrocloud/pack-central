@@ -1,0 +1,93 @@
+global:
+  clusterName: ""
+  tls:
+    appdCollectors:
+      enabled: false
+      secret: {}
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+appdynamics-cloud-db-collector:
+  appdCloudAuth: {}
+  install:
+    dbCollector: false
+    dbMonitoringConfigs: false
+    agentManagementEnabled: true
+  dbCollectorPod:
+    image: appdynamics/appdynamics-cloud-db-collector:24.1.0-1046
+    imagePullPolicy: Always
+    imagePullSecrets: []
+  dbCollectorConfig:
+    pprof:
+      enabled : false
+      port : 0
+
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: true
+    defaultInfraCollectors: true
+    logCollector: false
+
+  clustermonConfig:
+    os: linux
+    filters:
+      entity:
+        excludeRegex: "kube-root-ca.crt|openshift-service-ca.crt"
+
+  servermonConfig:
+    os: [linux]
+
+  containermonConfig:
+    os: [linux]
+
+  clustermonPod:
+    image: appdynamics/appdynamics-cloud-k8s-monitoring:24.1.0-1887
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+  inframonPod:
+    image: appdynamics/appdynamics-cloud-k8s-monitoring:24.1.0-1887
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+  windowsExporterPod:
+    image: ghcr.io/prometheus-community/windows-exporter:0.24.0
+    imagePullPolicy: Always
+    imagePullSecrets: []
+    nodeSelector:
+      kubernetes.io/os: windows
+
+  logCollectorPod:
+    image: appdynamics/appdynamics-cloud-log-collector-agent:24.1.0-970
+    imagePullPolicy: Always
+    imagePullSecrets: []
+
+
+appdynamics-otel-collector:
+  install: true
+  spec:
+    image: appdynamics/appdynamics-cloud-otel-collector:24.1.1-1356
+    mode: daemonset
+    imagePullPolicy: Always
+  env:
+    windows:
+      spec:
+        image: appdynamics/appdynamics-cloud-otel-collector:24.1.1-1356-windows-amd64-nanoserver-ltsc2019
+
+appdynamics-security-collector:
+  enabled: false
+  panoptica:
+    controller:
+      agentID: ""
+      secret:
+        sharedSecret: ""
+
+appdynamics-otel-instrumentation:
+  enabled: true
+  
+appdynamics-network-monitoring:
+  enabled: false
