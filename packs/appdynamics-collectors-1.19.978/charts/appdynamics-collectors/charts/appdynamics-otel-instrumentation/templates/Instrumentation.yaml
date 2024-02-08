@@ -1,0 +1,31 @@
+{{- define "appdynamics-otel-instrumentation.exporter" -}}
+exporter:
+  {{- $scheme := ternary "http://" "https://" .Values.exporter.insecure }}
+  endpoint: {{$scheme}}{{tpl (dig .Values.exporter.protocol "endpoint" "0.0.0.0:4317" .Values.exporter) .}}
+{{- end -}}
+{{- define "appdynamics-otel-instrumentation.language.specific.default" -}}
+# tracer level configuration - uncomment to enable instrumentation for the language
+#java:
+{{- $scheme := ternary "http://" "https://" .Values.exporter.insecure }}
+python:
+  env:
+    - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      value: {{$scheme}}{{tpl (dig "http" "endpoint" "0.0.0.0:4317" .Values.exporter) .}}/v1/traces
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp_proto_http
+#nodejs:
+dotnet:
+  env:
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: {{$scheme}}{{tpl (dig "http" "endpoint" "0.0.0.0:4317" .Values.exporter) .}}
+{{- end -}}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ .Values.name | default .Release.Name }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+{{ $spec := include "appdynamics-otel-instrumentation.exporter" . | fromYaml }}
+{{- merge .Values.spec $spec (include "appdynamics-otel-instrumentation.language.specific.default" . | fromYaml) | toYaml | indent 2 }}
+
