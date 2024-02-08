@@ -1,0 +1,33 @@
+{{- if .Values.install -}}
+{{- if or (and .Values.presets.tailsampler.enable (contains "sidecar" .Values.presets.tailsampler.deploy_mode)) (or .Values.presets.multi_tier.sidecar.enable .Values.presets.multi_tier.sidecar.client_side_loadbalancing) }}
+
+{{- if  (has "linux" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name:  {{ include "appdynamics-otel-collector.sidecar.fullname" .}}
+spec:
+{{- include "appdynamics-otel-collector.sidecar.linux.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+---
+
+{{- if (has "windows" .Values.os) }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name:  {{ include "appdynamics-otel-collector.sidecar.windows.fullname" .}}
+spec:
+{{- include "appdynamics-otel-collector.sidecar.windows.spec" . | nindent 2 }}
+{{- if .Values.status }}
+status:
+{{- .Values.status | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}

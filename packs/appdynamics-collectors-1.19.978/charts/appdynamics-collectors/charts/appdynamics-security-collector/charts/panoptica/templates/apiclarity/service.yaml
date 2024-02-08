@@ -1,0 +1,41 @@
+{{- if .Values.global.isAPISecurityEnabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apiclarity.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "apiclarity.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: http-trace-server
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    - name: https-trace-server
+      port: 9443
+      protocol: TCP
+      targetPort: 9443
+    - name: http-backend
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: https-backend
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: http-trace-sampling-manager-server
+      port: 9990
+      protocol: TCP
+      targetPort: 9990
+    - name: grpc-trace-sampling-manager-server
+      port: 9991
+      protocol: TCP
+      targetPort: 9991
+    - name: healthz
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+  selector:
+    {{- include "apiclarity.selectorLabels" . | nindent 4 }}
+{{- end }}
