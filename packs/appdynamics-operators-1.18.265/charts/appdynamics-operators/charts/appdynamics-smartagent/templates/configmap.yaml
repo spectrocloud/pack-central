@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "appdynamics-smartagent.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appdynamics-smartagent.labels" . | nindent 4 }}
+data:
+  {{- if contains "localhost" .Values.solution.endpoint }}
+  SERVICE_URL: "{{ .Values.solution.endpoint | required ".Values.solution.endpoint is required for a functional template" }}"
+  {{- else }}
+  SERVICE_URL: "{{ .Values.solution.endpoint | required ".Values.solution.endpoint is required for a functional template" }}{{ .Values.serviceAPIExtension }}"
+  OAUTH_ID: {{ .Values.oauth.clientId | required ".Values.oauth.clientId is required for a functional template" | quote }}
+  OAUTH_URL: {{ .Values.oauth.tokenUrl | required ".Values.oauth.tokenUrl is required for a functional template" | quote }}
+  OAUTH_TENANT_ID: {{ .Values.oauth.tenantId | required ".Values.oauth.tenantId is required for a functional template" | quote }}
+  OAUTH_SCOPES: {{ .Values.oauth.scopes | quote }}
+  INSECURE: {{ default true .Values.tls.insecure | quote }}
+  CA_FILE: {{ .Values.tls.caFile | quote }}
+  CERT_FILE: {{ .Values.tls.certFile | quote }}
+  KEY_FILE: {{ .Values.tls.keyFile | quote }}
+  {{- end }}
+
+  AGENT_TYPE: {{ .Values.agent.type | required ".Values.agent.type is required for a functional template" }}
+  AGENT_NAMESPACE: {{ .Values.agent.namespace | required ".Values.agent.namespace is required for a functional template" }}
+
+  AGENT_NAME: {{ .Release.Name | required ".Release.Name is required for a functional template" }}
+
+  K8S_CLUSTER_NAME: {{ .Values.global.clusterName | required ".Values.global.clusterName is required for a functional template"}}
+
+  K8S_DEPLOYMENT_NAME: {{ include "appdynamics-smartagent.fullname" . }}
+
+  # Go Proxy Configuration https://pkg.go.dev/golang.org/x/net/http/httpproxy
+  HTTP_PROXY: {{ .Values.proxy.httpProxy | quote }}
+  HTTPS_PROXY: {{ .Values.proxy.httpsProxy | quote }}
+  NO_PROXY: {{ .Values.proxy.noProxy | quote }}
+
+  IMAGE_REGISTRY: {{ .Values.image.registry | quote }}

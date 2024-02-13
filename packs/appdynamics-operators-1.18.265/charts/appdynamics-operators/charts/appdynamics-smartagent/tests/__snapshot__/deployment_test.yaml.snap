@@ -1,0 +1,50 @@
+should pass all kinds of assertion:
+  1: |
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: fso-agent
+        app.kubernetes.io/name: appdynamics-smartagent
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/instance: fso-agent
+          app.kubernetes.io/name: appdynamics-smartagent
+      spec:
+        containers:
+          - env:
+              - name: K8S_NAMESPACE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: K8S_POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              - name: K8S_CLUSTER_ID
+                value: clusterID-test
+              - name: K8S_NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+            envFrom:
+              - configMapRef:
+                  name: fso-agent-appdynamics-smartagent
+              - secretRef:
+                  name: fso-agent-appdynamics-smartagent
+            image: appdynamics/apache:latest
+            imagePullPolicy: Always
+            name: appdynamics-smartagent
+            resources:
+              limits:
+                cpu: 200m
+                memory: 256Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            securityContext: {}
+        nodeSelector:
+          kubernetes.io/os: linux
+        securityContext: {}
+        serviceAccountName: fso-agent
+        terminationGracePeriodSeconds: 30
