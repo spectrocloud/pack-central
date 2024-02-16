@@ -1,0 +1,69 @@
+global:
+  clusterName: ""
+  tls:
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+enabled: false
+nameOverride: ""
+
+log:
+  console: false
+  # possible values: { error | warning | info | debug | trace }
+  level: warning
+
+kernelCollector:
+  enabled: true
+  image: otel/opentelemetry-ebpf-kernel-collector:v0.10.0
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  nodeSelector: {}
+
+  serviceAccount:
+    create: false
+    name: ""
+
+  tolerations:
+  - operator: "Exists"
+    effect: "NoExecute"
+  - operator: "Exists"
+    effect: "NoSchedule"
+
+  affinity: {}
+  resources: {}
+
+k8sCollector:
+  enabled: true
+  relay:
+    image: otel/opentelemetry-ebpf-k8s-relay:v0.10.0
+    imagePullPolicy: Always
+  watcher:
+    image: otel/opentelemetry-ebpf-k8s-watcher:v0.10.0
+    imagePullPolicy: Always
+  imagePullSecrets: []
+  serviceAccount:
+    create: false
+    name: ""
+
+reducer:
+  ingestShards: 1
+  matchingShards: 1
+  aggregationShards: 1
+  disableMetrics:
+  - ebpf_net.all
+  enableMetrics: []
+  telemetryPort: 7000
+  image: otel/opentelemetry-ebpf-reducer:v0.10.0
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+rbac:
+  create: true

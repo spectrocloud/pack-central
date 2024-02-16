@@ -1,0 +1,17 @@
+# required 
+endpoint: "https://data.appdynamics.com"
+# Dummy values for oauth2 is required. This is a test example to disable oauth2, do NOT use it in production.
+clientId: "dummy"
+clientSecret: "dummy"
+tokenUrl: "dummy"
+  
+configOverride:
+  # remove auth field from otlp exporter
+  exporters:
+    otlphttp:
+      auth: null
+  # to disbale oauth2 remove from service section. The below is the default.
+  # service:
+  #   extensions: [health_check, oauth2client]
+  service:
+    extensions: [health_check]

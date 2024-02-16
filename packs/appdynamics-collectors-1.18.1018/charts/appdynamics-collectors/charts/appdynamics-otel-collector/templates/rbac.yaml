@@ -1,0 +1,33 @@
+{{ if and .Values.rbac.create .Values.install }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "appdynamics-otel-collector.fullname" . }}-clusterrole
+  labels:
+    {{- include "appdynamics-otel-collector.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+{{- with .Values.rbac.rules }}
+rules:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "appdynamics-otel-collector.fullname" . }}-clusterrolebinding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appdynamics-otel-collector.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "appdynamics-otel-collector.fullname" . }}-clusterrole
+subjects:
+  - kind: ServiceAccount
+    {{- with $spec := include "appdynamics-otel-collector.valueServiceAccount" . | fromYaml }}
+    name: {{ index $spec "serviceAccount" }}
+    {{- end}}
+    namespace: {{ .Release.Namespace }}
+
+{{ end }}
