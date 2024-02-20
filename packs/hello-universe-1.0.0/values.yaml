@@ -1,0 +1,10 @@
+pack:
+  # The namespace (on the target cluster) in which the pack will be deployed.
+  # When the namespace is not found, a new namespace will be created with the name specified.
+  namespace: "hello-universe"
+
+manifests:
+  hello-universe:
+    registry: ghcr.io
+    repository: spectrocloud/hello-universe
+    tag: 1.1.1
