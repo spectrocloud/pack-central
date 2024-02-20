@@ -5,6 +5,7 @@ pack:
 
 manifests:
   hello-universe:
-    registry: ghcr.io
-    repository: spectrocloud/hello-universe
-    tag: 1.1.1
+    image:
+      registry: ghcr.io
+      repository: spectrocloud/hello-universe
+      tag: 1.1.1
