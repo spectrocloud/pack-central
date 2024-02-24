@@ -8,18 +8,20 @@
 
 - A cluster profile where the Hello Universe pack can be integrated.
 
-- A Palette cluster with port `:8080` available.
+- A Palette cluster with port `:8080` available. If port 8080 is not available, you can set a different port in the **values.yaml** file.
+
+- Ensure sufficient CPU resources within the cluster to allocate a minimum of 100 milliCPU and a maximum of 200 milliCPU per replica.
 
 ## Parameters
 
 The following parameters are applied to the **hello-universe.yaml** manifest through the **values.yaml** file. Users do not need to take any additional actions regarding these parameters.
 
-| **Parameter**         | **Description**                                                                                        | **Default Value**             | **Required** |
-| --------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------- | ------------ |
-| `pack.namespace`      | The namespace in which the pack will be deployed. If the namespace does not exist, it will be created. | `hello-universe`              | No           |
-| `manifest.registry`   | The registry that hosts the application image.                                                         | `ghcr.io`                     | No           |
-| `manifest.repository` | The repository that stores the application image.                                                      | `spectrocloud/hello-universe` | No           |
-| `manifest.tag`        | The image tag that specifies the application version.                                                  | `1.1.1`                       | No           |
+| **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
+| --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
+| `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | No           |
+| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.1` | No           |
+| `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | No           |
+| `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | No           |
 
 ## Usage
 

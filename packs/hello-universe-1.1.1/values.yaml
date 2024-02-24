@@ -1,0 +1,12 @@
+pack:
+  content:
+    images:
+      - image: ghcr.io/spectrocloud/hello-universe:1.1.1
+
+manifests:
+  hello-universe:
+    images:
+      hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.1 # The hellouniverse key cannot contain -.
+    namespace: "hello-universe"
+    port: 8080
+    replicas: 1
