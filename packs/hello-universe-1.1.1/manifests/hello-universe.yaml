@@ -41,5 +41,7 @@ spec:
           resources:
             requests:
               cpu: "100m" # requesting 100 milliCPU
+              memory: "512Mi" # requesting 512 MiB of memory
             limits:
               cpu: "200m" # limiting to 200 milliCPU
+              memory: "1024Mi" # requesting 1024 MiB of memory
