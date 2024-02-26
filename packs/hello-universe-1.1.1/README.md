@@ -1,6 +1,6 @@
 # Hello Universe
 
-[Hello Universe](https://github.com/spectrocloud/hello-universe) is a demo web application utilized to help users learn more about [Palette](https://docs.spectrocloud.com/introduction) and its features. It functions as a standalone front-end application and provides users with a local click counter and funny SpectroCloud-themed images.
+[Hello Universe](https://github.com/spectrocloud/hello-universe) is a demo web application utilized to help users learn more about [Palette](https://docs.spectrocloud.com/introduction) and its features. It functions as a standalone front-end application and provides users with a local click counter and funny Spectro Cloud-themed images.
 
 ## Prerequisites
 
