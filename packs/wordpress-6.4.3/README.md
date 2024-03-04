@@ -1,7 +1,7 @@
 # Title <!-- It must be the pack’s name -->
 
 <!-- A brief overview of the application or service the pack provides. -->
-Wordpress-6.4.3
+
 WordPress is the world's most popular blogging and content management platform. Powerful yet simple, everyone from students to global corporations use it to build beautiful, functional websites.
 
 ## Prerequisites
