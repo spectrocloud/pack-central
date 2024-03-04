@@ -1,0 +1,18 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "charts": [
+    "charts/wordpress-19.4.3.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "WordPress",
+  "layer":"addon",
+  "name": "wordpress-chart",
+  "version": "6.4.3"
+}
