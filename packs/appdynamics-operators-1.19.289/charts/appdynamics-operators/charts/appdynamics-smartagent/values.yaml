@@ -1,0 +1,154 @@
+# Default values for appdynamics-smartagent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  clusterId: ""
+  clusterName: "appdynamics"
+
+image:
+  registry: appdynamics
+  repository: appdynamics-smartagent
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "24.2.0-1529"
+
+serviceAPIExtension: "/rest/agent/service"
+
+clusterRole:
+  - apiGroup: [ "" ]
+    resources:  [
+      configmaps,
+      secrets,
+      pods,
+      pods/logs,
+      pods/status,
+      namespaces,
+      serviceaccounts,
+      services,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+  - apiGroup: [ rbac.authorization.k8s.io ]
+    resources:  [
+      rolebindings,
+      roles,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+  - apiGroup: [ rbac.authorization.k8s.io ]
+    resources:  [
+      roles,
+    ]
+    verbs: [
+      bind,
+    ]
+    resourceNames: [
+      admin,
+      edit,
+      view,
+    ]
+  - apiGroup: [
+      apps,
+      extensions,
+    ]
+    resources:  [
+      deployments,
+      deployments/status,
+      replicasets,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "appd-smartagent"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+
+solution:
+  endpoint: ""
+
+oauth:
+  clientId: ""
+  clientSecret: ""
+  tokenUrl: ""
+  tenantId: ""
+  scopes: ""
+  clientSecretEnvVar: {}
+
+tls:
+  insecure: true
+  caFile: ""
+  certFile: ""
+  keyFile: ""
+
+agent:
+  type: "smartagent"
+  namespace: "agent"
+
+proxy:
+  httpProxy: ""
+  httpsProxy: ""
+  noProxy: ""
