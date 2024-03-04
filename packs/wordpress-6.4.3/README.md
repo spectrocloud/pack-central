@@ -105,7 +105,12 @@ You can use a table to list parameters with a **Parameter** and a **Description*
 
 > [!CAUTION]
 > Call-out notes must follow the GitHub Flavored Markdown syntax. -->
+User can set "wordpress-chart.charts.wordpress.wordpressPassword" and "wordpress-chart.charts.wordpress.wordpressUsername" as per the need before deploying the addon pack. Similarly make the changes in the Mariadb paramenters
 
+After the pack comes up running. you can access the wordpress app using the External Ip assigned to the service.
+To login to the wordpress admin console one must use the URL '"http/https"://{ExternalIP}/admin'
+
+User can create more users from the admin console settings.
 
 ## References
 
