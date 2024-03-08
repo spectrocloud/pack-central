@@ -7,7 +7,7 @@ WordPress is the world's most popular blogging and content management platform. 
 ## Prerequisites
 
 <!-- List the required software version or hardware the user is required to have installed and available in order to integrate the pack. -->
-- Kubernetes 1.23+
+- Kubernetes 1.25+
 
 ## Parameters
 
