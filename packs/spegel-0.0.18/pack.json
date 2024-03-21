@@ -1,0 +1,14 @@
+{
+  "addonType":"registry",
+  "annotations": {},
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Spegel",
+  "charts": [
+    "charts/spegel-0.0.18.tgz"
+  ],
+  "layer": "addon",
+  "name": "spegel",
+  "version": "0.0.18"
+}
