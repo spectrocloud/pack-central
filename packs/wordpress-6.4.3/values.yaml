@@ -10,6 +10,9 @@ pack:
       - repo: https://github.com/bitnami/charts/tree/main/bitnami/wordpress
         name: wordpress
         version: 19.4.3
+      - repo: https://charts.bitnami.com/wordpress
+        name: wordpress
+        version: 19.4.3
   namespace: "wordpress"
   
 charts:
