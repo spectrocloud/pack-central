@@ -7,7 +7,7 @@ pack:
       - image: docker.io/bitnami/memcached:1.6.24-debian-12-r0
       - image: docker.io/bitnami/wordpress:6.4.3-debian-12-r16
     charts:
-      - repo: https://github.com/bitnami/charts/tree/main/bitnami/wordpress
+      - repo: https://charts.bitnami.com/wordpress
         name: wordpress
         version: 19.4.3
   namespace: "wordpress"
