@@ -1,0 +1,4 @@
+To verify that unctl has started, run:
+
+  kubectl --namespace={{ .Release.Namespace }} get pods -l "app={{ template "unctl.name" . }},release={{ .Release.Name }}"
+

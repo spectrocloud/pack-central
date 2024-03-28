@@ -1,0 +1,76 @@
+pack:
+  # The namespace (on the target cluster) to install this chart
+  # When not found, a new namespace will be created
+  namespace: "monitoring"
+  
+  content:
+    images:
+      - image: public.ecr.aws/unskript/unctl:1.0.0
+      - image: public.ecr.aws/unskript/unctl-frontend:1.0.0
+
+charts:
+  frontend: 
+    # defines whether it should contains frontend application
+    enabled: true
+
+  service:
+    # defines whether it should create service
+    enabled: true
+    # defines whether service should be a loadbalancer
+    loadbalancer: true
+    # port exposed in service
+    port: 8000
+
+  # By default checks will run at 12 AM every day
+  schedule: "0 0 * * *"
+
+  # value in days to prevent disk space build up for embedded DB
+  # by deafult it will use 7 days
+  retention_period: 7
+
+  # Defaults to .Chart.Name
+  nameOverride: ""
+  # Defaults to .Release.Name-.Chart.Name
+  fullnameOverride: ""
+
+  image:
+    registry: public.ecr.aws
+    api: unskript/unctl
+    frontend: unskript/unctl-frontend
+    tag: 1.0.0
+    pullPolicy: Always
+
+  rbac:
+    # If true, create & use RBAC resources
+    create: true
+
+  serviceAccount:
+    # Specifies whether a ServiceAccount should be created
+    create: true
+    # The name of the ServiceAccount to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name:
+
+  resources: {}
+  #   limits:
+  #     cpu: 100m
+  #     memory: 300Mi
+  #   requests:
+  #     cpu: 100m
+  #     memory: 300Mi
+
+  # Affinity for pod assignment
+  # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # affinity: {}
+
+  # Tolerations for pod assignment
+  # Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+
+  # Node labels for pod assignment
+  # Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  replicaCount: 1

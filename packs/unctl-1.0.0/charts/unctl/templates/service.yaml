@@ -1,0 +1,21 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ template "unctl.name" . }}
+    chart: {{ template "unctl.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "unctl.fullname" . }}
+spec:
+  {{- if .Values.service.loadbalancer }}
+  type: LoadBalancer
+  {{- end }}
+  selector:
+    app: {{ template "unctl.name" . }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ if .Values.frontend.enabled }}http{{ else }}api{{ end }}
+{{- end}}
