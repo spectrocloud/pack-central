@@ -1,0 +1,677 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "Values",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "description": "The name for cluster where the collectors and target allocator are deployed, required when enablePrometheus set to true",
+          "type": "string"
+        },
+        "clusterId": {
+          "description": "The uid of kube-system namespace, required when helm lookup is not supported and enablePrometheus/selfTelemetry is set to true",
+          "type": "string"
+        }
+      }
+    },
+    "install": {
+      "description": "Install flag for Otel, 'true' will install/upgrade it, 'false' will not install/uninstall it",
+      "type": "boolean"
+    },
+    "nameOverride": {
+      "description": "Override name of the chart used in Kubernetes object names.",
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "description": "Override fully qualified app name.",
+      "type": "string"
+    },
+    "clientId": {
+      "description": "AppDynamics oauth2 client id",
+      "type": "string"
+    },
+    "clientSecret": {
+      "description": "AppDynamics oauth2 client secret plain text.",
+      "type": ["string"]
+    },
+    "clientSecretEnvVar": {
+      "description": "AppDynamics oauth2 client secret environment variable.",
+      "type": ["object"]
+    },
+    "clientSecretVolume": {
+      "description": "AppDynamics oauth2 client secret volume.",
+      "type": ["object"]
+    },
+    "tenantId": {
+      "description": "Tenant id, if not provided, the chart will try to extract the tenantId from tokenUrl.",
+      "type": ["string"]
+    },
+    "tokenUrl": {
+      "description": "AppDynamics oauth2 token refreshurl",
+      "type": "string"
+    },
+    "endpoint": {
+      "description": "AppDynamics otlp endpoint url",
+      "type": "string"
+    },
+    "spec": {
+      "type": "object",
+      "description": "The spec section of OpenTelemetry Operator. Refer to https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec for possible properties"
+    },
+    "traceContextPropagation": {
+      "type": "boolean",
+      "description": "to enable/disbale traceparent header propagation for export requests made by collector."
+    },
+    "status": {
+      "type": "object",
+      "description": "The status section of OpenTelemetry Operator. Refer to https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorstatus for possible properties"
+    },
+    "config": {
+      "description": "OpenTelemetry Collector Configuration. It is the recommended way to set the collector config. If spec.config is set, this property won't take effect. Refer to the OpenTelemetry Collector documentation for details.",
+      "type": "object"
+    },
+    "configOverride": {
+      "description": "Any additional OpenTelemetry Collector Configuration for the enabled configuration. We can also use this field to remove/add new components to the pipelines",
+      "type": "object"
+    },
+    "sendChartInfo": {
+      "description": "sendChartInfo when set to true, will add the chart name and version to the http headers for sending to AppDynamics Cloud for debugging purpose. It is false by default",
+      "type": "boolean"
+    },
+    "serviceAccount": {
+      "description": "ServiceAccount applied by this chart, disable it by setting create to false.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "annotations": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "create"
+      ]
+    },
+    "service": {
+      "description": "service expose collector for external traffics.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer",
+            "ExternalName"
+          ]
+        },
+        "ports": {
+          "type": "array"
+        },
+        "clusterIP": {
+          "type": "string"
+        }
+      }
+    },
+    "rbac": {
+      "description": "RBAC rules associated with the service account. If created, a Role will be created and bind with the collector service account",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "type": "array"
+        },
+        "create": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "create"
+      ]
+    },
+    "selfTelemetry": {
+      "description": "Open telemetry collector metrics",
+      "type": "boolean"
+    },
+    "selfTelemetryServiceName": {
+      "description": "Open telemetry collector service name",
+      "type": "string"
+    },
+    "selfTelemetryServiceNamespace": {
+      "description": "Open telemetry collector service namespace",
+      "type": "string"
+    },
+    "enablePrometheus": {
+      "description": "Enable the prometheus related deployment, it will deploy a target allocator and change collector replica mode to be statfulset.",
+      "type": "boolean"
+    },
+    "setPodUID":{
+      "description": "setPodUID when set to true will set pod uid to the collector self-telemetry resrouce.",
+      "type": "boolean"
+    },    
+    "targetAllocatorServiceAccount": {
+      "description": "ServiceAccount for target allocator, only enable when enablePrometheus equals true, disable it by setting create to false.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "annotations": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "create"
+      ]      
+    },
+    "os": {
+      "description": "Choose the os type for otel collector to run, useful when the cluster has mixed os types.",
+      "type": "array"
+    },     
+    "env":{
+      "description": "os specific otel collector spec.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "linux": {
+          "type": "object",
+          "description": "The spec and configuration override objects for Linux deployments of the Cisco AppDynamics Distribution of OpenTelemetry Collector. It will overrides the configs from mode.statefulset and mode.daemonset",
+          "additionalProperties": false,
+          "properties": {
+            "spec": {
+              "type": "object",
+              "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+            },
+            "configOverride": {
+              "type": "object",
+              "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+            },
+            "mode": {
+              "type": "object",
+              "description": "The spec and configuration override objects for the Linux deployment modes of the Cisco AppDynamics Distribution of OpenTelemetry Collector.",
+              "properties": {
+                "daemonset": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "spec": {
+                      "type": "object",
+                      "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+                    },
+                    "configOverride": {
+                      "type": "object",
+                      "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+                    }
+                  }
+                },
+                "statefulset": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "spec": {
+                      "type": "object",
+                      "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+                    },
+                    "configOverride": {
+                      "type": "object",
+                      "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "windows": {
+          "type": "object",
+          "description": "The spec and configuration override objects for Windows deployments of the Cisco AppDynamics Distribution of OpenTelemetry Collector. It will overrides the configs from mode.statefulset and mode.daemonset",
+          "additionalProperties": false,
+          "properties": {
+            "spec": {
+              "type": "object",
+              "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+            },
+            "configOverride": {
+              "type": "object",
+              "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+            },
+            "mode": {
+              "type": "object",
+              "description": "The spec and configuration override objects for the Windows deployment modes of the Cisco AppDynamics Distribution of OpenTelemetry Collector.",
+              "properties": {
+                "daemonset": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "spec": {
+                      "type": "object",
+                      "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+                    },
+                    "configOverride": {
+                      "type": "object",
+                      "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+                    }
+                  }
+                },
+                "statefulset": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "spec": {
+                      "type": "object",
+                      "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+                    },
+                    "configOverride": {
+                      "type": "object",
+                      "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "annotations":{
+      "description": "user provided annotations.",
+      "type": "object"
+    },
+    "labels":{
+      "description": "user provided labels.",
+      "type": "object"
+    },
+    "mode":{
+      "description": "spec and config override for different deployment modes",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "daemonset": {
+          "type": "object",
+          "description": "The spec and configuration override objects for DaemonSet deployments of the Cisco AppDynamics Distribution of OpenTelemetry Collector.",
+          "properties": {
+            "spec": {
+              "type": "object",
+              "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+            },
+            "configOverride": {
+              "type": "object",
+              "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+            }
+          }
+        },
+        "statefulset": {
+          "type": "object",
+          "description": "the spec and configuration override objects for StatefulSet deployments of the Cisco AppDynamics Distribution of OpenTelemetry Collector.",
+          "properties": {
+            "spec": {
+              "type": "object",
+              "description": "The desired state of the Cisco AppDynamics Distribution of OpenTelemetry Collector. For the full list of settings, see https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec"
+            },
+            "configOverride": {
+              "type": "object",
+              "description": "The configurations for the Cisco AppDynamics Distribution of OpenTelemetry Collector. This environment variable will override the default configurations provided by the Helm chart values. For detailed configurations, see https://opentelemetry.io/docs/collector/configuration/."
+            }
+          }
+        }
+      }
+    },
+    "enableFileLog":{
+      "description": "enable filelog receiver deployment.",
+      "type": "boolean"
+    },
+    "filelogReceiverConfig":{
+      "description": "filelogReceiverConfig specify configs for filelog receiver.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeLogsPath": {
+          "type": "array"
+        },
+        "excludeLogsPath": {
+          "type": "array"
+        },
+        "messageParserPattern": {
+          "type": "string"
+        },
+        "messageParserType": {
+          "type": "string"
+        }
+      }
+    },
+    "presets":{
+      "description": "presets specify a list of pre-configured fuctions.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "truncated": {
+          "description": "truncated specify max attributes value length.",
+          "type": "object",
+          "truncated": {
+            "description": "configurations to truncate attributes for OpenTelemetry signals.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "trace": {
+                "description": "configurations to truncate attributes for trace signal.",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "resource": {
+                    "description": "max length for trace resouce attribute",
+                    "type": "integer"
+                  },
+                  "scope": {
+                    "description": "max length for trace scope attribute",
+                    "type": "integer"
+                  },    
+                  "span": {
+                    "description": "max length for span attribute",
+                    "type": "integer"
+                  },  
+                  "spanevent": {
+                    "type": "integer"
+                  }  
+                }
+              },
+              "metric": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "resource": {
+                    "description": "max length for metric resouce attribute",
+                    "type": "integer"
+                  },
+                  "scope": {
+                    "description": "max length for trace scope attribute",
+                    "type": "integer"
+                  },    
+                  "datapoint": {
+                    "description": "max length for metric datapoint attribute",
+                    "type": "integer"
+                  } 
+                }
+              },
+              "log": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "resource": {
+                    "description": "max length for log resouce attribute",
+                    "type": "integer"
+                  },
+                  "scope": {
+                    "description": "max length for log scope attribute",
+                    "type": "integer"
+                  },    
+                  "log": {
+                    "description": "max length for log attribute",
+                    "type": "integer"
+                  }
+                } 
+              }
+            }
+          }
+        },
+        "multi_tier": {
+          "description": "multi-tier configurations for different deployments of AppDynamics Distribution of OpenTelemetry Collector",
+          "type": "object",
+          "tailsampler": {
+            "description": "configurations for tail sampling collector",
+            "type": "object",
+            "properties": {
+              "enable": {
+                "description": "whether the tail sampling collector should be deployed, default false. Tail sampling collector will be deployed automatically when presets.tailsampler.enable set to true and this config will be ignored.",
+                "type": "boolean"
+              },
+              "os": {
+                "description": "The operating system that tail sampling collector should be deployed, [linux] by default. If you also want to deploy tail sampling collector to windows, you could change it to [linux, windows]",
+                "type": "array"
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "linux": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "spec": {
+                        "description": "The spec section of OpenTelemetry Operator. Refer to https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec for possible properties",
+                        "type": "object"
+                      },
+                      "configOverride": {
+                        "description": "Any additional OpenTelemetry Collector Configuration for the enabled configuration. We can also use this field to remove/add new components to the pipelines",
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "windows": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "spec": {
+                        "description": "The spec section of OpenTelemetry Operator. Refer to https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec for possible properties",
+                        "type": "object"
+                      },
+                      "configOverride": {
+                        "description": "Any additional OpenTelemetry Collector Configuration for the enabled configuration. We can also use this field to remove/add new components to the pipelines",
+                        "type": "object"
+                      }
+                    }                    
+                  }
+                }
+              },
+              "spec": {
+                "description": "The spec section of OpenTelemetry Operator. Refer to https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#opentelemetrycollectorspec for possible properties",
+                "type": "object"
+              },
+              "config": {
+                "description": "OpenTelemetry Collector Configuration. It is the recommended way to set the collector config. If spec.config is set, this property won't take effect. Refer to the OpenTelemetry Collector documentation for details.",
+                "type": "object"
+              },
+              "configOverride": {
+                "description": "Any additional OpenTelemetry Collector Configuration for the enabled configuration. We can also use this field to remove/add new components to the pipelines",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "presampler": {
+          "description": "presampler config",
+          "type": "object"
+        },
+        "samplerDebug": {
+          "description": "samplerDebug config",
+          "type": "object"
+        },
+        "tailsampler": {
+          "description": "Configs for tail sampling",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "description": "Whether tail sampling should be used, default to false",
+              "type": "boolean"
+            },
+            "deploy_mode": {
+              "description": "How tail sampling should be deployed, for now only gateway_sampler is available, which means the default gateway_sampler will receive the trace and forward to tail sampling collector for sampling",
+              "type": "string"
+            },
+            "replicas": {
+              "description": "The number of tail sampling collector should be deployed.",
+              "type": "integer"
+            },
+            "service": {
+              "description": "The tail sampling collector service configs",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the tail sampling collector, default to be appdynamics-otel-collector-sampler-service",
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ClusterIP",
+                    "NodePort",
+                    "LoadBalancer",
+                    "ExternalName"
+                  ]
+                }, 
+                "ports": {
+                  "type": "array"
+                }
+              }
+            },
+            "pipeline": {
+              "description": "The trace processor pipeline for the tail sampling collector, this is where the user can drop or add a certain sampler",
+              "type": "array"
+            },
+            "trace_classification_and_sampling": {
+              "description": "Configs for trace_classification_and_sampling processor.",
+              "type": "object",
+              "properties": {
+                "decision_wait": {
+                  "type": "string"
+                },
+                "policies": {
+                  "type": "array"
+                },
+                "samplers": {
+                  "type": "object",
+                  "properties": {
+                    "export_period": {
+                      "type": "string"
+                    },
+                    "consistent_reservoir_sampler": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "consistent_proportional_sampler": {
+              "description": "Configs for consistent_proportional_sampler processor",
+              "type": "object",
+              "properties": {
+                "export_period": {
+                  "type": "string"
+                },
+                "spans_per_period": {
+                  "type": "integer"
+                },
+                "exponential_smooth": {
+                  "type": "number"
+                },
+                "initial_estimate_rate": {
+                  "type": "integer"
+                }
+              }
+            },
+            "intermediate_sampler": {
+              "description": "Configs for intermediate_sampler processor",
+              "type": "object",
+              "properties": {
+                "export_period": {
+                  "type": "string"
+                },
+                "size_limit": {
+                  "type": "integer"
+                },
+                "size_limit_type": {
+                  "type": "string"
+                },
+                "initial_estimate_rate": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "selfTelemetry": {
+          "description": "self-telemetry config",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "exporters": {
+              "description": "exporters for self telemetry, default otlphttp: {}. By default self telemetry is sent with other metrics together to AppDynamics, the user may add or replace the exporters here to let the self telemetry be sent to other places. Note when a exporter with empty config need to be added, please use {} as value, for example logging: {} instead of logging: null or just logging: ",
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "disableOpamp": {
+      "description": "disable agent management extension communication. By setting this to true, the user can enable agent management extension without connecting it with the platform, the collector can still report self telemetry by setting agentManagementSelfTelemetry to true",
+      "type": "boolean"
+    },
+    "agentManagement": {
+      "description": "Enable agent management extension",
+      "type": "boolean"
+    },
+    "agentManagementSelfTelemetry": {
+      "description": "Enable agent management extension based self telemetry, it will report the same set of metrics by enabling selfTelemetry, but it will have different resource attribute and use different solution",
+      "type": "boolean"
+    },
+    "enableNetworkMonitoring": {
+      "description": "enable the Network Monitoring related receiver & processors",
+      "type": "boolean"
+    },
+    "enabled": {
+      "description": "",
+      "type": "boolean"
+    },
+    "customService": {
+      "description": "A custom service which its name and namespace can be configured for user application. Note that the default service name, i.e. appdynamics-otel-collector-service, is used by other AppDynamics collectors and shall not be changed",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enable" : {
+          "description": "Whether the custom service will be created, false by default",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "The name for the custom service",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "The namespace for the custom service",
+          "type": "string"
+        }
+      }
+    }
+  },  
+  "required": [
+    "clientId",
+    "tokenUrl",
+    "endpoint",
+    "install"
+  ],
+  "anyOf": [
+    {"required" : ["clientSecret"]},
+    {"required" : ["clientSecretEnvVar"]},
+    {"required" : ["clientSecretVolume"]}
+  ]
+}

@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 24.3.0-1528
+description: A Helm chart for installing otel auto instrumentation CRDs
+name: appdynamics-otel-instrumentation
+type: application
+version: 24.3.0-1528

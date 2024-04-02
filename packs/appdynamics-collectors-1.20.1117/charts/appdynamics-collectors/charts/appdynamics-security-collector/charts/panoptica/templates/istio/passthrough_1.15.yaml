@@ -1,0 +1,36 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+{{- if semverCompare "1.15 - 1.17" .Values.istio.global.version -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: passthrough-cluster-tls-1.15
+  namespace: istio-system
+  labels:
+    owner: {{ include "product.name" . }}
+spec:
+  configPatches:
+    - applyTo: CLUSTER
+      match:
+        proxy:
+          proxyVersion: '^1\.15.*'
+        context: ANY
+        cluster:
+          name: "PassthroughClusterTLS"
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: PassthroughClusterTLS
+          connect_timeout: 10s
+          type: ORIGINAL_DST
+          lb_policy: CLUSTER_PROVIDED
+          protocol_selection: "USE_DOWNSTREAM_PROTOCOL"
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+              common_tls_context:
+                validation_context:
+                  trusted_ca:
+                    filename: /etc/ssl/certs/ca-certificates.crt
+{{- end }}
+{{- end }}
