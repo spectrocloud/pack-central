@@ -1,0 +1,11 @@
+charts:
+  csm-operator:
+    namespace: dell-csm-operator
+
+    image:
+      repository: docker.io/dellemc/dell-csm-operator
+      pullPolicy: IfNotPresent
+      tag: "v1.5.0"
+
+    csm:
+      # Select a preset to populate the default configuration for your platform

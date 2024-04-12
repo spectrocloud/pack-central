@@ -1,0 +1,122 @@
+{{- if eq .Values.csm.type "powerstore" }}
+apiVersion: storage.dell.com/v1
+kind: ContainerStorageModule
+metadata:
+  name: powerstore
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  driver:
+    csiDriverType: "powerstore"
+    csiDriverSpec:
+      # fsGroupPolicy: Defines if the underlying volume supports changing ownership and permission of the volume before being mounted.
+      # Allowed values: ReadWriteOnceWithFSType, File , None
+      # Default value: ReadWriteOnceWithFSType
+      fSGroupPolicy: "{{ .Values.csm.config.driver.fSGroupPolicy }}"
+      # storageCapacity: Helps the scheduler to schedule the pod on a node satisfying the topology constraints, only if the requested capacity is available on the storage array
+      # Allowed values:
+      #   true: enable storage capacity tracking
+      #   false: disable storage capacity tracking
+      storageCapacity: {{ .Values.csm.config.driver.storageCapacity }}
+    # Config version for CSI PowerStore v2.10.0 driver
+    configVersion: "{{ include "csm-operator.powerstore" (dict "lookup" "driver-config") }}"
+    # authSecret: This is the secret used to validate the default PowerStore secret used for installation
+    # Allowed values: <metadataName specified in the Manifest>-config
+    # For example: If the metadataName is set to powerstore, authSecret value should be set to powerstore-config
+    authSecret: {{ default .Values.csm.config.driver.authSecret "powerstore-config" | quote }}
+    # Controller count
+    replicas: {{ .Values.csm.config.driver.replicas }}
+    dnsPolicy: {{ .Values.csm.config.driver.dnsPolicy }}
+    forceUpdate: {{ .Values.csm.config.driver.forceUpdate }}
+    forceRemoveDriver: {{ .Values.csm.config.driver.forceRemoveDriver }}
+    common:
+      # Image for CSI PowerStore driver v2.10.0
+      image: "dellemc/csi-powerstore:{{ include "csm-operator.powerstore" (dict "lookup" "driver-image") }}"
+      imagePullPolicy: IfNotPresent
+      envs:
+{{ toYaml .Values.csm.config.driver.envs | indent 8 }}
+
+    sideCars:
+{{ toYaml .Values.csm.config.driver.sideCars | indent 6 }}
+
+    controller:
+      envs:
+{{ toYaml .Values.csm.config.controller.envs | indent 8 }}
+
+      # nodeSelector: Define node selection constraints for controller pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.controller.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations for the controllers, if required.
+      # Leave as blank to install controller on worker nodes
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.controller.tolerations | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      # - key: "node-role.kubernetes.io/control-plane"
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+    node:
+      envs:
+{{ toYaml .Values.csm.config.node.envs | indent 8 }}
+
+      # nodeSelector: Define node selection constraints for node pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.node.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations for the controllers, if required.
+      # Leave as blank to install controller on worker nodes
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.node.tolerations | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      # - key: "node-role.kubernetes.io/control-plane"
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+  
+  modules:
+    - name: resiliency
+      # enabled: Enable/Disable Resiliency feature
+      # Allowed values:
+      #   true: enable Resiliency feature(deploy podmon sidecar)
+      #   false: disable Resiliency feature(do not deploy podmon sidecar)
+      # Default value: false
+      enabled: {{ .Values.csm.config.modules.resiliency.enabled }}
+      configVersion: "{{ include "csm-operator.powerstore" (dict "lookup" "module-resiliency-config") }}"
+      components:
+        - name: podmon-controller
+          image: "dellemc/podmon:{{ include "csm-operator.powerstore" (dict "lookup" "module-resiliency-image-podmon") }}"
+          imagePullPolicy: IfNotPresent
+          args:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonController.args | indent 12 }}
+            # Below 4 args should not be modified.
+            - "--csisock=unix:/var/run/csi/csi.sock"
+            - "--mode=controller"
+            - "--driver-config-params=/powerstore-config-params/driver-config-params.yaml"
+            - "--driverPath=csi-powerstore.dellemc.com"
+        - name: podmon-node
+          image: "dellemc/podmon:{{ include "csm-operator.powerstore" (dict "lookup" "module-resiliency-image-podmon") }}"
+          imagePullPolicy: IfNotPresent
+          envs:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonNode.envs | indent 12 }}
+          args:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonNode.args | indent 12 }}
+            # Below 4 args should not be modified.
+            - "--csisock=unix:/var/lib/kubelet/plugins/csi-powerstore.dellemc.com/csi_sock"
+            - "--mode=node"
+            - "--driver-config-params=/powerstore-config-params/driver-config-params.yaml"
+            - "--driverPath=csi-powerstore.dellemc.com"
+{{- end }}

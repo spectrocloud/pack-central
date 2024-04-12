@@ -1,0 +1,277 @@
+namespace: dell-csm-operator
+
+image:
+  repository: docker.io/dellemc/dell-csm-operator
+  pullPolicy: IfNotPresent
+  tag: "v1.5.0"
+
+csm:
+  # Select a preset to populate the default configuration for your platform
+  namespace: powerstore
+
+  type: powerstore
+  version: v2.10.0
+
+  config:
+    driver:
+      # fsGroupPolicy: Defines if the underlying volume supports changing ownership and permission of the volume before being mounted.
+      # Allowed values: ReadWriteOnceWithFSType, File , None
+      # Default value: ReadWriteOnceWithFSType
+      fSGroupPolicy: "File"
+      # storageCapacity: Helps the scheduler to schedule the pod on a node satisfying the topology constraints, only if the requested capacity is available on the storage array
+      # Allowed values:
+      #   true: enable storage capacity tracking
+      #   false: disable storage capacity tracking
+      storageCapacity: true
+      replicas: 2
+      dnsPolicy: ClusterFirstWithHostNet
+      forceUpdate: false
+      forceRemoveDriver: true
+      # To specify a different credentials secret than the default, set the authSecret value.
+      # authSecret: name-of-secret
+      envs:
+        - name: X_CSI_POWERSTORE_NODE_NAME_PREFIX
+          value: "csi-node"
+        - name: X_CSI_FC_PORTS_FILTER_FILE_PATH
+          value: "/etc/fc-ports-filter"
+        # Specify kubelet config dir path.
+        # Ensure that the config.yaml file is present at this path.
+        # Default value: /var/lib/kubelet
+        - name: KUBELET_CONFIG_DIR
+          value: /var/lib/kubelet
+        - name: CSI_LOG_LEVEL
+          value: debug
+      sideCars:
+      # 'csivol' represents a string prepended to each volume created by the CSI driver
+      - name: provisioner
+        image: registry.k8s.io/sig-storage/csi-provisioner:v4.0.0
+        args: ["--volume-name-prefix=csivol"]
+      - name: attacher
+        image: registry.k8s.io/sig-storage/csi-attacher:v4.5.0
+      - name: registrar
+        image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0
+      - name: resizer
+        image: registry.k8s.io/sig-storage/csi-resizer:v1.10.0
+      - name: snapshotter
+        image: registry.k8s.io/sig-storage/csi-snapshotter:v7.0.1
+      - name: csi-metadata-retriever
+        image: dellemc/csi-metadata-retriever:v1.7.2
+
+      # health monitor is disabled by default, refer to driver documentation before enabling it
+      - name: external-health-monitor
+        enabled: false
+        args: ["--monitor-interval=60s"]
+        image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.11.0
+      # Uncomment the following to configure how often external-provisioner polls the driver to detect changed capacity
+      # Configure only when the storageCapacity is set as "true"
+      # Allowed values: 1m,2m,3m,...,10m,...,60m etc. Default value: 5m
+      #- name: provisioner
+      #  args: ["--capacity-poll-interval=5m"]
+
+    controller:
+      envs:
+        # X_CSI_NFS_ACLS: enables setting permissions on NFS mount directory
+        # This value will be the default value if a storage class and array config in secret
+        # do not contain the NFS ACL (nfsAcls) parameter specified
+        # Permissions can be specified in two formats:
+        #   1) Unix mode (NFSv3)
+        #   2) NFSv4 ACLs (NFSv4)
+        #      NFSv4 ACLs are supported on NFSv4 share only.
+        # Allowed values:
+        #   1) Unix mode: valid octal mode number
+        #      Examples: "0777", "777", "0755"
+        #   2) NFSv4 acls: valid NFSv4 acls, seperated by comma
+        #      Examples: "A::OWNER@:RWX,A::GROUP@:RWX", "A::OWNER@:rxtncy"
+        # Optional: true
+        # Default value: "0777"
+        # nfsAcls: "0777"
+        - name: X_CSI_NFS_ACLS
+          value: "0777"
+        # X_CSI_HEALTH_MONITOR_ENABLED: Enable/Disable health monitor of CSI volumes from Controller plugin - volume condition.
+        # Install the 'external-health-monitor' sidecar accordingly.
+        # Allowed values:
+        #   true: enable checking of health condition of CSI volumes
+        #   false: disable checking of health condition of CSI volumes
+        # Default value: false
+        - name: X_CSI_HEALTH_MONITOR_ENABLED
+          value: "false"
+        # X_CSI_POWERSTORE_EXTERNAL_ACCESS: Allows to specify additional entries for hostAccess of NFS volumes. Both single IP address and subnet are valid entries.
+        # Allowed Values: x.x.x.x/xx or x.x.x.x
+        # Default Value: 
+        - name: X_CSI_POWERSTORE_EXTERNAL_ACCESS
+          value: 
+
+      # nodeSelector: Define node selection constraints for controller pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations for the controllers, if required.
+      # Leave as blank to install controller on worker nodes
+      # Default value: None
+      tolerations:
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      # - key: "node-role.kubernetes.io/control-plane"
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+
+    node:
+      envs:
+        # Set to "true" to enable ISCSI CHAP Authentication
+        # CHAP password will be autogenerated by driver
+        - name: "X_CSI_POWERSTORE_ENABLE_CHAP"
+          value: "false"
+        # X_CSI_HEALTH_MONITOR_ENABLED: Enable/Disable health monitor of CSI volumes from node plugin - volume usage
+        # Allowed values:
+        #   true: enable checking of health condition of CSI volumes
+        #   false: disable checking of health condition of CSI volumes
+        # Default value: false
+        - name: X_CSI_HEALTH_MONITOR_ENABLED
+          value: "false"
+        # X_CSI_POWERSTORE_MAX_VOLUMES_PER_NODE: Defines the maximum PowerStore volumes that can be created per node
+        # Allowed values: Any value greater than or equal to 0
+        # Default value: "0"
+        - name: X_CSI_POWERSTORE_MAX_VOLUMES_PER_NODE
+          value: "0"
+
+      # nodeSelector: Define node selection constraints for node pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations for the controllers, if required.
+      # Leave as blank to install controller on worker nodes
+      # Default value: None
+      tolerations:
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      # - key: "node-role.kubernetes.io/control-plane"
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+
+    modules:
+      resiliency:
+        enabled: false
+        podmonController:
+          args:
+            - "--labelvalue=csi-powerstore"
+            - "--arrayConnectivityPollRate=60"
+            - "--skipArrayConnectionValidation=false"
+            - "--driverPodLabelValue=dell-storage"
+            - "--ignoreVolumelessPods=false"
+            - "--arrayConnectivityConnectionLossThreshold=3"
+        podmonNode:
+          args:
+            - "--labelvalue=csi-powerstore"
+            - "--arrayConnectivityPollRate=60"
+            - "--leaderelection=false"
+            - "--driverPodLabelValue=dell-storage"
+            - "--ignoreVolumelessPods=false"
+          envs:
+            # podmonAPIPort: Defines the port to be used within the kubernetes cluster
+            # Allowed values: Any valid and free port (string)
+            # Default value: 8083
+            - name: "X_CSI_PODMON_API_PORT"
+              value: "8083"
+
+    secret:
+      encoded: false # if set to true, provide a base64 encoded value instead
+      # Default secret names:
+      # PowerFlex:  vxflexos-config
+      # PowerMax:   powermax-creds
+      # PowerStore: powerstore-config
+      name: powerstore-config
+      value: |
+        arrays:
+          - endpoint: "https://10.0.0.1/api/rest"     # full URL path to the PowerStore API
+            globalID: "unique"                        # unique id of the PowerStore array
+            username: "user"                          # username for connecting to API
+            password: "password"                      # password for connecting to API
+            skipCertificateValidation: true           # indicates if client side validation of (management)server's certificate can be skipped
+            isDefault: true                           # treat current array as a default (would be used by storage classes without arrayID parameter)
+            blockProtocol: "auto"                     # what SCSI transport protocol use on node side (FC, ISCSI, NVMeTCP, NVMeFC, None, or auto)
+            nasName: "nas-server"                     # what NAS should be used for NFS volumes
+            nfsAcls: "0777"                           # (Optional) defines permissions - POSIX mode bits or NFSv4 ACLs, to be set on NFS target mount directory.
+                                                      # NFSv4 ACls are supported for NFSv4 shares on NFSv4 enabled NAS servers only. POSIX ACLs are not supported and only POSIX mode bits are supported for NFSv3 shares.
+      # Example value for encoded
+      # value: LSB1c2VybmFtZTogImFkbWluIgogIHBhc3N3b3JkOiAiUGFzc3dvcmQxMjMiCiAgc3lzdGVtSUQ6ICIyYjExYmIxM...
+
+storageclass:
+  name: powerstore
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  provisioner: csi-powerstore.dellemc.com
+  # reclaimPolicy: PVs that are dynamically created by a StorageClass will have the reclaim policy specified here
+  # Allowed values:
+  #   Reclaim: retain the PV after PVC deletion
+  #   Delete: delete the PV after PVC deletion
+  # Optional: true
+  # Default value: Delete
+  reclaimPolicy: Delete
+  # allowVolumeExpansion: allows the users to resize the volume by editing the corresponding PVC object
+  # Allowed values:
+  #   true: allow users to resize the PVC
+  #   false: does not allow users to resize the PVC
+  # Optional: true
+  # Default value: false
+  allowVolumeExpansion: true
+  parameters:
+    type: any
+    fstype: ext4
+  # volumeBindingMode determines how volume binding and dynamic provisioning should occur
+  # Allowed values: 
+  #  Immediate: volume binding and dynamic provisioning occurs once PVC is created
+  #  WaitForFirstConsumer: delay the binding and provisioning of PV until a pod using the PVC is created.
+  #  Optional: false
+  # Default value: WaitForFirstConsumer
+  volumeBindingMode: WaitForFirstConsumer
+
+snapshot-controller:
+  enabled: true
+  replicas: 2
+  # controller image and policies
+  image:
+    repository: registry.k8s.io/sig-storage/snapshot-controller
+    pullPolicy: IfNotPresent
+    tag: "v7.0.1"
+
+  # A list/array of extra args that should be used 
+  # when running the controller. Default args include log verbose level 
+  # and leader election
+  extraArgs: []
+
+  # snapshot webhook config
+  webhook:
+    # enable or disable the snapshot webhook 
+    enabled: true
+    # all below values take effect only if webhook is enabled
+
+    # webhook controller image and policies
+    image:
+      # change the image if you wish to use your own custom validation server image
+      repository: registry.k8s.io/sig-storage/snapshot-validation-webhook 
+      pullPolicy: IfNotPresent
+      tag: "v7.0.1"
+
+  # create a default volume snapshot class
+  volumeSnapshotClass:
+    create: true
+    name: "powerstore-snapshot-class"
+    driver: "csi-powerstore.dellemc.com"
+    # deletionPolicy determines whether a VolumeSnapshotContent created through
+    # the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted.
+    # Supported values are "Retain" and "Delete".
+    deletionPolicy: "Delete"
+    # params is a key-value map with storage driver specific parameters for creating snapshots.
+    params: {}
+    # key-value pair of extra labels to apply to the volumesnapshotclass
+    extraLabels: {}
