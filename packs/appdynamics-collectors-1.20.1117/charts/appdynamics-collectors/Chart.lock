@@ -1,0 +1,21 @@
+dependencies:
+- name: appdynamics-cloud-k8s-monitoring
+  repository: ""
+  version: 1.20.0
+- name: appdynamics-cloud-db-collector
+  repository: ""
+  version: 1.8.0
+- name: appdynamics-network-monitoring
+  repository: ""
+  version: 0.2.0
+- name: appdynamics-otel-collector
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 24.3.0-1521
+- name: appdynamics-security-collector
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 1.0.26
+- name: appdynamics-otel-instrumentation
+  repository: https://artifactory.bare.appdynamics.com/artifactory/appd-helm
+  version: 24.3.0-1528
+digest: sha256:90b401c8fe887c3e35e0649375a5822efc672ae9b7bbbcee46d87ae2a01d5cba
+generated: "2024-03-26T17:41:48.163437954Z"
