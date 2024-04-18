@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "appdynamics-smartagent.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "appdynamics-smartagent.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "appdynamics-smartagent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "appdynamics-smartagent.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "appdynamics-smartagent.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: K8S_NAMESPACE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if (lookup "v1" "Namespace" "" "kube-system").metadata }}
+            - name: K8S_CLUSTER_ID
+              value: {{ (lookup "v1" "Namespace" "" "kube-system").metadata.uid | required "Could not fetch kube-system uid to populate clusterID! "  }}
+            {{- else }}
+            - name: K8S_CLUSTER_ID
+              value: {{ .Values.global.clusterId | required "clusterId needs to be specified when kube-system metadata is not accessible!" }}
+            {{- end }}
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- if .Values.oauth.clientSecretEnvVar }}
+            - name: OAUTH_SECRET
+              {{- .Values.oauth.clientSecretEnvVar | toYaml | nindent 14}}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "appdynamics-smartagent.fullname" . }}
+            {{- if .Values.oauth.clientSecret }}
+            - secretRef:
+                name: {{ include "appdynamics-smartagent.fullname" . }}
+            {{- end }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
