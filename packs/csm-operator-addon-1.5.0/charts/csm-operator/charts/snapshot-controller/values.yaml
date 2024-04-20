@@ -1,0 +1,130 @@
+# Default values for snapshot-controller.
+# This is a YAML-formatted file.
+
+# no.of controller replicas to run
+replicas: 2
+
+# controller image and policies
+image:
+  repository: registry.k8s.io/sig-storage/snapshot-controller
+  pullPolicy: IfNotPresent
+  tag: "v7.0.1"
+
+# A list/array of extra args that should be used 
+# when running the controller. Default args include log verbose level 
+# and leader election
+extraArgs: []
+
+# snapshot webhook config
+webhook:
+  # enable or disable the snapshot webhook 
+  enabled: true
+  # all below values take effect only if webhook is enabled
+
+  # webhook controller image and policies
+  image:
+    # change the image if you wish to use your own custom validation server image
+    repository: registry.k8s.io/sig-storage/snapshot-validation-webhook
+    pullPolicy: IfNotPresent
+    tag: "v7.0.1"
+
+  tlsCertUpdaterImage:
+    repository: alpine
+    pullPolicy: IfNotPresent
+    tag: 3.11
+
+  validatingWebhook:
+    failurePolicy: Fail
+    timeoutSeconds: 2
+
+  # Validating webhook is exposed on an HTTPS endpoint, and so
+  # TLS certificate is required. This Helm chart relies on
+  # cert-manager.io for managing TLS certificates.
+  tls:
+    # If not empty, this issuer will be used to sign the certificate.
+    # If none is provided, a new, self-signing issuer will be created.
+    issuerRef: { }
+      # name: <ISSUER NAME>
+    # kind: <ClusterIssuer|Issuer>
+    # group: cert-manager.io
+
+    # Certificate duration. The generated certificate will be automatically
+    # renewed 1/3 of `certDuration` before its expiry.
+    # Value must be in units accepted by Go time.ParseDuration.
+    # See https://golang.org/pkg/time/#ParseDuration for allowed formats.
+    # Minimum accepted duration is `1h`.
+    # This option may be ignored/overridden by some issuer types.
+    certDuration: 8760h
+
+  # webhook controller service config
+  service:
+    # when running in cluster webhook service is recommended to be of type ClusterIP
+    type: ClusterIP
+    port: 443
+
+  serviceAccount:
+    # Specifies whether a service account should be created.
+    create: true
+    # Annotations to add to the service account.
+    annotations: { }
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template.
+    name: ""
+
+  # Log verbosity level.
+  # See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
+  # for description of individual verbosity levels.
+  logVerbosityLevel: 2
+
+  podAnnotations: { }
+
+  resources: { }
+
+  nodeSelector: { }
+
+  tolerations: [ ]
+
+  affinity: { }
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# create a default volume snapshot class
+volumeSnapshotClass:
+  create: false
+  name: "default-snapshot-class"
+  driver: "mydriver"
+  # deletionPolicy determines whether a VolumeSnapshotContent created through
+  # the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted.
+  # Supported values are "Retain" and "Delete".
+  deletionPolicy: ""
+  # params is a key-value map with storage driver specific parameters for creating snapshots.
+  params: {}
+
+  # key-value pair of extra labels to apply
+  extraLabels: {}
+
+# time for sleep hook in seconds
+hooksleepTime: 12

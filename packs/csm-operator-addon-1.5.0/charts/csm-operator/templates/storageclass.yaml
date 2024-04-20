@@ -1,0 +1,34 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  # name for the storage class
+  name: {{ .Values.storageclass.name }}
+  annotations:
+{{ toYaml .Values.storageclass.annotations | indent 4 }}
+provisioner: {{ .Values.storageclass.provisioner }}
+# reclaimPolicy: PVs that are dynamically created by a StorageClass will have the reclaim policy specified here
+# Allowed values:
+#   Reclaim: retain the PV after PVC deletion
+#   Delete: delete the PV after PVC deletion
+# Optional: true
+# Default value: Delete
+reclaimPolicy: {{ .Values.storageclass.reclaimPolicy }}
+# allowVolumeExpansion: allows the users to resize the volume by editing the corresponding PVC object
+# Allowed values:
+#   true: allow users to resize the PVC
+#   false: does not allow users to resize the PVC
+# Optional: true
+# Default value: false
+allowVolumeExpansion: {{ .Values.storageclass.allowVolumeExpansion }}
+parameters:
+{{ toYaml .Values.storageclass.parameters | indent 2 }}
+# volumeBindingMode determines how volume binding and dynamic provisioning should occur
+# Allowed values: 
+#  Immediate: volume binding and dynamic provisioning occurs once PVC is created
+#  WaitForFirstConsumer: delay the binding and provisioning of PV until a pod using the PVC is created.
+#  Optional: false
+# Default value: WaitForFirstConsumer (required for topology section below) 
+volumeBindingMode: {{ .Values.storageclass.volumeBindingMode }}
+# allowedTopologies helps scheduling pods on worker nodes which match all of below expressions.
+allowedTopologies:
+{{ toYaml .Values.storageclass.allowedTopologies | indent 2 }}

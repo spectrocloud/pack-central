@@ -1,0 +1,10 @@
+{{- if eq .Values.csm.type "powermax" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: powermax-reverseproxy-config
+  namespace: {{ .Values.csm.namespace }}
+data:
+  config.yaml: |-
+{{ toYaml .Values.reverseProxyConfig | indent 4 }}
+{{- end }}

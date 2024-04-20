@@ -1,0 +1,28 @@
+{{- if .Values.webhook.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    created-by: spectrocloud.com
+  name: volume-snapshot-issuer
+  namespace: kube-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    created-by: spectrocloud.com
+  name: volume-snapshot-cert
+  namespace: kube-system
+spec:
+  dnsNames:
+  - snapshot-validation-service
+  - snapshot-validation-service.kube-system.svc
+  - snapshot-validation-service.kube-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: volume-snapshot-issuer
+  secretName: snapshot-validation-secret
+{{- end }}

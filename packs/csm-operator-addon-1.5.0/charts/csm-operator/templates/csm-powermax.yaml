@@ -1,0 +1,220 @@
+{{- if eq .Values.csm.type "powermax" }}
+#
+# Copyright © 2023 Dell Inc. or its subsidiaries. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#      http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+apiVersion: storage.dell.com/v1
+kind: ContainerStorageModule
+metadata:
+  name: powermax
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  # Add fields here
+  driver:
+    csiDriverType: "powermax"
+    csiDriverSpec:
+      # fsGroupPolicy: Defines if the underlying volume supports changing ownership and permission of the volume before being mounted.
+      # Allowed values: ReadWriteOnceWithFSType, File , None
+      # Default value: ReadWriteOnceWithFSType
+      fSGroupPolicy: "{{ .Values.csm.config.driver.fSGroupPolicy }}"
+      # storageCapacity: Helps the scheduler to schedule the pod on a node satisfying the topology constraints, only if the requested capacity is available on the storage array
+      # Allowed values:
+      #   true: enable storage capacity tracking
+      #   false: disable storage capacity tracking
+      storageCapacity: {{ .Values.csm.config.driver.storageCapacity }}
+    # Config version for CSI PowerMax driver
+    configVersion: "{{ include "csm-operator.powermax" (dict "lookup" "driver-config") }}"
+    # replica: Define the number of PowerMax controller nodes
+    # to deploy to the Kubernetes release
+    # Allowed values: n, where n > 0
+    # Default value: None
+    replicas: {{ .Values.csm.config.driver.replicas }}
+    # Default credential secret for Powermax, if not set it to ""
+    authSecret: {{ default .Values.csm.config.driver.authSecret "powermax-creds" | quote }}
+    dnsPolicy: {{ .Values.csm.config.driver.dnsPolicy }}
+    forceUpdate: false
+    forceRemoveDriver: true
+    common:
+      # Image for CSI PowerMax driver v2.8.0
+      image: "dellemc/csi-powermax:{{ include "csm-operator.powermax" (dict "lookup" "driver-image") }}"
+      # imagePullPolicy: Policy to determine if the image should be pulled prior to starting the container.
+      # Allowed values:
+      #  Always: Always pull the image.
+      #  IfNotPresent: Only pull the image if it does not already exist on the node.
+      #  Never: Never pull the image.
+      # Default value: None
+      imagePullPolicy: IfNotPresent
+      envs:
+{{ toYaml .Values.csm.config.driver.envs | indent 8 }}
+
+    controller:
+      envs:
+{{ toYaml .Values.csm.config.driver.controller.envs | indent 8 }}
+
+      # nodeSelector: Define node selection constraints for controller pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.driver.controller.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations that would be applied to controller deployment
+      # Leave as blank to install controller on worker nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.driver.controller.tolerations | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  - key: "node-role.kubernetes.io/control-plane"
+      #    operator: "Exists"
+      #    effect: "NoSchedule"
+    node:
+      envs:
+{{ toYaml .Values.csm.config.driver.node.envs | indent 8 }}
+
+      # nodeSelector: Define node selection constraints for node pods.
+      # For the pod to be eligible to run on a node, the node must have each
+      # of the indicated key-value pairs as labels.
+      # Leave as blank to consider all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.driver.node.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # tolerations: Define tolerations that would be applied to node daemonset
+      # Add/Remove tolerations as per requirement
+      # Leave as blank if you wish to not apply any tolerations
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.driver.node.tolerations | indent 8 }}
+
+    sideCars:
+{{ toYaml .Values.csm.config.driver.sideCars | indent 6 }}
+
+  modules:
+    # CSI Powermax Reverseproxy is a mandatory module for Powermax
+    - name: csireverseproxy
+      # enabled: Always set to true
+      enabled: {{ .Values.csm.config.modules.csireverseproxy.enabled }}
+      configVersion: "{{ include "csm-operator.powermax" (dict "lookup" "module-csirevprx-config") }}"
+      forceRemoveModule: true
+      components:
+      - name: csipowermax-reverseproxy
+      # image: Define the container images used for the reverse proxy
+      # Default value: None
+      # Example: "csipowermax-reverseproxy:v2.6.0"
+        image: dellemc/csipowermax-reverseproxy:{{ include "csm-operator.powermax" (dict "lookup" "module-csirevprx-image") }}
+        envs:
+{{ toYaml .Values.csm.config.modules.csireverseproxy.envs | indent 10 }}
+
+    # Authorization: enable csm-authorization for RBAC
+    - name: authorization
+      # enabled: Enable/Disable csm-authorization
+      enabled: {{ .Values.csm.config.modules.authorization.enabled }}
+      configVersion: "{{ include "csm-operator.powermax" (dict "lookup" "module-auth-config") }}"
+      components:
+      - name: karavi-authorization-proxy
+        image: "dellemc/csm-authorization-sidecar:{{ include "csm-operator.powermax" (dict "lookup" "module-auth-image") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.authorization.envs | indent 10 }}
+
+    # Replication: allows to configure replication
+    # Replication CRDs must be installed before installing driver
+    - name: replication
+      # enabled: Enable/Disable replication feature
+      # Allowed values:
+      #   true: enable replication feature(install dell-csi-replicator sidecar)
+      #   false: disable replication feature(do not install dell-csi-replicator sidecar)
+      # Default value: false
+      enabled: {{ .Values.csm.config.modules.replication.enabled }}
+      configVersion: "{{ include "csm-operator.powermax" (dict "lookup" "module-repl-config") }}"
+      components:
+      - name: dell-csi-replicator
+        # image: Image to use for dell-csi-replicator. This shouldn't be changed
+        # Allowed values: string
+        # Default value: None
+        image: "dellemc/dell-csi-replicator:{{ include "csm-operator.powermax" (dict "lookup" "module-repl-image-replicator") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.replication.dellCsiReplicator.envs | indent 10 }}
+
+      - name: dell-replication-controller-manager
+        # image: Defines controller image. This shouldn't be changed
+        # Allowed values: string
+        image: "dellemc/dell-replication-controller:{{ include "csm-operator.powermax" (dict "lookup" "module-repl-image-controller") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.replication.dellReplicationControllerManager.envs | indent 10 }}
+
+    # observability: allows to configure observability
+    - name: observability
+      # enabled: Enable/Disable observability
+      enabled: {{ .Values.csm.config.modules.observability.enabled }}
+      configVersion: "{{ include "csm-operator.powermax" (dict "lookup" "module-obsv-config") }}"
+      components:
+        - name: topology
+          # enabled: Enable/Disable topology
+          enabled: {{ .Values.csm.config.modules.observability.topology.enabled }}
+          # image: Defines karavi-topology image. This shouldn't be changed
+          # Allowed values: string
+          image: "dellemc/csm-topology:{{ include "csm-operator.powermax" (dict "lookup" "module-obsv-image") }}"
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: "{{ .Values.csm.config.modules.observability.topology.certificate }}"
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: "{{ .Values.csm.config.modules.observability.topology.privateKey }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.topology.envs | indent 12 }}
+
+        - name: otel-collector
+          # enabled: Enable/Disable OpenTelemetry Collector
+          enabled: {{ .Values.csm.config.modules.observability.otelCollector.enabled }}
+          # image: Defines otel-collector image. This shouldn't be changed
+          # Allowed values: string
+          image: otel/opentelemetry-collector:0.42.0
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: "{{ .Values.csm.config.modules.observability.otelCollector.certificate }}"
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: "{{ .Values.csm.config.modules.observability.otelCollector.privateKey }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.otelCollector.envs | indent 12 }}
+
+        - name: cert-manager
+        # enabled: Enable/Disable cert-manager
+        # Allowed values:
+        #   true: enable deployment of cert-manager
+        #   false: disable deployment of cert-manager only if it's already deployed
+        # Default value: false
+          enabled: false
+
+        - name: metrics-powermax
+          # enabled: Enable/Disable PowerMax metrics
+          enabled: {{ .Values.csm.config.modules.observability.metricsPowerMax.enabled }}
+          # image: Defines PowerMax metrics image. This shouldn't be changed
+          image: "dellemc/csm-metrics-powermax:{{ include "csm-operator.powermax" (dict "lookup" "module-metrics-image") }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.metricsPowerMax.envs | indent 12 }}
+
+{{- end }}

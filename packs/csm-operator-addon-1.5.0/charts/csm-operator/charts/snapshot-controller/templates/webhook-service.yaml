@@ -1,0 +1,15 @@
+{{- if .Values.webhook.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshot-validation-service
+  namespace: kube-system
+spec:
+  selector:
+    app: snapshot-validation
+  ports:
+    - protocol: TCP
+      port: {{ .Values.webhook.service.port }}
+      targetPort: https
+  type: {{ .Values.webhook.service.type | default "ClusterIP" }}
+{{- end }}
