@@ -1,0 +1,17 @@
+{
+    "addonType": "monitoring",
+    "annotations": {
+        "source": "community",
+        "contributor": "unskript"
+    },
+    "cloudTypes": [
+        "all"
+    ],
+    "displayName": "unCtl",
+    "charts": [
+        "charts/unctl-1.0.0.tgz"
+    ],
+    "layer": "addon",
+    "name": "unctl",
+    "version": "1.0.0"
+}
