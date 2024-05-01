@@ -19,15 +19,19 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
 | `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | No           |
-| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.1` | No           |
+| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2` | No           |
 | `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | No           |
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | No           |
-| `manifests.dbpassword`           | The base64 encoded database password to connect to the API database.           |                                             | Yes          |
-| `manifests.authtoken`            | The base64 encoded auth token for the API connection.                          |                                             | Yes          |
+| `manifests.dbpassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
+| `manifests.authtoken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
 
 ## Usage
 
-To utilize the Hello Universe pack, create either a [full Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-full-profile) or an [add-on Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-addon-profile/) and add the pack to your profile.
+The Hello Universe pack has two presets that you can select:
+- **Disable Hello Universe API** configures Hello Universe as a standalone frontend application. This is the default configuration of the pack. 
+- **Enable Hello Universe API** configures Hello Universe as a three-tier application with a frontend, API server and database.
+
+To utilize the Hello Universe pack, create either a [full Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-full-profile) or an [add-on Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-addon-profile/) and add the pack to your profile. You can select the preset you wish to deploy on the cluster profile creation page.
 
 If your infrastructure provider does not offer a native load balancer solution, such as VMware and MAAS, the [MetalLB](https://docs.spectrocloud.com/integrations/metallb) pack must be included to the cluster profile to help the LoadBalancer service specified in the manifest obtain an IP address.
 
@@ -38,6 +42,8 @@ Once the cluster status displays **Running** and **Healthy**, access the Hello U
 ## References
 
 - [Hello Universe GitHub Repository](https://github.com/spectrocloud/hello-universe)
+
+- [Hello Universe API GitHub Repository](https://github.com/spectrocloud/hello-universe-api)
 
 - [Deploy a Custom Pack Tutorial](https://docs.spectrocloud.com/registries-and-packs/deploy-pack/)
 
