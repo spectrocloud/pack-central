@@ -1,0 +1,16 @@
+{
+  "addonType": "app services",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Hello Universe",
+  "kubeManifests": [
+    "manifests/hello-universe.yaml", 
+    "manifests/hello-universe-k8s.yaml" 
+  ],
+  "layer": "addon",
+  "name": "hello-universe",
+  "version": "1.1.2"
+}

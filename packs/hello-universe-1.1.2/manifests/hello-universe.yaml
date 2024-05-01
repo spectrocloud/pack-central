@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: { { .Values.namespace } }
+---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: hello-universe-service
+      namespace: { { .Values.namespace } }
+    spec:
+      type: LoadBalancer
+      selector:
+        app: hello-universe
+      ports:
+        - protocol: TCP
+          port: { { .Values.port } }
+          targetPort: 8080
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: hello-universe-deployment
+      namespace: { { .Values.namespace } }
+    spec:
+      replicas: { { .Values.replicas } }
+      selector:
+        matchLabels:
+          app: hello-universe
+      template:
+        metadata:
+          labels:
+            app: hello-universe
+        spec:
+          containers:
+            - name: hello-universe
+              image: { { .Values.images.hellouniverse } }
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 8080
+              resources:
+                requests:
+                  cpu: "100m" # requesting 100 milliCPU
+                  memory: "512Mi" # requesting 512 MiB of memory
+                limits:
+                  cpu: "200m" # limiting to 200 milliCPU
+                  memory: "1024Mi" # requesting 1024 MiB of memory

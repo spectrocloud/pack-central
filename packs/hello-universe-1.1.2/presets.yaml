@@ -1,0 +1,28 @@
+presets:
+  - name: "disable-api"
+    displayName: "Disable Backend API"
+    group: "Backend"
+    remove:
+    - "manifests.hello-universe-k8s"
+    - "manifests.hello-universe-k8s.images"
+
+  - name: "enable-api"
+    displayName: "Enable Backend API"
+    group: "Backend"
+    remove:
+    - "manifests.hello-universe.replicas"
+    - "manifests.hello-universe.port"
+    - "manifests.hello-universe.namespace"
+    - "manifests.hello-universe.images.hellouniverse"
+    - "manifests.hello-universe.images"
+    - "manifests.hello-universe"
+    add: |
+      manifests:
+        hello-universe-k8s:
+          images:
+            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2
+          namespace: "hello-universe"
+          port: 8080
+          replicas: 1
+          dbpassword: "REPLACE_ME"
+          authtoken: "REPLACE_ME"

@@ -1,0 +1,29 @@
+manifests.hello-universe.namespace:
+  # This schema enforces the requirement of a namespace in which the application will be deployed.
+  # The namespace should be specified as a string.
+  schema: '{{ required | format "${string}" | hints "Enter the namespace in which the application will be deployed."}}'
+
+manifests.hello-universe.images.hellouniverse:
+  # This schema enforces the requirement of the application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ required | format "${string}/${string}:${version}" | hints "Enter the application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.hello-universe.port:
+  # This schema enforces the requirement of the cluster port number on which the service will listen for incoming traffic.
+  # The port should be specified as a number.
+  schema: '{{ required | format "${number}" | hints "Enter the cluster port number on which the service will listen for incoming traffic."}}'
+
+manifests.hello-universe.replicas:
+  # This schema enforces the requirement of the number of replicas of the application to be created.
+  # The replicas should be specified as a number.
+  schema: '{{ required | format "${number}" | hints "Enter the number of replicas of the application."}}'
+
+manifests.hello-universe.dbpassword:
+  # This schema requires a database password to connect the hello-universe-api to the hello-universe-db.
+  # The password should be specified as a base64 encoded string.
+  schema: '{{ format "${string}" | hints "Enter the base64 encoded database password to connect to."}}'
+
+manifests.hello-universe.authtoken:
+  # This schema requires an auth token to connect the hello-universe-api to the hello-universe-db.
+  # The token should be specified as a base64 encoded string.
+  schema: '{{ format "${string}" | hints "Enter the base64 encoded auth token to connect to the API with."}}'
