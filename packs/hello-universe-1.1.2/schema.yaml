@@ -18,12 +18,12 @@ manifests.hello-universe.replicas:
   # The replicas should be specified as a number.
   schema: '{{ required | format "${number}" | hints "Enter the number of replicas of the  UI application."}}'
 
-manifests.hello-universe.dbpassword:
+manifests.hello-universe.dbPassword:
   # The database password to connect the hello-universe-api to the hello-universe-db.
   # The password should be specified as a base64 encoded string.
   schema: '{{ format "${string}" | hints "Enter the base64 encoded database password to connect to."}}'
 
-manifests.hello-universe.authtoken:
+manifests.hello-universe.authToken:
   # The auth token to connect the hello-universe-api to the hello-universe-db.
   # The token should be specified as a base64 encoded string.
   schema: '{{ format "${string}" | hints "Enter the base64 encoded auth token to connect to the API with."}}'

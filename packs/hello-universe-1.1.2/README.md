@@ -23,8 +23,8 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | `manifests.apiEnabled`                  | The flag that indicates whether to deploy the UI application as standalone or together with the API server. | `false`                                      | Yes           |
 | `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | Yes           |
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |
-| `manifests.dbpassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
-| `manifests.authtoken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
+| `manifests.dbPassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
+| `manifests.authToken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
 
 ## Usage
 

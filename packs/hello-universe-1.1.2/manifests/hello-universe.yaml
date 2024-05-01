@@ -111,7 +111,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 type: Opaque
 data:
-  db-password: {{ .Values.dbpassword }}
+  db-password: {{ .Values.dbPassword }}
 ---
 apiVersion: v1
 kind: Secret
@@ -120,7 +120,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 type: Opaque
 data:
-  auth-token: {{ .Values.authtoken }}
+  auth-token: {{ .Values.authToken }}
 ---
 apiVersion: apps/v1
 kind: Deployment
