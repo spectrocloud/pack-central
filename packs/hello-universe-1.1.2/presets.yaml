@@ -2,25 +2,27 @@ presets:
   - name: "disable-api"
     displayName: "Disable Hello Universe API"
     group: "Backend"
-    remove:
-    - "manifests.hello-universe-k8s"
-    - "manifests.hello-universe-k8s.images"
+    remove: []
+    add: |
+      manifests:
+        hello-universe:
+          images:
+            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2
+          apiEnabled: false
+          namespace: "hello-universe"
+          port: 8080
+          replicas: 1
 
   - name: "enable-api"
     displayName: "Enable Hello Universe API"
     group: "Backend"
-    remove:
-    - "manifests.hello-universe.replicas"
-    - "manifests.hello-universe.port"
-    - "manifests.hello-universe.namespace"
-    - "manifests.hello-universe.images.hellouniverse"
-    - "manifests.hello-universe.images"
-    - "manifests.hello-universe"
+    remove: []
     add: |
       manifests:
-        hello-universe-k8s:
+        hello-universe:
           images:
             hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2
+          apiEnabled: true
           namespace: "hello-universe"
           port: 8080
           replicas: 1

@@ -10,6 +10,7 @@ manifests:
   hello-universe:
     images:
       hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2
-    namespace: "hello-universe"
+    apiEnabled: false
+    namespace: hello-universe
     port: 8080
     replicas: 1

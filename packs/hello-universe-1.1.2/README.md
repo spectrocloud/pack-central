@@ -18,10 +18,11 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
-| `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | No           |
-| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2` | No           |
-| `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | No           |
-| `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | No           |
+| `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | Yes           |
+| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2` | Yes           |
+| `manifests.apiEnabled`                  | The flag that indicates whether to deploy the UI application as standalone or together with the API server. | `false`                                      | Yes           |
+| `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | Yes           |
+| `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |
 | `manifests.dbpassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
 | `manifests.authtoken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
 

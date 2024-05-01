@@ -7,8 +7,7 @@
   "cloudTypes": ["all"],
   "displayName": "Hello Universe",
   "kubeManifests": [
-    "manifests/hello-universe.yaml", 
-    "manifests/hello-universe-k8s.yaml" 
+    "manifests/hello-universe.yaml"
   ],
   "layer": "addon",
   "name": "hello-universe",
