@@ -1,0 +1,22 @@
+{{- if .Values.enabled}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "appdynamics-network-monitoring-reducer.fullname" . }}
+  labels:
+    helm.sh/chart: {{ include "appdynamics-network-monitoring.chart" . }}
+    app.kubernetes.io/name: {{ include "appdynamics-network-monitoring-reducer.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "appdynamics-network-monitoring-reducer.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: telemetry
+      port: {{ .Values.reducer.telemetryPort }}
+      targetPort: telemetry
+      protocol: TCP
+{{- end }}
