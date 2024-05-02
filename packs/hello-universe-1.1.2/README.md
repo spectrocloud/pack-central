@@ -1,6 +1,10 @@
 # Hello Universe
 
-[Hello Universe](https://github.com/spectrocloud/hello-universe) is a demo web application utilized to help users learn more about [Palette](https://docs.spectrocloud.com/introduction) and its features. It functions as a standalone front-end application and provides users with a local click counter and funny Spectro Cloud-themed images.
+[Hello Universe](https://github.com/spectrocloud/hello-universe) is a demo web application utilized to help users learn more about [Palette](https://docs.spectrocloud.com/introduction) and its features.
+
+You can deploy it using two preset configurations: 
+- A standalone front-end application. It provides a click counter that is saved locally and displays Spectro Cloud themed images.
+- A three-tier application with a front-end application, API server and PostgreSQL database into a Kubernetes cluster. It provides a click counter that is saved in the deployed database and displays Spectro Cloud themed images. You can read more about this configuration on the Hello Universe [README](https://github.com/spectrocloud/hello-universe?tab=readme-ov-file#reverse-proxy-with-kubernetes).
 
 ## Prerequisites
 
@@ -9,6 +13,8 @@
 - A cluster profile where the Hello Universe pack can be integrated.
 
 - A Palette cluster with port `:8080` available. If port 8080 is not available, you can set a different port in the **values.yaml** file.
+
+- If you are using the **Enable Hello Universe API** preset, you will need the `:3000` port available on your cluster too. Check out the [Usage](#usage) section for further details.
 
 - Ensure sufficient CPU resources within the cluster to allocate a minimum of 500 milliCPU and a maximum of 500 milliCPU per replica.
 
@@ -19,7 +25,9 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
 | `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | Yes           |
-| `manifests.images.hello-universe` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2` | Yes           |
+| `manifests.images.hellouniverse` | The [`hello-universe`](https://github.com/spectrocloud/hello-universe) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2`/ `ghcr.io/spectrocloud/hello-universe:1.1.2-proxy` | Yes           |
+| `manifests.images.hellouniverseapi` | The [`hello-universe-api`](https://github.com/spectrocloud/hello-universe-api) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-api:1.0.12` | No           |
+| `manifests.images.hellouniversedb` | The [`hello-universe-db`](https://github.com/spectrocloud/hello-universe-db) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-db:1.0.2` | No           |
 | `manifests.apiEnabled`                  | The flag that indicates whether to deploy the UI application as standalone or together with the API server. | `false`                                      | Yes           |
 | `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | Yes           |
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |

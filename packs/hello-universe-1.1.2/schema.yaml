@@ -8,6 +8,16 @@ manifests.hello-universe.images.hellouniverse:
   # Ensure that the image follows the required format: registry/repository:version.
   schema: '{{ required | format "${string}" | hints "Enter the UI application image. Ensure that it follows the required format: registry/repository:version." }}'
 
+manifests.hello-universe.images.hellouniverseapi:
+  # The hello-universe-api application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ format "${string}" | hints "Enter the API application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.hello-universe.images.hellouniversedb:
+  # The hello-universe-db application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ format "${string}" | hints "Enter the API application image. Ensure that it follows the required format: registry/repository:version." }}'
+
 manifests.hello-universe.port:
   # The cluster port number on which the UI service will listen for incoming traffic.
   # The port should be specified as a number.

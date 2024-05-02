@@ -21,7 +21,9 @@ presets:
       manifests:
         hello-universe:
           images:
-            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2
+            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.1.2-proxy
+            hellouniverseapi: ghcr.io/spectrocloud/hello-universe-api:1.0.12
+            hellouniversedb: ghcr.io/spectrocloud/hello-universe-db:1.0.2
           apiEnabled: true
           namespace: hello-universe
           port: 8080

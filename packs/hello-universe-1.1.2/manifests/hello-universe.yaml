@@ -139,7 +139,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: ghcr.io/spectrocloud/hello-universe-db:1.0.2
+          image: {{ .Values.images.hellouniversedb }}
           ports:
             - containerPort: 5432
               name: postgres
@@ -183,7 +183,7 @@ spec:
       serviceAccountName: hello-universe-role
       containers:
         - name: api
-          image: ghcr.io/spectrocloud/hello-universe-api:1.0.12
+          image: {{ .Values.images.hellouniverseapi }}
           ports:
             - containerPort: 3000
               name: api
@@ -265,7 +265,7 @@ spec:
             ["/bin/sh", "-c", "echo 'sleeping for 30 seconds' && sleep 30"]
       containers:
         - name: ui
-          image: ghcr.io/spectrocloud/hello-universe:1.1.2-proxy
+          image: {{ .Values.images.hellouniverse }}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
