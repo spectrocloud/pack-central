@@ -1,0 +1,254 @@
+global:
+  smartAgentInstall: false
+  namespace: ""
+  clusterName: ""
+  tls:
+    appdCollectors:
+      enabled: false
+      secret: {}
+  oauth:
+    clientId: ""
+    # Either of clientSecret or clientSecretEnvVar will be present
+    clientSecret: ""
+    #  clientSecretEnvVar:
+    #    valueFrom:
+    #      secretKeyRef:
+    #        name: ""
+    #        key: ""
+    endpoint: ""
+    tokenUrl: ""
+  agentManagementProxy:
+    httpProxy: ""
+    httpsProxy: ""
+    noProxy: []
+
+install:
+  clustermon: true
+  defaultInfraCollectors: true
+  logCollector: false
+
+agentManagementEnabled:
+  clustermon: true
+  defaultInfraCollectors: true
+  logCollector: true
+
+# RBAC config
+clustermonServiceAccount: appdynamics-clustermon
+inframonServiceAccount: appdynamics-inframon
+logCollectorServiceAccount: appdynamics-log-collector
+
+# Clustermon Configs
+clustermonConfig:
+  os: linux
+  logLevel: info
+  logFilesMaxSizeMb: 10
+  logFilesNumBackups: 4
+  printToStdout: "true"
+
+  filters:
+    namespace:
+      includeRegex: ".*"
+      excludeRegex: ""
+    entity:
+      excludeRegex: ""
+      excludeLabels: []
+    label:
+      excludeRegex: ""
+    annotation:
+      excludeRegex: ""
+    scopedFilters: []
+  ingressControllers: {}
+
+  labels:
+    enabled: true
+
+  events:
+    enabled: true
+    severityToExclude: []
+    reasonToExclude: []
+    severeGroupByReason: []
+
+  configurations:
+    enabled: true
+  autoscalers:
+    hpaVpaEnabled: true
+
+# Infra Manager Configs
+infraManagerConfig:
+  logLevel: info
+  logFilesMaxSizeMb: 10
+  logFilesNumBackups: 4
+  printToStdout: "true"
+
+# Servermon Configs
+servermonConfig:
+  os: [linux]
+  logLevel: info
+  logFilesMaxSizeMb: 10
+  logFilesNumBackups: 4
+
+# Containermon Configs
+containermonConfig:
+  os: [linux]
+  logLevel: info
+  logFilesMaxSizeMb: 10
+  logFilesNumBackups: 4
+
+# LogCollector Configs
+logCollectorConfig:
+  os: [linux]
+  container:
+    monitorCollectors: false
+    defaultConfig:
+      enabled: true
+    conditionalConfigs: []
+    dropFields: []
+    batchSize: 1000
+    worker: 1
+    maxBytes: 1000000
+    summaryDebugLogsInterval: 10s
+    logging:
+      level: info
+      selectors: []
+      files:
+        enabled: false
+        keepFiles: 5
+      metrics:
+        enabled: false
+        period: 30s
+    monitoring:
+      otlpmetric:
+        enabled: false
+        endpoint: "${APPD_OTELCOL_GRPC_RECEIVER_HOST}:${APPD_OTELCOL_GRPC_RECEIVER_PORT}"
+        protocol: grpc
+        resourceAttrs: []
+        # default metrics to capture
+        metrics:
+          - beat.memstats.memory_alloc
+          - filebeat.events.active
+          - libbeat.output.read.errors
+          - libbeat.output.write.bytes
+          - libbeat.output.write.errors
+          - system.load.norm.5
+          - system.load.norm.15
+          - filebeat.input.filestream.harvester.running
+          - filebeat.input.filestream.harvester.stopped
+          - filebeat.input.filestream.files.open
+          - filebeat.input.filestream.events.eof
+          - filebeat.input.filestream.events.write
+          - filebeat.input.filestream.events.create
+          - filebeat.input.filestream.events.rename
+          - filebeat.input.filestream.events.delete
+          - filebeat.input.filestream.events.truncate
+        retry:
+          enabled: false
+        ssl:
+          enabled: false
+          certificateAuthorities: []
+  filebeatYaml: ""
+  env:
+    linux:
+      filebeatYaml: ""
+    windows:
+      filebeatYaml: ""
+
+# Deployment specific configs
+clustermonPod:
+  image: appdynamics/appdynamics-cloud-k8s-monitoring:24.4.0-2034
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1000Mi
+    requests:
+      cpu: 500m
+      memory: 750Mi
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  imagePullSecrets: []
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+
+# Daemonset specific configs
+inframonPod:
+  image: appdynamics/appdynamics-cloud-k8s-monitoring:24.4.0-2034
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 350m
+      memory: 100Mi
+    requests:
+      cpu: 200m
+      memory: 64Mi
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  imagePullSecrets: []
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+  env:
+    linux:
+      nodeSelector:
+        kubernetes.io/os: linux
+    windows:
+      resources:
+        limits:
+          cpu: 350m
+          memory: 300Mi
+        requests:
+          cpu: 200m
+          memory: 150Mi
+      nodeSelector:
+        kubernetes.io/os: windows
+
+windowsExporterPod:
+  image: ghcr.io/prometheus-community/windows-exporter:0.24.0
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  imagePullSecrets: []
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+
+# Daemonset specific configs
+logCollectorPod:
+  image: appdynamics/appdynamics-cloud-log-collector-agent:24.4.0-1163
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 400m
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 150Mi
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  imagePullSecrets: []
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+  # MaxUnavailable replicas for Daemonset rolling update. This can be both absolute value(int) or in percentage.
+  rollingUpdateMaxUnavailable: 100%
+  env:
+    linux:
+      nodeSelector:
+        kubernetes.io/os: linux
+    windows:
+      nodeSelector:
+        kubernetes.io/os: windows
+
+
+
