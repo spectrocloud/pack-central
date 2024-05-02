@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "appdynamics-smartagent.fullname" . }}
+  labels:
+    {{- include "appdynamics-smartagent.labels" . | nindent 4 }}
+rules:
+  {{- range $role := .Values.clusterRole }}
+    {{- with $role.apiGroup}}
+  - apiGroups:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $role.resources }}
+    resources:
+    {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- with $role.verbs }}
+    verbs:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- end }}
