@@ -38,7 +38,7 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 
 The Hello Universe pack has two presets that you can select:
 - **Disable Hello Universe API** configures Hello Universe as a standalone frontend application. This is the default configuration of the pack. 
-- **Enable Hello Universe API** configures Hello Universe as a three-tier application with a frontend, API server and database.
+- **Enable Hello Universe API** configures Hello Universe as a three-tier application with a frontend, API server, and Postgres database.
 
 To utilize the Hello Universe pack, create either a [full Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-full-profile) or an [add-on Palette cluster profile](https://docs.spectrocloud.com/profiles/cluster-profiles/create-cluster-profiles/create-addon-profile/) and add the pack to your profile. You can select the preset you wish to deploy on the cluster profile creation page.
 
