@@ -1,0 +1,17 @@
+{
+    "name": "ocm-cluster-manager",
+    "displayName": "OCM Cluster Manager",
+    "annotations": {
+        "description": "Open Cluster Management - Cluster Manager",
+        "contributor": "spectrocloud"
+    },
+    "version": "0.13.2",
+    "charts": [
+        "charts/ocm-cluster-manager-0.13.2.tgz"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}

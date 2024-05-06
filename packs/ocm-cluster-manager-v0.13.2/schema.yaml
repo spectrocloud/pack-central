@@ -1,0 +1,5 @@
+pack.namespace:
+  schema: '{{ required | format "${string}" }}'
+
+charts.ocm-cluster-manager.replicas:
+  schema: '{{ required | format "${number}" }}'

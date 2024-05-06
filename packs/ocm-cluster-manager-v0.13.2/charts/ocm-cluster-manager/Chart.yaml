@@ -1,0 +1,7 @@
+apiVersion: v1
+appVersion: 0.13.2
+maintainers:
+- email: help@spectrocloud.com
+  name: Spectro Cloud Maintainers
+name: ocm-cluster-manager
+version: 0.13.2
