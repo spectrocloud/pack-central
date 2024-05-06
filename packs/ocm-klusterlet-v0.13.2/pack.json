@@ -1,0 +1,17 @@
+{
+    "name": "ocm-klusterlet",
+    "displayName": "OCM - Klusterlet",
+    "annotations": {
+        "description": "Open Cluster Management - Klusterlet",
+        "contributor": "spectrocloud"
+    },
+    "version": "0.13.2",
+    "charts": [
+        "charts/ocm-klusterlet-0.13.2.tgz"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}

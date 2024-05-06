@@ -1,0 +1,11 @@
+replicas: 1
+
+# Optionally specify hostAliases for the hub api server
+# (if the server field in your hub cluster kubeconfig is a domain name instead of an ipv4 address)
+# For example: https://xxx.yyy.zzz.
+hostAliases: []      
+# - hostnames:
+  # target hostname
+  # - xxx.yyy.zzz 
+  # target ipv4 address
+  # ip: 1.2.3.4

@@ -1,0 +1,22 @@
+pack:
+  content:
+    images:
+      - image: quay.io/open-cluster-management/registration-operator:v0.13.2
+      - image: quay.io/open-cluster-management/registration:v0.13.2
+      - image: quay.io/open-cluster-management/work:v0.13.2
+
+  namespace: "open-cluster-management-agent"
+
+charts:
+  ocm-klusterlet:
+    replicas: 1
+
+    # Optionally specify hostAliases for the hub api server
+    # (if the server field in your hub cluster kubeconfig is a domain name instead of an ipv4 address)
+    # For example: https://xxx.yyy.zzz.
+    hostAliases: []      
+    # - hostnames:
+      # target hostname
+      # - xxx.yyy.zzz 
+      # target ipv4 address
+      # ip: 1.2.3.4

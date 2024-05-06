@@ -1,0 +1,4 @@
+pack.namespace:
+  schema: '{{ required | format "${string}" }}'
+charts.ocm-klusterlet.replicas:
+  schema: '{{ required | format "${number}" }}'
