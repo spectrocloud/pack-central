@@ -1,0 +1,25 @@
+{{- if .Values.coredns.deployment.enabled }}
+kind: ConfigMap
+metadata:
+  labels:
+{{ include "chart.labels" . | indent 4  }}
+  name: {{ .Release.Name }}-coredns
+apiVersion: v1
+data:
+  Corefile: |-
+    {{ .Values.k8gb.dnsZone }}:5353 {
+        errors
+        health
+{{- if .Values.k8gb.coredns.extra_plugins }}
+{{ .Values.k8gb.coredns.extra_plugins | indent 8}}
+{{- end }}
+        ready
+        prometheus 0.0.0.0:9153
+        forward . /etc/resolv.conf
+        k8s_crd {
+            filter k8gb.absa.oss/dnstype=local
+            negttl {{ .Values.k8gb.dnsZoneNegTTL }}
+            loadbalance weight
+        }
+    }
+{{- end }}
