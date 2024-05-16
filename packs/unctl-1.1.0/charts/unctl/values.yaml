@@ -16,25 +16,9 @@ schedule: "0 0 * * *"
 # List of namespaces to conduct checks on
 namespaces: []
 
-ai:
-  # Defines whether AI analysis will be done for failures
-  enabled: true
-  # AI agent. OpenAI, LocalAI
-  provider: "OpenAI"
-  # AI agent token
-  # For openai use gpt4 key with assistant permissions
-  token: "sk-xxxxx"
-  config:
-    # Exact model to use. For eg. gpt4 for OpenAI
-    model: "gpt-4"
-    # Host of the llm agent
-    host: http://localhost:8080
-
-
 # value in days to prevent disk space build up for embedded DB
 # by deafult it will use 7 days
 retention_period: 7
-
 
 # Defaults to .Chart.Name
 nameOverride: ""
