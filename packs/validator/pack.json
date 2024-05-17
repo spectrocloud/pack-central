@@ -1,0 +1,17 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "charts": [
+    "charts/validator-0.0.38.tgz",
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Validator",
+  "layer":"addon",
+  "name": "validator-chart",
+  "version": "0.0.1"
+}
