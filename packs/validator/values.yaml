@@ -3,36 +3,36 @@ pack:
   #When not found, a new namespace will be created
   content:
     images:
-      - image: quay.io/validator-labs/validator:v0.0.38
-      - image: quay.io/validator-labs/validator-plugin-aws:v0.0.25
-      - image: quay.io/validator-labs/validator-plugin-azure:v0.0.10
-      - image: quay.io/validator-labs/validator-plugin-kubescape:v0.0.2
-      - image: quay.io/validator-labs/validator-plugin-network:v0.0.14
-      - image: quay.io/validator-labs/validator-plugin-oci:v0.0.9
-      - image: quay.io/validator-labs/validator-plugin-vsphere:v0.0.19
+      - image: quay.io/validator-labs/validator:v0.0.40
+      - image: quay.io/validator-labs/validator-plugin-aws:v0.0.26
+      - image: quay.io/validator-labs/validator-plugin-azure:v0.0.11
+      - image: quay.io/validator-labs/validator-plugin-kubescape:v0.0.3
+      - image: quay.io/validator-labs/validator-plugin-network:v0.0.16
+      - image: quay.io/validator-labs/validator-plugin-oci:v0.0.10
+      - image: quay.io/validator-labs/validator-plugin-vsphere:v0.0.20
       - image: gcr.io/spectro-images-public/release/spectro-cleanup:1.2.0
     charts:
       - repo: https://validator-labs.github.io/validator
         name: validator
-        version: v0.0.38
+        version: v0.0.40
           #- repo: https://validator-labs.github.io/validator-plugin-aws
           #  name: validator-plugin-aws
-          #  version: v0.0.25
+          #  version: v0.0.26
           #- repo: https://validator-labs.github.io/validator-plugin-azure
           #  name: validator-plugin-azure
-          #  version: v0.0.10
+          #  version: v0.0.11
           #- repo: https://validator-labs.github.io/validator-plugin-kubescape
           #  name: validator-plugin-kubescape
-          #  version: v0.0.2
+          #  version: v0.0.3
           #- repo: https://validator-labs.github.io/validator-plugin-network
           #  name: validator-plugin-network
-          #  version: v0.0.14
+          #  version: v0.0.16
           #- repo: https://validator-labs.github.io/validator-plugin-oci
           #  name: validator-plugin-oci
-          #  version: v0.0.9
+          #  version: v0.0.10
           #- repo: https://validator-labs.github.io/validator-plugin-vsphere
           #  name: validator-plugin-vsphere
-          #  version: v0.0.19
+          #  version: v0.0.20
   namespace: "validator"
   
 charts:
@@ -70,7 +70,7 @@ charts:
             - ALL
         image:
           repository: quay.io/validator-labs/validator
-          tag: v0.0.39  # x-release-please-version
+          tag: v0.0.40  # x-release-please-version
         resources:
           limits:
             cpu: 500m
@@ -147,7 +147,7 @@ charts:
     - chart:
         name: validator-plugin-aws
         repository: "https://validator-labs.github.io/validator-plugin-aws"
-        version: v0.0.25
+        version: v0.0.26
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -182,7 +182,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-aws
-              tag: v0.0.25
+              tag: v0.0.26
             resources:
               limits:
                 cpu: 500m
@@ -216,7 +216,7 @@ charts:
     - chart:
         name: validator-plugin-azure
         repository: "https://validator-labs.github.io/validator-plugin-azure"
-        version: v0.0.10
+        version: v0.0.11
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -251,7 +251,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-azure
-              tag: v0.0.10
+              tag: v0.0.11
             resources:
               limits:
                 cpu: 500m
@@ -291,7 +291,7 @@ charts:
     - chart:
         name: validator-plugin-vsphere
         repository: "https://validator-labs.github.io/validator-plugin-vsphere"
-        version: v0.0.19
+        version: v0.0.20
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -326,7 +326,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-vsphere
-              tag: v0.0.19
+              tag: v0.0.20
             resources:
               limits:
                 cpu: 500m
@@ -352,7 +352,7 @@ charts:
     - chart:
         name: validator-plugin-network
         repository: "https://validator-labs.github.io/validator-plugin-network"
-        version: v0.0.14
+        version: v0.0.16
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -389,7 +389,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-network
-              tag: v0.0.14
+              tag: v0.0.16
             resources:
               limits:
                 cpu: 500m
@@ -411,7 +411,7 @@ charts:
     - chart:
         name: validator-plugin-oci
         repository: "https://validator-labs.github.io/validator-plugin-oci"
-        version: v0.0.9
+        version: v0.0.10
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -446,7 +446,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-oci
-              tag: v0.0.9
+              tag: v0.0.10
             resources:
               limits:
                 cpu: 500m
@@ -468,7 +468,7 @@ charts:
     - chart:
         name: validator-plugin-kubescape
         repository: "https://validator-labs.github.io/validator-plugin-kubescape"
-        version: v0.0.2
+        version: v0.0.3
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -503,7 +503,7 @@ charts:
                 - ALL
             image:
               repository: quay.io/validator-labs/validator-plugin-kubescape
-              tag: v0.0.2
+              tag: v0.0.3
             resources:
               limits:
                 cpu: 500m
