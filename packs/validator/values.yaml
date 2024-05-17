@@ -3,34 +3,34 @@ pack:
   #When not found, a new namespace will be created
   content:
     images:
-      - image: quay.io/spectrocloud-labs/validator:v0.0.38
-      - image: quay.io/spectrocloud-labs/validator-plugin-aws:v0.0.25
-      - image: quay.io/spectrocloud-labs/validator-plugin-azure:v0.0.10
-      - image: quay.io/spectrocloud-labs/validator-plugin-kubescape:v0.0.2
-      - image: quay.io/spectrocloud-labs/validator-plugin-network:v0.0.14
-      - image: quay.io/spectrocloud-labs/validator-plugin-oci:v0.0.9
-      - image: quay.io/spectrocloud-labs/validator-plugin-vsphere:v0.0.19
+      - image: quay.io/validator-labs/validator:v0.0.38
+      - image: quay.io/validator-labs/validator-plugin-aws:v0.0.25
+      - image: quay.io/validator-labs/validator-plugin-azure:v0.0.10
+      - image: quay.io/validator-labs/validator-plugin-kubescape:v0.0.2
+      - image: quay.io/validator-labs/validator-plugin-network:v0.0.14
+      - image: quay.io/validator-labs/validator-plugin-oci:v0.0.9
+      - image: quay.io/validator-labs/validator-plugin-vsphere:v0.0.19
       - image: gcr.io/spectro-images-public/release/spectro-cleanup:1.2.0
     charts:
-      - repo: https://spectrocloud-labs.github.io/validator
+      - repo: https://validator-labs.github.io/validator
         name: validator
         version: v0.0.38
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-aws
+          #- repo: https://validator-labs.github.io/validator-plugin-aws
           #  name: validator-plugin-aws
           #  version: v0.0.25
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-azure
+          #- repo: https://validator-labs.github.io/validator-plugin-azure
           #  name: validator-plugin-azure
           #  version: v0.0.10
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-kubescape
+          #- repo: https://validator-labs.github.io/validator-plugin-kubescape
           #  name: validator-plugin-kubescape
           #  version: v0.0.2
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-network
+          #- repo: https://validator-labs.github.io/validator-plugin-network
           #  name: validator-plugin-network
           #  version: v0.0.14
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-oci
+          #- repo: https://validator-labs.github.io/validator-plugin-oci
           #  name: validator-plugin-oci
           #  version: v0.0.9
-          #- repo: https://spectrocloud-labs.github.io/validator-plugin-vsphere
+          #- repo: https://validator-labs.github.io/validator-plugin-vsphere
           #  name: validator-plugin-vsphere
           #  version: v0.0.19
   namespace: "validator"
@@ -69,8 +69,8 @@ charts:
             drop:
             - ALL
         image:
-          repository: quay.io/spectrocloud-labs/validator
-          tag: v0.0.38  # x-release-please-version
+          repository: quay.io/validator-labs/validator
+          tag: v0.0.39  # x-release-please-version
         resources:
           limits:
             cpu: 500m
@@ -82,30 +82,30 @@ charts:
       replicas: 1
       serviceAccount:
         annotations: {}
-    kubernetesClusterDomain: cluster.local
-    metricsService:
+ku    bernetesClusterDomain: cluster.local
+me    tricsService:
       ports:
       - name: https
         port: 8443
         protocol: TCP
         targetPort: https
       type: ClusterIP
-    
-    # Optional environment variable configuration
-    env: []
-    # - name: HTTP_PROXY
-    #   value: http://192.168.1.100:8080
-    # - name: HTTPS_PROXY
-    #   value: http://192.168.1.100:8080
-    # - name: NO_PROXY
-    #   value: foo.bar.com,127.0.0.1
-    
-    # Optional proxy configuration. If enabled, the secret containing your proxy CA certificate
-    # will be mounted in the manager container and configured via an init container.
-    proxy:
+
+#     Optional environment variable configuration
+en    v: []
+#     - name: HTTP_PROXY
+#       value: http://192.168.1.100:8080
+#     - name: HTTPS_PROXY
+#       value: http://192.168.1.100:8080
+#     - name: NO_PROXY
+#       value: foo.bar.com,127.0.0.1
+
+#     Optional proxy configuration. If enabled, the secret containing your proxy CA certificate
+#     will be mounted in the manager container and configured via an init container.
+pr    oxy:
       enabled: false
       # The image used by the init container. Must include the update-ca-certificates command.
-      image: quay.io/spectrocloud-labs/validator-certs-init:latest
+      image: quay.io/validator-labs/validator-certs-init:latest
       # The name of a secret containing a proxy CA certificate.
       secretName: proxy-cert
       # If false (using an existing secret), the key whose value is the CA certificate must end with '.crt'.
@@ -115,9 +115,9 @@ charts:
         -----BEGIN CERTIFICATE-----
         <your certificate content here>
         -----END CERTIFICATE-----
-    
-    # Optional sink configuration
-    sink: {}
+
+#     Optional sink configuration
+si    nk: {}
       # type: alertmanager
       # secretName: alertmanager-sink-secret
       # endpoint: "https://alertmanager.alertmanager.svc.cluster.local:9093"
@@ -125,28 +125,29 @@ charts:
       # caCert: ""    # (TLS CA certificate, optional)
       # username: ""  # (HTTP basic auth, optional)
       # password: ""  # (HTTP basic auth, optional)
-    
+
       # OR
       # type: slack
       # secretName: slack-sink-secret
       # apiToken: ""
       # channelId: ""
-    
+
       # By default, a secret will be created. Leave the above fields blank and specify 'createSecret: false' to use an existing secret.
       # WARNING: the existing secret must match the format used in sink-secret.yaml
       # createSecret: true
-    
-    cleanup:
+
+cl    eanup:
       image: gcr.io/spectro-images-public/release/spectro-cleanup:1.2.0
       grpcServerEnabled: true
       hostname: validator-cleanup-service
       port: 3006
-    
-    # Validation plugin charts
-    plugins:
-    - chart:
+
+#     Validation plugin charts
+pl    ugins:
+-     chart:
         name: validator-plugin-aws
-        tarball: /plugins-charts/validator-plugin-aws-v0.0.25.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-aws"
+        version: v0.0.25
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -180,7 +181,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-aws
+              repository: quay.io/validator-labs/validator-plugin-aws
               tag: v0.0.25
             resources:
               limits:
@@ -207,14 +208,15 @@ charts:
           #
           secret: {}  # Delete these curly braces if you're specifying secretName!
             # secretName: aws-creds
-    
+
           # Override the service account used by AWS validator (optional, could be used for IMDSv2 on EKS)
           # WARNING: the chosen service account must include all RBAC privileges found in the AWS plugin template:
-          #          https://github.com/spectrocloud-labs/validator-plugin-aws/blob/main/chart/validator-plugin-aws/templates/manager-rbac.yaml
+          #          https://github.com/validator-labs/validator-plugin-aws/blob/main/chart/validator-plugin-aws/templates/manager-rbac.yaml
           serviceAccountName: ""
-    - chart:
+-     chart:
         name: validator-plugin-azure
-        tarball: /plugin-charts/validator-plugin-azure-v0.0.10.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-azure"
+        version: v0.0.10
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -248,7 +250,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-azure
+              repository: quay.io/validator-labs/validator-plugin-azure
               tag: v0.0.10
             resources:
               limits:
@@ -281,14 +283,15 @@ charts:
           #
           secret: {}  # Delete these curly braces if you're specifying secretName!
             # secretName: azure-creds
-    
+
           # Override the service account used by Azure validator (optional, could be used for WorkloadIdentityCredentials on AKS)
           # WARNING: the chosen service account must include all RBAC privileges found in the Azure plugin template:
-          #          https://github.com/spectrocloud-labs/validator-plugin-aws/blob/main/chart/validator-plugin-azure/templates/manager-rbac.yaml
+          #          https://github.com/validator-labs/validator-plugin-aws/blob/main/chart/validator-plugin-azure/templates/manager-rbac.yaml
           serviceAccountName: ""
-    - chart:
+-     chart:
         name: validator-plugin-vsphere
-        tarball: /plugin-charts/validator-plugin-vsphere-v0.0.19.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-vsphere"
+        version: v0.0.19
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -322,7 +325,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-vsphere
+              repository: quay.io/validator-labs/validator-plugin-vsphere
               tag: v0.0.19
             resources:
               limits:
@@ -346,9 +349,10 @@ charts:
           # Option 1: Create a secret via pluginSecrets (see below). Note: secretName and pluginSecrets.vSphere.secretName must match.
           # Option 2: Specify the name of a preexisting secret in your target cluster and leave pluginSecrets.vSphere undefined.
           secretName: vsphere-creds
-    - chart:
+-     chart:
         name: validator-plugin-network
-        tarball: /plugin-charts/validator-plugin-network-v0.0.14.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-network"
+        version: v0.0.14
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -384,7 +388,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-network
+              repository: quay.io/validator-labs/validator-plugin-network
               tag: v0.0.14
             resources:
               limits:
@@ -404,9 +408,10 @@ charts:
             protocol: TCP
             targetPort: https
           type: ClusterIP
-    - chart:
+-     chart:
         name: validator-plugin-oci
-        tarball: /plugin-charts/validator-plugin-oci-v0.0.9.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-oci"
+        version: v0.0.9
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -440,7 +445,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-oci
+              repository: quay.io/validator-labs/validator-plugin-oci
               tag: v0.0.9
             resources:
               limits:
@@ -460,9 +465,10 @@ charts:
             protocol: TCP
             targetPort: https
           type: ClusterIP
-    - chart:
+-     chart:
         name: validator-plugin-kubescape
-        tarball: /plugin-charts/validator-plugin-kubescape-v0.0.2.tgz
+        repository: "https://validator-labs.github.io/validator-plugin-kubescape"
+        version: v0.0.2
       values: |-
         controllerManager:
           kubeRbacProxy:
@@ -496,7 +502,7 @@ charts:
                 drop:
                 - ALL
             image:
-              repository: quay.io/spectrocloud-labs/validator-plugin-kubescape
+              repository: quay.io/validator-labs/validator-plugin-kubescape
               tag: v0.0.2
             resources:
               limits:
@@ -516,8 +522,8 @@ charts:
             protocol: TCP
             targetPort: https
           type: ClusterIP
-    
-    pluginSecrets:
+
+pl    uginSecrets:
       # If installing the AWS plugin, the below config is required unless one of the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-aws.yaml for
@@ -534,7 +540,7 @@ charts:
         #   AWS_ACCESS_KEY_ID: ""
         #   AWS_SECRET_ACCESS_KEY: ""
         #   AWS_SESSION_TOKEN: ""
-    
+
       # If installing the Azure plugin, the below config is required unless one of the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-azure.yaml for
@@ -554,7 +560,7 @@ charts:
         #   AZURE_CLIENT_CERTIFICATE_PASSWORD: ""
         #   AZURE_USERNAME: ""
         #   AZURE_PASSWORD: ""
-    
+
       # If installing the vSphere plugin, the below config is required unless the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-vsphere.yaml for
@@ -566,7 +572,7 @@ charts:
         # password: ""
         # vcenterServer: ""
         # insecureSkipVerify: ""
-    
+
       oci:
         # If installing the OCI plugin and validating against private registries, the below config is required unless the following applies:
         # - The target cluster already contains secrets with the correct format for all private registries.
@@ -577,7 +583,7 @@ charts:
           # - secretName: registry-creds # ensure this matches the credentials secretName in the OciRegistryRule
           #   username: username # for ECR Registries, store the AWS_ACCESS_KEY_ID here
           #   password: pa$$w0rd # for ECR Registries, store the AWS_SECRET_ACCESS_KEY here
-    
+
         # If installing the OCI plugin and enabling signature verification of artifacts, the below config is required unless the following applies:
         # - The target cluster already contains secrets with the correct format for all public keys used for signing artifacts.
         #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-oci-pubkey.yaml for
