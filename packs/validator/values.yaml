@@ -82,27 +82,27 @@ charts:
       replicas: 1
       serviceAccount:
         annotations: {}
-ku    bernetesClusterDomain: cluster.local
-me    tricsService:
+    kubernetesClusterDomain: cluster.local
+    metricsService:
       ports:
       - name: https
         port: 8443
         protocol: TCP
         targetPort: https
       type: ClusterIP
-
-#     Optional environment variable configuration
-en    v: []
-#     - name: HTTP_PROXY
-#       value: http://192.168.1.100:8080
-#     - name: HTTPS_PROXY
-#       value: http://192.168.1.100:8080
-#     - name: NO_PROXY
-#       value: foo.bar.com,127.0.0.1
-
-#     Optional proxy configuration. If enabled, the secret containing your proxy CA certificate
-#     will be mounted in the manager container and configured via an init container.
-pr    oxy:
+    
+    # Optional environment variable configuration
+    env: []
+    # - name: HTTP_PROXY
+    #   value: http://192.168.1.100:8080
+    # - name: HTTPS_PROXY
+    #   value: http://192.168.1.100:8080
+    # - name: NO_PROXY
+    #   value: foo.bar.com,127.0.0.1
+    
+    # Optional proxy configuration. If enabled, the secret containing your proxy CA certificate
+    # will be mounted in the manager container and configured via an init container.
+    proxy:
       enabled: false
       # The image used by the init container. Must include the update-ca-certificates command.
       image: quay.io/validator-labs/validator-certs-init:latest
@@ -115,9 +115,9 @@ pr    oxy:
         -----BEGIN CERTIFICATE-----
         <your certificate content here>
         -----END CERTIFICATE-----
-
-#     Optional sink configuration
-si    nk: {}
+    
+    # Optional sink configuration
+    sink: {}
       # type: alertmanager
       # secretName: alertmanager-sink-secret
       # endpoint: "https://alertmanager.alertmanager.svc.cluster.local:9093"
@@ -125,26 +125,26 @@ si    nk: {}
       # caCert: ""    # (TLS CA certificate, optional)
       # username: ""  # (HTTP basic auth, optional)
       # password: ""  # (HTTP basic auth, optional)
-
+    
       # OR
       # type: slack
       # secretName: slack-sink-secret
       # apiToken: ""
       # channelId: ""
-
+    
       # By default, a secret will be created. Leave the above fields blank and specify 'createSecret: false' to use an existing secret.
       # WARNING: the existing secret must match the format used in sink-secret.yaml
       # createSecret: true
-
-cl    eanup:
+    
+    cleanup:
       image: gcr.io/spectro-images-public/release/spectro-cleanup:1.2.0
       grpcServerEnabled: true
       hostname: validator-cleanup-service
       port: 3006
-
-#     Validation plugin charts
-pl    ugins:
--     chart:
+    
+    # Validation plugin charts
+    plugins:
+    - chart:
         name: validator-plugin-aws
         repository: "https://validator-labs.github.io/validator-plugin-aws"
         version: v0.0.25
@@ -208,12 +208,12 @@ pl    ugins:
           #
           secret: {}  # Delete these curly braces if you're specifying secretName!
             # secretName: aws-creds
-
+    
           # Override the service account used by AWS validator (optional, could be used for IMDSv2 on EKS)
           # WARNING: the chosen service account must include all RBAC privileges found in the AWS plugin template:
           #          https://github.com/validator-labs/validator-plugin-aws/blob/main/chart/validator-plugin-aws/templates/manager-rbac.yaml
           serviceAccountName: ""
--     chart:
+    - chart:
         name: validator-plugin-azure
         repository: "https://validator-labs.github.io/validator-plugin-azure"
         version: v0.0.10
@@ -283,12 +283,12 @@ pl    ugins:
           #
           secret: {}  # Delete these curly braces if you're specifying secretName!
             # secretName: azure-creds
-
+    
           # Override the service account used by Azure validator (optional, could be used for WorkloadIdentityCredentials on AKS)
           # WARNING: the chosen service account must include all RBAC privileges found in the Azure plugin template:
           #          https://github.com/validator-labs/validator-plugin-aws/blob/main/chart/validator-plugin-azure/templates/manager-rbac.yaml
           serviceAccountName: ""
--     chart:
+    - chart:
         name: validator-plugin-vsphere
         repository: "https://validator-labs.github.io/validator-plugin-vsphere"
         version: v0.0.19
@@ -349,7 +349,7 @@ pl    ugins:
           # Option 1: Create a secret via pluginSecrets (see below). Note: secretName and pluginSecrets.vSphere.secretName must match.
           # Option 2: Specify the name of a preexisting secret in your target cluster and leave pluginSecrets.vSphere undefined.
           secretName: vsphere-creds
--     chart:
+    - chart:
         name: validator-plugin-network
         repository: "https://validator-labs.github.io/validator-plugin-network"
         version: v0.0.14
@@ -408,7 +408,7 @@ pl    ugins:
             protocol: TCP
             targetPort: https
           type: ClusterIP
--     chart:
+    - chart:
         name: validator-plugin-oci
         repository: "https://validator-labs.github.io/validator-plugin-oci"
         version: v0.0.9
@@ -465,7 +465,7 @@ pl    ugins:
             protocol: TCP
             targetPort: https
           type: ClusterIP
--     chart:
+    - chart:
         name: validator-plugin-kubescape
         repository: "https://validator-labs.github.io/validator-plugin-kubescape"
         version: v0.0.2
@@ -522,8 +522,8 @@ pl    ugins:
             protocol: TCP
             targetPort: https
           type: ClusterIP
-
-pl    uginSecrets:
+    
+    pluginSecrets:
       # If installing the AWS plugin, the below config is required unless one of the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-aws.yaml for
@@ -540,7 +540,7 @@ pl    uginSecrets:
         #   AWS_ACCESS_KEY_ID: ""
         #   AWS_SECRET_ACCESS_KEY: ""
         #   AWS_SESSION_TOKEN: ""
-
+    
       # If installing the Azure plugin, the below config is required unless one of the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-azure.yaml for
@@ -560,7 +560,7 @@ pl    uginSecrets:
         #   AZURE_CLIENT_CERTIFICATE_PASSWORD: ""
         #   AZURE_USERNAME: ""
         #   AZURE_PASSWORD: ""
-
+    
       # If installing the vSphere plugin, the below config is required unless the following applies:
       # - The target cluster already contains a secret with the correct format and you've specified its name above.
       #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-vsphere.yaml for
@@ -572,7 +572,7 @@ pl    uginSecrets:
         # password: ""
         # vcenterServer: ""
         # insecureSkipVerify: ""
-
+    
       oci:
         # If installing the OCI plugin and validating against private registries, the below config is required unless the following applies:
         # - The target cluster already contains secrets with the correct format for all private registries.
@@ -583,7 +583,7 @@ pl    uginSecrets:
           # - secretName: registry-creds # ensure this matches the credentials secretName in the OciRegistryRule
           #   username: username # for ECR Registries, store the AWS_ACCESS_KEY_ID here
           #   password: pa$$w0rd # for ECR Registries, store the AWS_SECRET_ACCESS_KEY here
-
+    
         # If installing the OCI plugin and enabling signature verification of artifacts, the below config is required unless the following applies:
         # - The target cluster already contains secrets with the correct format for all public keys used for signing artifacts.
         #   If specifying your own secret, refer to chart/validator/templates/plugin-secret-oci-pubkey.yaml for
