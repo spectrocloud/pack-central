@@ -5,7 +5,7 @@
     "contributor" : "spectrocloud"
   },
   "charts": [
-    "charts/validator-0.0.39.tgz"
+    "charts/validator-0.0.40.tgz"
   ],
   "cloudTypes": [
     "all"
