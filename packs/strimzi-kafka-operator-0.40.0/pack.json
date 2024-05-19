@@ -1,0 +1,29 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "commit_msg": "Run an Apache Kafka® cluster on Kubernetes with Strimzi",
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "charts": [
+      "charts/strimzi-kafka-operator-helm-3-chart-0.40.0.tgz"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Strimzi Kafka",
+    "layer":"addon",
+    "name": "strimzi-kafka",
+    "version": "0.4.0",
+    "constraints": {
+        "dependencies": [
+            {
+                "packName": "kubernetes",
+                "minVersion": "1.23.0",
+                "maxVersion": "",
+                "layer": "k8s",
+                "type": "required"
+            }
+        ]
+    }
+}
