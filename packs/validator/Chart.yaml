@@ -1,6 +1,0 @@
-apiVersion: v2
-name: validator
-description: A Helm chart for the validator
-type: application
-version: 0.0.1
-appVersion: 0.0.40

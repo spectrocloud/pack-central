@@ -2,7 +2,8 @@
   "addonType":"system app",
   "annotations": {
     "source": "community",
-    "contributor" : "spectrocloud"
+    "contributor" : "spectrocloud",
+    "upload_helm_charts": "true"
   },
   "charts": [
     "charts/validator-0.0.40.tgz"
@@ -13,5 +14,5 @@
   "displayName": "Validator",
   "layer":"addon",
   "name": "validator-chart",
-  "version": "0.0.1"
+  "version": "0.0.40"
 }

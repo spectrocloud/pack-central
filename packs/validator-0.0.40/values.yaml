@@ -14,6 +14,24 @@ pack:
       - repo: https://validator-labs.github.io/validator
         name: validator
         version: v0.0.40
+      - repo: https://validator-labs.github.io/validator-plugin-aws
+        name: validator-plugin-aws
+        version: v0.0.26
+      - repo: https://validator-labs.github.io/validator-plugin-azure
+        name: validator-plugin-azure
+        version: v0.0.11
+      - repo: https://validator-labs.github.io/validator-plugin-kubescape
+        name: validator-plugin-kubescape
+        version: v0.0.3
+      - repo: https://validator-labs.github.io/validator-plugin-network
+        name: validator-plugin-network
+        version: v0.0.16
+      - repo: https://validator-labs.github.io/validator-plugin-oci
+        name: validator-plugin-oci
+        version: v0.0.10
+      - repo: https://validator-labs.github.io/validator-plugin-vsphere
+        name: validator-plugin-vsphere
+        version: v0.0.20
   namespace: "validator"
   
 charts:
