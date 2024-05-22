@@ -18,13 +18,6 @@
     "constraints": {
         "dependencies": [
             {
-                "packName": "kubernetes",
-                "minVersion": "1.25.0",
-                "maxVersion": "1.29.99",
-                "layer": "k8s",
-                "type": "required"
-            },
-            {
               "packName": "elastic-operator",
               "minVersion": "2.12.1",
               "maxVersion": "",
