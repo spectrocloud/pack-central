@@ -166,6 +166,10 @@ presets:
               count: 1
               elasticsearchRef:
                 name: elasticsearch
+          
+          # AIRGAP DEPLOYMENTS PLEASE NOTE:
+          # This preset curls logstash data from an external location. 
+          # If you want to use this in airgap you will have to move it to a local file server and replace the curl endpoint below
           eck-beats:
             enabled: true
             spec:
