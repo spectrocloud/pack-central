@@ -14,16 +14,5 @@
     "displayName": "Strimzi Kafka",
     "layer":"addon",
     "name": "strimzi-kafka",
-    "version": "0.4.0",
-    "constraints": {
-        "dependencies": [
-            {
-                "packName": "kubernetes",
-                "minVersion": "1.23.0",
-                "maxVersion": "",
-                "layer": "k8s",
-                "type": "required"
-            }
-        ]
-    }
+    "version": "0.4.0"
 }
