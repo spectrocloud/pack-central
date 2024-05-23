@@ -1,0 +1,46 @@
+{{ if and .Values.install.defaultInfraCollectors (has "linux" .Values.containermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Containermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-containermon" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  os: linux
+  {{- include "appdynamics-cloud-k8s-monitoring.getClusterId" . | nindent 2 }}
+  {{$containermonConfig := .Values.containermonConfig}}
+  {{ if (.Values.containermonConfig.env).linux -}}
+  {{$containermonConfig = mustMergeOverwrite .Values.containermonConfig .Values.containermonConfig.env.linux}}
+  {{- end }}
+  {{ with $containermonConfig -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+{{- end }}
+---
+{{ if and .Values.install.defaultInfraCollectors (has "windows" .Values.containermonConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Containermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-containermon-windows" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  os: windows
+  {{- include "appdynamics-cloud-k8s-monitoring.getClusterId" . | nindent 2 }}
+  {{$containermonConfig := .Values.containermonConfig}}
+  {{ if (.Values.containermonConfig.env).windows -}}
+  {{$containermonConfig = mustMergeOverwrite .Values.containermonConfig .Values.containermonConfig.env.windows}}
+  {{- end }}
+  {{ with $containermonConfig -}}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+{{- end }}
+
