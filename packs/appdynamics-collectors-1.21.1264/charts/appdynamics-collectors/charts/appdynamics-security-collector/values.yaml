@@ -1,0 +1,7 @@
+panoptica:
+  k8sEventsEnabled: false
+  isContainerSecurityEnabled: false
+  controller:
+    agentID: ""
+    secret:
+      sharedSecret: ""

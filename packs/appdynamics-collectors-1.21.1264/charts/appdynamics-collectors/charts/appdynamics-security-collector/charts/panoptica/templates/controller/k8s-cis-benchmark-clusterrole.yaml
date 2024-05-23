@@ -1,0 +1,13 @@
+{{- if .Values.global.k8sCisBenchmarkEnabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "controller.fullname" . }}-k8s-cis-benchmark
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources:
+      - "nodes"
+    verbs: ["get", "list"]
+{{- end }}
