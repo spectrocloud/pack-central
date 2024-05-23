@@ -1,0 +1,18 @@
+{
+    "addonType": "logging",
+    "annotations": {
+      "commit_msg": "Elastic Cloud on Kubernetes (ECK) operator",
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "charts": [
+      "charts/eck-operator-2.12.1.tgz"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "ECK Operator",
+    "layer":"addon",
+    "name": "elastic-operator",
+    "version": "2.12.1"
+}
