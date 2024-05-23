@@ -1,0 +1,10 @@
+# required 
+endpoint: "https://data.appdynamics.com"
+clientId: "id"
+clientSecret: "secret"
+tokenUrl: "https://token_ur.com/oauth2l"
+
+# If your cluster does not deploy the service mesh that can do http/2 load balancing for grpc, 
+# we recommended to deploy the otel collector with a headless service to enable the grpc client load balance.
+service:
+  clusterIP: None
