@@ -1,0 +1,136 @@
+installClusterAgent: false
+installInfraViz: false
+
+# Docker images
+imageInfo:
+  agentImage: docker.io/appdynamics/cluster-agent
+  agentTag: 24.1.0
+  imagePullPolicy: Always                               # Will be used for operator pod
+  machineAgentImage: docker.io/appdynamics/machine-agent
+  machineAgentTag: latest
+  machineAgentWinImage: docker.io/appdynamics/machine-agent-analytics
+  machineAgentWinTag: win-latest
+  netVizImage: docker.io/appdynamics/machine-agent-netviz
+  netvizTag: latest
+
+# AppDynamics controller info (VALUES TO BE PROVIDED BY THE USER)
+controllerInfo:
+  url: null
+  account: null
+  username: null
+  password: null
+  accessKey: null
+  globalAccount: null            # To be provided when using machineAgent Window Image
+
+  # Cluster Agent SSL properties
+  customSSLCert: null
+  # InfraViz SSL properties
+  keystorePasswordSecret: ""
+  keyStoreFileSecret: ""
+
+  # Proxy config
+  authenticateProxy: false
+  proxyUrl: null
+  proxyUser: null
+  proxyPassword: null
+
+# RBAC config
+createServiceAccount: true
+agentServiceAccount: appdynamics-cluster-agent
+infravizServiceAccount: appdynamics-infraviz
+
+# Cluster agent config
+clusterAgent:
+  nsToMonitor:
+    - default
+  clusterMetricsSyncInterval: 60
+  metadataSyncInterval: 60
+  eventUploadInterval: 10
+  httpClientTimeout: 30
+  podBatchSize: 6
+  instrumentationMaxPollingAttempts: 10
+  instrumentationNsStatusPollingIntervalMinutes: 5
+  imagePullPolicy: ""
+  imagePullSecret: ""
+  memoryThresholdForRestart: 90
+  containerProperties:
+    containerBatchSize: 5
+    containerParallelRequestLimit: 1
+    containerRegistrationInterval: 120
+  logProperties:
+    logFileSizeMb: 5
+    logFileBackups: 3
+    logLevel: INFO
+  metricProperties:
+    metricsSyncInterval: 30
+    metricUploadRetryCount: 2
+    metricUploadRetryIntervalMilliSeconds: 5
+
+# Profiling specific config - set pprofEnabled true if profiling need to be enabled,
+# provide pprofPort if you need different port else default port 9991 will be assigned
+agentProfiler:
+  pprofEnabled: false
+  pprofPort: 9991
+
+# Pod filter config
+podFilter: {}
+
+# Instrumentation config
+instrumentationConfig:
+  enabled: false
+  containerAppCorrelationMethod: proxy
+
+# InfraViz config
+infraViz:
+  nodeOS: "linux"
+  enableMasters: false
+  stdoutLogging: false
+  enableContainerHostId: true
+  enableServerViz: false
+  enableDockerViz: false
+
+# Netviz config
+netViz:
+  enabled: false
+  netVizPort: 3892
+  resourcesNetViz:
+    limits:
+      cpu: 200m
+      memory: "300Mi"
+    requests:
+      cpu: 100m
+      memory: "150Mi"
+
+# Agent pod specific properties
+agentPod:
+  nodeSelector: {}
+  tolerations: []
+  resources:
+    limits:
+      cpu: "1250m"
+      memory: "300Mi"
+    requests:
+      cpu: "750m"
+      memory: "150Mi"
+  labels: {}
+
+# Infraviz pod specific properties
+infravizPod:
+  imagePullSecret: ""
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  priorityClassName: ""
+  resources:
+    limits:
+      cpu: 500m
+      memory: "1G"
+    requests:
+      cpu: 200m
+      memory: "800M"
+  overrideVolumeMounts:
+  env:
+
+# Subcharts boolean install switches
+install:
+  metrics-server: false

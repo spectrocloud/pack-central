@@ -1,0 +1,107 @@
+{{ if and .Values.install.defaultInfraCollectors (or (has "linux" .Values.containermonConfig.os) (has "linux" .Values.servermonConfig.os)) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Inframon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-inframon" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  {{- $mergedPodConfig := (mustMergeOverwrite .Values.inframonPod .Values.inframonPod.env.linux) }}
+  {{- if (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") }}
+    {{- if ne (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") "linux" }}
+      {{- fail "Invalid node selector" }}
+    {{- end }}
+  {{- else }}
+    {{- $mergedPodConfig := mustMergeOverwrite (include "appdynamics-cloud-k8s-monitoring.osNodeSelector" "linux" | fromYaml ) $mergedPodConfig }}
+  {{- end }}
+  {{- template "appdynamics-cloud-k8s-monitoring.podConfigs" $mergedPodConfig }}
+  os: linux
+  serviceAccountName: {{ .Values.inframonServiceAccount}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  agentManagementEnabled: {{ .Values.agentManagementEnabled.defaultInfraCollectors | quote }}
+  {{ if .Values.agentManagementEnabled.defaultInfraCollectors -}}
+  collectorName: {{ .Release.Name }}
+  clusterName: {{ include "appdynamics-cloud-k8s-monitoring.getClusterName" . }}
+  helmChartVersion: {{ .Values.global.helmChartVersion }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getClusterId" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getOAuth" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getAgentManagementProxy" . | nindent 2 }}
+  {{- end }}
+
+  {{ with .Values.infraManagerConfig -}}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  printToStdout: {{ .printToStdout | quote }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+{{- end }}
+---
+{{ if and .Values.install.defaultInfraCollectors (or (has "windows" .Values.containermonConfig.os) (has "windows" .Values.servermonConfig.os)) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Inframon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-inframon-windows" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  {{- $mergedPodConfig := (mustMergeOverwrite .Values.inframonPod .Values.inframonPod.env.windows) }}
+  {{- if (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") }}
+    {{- if ne (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") "windows" }}
+      {{- fail "Invalid node selector" }}
+    {{- end }}
+  {{- else }}
+    {{- $mergedPodConfig := mustMergeOverwrite (include "appdynamics-cloud-k8s-monitoring.osNodeSelector" "windows" | fromYaml ) $mergedPodConfig }}
+  {{- end }}
+  {{- template "appdynamics-cloud-k8s-monitoring.podConfigs" $mergedPodConfig }}
+
+  os: windows
+  serviceAccountName: {{ .Values.inframonServiceAccount}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  agentManagementEnabled: {{ .Values.agentManagementEnabled.defaultInfraCollectors | quote }}
+  {{ if .Values.agentManagementEnabled.defaultInfraCollectors -}}
+  collectorName: {{ .Release.Name }}
+  clusterName: {{ include "appdynamics-cloud-k8s-monitoring.getClusterName" . }}
+  helmChartVersion: {{ .Values.global.helmChartVersion }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getClusterId" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getOAuth" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getAgentManagementProxy" . | nindent 2 }}
+  {{- end }}
+  
+  {{ with .Values.infraManagerConfig -}}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  printToStdout: {{ .printToStdout | quote }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+
+  windowsExporter:
+    {{- $mergedPodConfig := .Values.windowsExporterPod }}
+    {{- if (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") }}
+      {{- if ne (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") "windows" }}
+        {{- fail "Invalid node selector" }}
+      {{- end }}
+    {{- end }}
+    {{- include "appdynamics-cloud-k8s-monitoring.podConfigs" $mergedPodConfig | nindent 2 }}
+{{- end }}
