@@ -1,0 +1,29 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "false",
+    "source": "community",
+    "contributor": "appdynamics"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/appdynamics-collectors-1.21.1264.tgz"
+  ],
+  "displayName": "Cisco AppDynamics Collectors",
+  "layer": "addon",
+  "name": "cisco-appdynamics-collectors",
+  "version": "1.21.1264",
+  "constraints": {
+    "dependencies": [
+      {
+        "layer": "addon",
+        "packName": "cisco-appdynamics-operators",
+        "minVersion": "1.21.0",
+        "maxVersion": "",
+        "type": "required"
+      }
+    ]
+  }
+}

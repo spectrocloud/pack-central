@@ -1,0 +1,16 @@
+{{ if .Values.installClusterAgent -}}
+{{ $agentSA := .Values.agentServiceAccount }}
+{{ $namespace := .Release.Namespace }}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: appdynamics-cluster-agent-instrumentation-{{.Release.Name}}
+subjects:
+  {{- printf "- kind: ServiceAccount" | nindent 2 }}
+  {{- printf "name: %s" $agentSA | nindent 4 }}
+  {{- printf "namespace: %s" $namespace | nindent 4}}
+roleRef:
+  kind: ClusterRole
+  name: appdynamics-cluster-agent-instrumentation-{{.Release.Name}}
+  apiGroup: rbac.authorization.k8s.io
+{{- end -}}
