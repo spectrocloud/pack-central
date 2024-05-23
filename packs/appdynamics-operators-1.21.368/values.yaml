@@ -1,0 +1,37 @@
+pack:
+  namespace: "appdynamics"
+  releaseNameOverride:
+    appdynamics-operators: operator
+  content:
+    images:
+      - image: appdynamics/appdynamics-cloud-operator:24.4.0-1445
+    charts:
+      - repo: https://appdynamics.jfrog.io/artifactory/appdynamics-cloud-helmcharts/
+        name: appdynamics-operators
+        version: 1.21.368
+charts:
+  appdynamics-operators:
+    global:
+      clusterName:
+    appdynamics-cloud-operator:
+      operatorPod:
+        image: appdynamics/appdynamics-cloud-operator:24.4.0-1445
+        imagePullPolicy: Always
+        imagePullSecrets: []
+        nodeSelector:
+          kubernetes.io/os: linux
+      kubeRbacProxy: {}
+    opentelemetry-operator:
+      nodeSelector:
+        kubernetes.io/os: linux
+      manager:
+        serviceAccount:
+          name: opentelemetry-operator
+    appdynamics-smartagent:
+      solution:
+        endpoint:
+      oauth:
+        clientId:
+        clientSecret:
+        tokenUrl:
+        tenantId:
