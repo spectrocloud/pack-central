@@ -1,6 +1,0 @@
-apiVersion: v2
-name: validator
-description: Monitor results created by validator plugins and upload them to a configurable sink
-type: application
-version: 0.0.40
-appVersion: 0.0.40

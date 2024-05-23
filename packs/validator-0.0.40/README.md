@@ -1,5 +1,11 @@
 # Validator <!-- It must be the pack’s name -->
+The Validator ecosystem provides a means for producing (and alerting on) informative, actionable validation results pertaining to infrastructure, networking, kubernetes cluster internals, and more.
 
+Validator supports two primary use-cases:
+- Pre-flight environment validation
+- Continuous configuration drift monitoring
+
+Various plugins and plugin rules exist for validating a wide variety of systems. Pick and choose from them to craft a validation profile that meets your organization's requirements.
 
 ## Prerequisites
 
