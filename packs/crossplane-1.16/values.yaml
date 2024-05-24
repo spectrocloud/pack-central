@@ -1,7 +1,7 @@
 pack:
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
-  namespace: "crossplane"
+  namespace: "crossplane-system"
 
 charts:
   crossplane:
