@@ -1,0 +1,90 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "controller.fullname" . }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["", "apps", "extensions", "batch", "rbac.authorization.k8s.io"]
+    resources: ["pods", "namespaces", "replicasets", "deployments", "jobs", "cronjobs", "daemonsets", "statefulsets", "nodes", "clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+{{- if .Values.global.isContainerSecurityEnabled }}
+  # external service monitor
+  - apiGroups: ["", "networking.k8s.io", "networking.istio.io"]
+    resources: ["services", "endpoints", "ingresses", "virtualservices"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "update", "create"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "watch", "list", "create", "update", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "delete"]
+{{- if .Values.global.isConnectionEnforcementEnabled }}
+  - apiGroups: ["networking.istio.io"]
+    resources: ["destinationrules", "serviceentries", "virtualservices", "envoyfilters"]
+    verbs: ["create", "patch", "get", "list", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["peerauthentications"]
+    verbs: ["create", "patch", "list", "delete"]
+{{- end }}
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["get", "patch", "create", "delete", "list", "watch"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["mutatingwebhookconfigurations"]
+    verbs: ["get", "patch", "create", "delete", "list", "watch"]
+{{- if .Values.global.isExternalCaEnabled }}
+  # CSR signer
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests/status"]
+    verbs: ["update"]
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["signers"]
+    resourceNames: ["{{ include "product.name" . }}.io/*"]  # all signers in the '{{ include "product.name" . }}.io' domain
+    verbs: ["sign"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificaterequests", "certificaterequests/status"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+{{- end }}
+{{- if .Values.global.isOpenShift }}
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings"]
+    verbs: ["get", "create", "update", "delete"]
+  - apiGroups: ["k8s.cni.cncf.io"]
+    resources: ["network-attachment-definitions"]
+    verbs: ["get", "create", "update", "delete"]
+{{- end }}
+  # Allow bank-vaults to extract command metadata from an image.
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list"]
+{{- else if .Values.global.isAPISecurityEnabled }}
+  # Get kube-system namespace uid
+  # Watch namespaces for protected services discovery
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Watch nodes for nodes info report
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  # Watch services for protected services discovery
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+{{- end }}

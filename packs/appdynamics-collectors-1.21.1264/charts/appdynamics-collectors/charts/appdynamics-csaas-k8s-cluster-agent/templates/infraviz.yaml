@@ -1,0 +1,120 @@
+{{ if .Values.installInfraViz -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: InfraViz
+metadata:
+    name: {{ printf "%s-%s" .Release.Name "appdynamics-infraviz" | trunc 63 }}
+    namespace: {{ .Release.Namespace }}
+spec:
+    controllerUrl: {{ required "AppDynamics controller URL is required!" .Values.controllerInfo.url }}
+    account: {{ required "AppDynamics controller account is required!" .Values.controllerInfo.account }}
+
+    {{ if .Values.controllerInfo.keyStoreFileSecret -}}
+    # Custom SSL config
+    keyStoreFileSecret: {{ .Values.controllerInfo.keyStoreFileSecret }}
+    keystorePasswordSecret: {{ .Values.controllerInfo.keystorePasswordSecret }}
+    {{- end }}
+
+    {{- if eq .Values.infraViz.nodeOS "linux" }}
+    image: {{ .Values.imageInfo.machineAgentImage }}:{{ .Values.imageInfo.machineAgentTag }}
+    globalAccount: {{ required "AppDynamics controller global account is required when using machine-agent linux image!" .Values.controllerInfo.globalAccount }}
+    {{- else if eq .Values.infraViz.nodeOS "windows" }}
+    imageWin: {{ .Values.imageInfo.machineAgentWinImage }}:{{ .Values.imageInfo.machineAgentWinTag }}
+    globalAccount: {{ required "AppDynamics controller global account is required when using machine-agent win image!" .Values.controllerInfo.globalAccount }}
+    {{- else if eq .Values.infraViz.nodeOS "all" }}
+    image: {{ .Values.imageInfo.machineAgentImage }}:{{ .Values.imageInfo.machineAgentTag }}
+    imageWin: {{ .Values.imageInfo.machineAgentWinImage }}:{{ .Values.imageInfo.machineAgentWinTag }}
+    globalAccount: {{ required "AppDynamics controller global account is required when using machine-agent win image!" .Values.controllerInfo.globalAccount }}
+    {{- end }}
+
+    {{ with .Values.controllerInfo -}}
+    {{ if .proxyUrl -}}
+    # Proxy config
+    proxyUrl: {{ .proxyUrl }}
+    {{ if .authenticateProxy -}}
+    proxyUser: {{ required "Proxy user is required to authenticate proxy!" .proxyUser }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
+
+    {{ with .Values.infraViz -}}
+    nodeOS: {{ .nodeOS -}}
+    {{ if .enableMasters }}
+    enableMasters: {{ .enableMasters -}}
+    {{- end }}
+    {{ if .stdoutLogging -}}
+    stdoutLogging: {{ .stdoutLogging -}}
+    {{- end }}
+    {{ if .enableContainerHostId -}}
+    enableContainerHostId: {{ .enableContainerHostId -}}
+    {{- end }}
+    {{ if .runAsUser -}}
+    runAsUser: {{ .runAsUser -}}
+    {{- end }}
+    {{ if .runAsGroup -}}
+    runAsGroup: {{ .runAsGroup -}}
+    {{- end }}
+    {{ if .fsGroup -}}
+    fsGroup: {{ .fsGroup -}}
+    {{- end }}
+    {{ if .enableServerViz -}}
+    enableServerViz: {{ .enableServerViz -}}
+    {{- end }}
+    {{ if .enableDockerViz -}}
+    enableDockerViz: {{ .enableDockerViz -}}
+    {{- end }}
+    {{ if .eventServiceUrl -}}
+    eventServiceUrl: {{ .eventServiceUrl -}}
+    {{- end }}
+
+    # Log specific properties
+    {{ with .logProperties -}}
+    logLevel: {{ .logLevel }}
+    {{- end }}
+
+    {{ with .metricProperties -}}
+    metricsLimit: {{ .metricsLimit | quote -}}
+    {{- end }}
+
+    {{ if .propertyBag -}}
+    propertyBag: {{ .propertyBag -}}
+    {{- end }}
+
+    {{ if .uniqueHostId -}}
+    uniqueHostId: {{ .uniqueHostId -}}
+    {{- end }}
+
+    {{- end }}
+
+    {{ if .Values.netViz.enabled -}}
+    netVizImage: {{ .Values.imageInfo.netVizImage }}:{{ .Values.imageInfo.netvizTag }}
+    netVizPort: {{ .Values.netViz.netVizPort -}}
+    {{- end}}
+    {{ if .Values.infravizPod.imagePullSecret -}}
+    imagePullSecret: {{ .Values.infravizPod.imagePullSecret }}
+    {{- end }}
+    {{ if .Values.infravizPod.imagePullPolicy -}}
+    imagePullPolicy: {{ .Values.infravizPod.imagePullPolicy }}
+    {{- end }}
+    nodeSelector:
+    {{- toYaml .Values.infravizPod.nodeSelector | nindent 6 }}
+    priorityClassName:
+    {{- toYaml .Values.infravizPod.priorityClassName | nindent 6 }}
+    # Tolerations
+    tolerations:
+    {{- toYaml .Values.infravizPod.tolerations | nindent 6 }}
+    # Resources
+    resources:
+    {{- toYaml .Values.infravizPod.resources | nindent 6 }}
+    {{ if .Values.infravizPod.overrideVolumeMounts -}}
+    overrideVolumeMounts:
+    {{- toYaml .Values.infravizPod.overrideVolumeMounts | nindent 6 }}
+    {{ end -}}
+    {{ if .Values.infravizPod.env -}}
+    env:
+    {{- toYaml .Values.infravizPod.env | nindent 6 }}
+    {{ end -}}
+    #netviz resources
+    resourcesNetViz:
+    {{- toYaml .Values.netViz.resourcesNetViz | nindent 6 }}
+{{ end -}}
