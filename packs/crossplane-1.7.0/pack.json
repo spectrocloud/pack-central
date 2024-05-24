@@ -2,7 +2,8 @@
     "addonType": "system app",
     "annotations": {
       "source": "community",
-      "contributor" : "spectrocloud"
+      "contributor" : "spectrocloud",
+      "system_state": "deprecated"
     },    
     "cloudTypes": [
       "all"
@@ -13,7 +14,6 @@
     ],
     "layer":"addon",
     "name": "crossplane",
-    "version": "1.7.0",
-    "system_state": "deprecated"
+    "version": "1.7.0"
   }
   
