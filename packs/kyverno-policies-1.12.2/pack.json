@@ -7,12 +7,12 @@
     "cloudTypes": [
       "all"
     ],
-    "displayName": "Kyverno",
+    "displayName": "Kyverno-Policies",
     "charts": [
-      "charts/kyverno-3.2.3.tgz"
+      "charts/kyverno-policies-3.2.2.tgz"
     ],
     "layer":"addon",
-    "name": "kyverno",
+    "name": "kyverno-policies",
     "version": "1.12.2",
     "constraints": {
         "dependencies": [
