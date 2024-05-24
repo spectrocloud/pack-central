@@ -1,0 +1,19 @@
+{
+    "name": "oam-app-controller",
+    "displayName": "OAM App Controller",
+    "annotations": {
+        "description": "OAM Application Controller",
+        "contributor": "spectrocloud"
+    },
+    "version": "0.0.3",
+    "charts": [
+        "charts/app-core-0.0.3.tgz",
+        "charts/flux2-2.12.4.tgz",
+        "charts/zot-0.1.50.tgz"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}
