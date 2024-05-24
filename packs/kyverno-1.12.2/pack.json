@@ -1,0 +1,28 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Crossplane",
+    "charts": [
+      "charts/kyverno-3.2.3.tgz"
+    ],
+    "layer":"addon",
+    "name": "kyverno",
+    "version": "1.12.2",
+    "constraints": {
+        "dependencies": [
+            {
+                "packName": "kubernetes",
+                "layer": "k8s",
+                "minVersion": "1.25.0",
+                "type": "required"
+            }
+        ]
+    }
+  }
+  
