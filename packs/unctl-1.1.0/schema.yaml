@@ -1,0 +1,2 @@
+charts.unctl.ai.token:
+  schema: '{{ format "${password}" }}'
