@@ -1,0 +1,53 @@
+presets:
+  - name: "palette-provider"
+    displayName: "Enable Spectro Cloud Palette Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/crossplane-contrib/provider-palette:v0.19.2"
+  - name: "aws-provider"
+    displayName: "Enable AWS Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/upbound/provider-aws:v1.5.0"
+  - name: "azure-provider"
+    displayName: "Enable Azure Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/crossplane-contrib/provider-azure:v0.20.1"
+  - name: "gcp-provider"
+    displayName: "Enable GCP Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/crossplane-contrib/provider-gcp:v0.22.0"
+  - name: "aws-gcp-azure-provider"
+    displayName: "Enable AWS, GCP, Azure Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/crossplane-contrib/provider-gcp:v0.22.0"
+              - "xpkg.upbound.io/crossplane-contrib/provider-azure:v0.20.1"
+              - "xpkg.upbound.io/upbound/provider-aws:v1.5.0"

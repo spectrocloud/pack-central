@@ -9,11 +9,20 @@
     ],
     "displayName": "Crossplane",
     "charts": [
-      "charts/crossplane-1.7.0.tgz"
+      "charts/crossplane-1.16.0.tgz"
     ],
     "layer":"addon",
     "name": "crossplane",
-    "version": "1.7.0",
-    "eol": "2024-06-30"
+    "version": "1.16.0",
+    "constraints": {
+      "dependencies": [
+        {
+          "packName": "kubernetes",
+          "layer": "k8s",
+          "minVersion": "1.27.0",
+          "type": "required"
+        }
+      ]
+    }
   }
   
