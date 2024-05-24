@@ -13,34 +13,6 @@
     ],
     "layer":"addon",
     "name": "kyverno",
-    "version": "1.12.2",
-    "constraints": {
-        "dependencies": [
-            {
-                "packName": "kubernetes",
-                "layer": "k8s",
-                "minVersion": "24.99",
-                "type": "required"
-            },
-            {
-              "packName": "edge-k3s",
-              "layer": "k8s",
-              "maxVersion": "1.24.99",
-              "type": "required"
-            },
-            {
-              "packName": "edge-k8s",
-              "layer": "k8s",
-              "maxVersion": "1.24.99",
-              "type": "required"
-            },
-            {
-              "packName": "edge-rke2",
-              "layer": "k8s",
-              "maxVersion": "1.24.99",
-              "type": "required"
-            }
-        ]
-    }
+    "version": "1.12.2"
   }
   
