@@ -1,0 +1,703 @@
+pack:
+  content:
+    images:
+      - image: quay.io/spectrocloud-labs/app-core:v0.0.3
+      - image: cgr.dev/chainguard/kube-webhook-certgen:latest
+      - image: ghcr.io/fluxcd/helm-controller:v0.37.4
+      - image: ghcr.io/fluxcd/image-automation-controller:v0.37.1
+      - image: ghcr.io/fluxcd/image-reflector-controller:v0.31.2
+      - image: ghcr.io/fluxcd/kustomize-controller:v1.2.2
+      - image: ghcr.io/fluxcd/notification-controller:v1.2.4
+      - image: ghcr.io/fluxcd/source-controller:v1.2.4
+      - image: ghcr.io/fluxcd/flux-cli:v2.2.3
+      - image: ghcr.io/project-zot/zot-linux-amd64:v2.0.2-rc2
+    charts:
+      - repo: https://spectrocloud-labs.github.io/app-renderer
+        name: app-core
+        version: 0.0.3
+      - repo: https://fluxcd-community.github.io/helm-charts
+        name: flux2
+        version: 2.12.4
+      - repo: http://zotregistry.io/helm-charts
+        name: zot
+        version: 0.1.50
+  namespace: "app-system"
+
+charts:
+  app-core:
+    # Default values for app-core.
+    # This is a YAML-formatted file.
+    # Declare variables to be passed into your templates.
+
+    ## @section app-core parameters
+
+    ## @param systemDefinitionNamespace System definition namespace, if unspecified, will use built-in variable `.Release.Namespace`.
+    systemDefinitionNamespace:
+
+    ## @param concurrentReconciles concurrentReconciles is the concurrent reconcile number of the controller
+    concurrentReconciles: 4
+
+    ## @param controllerArgs.reSyncPeriod The period for resync the applications
+    controllerArgs:
+      reSyncPeriod: 5m
+
+    ## @section OCI registry parameters. If specified, OCI deployment flow will be enabled.
+    ociRegistry:
+      enabled: true
+      endpoint: "oam-app-controller-zot.app-system.svc.cluster.local:5000"
+      repository: "oam-applications"
+      username: "user"
+      password: "user"
+
+    ## @section app controller parameters
+
+    ## @param replicaCount app controller replica count
+    replicaCount: 1
+
+    ## @param imageRegistry Image registry
+    imageRegistry: ""
+    ## @param image.repository Image repository
+    ## @param image.tag Image tag
+    ## @param image.pullPolicy Image pull policy
+    image:
+      repository: quay.io/spectrocloud-labs/app-core
+      tag: v0.0.3
+      pullPolicy: Always
+
+    ## @param resources.limits.cpu app controller's cpu limit
+    ## @param resources.limits.memory app controller's memory limit
+    ## @param resources.requests.cpu app controller's cpu request
+    ## @param resources.requests.memory app controller's memory request
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 50m
+        memory: 20Mi
+
+    ## @param webhookService.type app webhook service type
+    ## @param webhookService.port app webhook service port
+    webhookService:
+      type: ClusterIP
+      port: 9443
+
+    ## @param healthCheck.port app health check port
+    healthCheck:
+      port: 9440
+
+    ## @skip readinessProbe
+    readinessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    ## @skip livenessProbe
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 90
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+
+    ## @section Common parameters
+
+    ## @param imagePullSecrets Image pull secrets
+    imagePullSecrets: []
+    ## @param nameOverride Override name
+    nameOverride: ""
+    ## @param fullnameOverride Fullname override
+    fullnameOverride: ""
+
+    ## @param serviceAccount.create Specifies whether a service account should be created
+    ## @param serviceAccount.annotations Annotations to add to the service account
+    ## @param serviceAccount.name The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    serviceAccount:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, a name is generated using the fullname template
+      name:
+
+    ## @skip podSecurityContext
+    podSecurityContext: {}
+      # fsGroup: 2000
+
+    ## @skip securityContext
+    securityContext: {}
+      # capabilities:
+      #   drop:
+      #   - ALL
+      # readOnlyRootFilesystem: true
+      # runAsNonRoot: true
+      # runAsUser: 1000
+
+    ## @param nodeSelector Node selector
+    nodeSelector: {}
+
+    ## @param tolerations Tolerations
+    tolerations: []
+
+    ## @param affinity Affinity
+    affinity: {}
+
+    ## @param rbac.create Specifies whether a RBAC role should be created
+    rbac:
+      create: true
+
+    ## @param logDebug Enable debug logs for development purpose
+    logDebug: false
+
+    ## @param logFilePath If non-empty, write log files in this path
+    logFilePath: ""
+
+    ## @param logFileMaxSize Defines the maximum size a log file can grow to. Unit is megabytes. If the value is 0, the maximum file size is unlimited.
+    logFileMaxSize: 1024
+
+    ## @skip admissionWebhooks
+    admissionWebhooks:
+      enabled: true
+      failurePolicy: Fail
+      certificate:
+        mountPath: /etc/k8s-webhook-certs
+      patch:
+        enabled: true
+        image:
+          repository: cgr.dev/chainguard/kube-webhook-certgen
+          tag: latest
+          pullPolicy: IfNotPresent
+        nodeSelector: {}
+        affinity: {}
+        tolerations: []
+      appConversion:
+        enabled: false
+      certManager:
+        enabled: false
+        revisionHistoryLimit: 3
+
+    ## @param kubeClient.qps The qps for reconcile clients
+    ## @param kubeClient.burst The burst for reconcile clients
+    kubeClient:
+      qps: 400
+      burst: 600
+
+    ## @param definitionRevisionLimit Definition revision limit
+    definitionRevisionLimit: 2
+
+    ## @param devspaceEnabled Used for dev.
+    devspaceEnabled: false
+
+  flux2:
+    # global
+
+    installCRDs: true
+    crds:
+      # -- Add annotations to all CRD resources, e.g. "helm.sh/resource-policy": keep
+      annotations: {}
+
+    multitenancy:
+      # -- Implement the patches for Multi-tenancy lockdown.
+      # See https://fluxcd.io/docs/installation/#multi-tenancy-lockdown
+      enabled: false
+      # -- All Kustomizations and HelmReleases which don’t have spec.serviceAccountName
+      # specified, will use the default account from the tenant’s namespace.
+      # Tenants have to specify a service account in their Flux resources to be able
+      # to deploy workloads in their namespaces as the default account has no permissions.
+      defaultServiceAccount: "default"
+      # -- Both kustomize-controller and helm-controller service accounts run privileged
+      # with cluster-admin ClusterRoleBinding. Disable if you want to run them with a
+      # minimum set of permissions.
+      privileged: true
+
+    clusterDomain: cluster.local
+
+    cli:
+      image: ghcr.io/fluxcd/flux-cli
+      tag: v2.2.3
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      annotations: {}
+      serviceAccount:
+        automount: true
+
+    # controllers
+
+    helmController:
+      create: false
+      image: ghcr.io/fluxcd/helm-controller
+      tag: v0.37.4
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      extraEnv: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      nodeSelector: {}
+      # expects input structure as per specification https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#affinity-v1-core
+      # for example:
+      #   affinity:
+      #     nodeAffinity:
+      #      requiredDuringSchedulingIgnoredDuringExecution:
+      #        nodeSelectorTerms:
+      #        - matchExpressions:
+      #          - key: foo.bar.com/role
+      #            operator: In
+      #            values:
+      #            - master
+
+      affinity: {}
+      # expects input structure as per specification https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#toleration-v1-core
+      # for example:
+      #   tolerations:
+      #   - key: foo.bar.com/role
+      #     operator: Equal
+      #     value: master
+      #     effect: NoSchedule
+
+      tolerations: []
+
+    imageAutomationController:
+      create: false
+      image: ghcr.io/fluxcd/image-automation-controller
+      tag: v0.37.1
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      extraEnv: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    imageReflectionController:
+      create: false
+      image: ghcr.io/fluxcd/image-reflector-controller
+      tag: v0.31.2
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      extraEnv: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    kustomizeController:
+      create: true
+      image: ghcr.io/fluxcd/kustomize-controller
+      tag: v1.2.2
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      extraEnv: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      secret:
+        # -- Create a secret to use it with extraSecretMounts. Defaults to false.
+        create: false
+        name: ""
+        data: {}
+      # -- Defines envFrom using a configmap and/or secret.
+      envFrom:
+        map:
+          name: ""
+        secret:
+          name: ""
+      # -- Defines additional mounts with secrets.
+      # Secrets must be manually created in the namespace or with kustomizeController.secret
+      extraSecretMounts: []
+      # - name: secret-files
+      #   mountPath: /etc/secrets
+      #   subPath: ""
+      #   secretName: secret-files
+      #   readOnly: true
+
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    notificationController:
+      create: false
+      image: ghcr.io/fluxcd/notification-controller
+      tag: v1.2.4
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      extraEnv: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      service:
+        labels: {}
+        annotations: {}
+      webhookReceiver:
+        service:
+          labels: {}
+          annotations: {}
+        ingress:
+          create: false
+          # ingressClassName: nginx
+          annotations: {}
+          # kubernetes.io/ingress.class: nginx
+          # kubernetes.io/tls-acme: "true"
+          labels: {}
+          hosts:
+            - host: flux-webhook.example.com
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+          tls: []
+          #  - secretName: flux-webhook-tls
+          #    hosts:
+          #      - flux-webhook.example.com
+
+
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    sourceController:
+      create: true
+      image: ghcr.io/fluxcd/source-controller
+      tag: v1.2.4
+      resources:
+        limits: {}
+        # cpu: 1000m
+        # memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      priorityClassName: ""
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels: {}
+      container:
+        additionalArgs: []
+      serviceAccount:
+        create: true
+        automount: true
+        annotations: {}
+      imagePullPolicy: ""
+      service:
+        labels: {}
+        annotations: {}
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      extraEnv: []
+
+    policies:
+      create: true
+
+    rbac:
+      create: true
+      # -- Grant the Kubernetes view, edit and admin roles access to Flux custom resources
+      createAggregation: true
+      # -- Add annotations to all RBAC resources, e.g. "helm.sh/resource-policy": keep
+      annotations: {}
+      roleRef:
+        name: cluster-admin
+
+    logLevel: info
+    watchAllNamespaces: true
+
+    # -- contents of pod imagePullSecret in form 'name=[secretName]'; applied to all controllers
+    imagePullSecrets: []
+
+    # -- Array of extra K8s manifests to deploy
+    extraObjects: []
+    # Example usage from https://fluxcd.io/docs/components/source/buckets/#static-authentication
+    # - apiVersion: source.toolkit.fluxcd.io/v1beta2
+    #   kind: Bucket
+    #   metadata:
+    #     name: podinfo
+    #     namespace: default
+    #   spec:
+    #     interval: 1m
+    #     provider: generic
+    #     bucketName: podinfo
+    #     endpoint: minio.minio.svc.cluster.local:9000
+    #     insecure: true
+    #     secretRef:
+    #       name: minio-credentials
+    # - apiVersion: v1
+    #   kind: Secret
+    #   metadata:
+    #     name: minio-credentials
+    #     namespace: default
+    #   type: Opaque
+    #   data:
+    #     accesskey: <BASE64>
+    #     secretkey: <BASE64>
+
+    # Enables podMonitor creation for the Prometheus Operator
+    prometheus:
+      podMonitor:
+        # -- Enables podMonitor endpoint
+        create: false
+        podMetricsEndpoints:
+          - port: http-prom
+            relabelings:
+              # https://github.com/prometheus-operator/prometheus-operator/issues/4816
+              - sourceLabels: [__meta_kubernetes_pod_phase]
+                action: keep
+                regex: Running
+
+  zot:
+    # Default values for zot.
+    # This is a YAML-formatted file.
+    # Declare variables to be passed into your templates.
+    replicaCount: 1
+    image:
+      repository: ghcr.io/project-zot/zot-linux-amd64
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "v2.0.2-rc2"
+    serviceAccount:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, a name is generated using the fullname template
+      name: ""
+    service:
+      type: NodePort
+      port: 5000
+      nodePort: null  # Set to a specific port if type is NodePort
+      # Annotations to add to the service
+      annotations: {}
+      # Set to a static IP if a static IP is desired, only works when
+      # type: ClusterIP
+      clusterIP: null
+    # Enabling this will publicly expose your zot server
+    # Only enable this if you have security enabled on your cluster
+    ingress:
+      enabled: false
+      annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+      # If using nginx, disable body limits and increase read and write timeouts
+      # nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      # nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+      # nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      className: "nginx"
+      pathtype: ImplementationSpecific
+      hosts:
+        - host: chart-example.local
+          paths:
+            - path: /
+      tls: []
+      #  - secretName: chart-example-tls
+      #    hosts:
+      #      - chart-example.local
+    # By default, Kubernetes HTTP probes use HTTP 'scheme'. So if TLS is enabled
+    # in configuration, to prevent failures, the scheme must be set to 'HTTPS'.
+    httpGet:
+      scheme: HTTP
+    # By default, Kubernetes considers a Pod healthy if the liveness probe returns
+    # successfully. However, sometimes applications need additional startup time on
+    # their first initialization. By defining a startupProbe, we can allow the
+    # application to take extra time for initialization without compromising fast
+    # response to deadlocks.
+    startupProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      failureThreshold: 3
+    # If mountConfig is true the configMap named $CHART_RELEASE-config is mounted
+    # on the pod's '/etc/zot' directory
+    mountConfig: false
+    # If mountConfig is true the chart creates the '$CHART_RELEASE-config', if it
+    # does not exist the user is in charge of managing it (as this file includes a
+    # sample file you have to add it empty to handle it externally) ... note that
+    # the service does not reload the configFiles once mounted, so you need to
+    # delete the pods to create new ones to use the new values.
+    configFiles:
+      config.json: |-
+        {
+          "storage": { "rootDirectory": "/var/lib/registry" },
+          "http": { "address": "0.0.0.0", "port": "5000" },
+          "log": { "level": "debug" }
+        }
+    # Alternatively, the configuration can include authentication and acessControl
+    # data and we can use mountSecret option for the passwords.
+    #
+    #  config.json: |-
+    #    {
+    #      "storage": { "rootDirectory": "/var/lib/registry" },
+    #      "http": {
+    #        "address": "0.0.0.0",
+    #        "port": "5000",
+    #        "auth": { "htpasswd": { "path": "/secret/htpasswd" } },
+    #        "accessControl": {
+    #          "repositories": {
+    #            "**": {
+    #              "policies": [{
+    #                "users": ["user"],
+    #                "actions": ["read"]
+    #              }],
+    #              "defaultPolicy": []
+    #            }
+    #          },
+    #          "adminPolicy": {
+    #            "users": ["admin"],
+    #            "actions": ["read", "create", "update", "delete"]
+    #          }
+    #        }
+    #      },
+    #      "log": { "level": "debug" }
+    #    }
+
+    # externalSecrets allows to mount external (meaning not managed by this chart)
+    # Kubernetes secrets within the Zot container.
+    # The secret is identified by its name (property "secretName") and should be
+    # present in the same namespace. The property "mountPath" specifies the path
+    # within the container filesystem where the secret is mounted.
+    #
+    # Below is an example:
+    #
+    #  externalSecrets:
+    #  - secretName: "secret1"
+    #    mountPath: "/secrets/s1"
+    #  - secretName: "secret2"
+    #    mountPath: "/secrets/s2"
+    externalSecrets: []
+    # If mountSecret is true, the Secret named $CHART_RELEASE-secret is mounted on
+    # the pod's '/secret' directory (it is used to keep files with passwords, like
+    # a `htpasswd` file)
+    mountSecret: false
+    # If secretFiles does not exist the user is in charge of managing it, again, if
+    # you want to manage it the value has to be added empty to avoid using this one
+    secretFiles:
+      # Example htpasswd with 'admin:admin' & 'user:user' user:pass pairs
+      htpasswd: |-
+        admin:$2y$05$vmiurPmJvHylk78HHFWuruFFVePlit9rZWGA/FbZfTEmNRneGJtha
+        user:$2y$05$L86zqQDfH5y445dcMlwu6uHv.oXFgT6AiJCwpv3ehr7idc0rI3S2G
+    # Authentication string for Kubernetes probes, which is needed when `htpasswd`
+    # authentication is enabled, but the anonymous access policy is not.
+    # It contains a `user:password` string encoded in base64. The example value is
+    # from running `echo -n "foo:var" | base64`
+    # authHeader: "Zm9vOmJhcg=="
+
+    # If persistence is 'true' the service uses a persistentVolumeClaim to mount a
+    # volume for zot on '/var/lib/registry'; by default the pvc used is named
+    # '$CHART_RELEASE-pvc', but the name can be changed below
+    persistence: false
+    # PVC data, only used if persistence is 'true'
+    pvc:
+      # Make the chart create the PVC, this option is used with storageClasses that
+      # can create volumes dynamically, if that is not the case is better to do it
+      # manually and set create to false
+      create: false
+      # Name of the PVC to use or create if persistence is enabled, if not set the
+      # value '$CHART_RELEASE-pvc' is used
+      name: null
+      # Volume access mode, if using more than one replica we need
+      accessMode: "ReadWriteOnce"
+      # Size of the volume requested
+      storage: 8Gi
+      # Name of the storage class to use if it is different than the default one
+      storageClassName: null
+    # List of environment variables to set on the container
+    env:
+    # - name: "TEST"
+    #  value: "ME"
+    # - name: SECRET_NAME
+    #  valueFrom:
+    #    secretKeyRef:
+    #      name: mysecret
+    #      key: username
+
+    # Extra Volume Mounts
+    extraVolumeMounts: []
+    # - name: data
+    #   mountPath: /var/lib/registry
+
+    # Extra Volumes
+    extraVolumes: []
+    # - name: data
+    #   emptyDir: {}
+
+    # Deployment strategy type
+    strategy:
+      type: RollingUpdate
+    #  rollingUpdate:
+    #    maxUnavailable: 25%
+
+    podAnnotations: {}
