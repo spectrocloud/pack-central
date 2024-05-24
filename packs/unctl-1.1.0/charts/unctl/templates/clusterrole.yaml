@@ -1,0 +1,108 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: {{ template "unctl.name" . }}
+    chart: {{ template "unctl.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "unctl.fullname" . }}
+rules:
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - ''
+    resources:
+      - pods
+      - pods/log
+      - pods/metrics
+      - namespaces
+      - services
+      - serviceaccounts
+      - deployments
+      - replicationcontrollers
+      - replicasets
+      - daemonsets
+      - persistentvolumes
+      - configmaps
+      - endpoints
+      - events
+      - nodes
+      - persistentvolumeclaims
+      - secrets
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - deployments
+      - deployments/scale
+      - replicasets
+      - replicasets/scale
+      - statefulsets
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - extensions
+    resources:
+      - daemonsets
+      - deployments
+      - deployments/scale
+      - replicasets
+      - replicasets/scale
+      - replicationcontrollers/scale
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - networkpolicies
+      - ingressclasses
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+      - roles
+      - rolebindings
+  - verbs:
+      - list
+      - get
+    apiGroups:
+      - metrics.k8s.io
+    resources:
+      - pods
+{{- end -}}
