@@ -13,16 +13,6 @@
     ],
     "layer":"addon",
     "name": "crossplane",
-    "version": "1.16.0",
-    "constraints": {
-      "dependencies": [
-        {
-          "packName": "kubernetes",
-          "layer": "k8s",
-          "minVersion": "1.27.0",
-          "type": "required"
-        }
-      ]
-    }
+    "version": "1.16.0"
   }
   
