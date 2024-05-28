@@ -15,7 +15,7 @@ Kuberernetes >= 1.27.0
 
 Installing a provider creates new Kubernetes resources representing the Provider’s APIs. Installing a provider also creates a Provider pod that’s responsible for reconciling the Provider’s APIs into the Kubernetes cluster. Providers constantly watch the state of the desired managed resources and create any external resources that are missing.
 
-Install a Provider with a Crossplane Provider object setting the spec.package value to the location of the provider package.
+Install a Provider with a Crossplane Provider object setting the spec.package value to the location of the provider package.  Additional providers can be found in the [Upboud Marketplace](https://marketplace.upbound.io/)
 
 *For Example*
 Install the [Palette Provider](https://marketplace.upbound.io/providers/crossplane-contrib/provider-palette/v0.19.2)
@@ -32,3 +32,4 @@ spec:
 
 Crossplane Provider Guide - https://docs.crossplane.io/latest/concepts/providers/
 Crossplane Concepts - https://docs.crossplane.io/latest/concepts/
+Upbound Marketplace - https://marketplace.upbound.io/
