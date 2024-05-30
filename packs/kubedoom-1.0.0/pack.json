@@ -1,0 +1,13 @@
+{
+  "addonType": "app services",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Kubedoom",
+  "kubeManifests": ["manifests/kubedoom.yaml"],
+  "layer": "addon",
+  "name": "kubedoom",
+  "version": "1.0.0"
+}

@@ -1,0 +1,14 @@
+manifests.kubedoom.namespace:
+  # This schema enforces the requirement of a namespace in which the application will be deployed.
+  # The namespace should be specified as a string.
+  schema: '{{ required | format "${string}" | hints "Enter the namespace in which the application will be deployed."}}'
+
+manifests.kubedoom.images.kubedoom:
+  # This schema enforces the requirement of the application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ required | format "${string}/${string}:${version}" | hints "Enter the application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.kubedoom.port:
+  # This schema enforces the requirement of the cluster port number on which the service will listen for incoming traffic.
+  # The port should be specified as a number.
+  schema: '{{ required | format "${number}" | hints "Enter the cluster port number on which the service will listen for incoming traffic."}}'

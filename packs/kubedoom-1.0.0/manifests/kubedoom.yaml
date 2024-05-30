@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: { { .Values.namespace } }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubedoom
+  namespace: { { .Values.namespace } }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubedoom
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: kubedoom
+    namespace: { { .Values.namespace } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kubedoom
+  name: kubedoom
+  namespace: { { .Values.namespace } }
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubedoom
+  template:
+    metadata:
+      labels:
+        app: kubedoom
+    spec:
+      serviceAccountName: kubedoom
+      containers:
+        - image: { { .Values.images.kubedoom } }
+          env:
+            - name: { { .Values.namespace } }
+              value: default
+          name: kubedoom
+          ports:
+            - containerPort: 5900
+              name: vnc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubedoom-service
+  namespace: { { .Values.namespace } }
+spec:
+  type: NodePort
+  selector:
+    app: kubedoom
+  ports:
+    - port: 5900
+      targetPort: 5900
+      nodePort: { { .Values.port } }
