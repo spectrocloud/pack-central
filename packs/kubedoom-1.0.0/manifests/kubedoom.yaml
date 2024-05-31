@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: { { .Values.namespace } }
+  name: {{ .Values.namespace }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kubedoom
-  namespace: { { .Values.namespace } }
+  namespace: {{ .Values.namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -21,7 +21,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: kubedoom
-    namespace: { { .Values.namespace } }
+    namespace: {{ .Values.namespace }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -29,7 +29,7 @@ metadata:
   labels:
     app: kubedoom
   name: kubedoom
-  namespace: { { .Values.namespace } }
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -42,9 +42,9 @@ spec:
     spec:
       serviceAccountName: kubedoom
       containers:
-        - image: { { .Values.images.kubedoom } }
+        - image: {{ .Values.images.kubedoom }}
           env:
-            - name: { { .Values.namespace } }
+            - name: NAMESPACE
               value: default
           name: kubedoom
           ports:
@@ -55,7 +55,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kubedoom-service
-  namespace: { { .Values.namespace } }
+  namespace: {{ .Values.namespace }}
 spec:
   type: NodePort
   selector:
@@ -63,4 +63,4 @@ spec:
   ports:
     - port: 5900
       targetPort: 5900
-      nodePort: { { .Values.port } }
+      nodePort: {{ .Values.port }}

@@ -1,11 +1,11 @@
 pack:
   content:
     images:
-      - image: docker.io/spectrodocs/kubedoom:v1.0.0
+      - image: docker.io/spectrodocs/kubedoom:1.0.0
 
 manifests:
   kubedoom:
     images:
-      kubedoom: docker.io/spectrodocs/kubedoom:v1.0.0 # The hellouniverse key cannot contain -.
+      kubedoom: docker.io/spectrodocs/kubedoom:1.0.0 
     namespace: "kubedoom"
-    port: 5900
+    port: 30059
