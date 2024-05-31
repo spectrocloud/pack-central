@@ -1,0 +1,38 @@
+global:
+  clusterName: "ClusterName"
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: true
+    defaultInfraCollectors: true
+    logCollector: true
+logCollectorConfig:
+  container:
+    conditionalConfigs:
+      - condition:
+          or:
+            - equals:
+                kubernetes.container.name: log-gen-app-grok-sub-win
+            - equals:
+                kubernetes.container.name: log-gen-app-grok-sub
+        config:
+          multiLinePattern: '^\d{4}-\d{2}-\d{2}'
+          multiLineNegate: true
+          multiLineMatch: "after"
+          messageParser:
+            grok:
+              enabled: true
+              patterns:
+                - '\[%{GREEDYDATA:log4j}\] \[%{GREEDYDATA:json}\] \[%{GREEDYDATA:log4j2}\] \[%{GREEDYDATA:logback}\] \[%{IPORHOST:grok}\] \[%{GREEDYDATA:infra}\]'
+              timestampPattern: "yyyy-MM-dd HH:mm:ss,SSS"
+            subparsers: "{\\\"parsersList\\\": [{    \\\"_message_parser.type\\\": \\\"log4j\\\",    \\\"_message_parser.field\\\": \\\"log4j\\\",    \\\"_message_parser.pattern\\\": \\\"%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %msg%n\\\"},
+                  {    \\\"_message_parser.type\\\": \\\"log4j\\\",    \\\"_message_parser.field\\\": \\\"log4j2\\\",    \\\"_message_parser.pattern\\\": \\\"%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %msg%n\\\"},
+                  {    \\\"_message_parser.type\\\": \\\"logback\\\",    \\\"_message_parser.field\\\": \\\"logback\\\",    \\\"_message_parser.pattern\\\": \\\"%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %msg%n\\\"},
+                  {    \\\"_message_parser.type\\\": \\\"grok\\\",    \\\"_message_parser.field\\\": \\\"grok\\\",    \\\"_message_parser.pattern\\\": \\\"%{GREEDYDATA:infra}\\\"},
+                  {    \\\"_message_parser.type\\\": \\\"infra\\\",    \\\"_message_parser.field\\\": \\\"infra\\\"},
+                  {    \\\"_message_parser.type\\\": \\\"json\\\",    \\\"_message_parser.field\\\": \\\"json\\\",    \\\"_message_parser.flatten_sep\\\": \\\"/\\\"}]\\r\\n}"
+
+appdynamics-otel-collector:
+  clientId: <ClientId>
+  clientSecret: <ClientSec>
+  endpoint: <ClientEndPoint>
+  tokenUrl: <ClientTokenURL>

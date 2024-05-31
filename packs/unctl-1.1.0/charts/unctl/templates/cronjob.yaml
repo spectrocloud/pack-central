@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app: {{ template "unctl.name" . }}
+    chart: {{ template "unctl.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "unctl.fullname" . }}-cronjob
+spec:
+  schedule: "{{ .Values.schedule }}"
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1 
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: api-caller
+            image: curlimages/curl:latest
+            command: ["/bin/sh", "-c"]
+            args: 
+              - >
+                curl -X POST "http://{{ template "unctl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/api/v1/executions" -H 'accept: application/json' -H 'Content-Type: application/json' -d '{}'
+          restartPolicy: OnFailure
