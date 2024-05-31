@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ template "unctl.name" . }}
+    chart: {{ template "unctl.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "unctl.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "unctl.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+      {{- end }}
+      labels:
+        app: {{ template "unctl.name" . }}
+        release: {{ .Release.Name }}
+        chart: {{ template "unctl.chart" . }}
+      {{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: {{ template "unctl.name" . }}
+        image: {{ printf "%s/%s:%s" .Values.image.registry .Values.image.api .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: api
+            protocol: TCP
+            containerPort: 8000
+        env:
+          - name: RETENTION_PERIOD
+            value: "{{ .Values.retention_period }}"
+          - name: NAMESPACES_TO_CHECK
+            value: "{{ .Values.namespaces | join "," }}"
+          - name: AI_ENABLED
+            value: "{{ (.Values.ai).enabled | default "false" }}"
+          {{- if and (.Values.ai) (.Values.ai.enabled)  }}
+            {{- if .Values.ai.token }}
+          - name: OPENAI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "unctl.fullname" . }}-ai-secret
+                key: token
+            {{- end }}
+          - name: LLM_PROVIDER
+            value: "{{ .Values.ai.provider | default "OpenAI" }}"
+            {{- if .Values.ai.config }}
+          - name: LLM_MODEL_NAME
+            value: "{{ .Values.ai.config.model | default "gpt-4" }}"
+          - name: LLM_PROVIDER_ENDPOINT
+            value: "{{ .Values.ai.config.host }}"
+            {{- end }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /openapi.json
+            port: 8000
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /openapi.json
+            port: 8000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 1
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+      {{- if .Values.frontend.enabled }}
+      - name: {{ template "unctl.name" . }}-frontend
+        image: {{ printf "%s/%s:%s" .Values.image.registry .Values.image.frontend .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            protocol: TCP
+            containerPort: 3000
+        env:
+          - name: AI_ENABLED
+            value: "{{ (.Values.ai).enabled | default "false" }}"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 1
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+      {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "unctl.serviceAccountName" . }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      restartPolicy: Always

@@ -1,0 +1,107 @@
+{{ if .Values.install.clustermon -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Clustermon
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-clustermon" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  {{- $mergedPodConfig := .Values.clustermonPod }}
+  {{- if (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") }}
+    {{- if ne (index $mergedPodConfig "nodeSelector" "kubernetes.io/os") .Values.clustermonConfig.os }}
+      {{- fail "Invalid node selector" }}
+    {{- end }}
+  {{- else }}
+    {{- $mergedPodConfig := mustMergeOverwrite (include "appdynamics-cloud-k8s-monitoring.osNodeSelector" .Values.clustermonConfig.os | fromYaml ) $mergedPodConfig }}
+  {{- end }}
+  {{- template "appdynamics-cloud-k8s-monitoring.podConfigs" $mergedPodConfig }}
+
+  serviceAccountName: {{ .Values.clustermonServiceAccount}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  agentManagementEnabled: {{ .Values.agentManagementEnabled.clustermon | quote }}
+  {{ if .Values.agentManagementEnabled.clustermon -}}
+  {{- include "appdynamics-cloud-k8s-monitoring.getOAuth" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getAgentManagementProxy" . | nindent 2 }}
+  {{- end }}
+  collectorName: {{ .Release.Name }}
+
+  clusterName: {{ include "appdynamics-cloud-k8s-monitoring.getClusterName" . }}
+  helmChartVersion: {{ .Values.global.helmChartVersion }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getClusterId" . | nindent 2 }}
+  {{ with .Values.clustermonConfig -}}
+  os: {{ .os }}
+  logLevel: {{ .logLevel }}
+  logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+  logFilesNumBackups: {{ .logFilesNumBackups }}
+  printToStdout: {{ .printToStdout | quote }}
+  {{ if .gatherInterval -}}
+  gatherInterval: {{ .gatherInterval }}
+  {{- end }}
+  {{ if .maxGoRoutine -}}
+  maxGoRoutine: {{ .maxGoRoutine }}
+  {{- end }}
+
+  filters:
+    namespace:
+    {{- toYaml .filters.namespace | nindent 6 }}
+    entity:
+    {{- toYaml .filters.entity | nindent 6 }}
+    label:
+    {{- toYaml .filters.label | nindent 6 }}
+    annotation:
+    {{- toYaml .filters.annotation | nindent 6}}
+    scopedFilters:
+    {{- toYaml .filters.scopedFilters | nindent 6}}
+
+  {{ if .testSetupEnabled -}}
+  testSetupEnabled: {{ .testSetupEnabled | quote }}
+  {{- end }}
+  {{ if .optimisedPayloadInterval -}}
+  optimisedPayloadInterval: {{ .optimisedPayloadInterval }}
+  {{- end }}
+  {{ if .events -}}
+  events:
+    enabled: {{ .events.enabled | quote }}
+    severityToExclude:
+    {{- toYaml .events.severityToExclude | nindent 6 }}
+    reasonToExclude:
+    {{- toYaml .events.reasonToExclude | nindent 6 }}
+    severeGroupByReason:
+    {{- toYaml .events.severeGroupByReason | nindent 6 }}
+  {{- end }}
+
+  labelsIngestionEnabled: {{ .labels.enabled }}
+  configurationEnabled: {{ .configurations.enabled | quote }}
+  hpaVpaEnabled: {{ .autoscalers.hpaVpaEnabled | quote }}
+
+  {{ if .profiler -}}
+  profiler:
+    enabled: {{ .profiler.enabled | quote }}
+    port: {{ .profiler.port }}
+  {{- end }}
+
+
+  ingressControllers:
+  {{- toYaml .ingressControllers | nindent 4 }}
+  {{- end }}
+
+  {{ with .Values.infraManagerConfig -}}
+  infraManagerConfig:
+    logFilesMaxSizeMb: {{ .logFilesMaxSizeMb }}
+    logFilesNumBackups: {{ .logFilesNumBackups }}
+    printToStdout: {{ .printToStdout | quote }}
+    logLevel: {{ .logLevel }}
+  {{- end }}
+
+{{ end -}}
