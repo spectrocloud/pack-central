@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8gb
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "chart.labels" . | indent 4  }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: k8gb
+  template:
+    metadata:
+      labels:
+        name: k8gb
+      annotations:
+        kubectl.kubernetes.io/default-container: k8gb
+    spec:
+      serviceAccountName: k8gb
+      containers:
+        - name: k8gb
+          ports:
+          - containerPort: {{ include "k8gb.metrics_port" . }}
+            name: metrics
+          image: {{ .Values.k8gb.imageRepo }}:{{ .Values.k8gb.imageTag | default .Chart.AppVersion }}
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.k8gb.securityContext }}
+          securityContext:
+            {{- toYaml .Values.k8gb.securityContext | nindent 12 }}
+          {{- end }}
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: "k8gb"
+            - name: CLUSTER_GEO_TAG
+              value: {{ quote .Values.k8gb.clusterGeoTag }}
+            - name: EXT_GSLB_CLUSTERS_GEO_TAGS
+              value: {{ quote .Values.k8gb.extGslbClustersGeoTags }}
+            - name: EDGE_DNS_ZONE
+              value: {{ .Values.k8gb.edgeDNSZone }}
+            - name: EDGE_DNS_SERVERS
+              value: {{ include "k8gb.edgeDNSServers" . }}
+            - name: DNS_ZONE
+              value: {{ .Values.k8gb.dnsZone }}
+            - name: RECONCILE_REQUEUE_SECONDS
+              value: {{ quote .Values.k8gb.reconcileRequeueSeconds}}
+            {{- if .Values.infoblox.enabled }}
+            - name: INFOBLOX_GRID_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_GRID_HOST
+            - name: INFOBLOX_WAPI_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_WAPI_VERSION
+            - name: INFOBLOX_WAPI_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_WAPI_PORT
+            - name: INFOBLOX_HTTP_REQUEST_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_HTTP_REQUEST_TIMEOUT
+            - name: INFOBLOX_HTTP_POOL_CONNECTIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_HTTP_POOL_CONNECTIONS
+            - name: INFOBLOX_WAPI_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_WAPI_USERNAME
+            - name: INFOBLOX_WAPI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infoblox
+                  key: INFOBLOX_WAPI_PASSWORD
+            {{- end }}
+            {{- if or .Values.route53.enabled .Values.ns1.enabled .Values.rfc2136.enabled .Values.cloudflare.enabled }}
+            - name: EXTDNS_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if eq "LoadBalancer" ( toString .Values.coredns.serviceType ) }}
+            - name: COREDNS_EXPOSED
+              value: "true"
+            {{- end }}
+            {{- if .Values.tracing.enabled }}
+              {{- with .Values.tracing }}
+            - name: TRACING_ENABLED
+              value: {{ .enabled | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .endpoint | quote }}
+                {{- with .samplingRatio }}
+            - name: TRACING_SAMPLING_RATIO
+              value: {{ . | quote }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            - name: LOG_FORMAT
+              value: {{ quote .Values.k8gb.log.format }}
+            - name: LOG_LEVEL
+              value: {{ quote .Values.k8gb.log.level }}
+            - name: NO_COLOR
+              value: "true"
+            - name: SPLIT_BRAIN_CHECK
+              value: {{ quote .Values.k8gb.splitBrainCheck }}
+            - name: METRICS_ADDRESS
+              value: {{ .Values.k8gb.metricsAddress }}
+      {{- if .Values.tracing.enabled }}
+        - image: {{ .Values.tracing.sidecarImage.repository }}:{{ .Values.tracing.sidecarImage.tag }}
+          name: otel-collector
+          imagePullPolicy: {{ .Values.tracing.sidecarImage.pullPolicy }}
+          args:
+          - --config=/conf/agent.yaml
+          volumeMounts:
+          - mountPath: /conf
+            name: agent-config
+      volumes:
+      - configMap:
+          items:
+          - key: agent.yaml
+            path: agent.yaml
+          name: agent-config
+        name: agent-config
+      {{- end }}

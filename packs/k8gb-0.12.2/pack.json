@@ -1,0 +1,17 @@
+{
+    "name": "k8gb",
+    "displayName": "k8gb",
+    "annotations": {
+        "description": "Kubernetes Global Balancer",
+        "contributor": "spectrocloud"
+    },
+    "version": "0.12.2",
+    "charts": [
+        "charts/k8gb-0.12.2.tgz"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ]
+}
