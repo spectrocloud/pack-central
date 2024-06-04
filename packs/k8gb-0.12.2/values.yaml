@@ -7,6 +7,11 @@ pack:
       - image: otel/opentelemetry-collector:0.57.2
       - image: jaegertracing/all-in-one:1.37.0
 
+    charts:
+      - repository: https://absaoss.github.io/coredns-helm
+        name: coredns
+        version: 1.15.3
+
   namespace: "k8gb"
 
 charts:
