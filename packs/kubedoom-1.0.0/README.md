@@ -1,8 +1,6 @@
 # Kubedoom
 
-Kubedoom is a containerized version of the 1993 video game Doom developed by id Software. The application runs in a container that simulates a virtual desktop and needs to be accessed with a Virtual Network Computing (VNC) viewer. 
-
-This pack was created for Edge deployments. If you want to deploy the application to a non-Edge environment, you need to set up port forwarding to the pod running the workload. 
+Kubedoom is a containerized version of the 1993 video game Doom developed by id Software. The application operates in a container that simulates a virtual desktop and needs to be accessed with a Virtual Network Computing (VNC) viewer. 
 
 ## Prerequisites
 

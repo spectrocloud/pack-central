@@ -4,7 +4,7 @@
     "source": "community",
     "contributor": "spectrocloud"
   },
-  "cloudTypes": ["all"],
+  "cloudTypes": ["edge-native"],
   "displayName": "Kubedoom",
   "kubeManifests": ["manifests/kubedoom.yaml"],
   "layer": "addon",
