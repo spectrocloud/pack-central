@@ -18,9 +18,9 @@ The following parameters are applied to the **kubedoom.yaml** manifest through t
 
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
-| `manifests.namespace`             | The namespace in which the application will be deployed.                       | `kubedoom`                            | No           |
-| `manifests.images.kubedoom` | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/kubedoom:1.0.0` | No           |
-| `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `30059`                                      | No           |
+| `manifests.namespace`             | The namespace in which the application will be deployed.                       | `kubedoom`                                  | Yes           |
+| `manifests.images.kubedoom`       | The application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/kubedoom:1.0.0`       | Yes           |
+| `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `30059`                                     | Yes           |
 
 
 ## Usage
