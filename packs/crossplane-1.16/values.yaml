@@ -3,7 +3,8 @@ pack:
   #When not found, a new namespace will be created
   namespace: "crossplane-system"
   content:
-    - image: xpkg.upbound.io/crossplane/crossplane:v1.16.0
+    images:
+      - image: xpkg.upbound.io/crossplane/crossplane:v1.16.0
     
 
 charts:
