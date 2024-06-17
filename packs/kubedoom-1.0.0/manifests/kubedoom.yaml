@@ -45,7 +45,7 @@ spec:
         - image: {{ .Values.images.kubedoom }}
           env:
             - name: NAMESPACE
-              value: default
+              value: {{ .Values.namespace }}
           name: kubedoom
           ports:
             - containerPort: 5900
