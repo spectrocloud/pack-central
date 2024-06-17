@@ -2,6 +2,14 @@ pack:
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
   namespace: "kyverno"
+  content:
+    images:
+      - image: ghcr.io/kyverno/background-controller:v1.12.2
+      - image: ghcr.io/kyverno/kyvernopre:v1.12.2
+      - image: ghcr.io/kyverno/cleanup-controller:v1.12.2
+      - image: ghcr.io/kyverno/reports-controller:v1.12.2
+      - image: ghcr.io/kyverno/kyverno-cli:v1.12.2
+      - image: ghcr.io/kyverno/kyverno:v1.12.2
 
 charts:
   kyverno:
