@@ -164,18 +164,11 @@ charts:
       certificate:
         mountPath: /etc/k8s-webhook-certs
       patch:
-        enabled: true
-        image:
-          repository: cgr.dev/chainguard/kube-webhook-certgen
-          tag: latest
-          pullPolicy: IfNotPresent
-        nodeSelector: {}
-        affinity: {}
-        tolerations: []
+        enabled: false
       appConversion:
         enabled: false
       certManager:
-        enabled: false
+        enabled: true
         revisionHistoryLimit: 3
 
     ## @param kubeClient.qps The qps for reconcile clients
