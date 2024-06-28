@@ -1,0 +1,71 @@
+apiVersion: v2
+name: k8gb
+description: A Helm chart for Kubernetes Global Balancer
+icon: https://www.k8gb.io/assets/images/icon-192x192.png
+type: application
+version: v0.12.2
+appVersion: v0.12.2
+kubeVersion: ">= 1.19.0-0"
+
+dependencies:
+  - name: coredns
+    repository: https://absaoss.github.io/coredns-helm
+    version: 1.15.3
+
+home: https://www.k8gb.io/
+sources:
+  - https://github.com/k8gb-io/k8gb
+
+keywords:
+  - gslb
+  - dns-lb
+  - kuberneters-global-balancer
+  - kubernetes-operator
+  - balancer
+  - multi-cluster
+
+maintainers:
+  - email: dinar.valeev@absa.africa
+    name: Dinar Valeev
+  - email: jiri.kremser@gmail.com
+    name: Jiri Kremser
+  - email: kuritka@gmail.com
+    name: Michal Kuritka
+  - email: yury.tsarev@absa.africa
+    name: Yury Tsarev
+
+annotations:
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Seamless Upgrades
+  artifacthub.io/crds: |
+    - kind: Gslb
+      version: v1beta1
+      name: gslbs.k8gb.absa.oss
+      displayName: Gslb
+      description: Gslb resource for global load balancing strategy configuration
+    - kind: DNSEndpoint
+      name: dnsendpoints.externaldns.k8s.io
+      version: v1alpha1
+      displayName: DNSEndpoint
+      description: Using ExternalDNS it synchronizes exposed Kubernetes Services and Ingresses with DNS providers
+  artifacthub.io/crdsExamples: |
+    - apiVersion: k8gb.absa.oss/v1beta1
+      kind: Gslb
+      metadata:
+        name: test-gslb-failover
+        namespace: test-gslb
+      spec:
+        ingress:
+          rules:
+            - host: failover.test.k8gb.io # Desired GSLB enabled FQDN
+              http:
+                paths:
+                - path: /
+                  backend:
+                    service:
+                      name: frontend-podinfo # Service name to enable GSLB for
+                      port:
+                        name: http
+        strategy:
+          type: failover # Global load balancing strategy
+          primaryGeoTag: eu-west-1 # Primary cluster geo tag
