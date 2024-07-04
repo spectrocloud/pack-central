@@ -1,0 +1,26 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "commit_msg": "CSI driver, provisioner, snapshotter, resizer and attacher for Ceph RBD",
+    "source": "community",
+    "contributor" : "pedro@spectrocloud"
+  },
+  "charts": [
+    "charts/ceph-rbd-3.11.0.tgz"
+  ],
+  "cloudTypes": [
+    "aws",
+    "azure",
+    "gcp",
+    "vsphere",
+    "maas",
+    "openstack",
+    "edge",
+    "edge-native",
+    "custom"
+  ],
+  "displayName": "Ceph CSI RBD",
+  "layer":"addon",
+  "name": "ceph-rbd-addon",
+  "version": "3.11.0"
+}
