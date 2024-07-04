@@ -13,7 +13,7 @@ pack:
     charts:
       - repo: https://ceph.github.io/csi-charts
         name: ceph-csi-rbd
-        version: 3-canary
+        version: 3.11.0
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
   namespace: "ceph-csi-rbd"
