@@ -60,6 +60,8 @@ After defining the cluster profile, use it to deploy a new cluster or attach it 
 
 Once the cluster status displays **Running** and **Healthy**, access the Hello Universe application through the exposed service URL along with the displayed port number.
 
+### Tolerations
+
 The Hello Universe pack provides parameters for providing pod tolerations. These make it possible to provide [Kubernetes Taints](https://docs.spectrocloud.com/clusters/cluster-management/taints/#taints). You can only apply toleration for the UI, API, and Postgres pods.
 
 The parameters are applied using the `Equal` operator as demonstrated below:
