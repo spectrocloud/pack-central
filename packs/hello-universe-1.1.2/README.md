@@ -34,6 +34,10 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | `manifests.dbPassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
 | `manifests.authToken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
 
+## Upgrade
+
+Upgrades from the [hello-universe-1.1.1](../hello-universe-1.1.1/README.md) pack are not supported. If you want to upgrade the pack, you must first remove it from the cluster profile. Then, you can add the upgraded version as a cluster profile layer.
+
 ## Usage
 
 The Hello Universe pack has two presets that you can select:

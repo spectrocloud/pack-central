@@ -46,6 +46,10 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | `manifests.hello-universe.api.tolerations.value`            | The tolerations value to use for the Hello Universe API pods.                         |      `api`                                   | No          |
 | `manifests.hello-universe.postgres.tolerations.value`            | The tolerations value to use for the Hello Universe Postgres pods.                         |      `postgres`                                | No          |
 
+## Upgrade
+
+Upgrades from the [hello-universe-1.1.1](../hello-universe-1.1.1/README.md) pack are not supported. If you want to upgrade the pack, you must first remove it from the cluster profile. Then, you can add the upgraded version as a cluster profile layer.
+
 ## Usage
 
 The Hello Universe pack has two presets that you can select:
