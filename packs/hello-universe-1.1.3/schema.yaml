@@ -46,17 +46,17 @@ manifests.hello-universe.apiEnabled:
 manifests.hello-universe.ui.useTolerations:
   # Flag to indicate whether to use tolerations for the UI pods.
   # The flag should be specified with true or false. 
-  schema: '{{ required | format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe UI pods."}}'
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe UI pods."}}'
 
 manifests.hello-universe.api.useTolerations:
   # Flag to indicate whether to use tolerations for the API pods.
   # The flag should be specified with true or false. 
-  schema: '{{ required | format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
 
 manifests.hello-universe.postgres.useTolerations:
   # Flag to indicate whether to use tolerations for the postgres pods.
   # The flag should be specified with true or false. 
-  schema: '{{ required | format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
 
 manifests.hello-universe.ui.tolerations.effect:
   # The toleration effect to use for the Hello Universe UI pods. 
