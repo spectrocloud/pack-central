@@ -1,0 +1,13 @@
+apiVersion: v2
+appVersion: 0.89.0
+description: AppDynamics Distribution of OpenTelemetry Operator Helm chart for Kubernetes
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: opentelemetry-operator
+sources:
+- https://github.com/open-telemetry/opentelemetry-operator
+type: application
+version: 0.43.0
