@@ -1,0 +1,48 @@
+# Docker images
+imageInfo:
+  agentImage: docker.io/appdynamics/auto-instrumentation-agent
+  agentTag: 24.4.0
+  imagePullPolicy: Always
+  imagePullSecret: null
+
+#Auto Instrumentation Agent
+autoInstrumentationAgent:
+  agentName: null
+  labels: {}
+  nodeSelector: {}
+  tolerations: []
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "300Mi"
+    requests:
+      cpu: "50m"
+      memory: "150Mi"
+# AppDynamics controller info (VALUES TO BE PROVIDED BY THE USER)
+controllerInfo:
+  url: ""
+  account: ""
+  username: ""
+  password: ""
+  accessKey: ""
+  customSSLCert: null
+
+  # Proxy config
+  authenticateProxy: false
+  proxyUrl: null
+  proxyUser: null
+  proxyPassword: null
+
+# RBAC config
+createServiceAccount: true
+agentServiceAccount: appdynamics-auto-instrumentation-agent
+
+# Instrumentation config
+instrumentationConfig:
+  enabled: false
+  containerAppCorrelationMethod: proxy
+
+logProperties:
+  logFileSizeMb: 5
+  logFileBackups: 3
+  logLevel: INFO

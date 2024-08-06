@@ -1,0 +1,62 @@
+global:
+  clusterName: clusterName
+  clusterId: testid
+
+# required
+endpoint: "https://data.appdynamics.com"
+clientId: "id"
+clientSecret: "secret"
+tokenUrl: "https://token_ur.com/oauth2l"
+
+spec:
+  image: "829771730735.dkr.ecr.us-west-2.amazonaws.com/otel/appdynamics-cloud-otel-collector:23.7.0-1075"
+
+presets:
+  samplerDebug:
+    enable: false
+  presampler:
+    enable: false
+    #pipeline: [memory_limiter, k8sattributes, consistent_proportional_sampler/presampler, batch/traces]
+    pipeline: [memory_limiter, k8sattributes, tracerecord/received, consistent_sampler/presampler, tracerecord/sampled, batch/traces] #replace with this pipeline when testing adding configured p value directly.
+    consistent_proportional_sampler:
+      export_period: 1s # the export period for specifying the expected output rate, it is for rate calculation only, NOT for batch interval. The batch interval can be configured at trace_classification_and_sampling.samplers.export_period, or you can add a batch processor before this.
+      spans_per_period: 100 # number of spans per request, the expected rate limit is calculated by dividing this number by export_period. The spans per packet is limited by the max packet size, assuming 1MB limit, and each span with size of 1KB
+      exponential_smooth: 0.1 # start with small number
+      initial_estimate_rate: 100 # number of incomming span rate, just give a reasonable guess.
+      rate_estimator: batch_rate_estimator
+      sample_mode: presampling
+    consistent_sampler:
+      p_value: 1 # user can configure a p value to add to the trace state directly, it is mainly for testing purpose
+  tailsampler:
+    enable: true
+    trace_classification_and_sampling:
+      decision_wait: 10s
+      # classification, example considers error, high latency and all other traces, each category will be rate limit separately.
+      policies:
+        - name: errors-policy
+          type: status_code
+          sampler_name: "consistent_reservoir_sampler/error"
+          status_code:
+            status_codes: [ERROR]
+        - name: high-latency
+          type: latency
+          sampler_name: "consistent_reservoir_sampler/latency"
+          latency:
+            threshold_ms: 10000
+        - name: always-on
+          type: always_sample
+          sampler_name: "consistent_reservoir_sampler/anyother"
+      samplers:
+        export_period: 1s # export interval. The overall request rate need to be multiplied the number of collector, tier one is 1000 req/sec, https://docs.appdynamics.com/fso/cloud-native-app-obs/en/licensing-for-cloud-native-application-observability/license-tokens-tiers-and-rate-limits
+        consistent_reservoir_sampler:
+          error:
+            reservoir_size: 10
+          latency:
+            reservoir_size: 10
+          anyother:
+            reservoir_size: 100
+    consistent_proportional_sampler:
+      export_period: 1s # the export period for specifying the expected output rate, it is for rate calculation only, NOT for batch interval. The batch interval can be configured at trace_classification_and_sampling.samplers.export_period, or you can add a batch processor before this.
+      spans_per_period: 100 # number of spans per request, the expected rate limit is calculated by dividing this number by export_period. The spans per packet is limited by the max packet size, assuming 1MB limit, and each span with size of 1KB
+      exponential_smooth: 0.1 # start with small number
+      initial_estimate_rate: 100 # number of incomming span rate, just give a reasonable guess.

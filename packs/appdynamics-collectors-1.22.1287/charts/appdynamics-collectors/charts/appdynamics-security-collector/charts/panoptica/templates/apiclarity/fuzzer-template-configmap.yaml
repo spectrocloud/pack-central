@@ -1,0 +1,67 @@
+{{- if .Values.global.isAPISecurityEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "apiclarity.fullname" . }}-fuzzer-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "apiclarity.labels" . | nindent 4 }}
+data:
+  config: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      namespace: '{{ .Release.Namespace }}'
+      labels:
+{{- toYaml .Values.apiclarity.fuzzer.labels | nindent 8 }}
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 300
+      template:
+        metadata:
+          labels:
+  {{- toYaml .Values.apiclarity.fuzzer.labels | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          volumes:
+          - name: tmp-volume
+            emptyDir: {}
+          - name: root-ca
+            configMap:
+              name: {{ include "product.name" . }}-root-ca.crt
+          containers:
+          - name: fuzzer
+            image: "{{ default .Values.global.registry .Values.apiclarity.fuzzer.image.registry }}/{{ .Values.apiclarity.fuzzer.image.repository }}:{{ .Values.apiclarity.fuzzer.image.tag }}"
+            imagePullPolicy: {{ .Values.apiclarity.fuzzer.image.pullPolicy }}
+            volumeMounts:
+              - mountPath: /tmp
+                name: tmp-volume
+              - name: root-ca
+                mountPath: /etc/root-ca
+                readOnly: true
+            env:
+            - name: PLATFORM_TYPE
+              value: "API_CLARITY"
+            - name: PLATFORM_HOST
+              value: https://{{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}:8443/api
+            - name: FUZZER
+              value: "scn-fuzzer,restler"
+            - name: RESTLER_ROOT_PATH
+              value: "/tmp"
+            - name: RESTLER_TOKEN_INJECTOR_PATH
+              value: "/app/"
+            - name: DEBUG
+              value: {{ .Values.apiclarity.fuzzer.debug | quote }}
+            securityContext:
+              {{- toYaml .Values.apiclarity.fuzzer.securityContext | nindent 14 }}
+            resources:
+              {{- toYaml .Values.apiclarity.fuzzer.resources | nindent 14 }}
+          {{- with .Values.apiclarity.fuzzer.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.apiclarity.fuzzer.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

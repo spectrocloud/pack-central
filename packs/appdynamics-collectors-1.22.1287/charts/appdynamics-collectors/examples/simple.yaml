@@ -1,0 +1,8 @@
+global:
+  clusterName: "cluster-name"
+
+appdynamics-otel-collector:
+  clientId: "id" # clientId for oauth2 extension
+  clientSecret: "oauth-client-secret"
+  tokenUrl: "https://token_ur.com/oauth2l" # tokenUrl for oauth2 extension
+  endpoint: "https://data.appdynamics.com" # endpoint for otlphttp exporter

@@ -1,0 +1,61 @@
+{{ if .Values.install.dbMonitoringConfigs -}}
+# loop over available dbconfigs to create multiple CRs
+{{- range .Values.dbMonitoringConfigs }}
+# convert given configname to lower case
+{{ $configResName := lower .configName }}
+# default dbPasswordSecretName
+{{- $dbPasswordSecretName := printf "%s-%s-%s" $.Release.Name $configResName "db-password"}}
+---
+apiVersion: cluster.appdynamics.com/v1alpha1
+# Kind will match the Kind section in generated CRD at Operator
+kind: DbConfig
+# Release is picked up from the command
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $configResName | trunc 255 }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  # spec for dbConfigs here
+  dbType: {{ .dbType }}
+  configName: {{ .configName }}
+  # if collector name is specified, otherwise default to collector deployed via current release
+  {{ if not .dbCollector }}
+  dbCollector:
+    name: {{ printf "%s-%s" $.Release.Name "appdynamics-db-collector" | trunc 63 }}
+    namespace: {{ $.Release.Namespace }}
+  {{ else }}
+  dbCollector:
+    name: {{ .dbCollector.name }}
+    namespace: {{ .dbCollector.namespace }}
+  {{ end }}
+  hostname: {{ .hostname }}
+  hostport: {{ .hostport }}
+  username: {{ .username }}
+  # if Secret Name containing the password is given
+  {{ if .passwordSecretName }}
+  passwordSecretName: {{ .passwordSecretName }}
+  # otherwise use the created secret
+  {{ else }}
+  passwordSecretName: {{ $dbPasswordSecretName}}
+  {{ end }}
+
+  # database : optional field
+  {{ if .database -}}
+  database: {{ .database }}
+  {{ end -}}
+  # environment : optional field
+  {{ if .environment -}}
+  environment:
+    platform: {{ .environment.platform }}
+  {{ end }}
+  # tlsconfig : optional field
+  {{ if .tlsConfig -}}
+  tlsConfig:
+    # hostnameincertificate : optional field
+    {{ if .tlsConfig.hostNameInCertificate -}}
+    hostNameInCertificate: {{ .tlsConfig.hostNameInCertificate }}
+    {{- end }}
+    certSecretName: {{ .tlsConfig.certSecretName }}
+
+  {{ end }}
+{{- end }}
+{{ end -}}

@@ -1,0 +1,25 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "product.name" . }}-kafka-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  config: |-
+    name: {{ include "product.name" . }}-kafka-authz-injector
+    image: "{{ default .Values.global.registry .Values.kafkaAuthzInjector.image.registry }}/{{ .Values.kafkaAuthzInjector.image.repository }}:{{ .Values.kafkaAuthzInjector.image.tag }}"    
+    imagePullPolicy: {{ .Values.kafkaAuthzInjector.image.pullPolicy }}
+    securityContext:
+      {{- toYaml .Values.kafkaAuthzInjector.securityContext | nindent 6 }}
+    volumeMounts:
+    - name: {{ include "product.name" . }}
+      mountPath: /jar
+  supported.broker.names: |-
+    {"broker":true,"cp-kafka-broker":true,"kafka-broker":true,"kafka":true}
+  supported.configmap.field.names: |-
+    {"server.properties":true,"server.config":true}
+  supported.start.commands: |-
+    {"kafka-server-start.sh":"KAFKA_NATIVE_DISTRIBUTION","docker/run":"KAFKA_DOCKER_DISTRIBUTION","kafka_run.sh":"KAFKA_NATIVE_DISTRIBUTION"}
+{{- end }}

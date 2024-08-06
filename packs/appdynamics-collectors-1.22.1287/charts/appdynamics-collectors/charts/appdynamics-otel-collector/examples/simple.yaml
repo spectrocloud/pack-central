@@ -1,0 +1,11 @@
+# required 
+endpoint: "https://data.appdynamics.com"
+clientId: "id"
+clientSecret: "secret"
+tokenUrl: "https://token_ur.com/oauth2l"
+configOverride:
+  service:
+    pipelines:
+      traces:
+        exporters: [ otlphttp, logging ]
+

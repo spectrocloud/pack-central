@@ -1,0 +1,19 @@
+# required 
+global:
+  clusterName: "my-cluster"
+endpoint: "https://data.appdynamics.com"
+clientId: "dummy"
+clientSecret: "dummy"
+tokenUrl: "dummy"
+enablePrometheus: true
+enableFileLog: true
+# set replicas for statefulset which gathers prometheus metrics, you can also set minReplicas and maxReplicas to enable autoscaling
+mode:
+  statefulset:
+    spec: 
+      replicas: 2
+  daemonset:
+    configOverride:
+      receivers:
+        filelog:
+          include: ["/var/log/*/*/*/*.log", "/var/lib/docker/containers/*"]

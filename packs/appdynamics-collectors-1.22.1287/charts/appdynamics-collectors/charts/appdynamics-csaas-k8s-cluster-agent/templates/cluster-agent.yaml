@@ -1,0 +1,228 @@
+{{ if .Values.installClusterAgent -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: Clusteragent
+metadata:
+  name: {{ (cat (regexReplaceAll "([^a-zA-Z0-9-.]+)"  (lower (.Values.clusterAgent.appName | default (cat .Release.Name "-" "appdynamics-cluster-agent" | nospace))) "-") "-" .Release.Namespace | nospace) | trunc 63 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  appName: {{ (cat (.Values.global.clusterName | default (cat .Release.Name "-" "appdynamics-cluster-agent" | nospace)) "-" .Release.Namespace | nospace) | trunc 63 }}
+  controllerUrl: {{ required "AppDynamics controller URL is required!" .Values.controllerInfo.url }}
+  account: {{ required "AppDynamics controller account is required!" .Values.controllerInfo.account }}
+  image: {{ .Values.imageInfo.agentImage }}:{{ .Values.imageInfo.agentTag }}
+  serviceAccountName: {{ .Values.agentServiceAccount }}
+
+  {{ if .Values.controllerInfo.customSSLCert -}}
+  # Custom SSL config
+  customSSLSecret: cluster-agent-ssl-cert
+  {{- end }}
+
+  {{ with .Values.controllerInfo -}}
+  {{ if .proxyUrl -}}
+  # Proxy config
+  proxyUrl: {{ .proxyUrl }}
+  {{ if .authenticateProxy -}}
+  proxyUser: {{ required "Proxy user is required to authenticate proxy!" .proxyUser }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+
+  # Ad-Hoc properties
+  {{ with .Values.clusterAgent -}}
+  nsToMonitor:
+  {{- toYaml .nsToMonitor | nindent 4 }}
+  {{ if .nsToMonitorRegex -}}
+  nsToMonitorRegex: {{ .nsToMonitorRegex }}
+  {{- end }}
+  {{ if .nsToExcludeRegex -}}
+  nsToExcludeRegex: {{ .nsToExcludeRegex }}
+  {{- end }}
+  clusterMetricsSyncInterval: {{ .clusterMetricsSyncInterval }}
+  metadataSyncInterval: {{ .metadataSyncInterval }}
+  eventUploadInterval: {{ .eventUploadInterval }}
+  httpClientTimeout: {{ .httpClientTimeout }}
+  podBatchSize: {{ .podBatchSize }}
+  instrumentationMaxPollingAttempts: {{ .instrumentationMaxPollingAttempts }}
+  instrumentationNsStatusPollingIntervalMinutes: {{ .instrumentationNsStatusPollingIntervalMinutes }}
+  priorityClassName: {{ .priorityClassName }}
+  # Container specific properties
+  {{ with .containerProperties -}}
+  containerBatchSize: {{ .containerBatchSize }}
+  #containerParallelRequestLimit: {{ .containerParallelRequestLimit }}
+  containerRegistrationInterval: {{ .containerRegistrationInterval }}
+  {{- end }}
+
+  # Metric specific properties
+  {{ with .metricProperties -}}
+  metricsSyncInterval: {{ .metricsSyncInterval }}
+  metricUploadRetryCount: {{ .metricUploadRetryCount }}
+  metricUploadRetryIntervalMilliSeconds: {{ .metricUploadRetryIntervalMilliSeconds }}
+  {{- end }}
+
+  # Log specific properties
+  {{ with .logProperties -}}
+  logFileSizeMb: {{ .logFileSizeMb }}
+  logFileBackups: {{ .logFileBackups }}
+  logLevel: {{ .logLevel }}
+  {{- end }}
+
+  {{ if .memoryThresholdForRestart -}}
+  # Cluster Agent memory threshold for restart
+  memoryThresholdForRestart: {{ .memoryThresholdForRestart }}
+  {{- end }}
+
+  {{ if .enableClusterAgentRestartProbe -}}
+  # Cluster Agent graceful restart prob
+  enableClusterAgentRestartProbe: {{ .enableClusterAgentRestartProbe }}
+  {{- end }}
+
+  {{ if .imagePullPolicy -}}
+  # Cluster Agent Image pull policy
+  imagePullPolicy: {{ .imagePullPolicy }}
+  {{- end }}
+
+  {{ if .imagePullSecret -}}
+  # Image pull secret
+  imagePullSecret: {{ .imagePullSecret }}
+  {{- end }}
+  {{- end }}
+
+  # profiling specific properties
+  {{ with .Values.agentProfiler -}}
+  pprofEnabled: {{ .pprofEnabled }}
+  pprofPort: {{ .pprofPort }}
+  {{- end }}
+  # Pod filter properties
+  podFilter:
+  {{- toYaml .Values.podFilter | nindent 4 }}
+
+  # Node selector
+  nodeSelector:
+  {{- toYaml .Values.agentPod.nodeSelector | nindent 4 }}
+
+  # Tolerations
+  tolerations:
+  {{- toYaml .Values.agentPod.tolerations | nindent 4 }}
+
+  labels:
+  {{- toYaml .Values.agentPod.labels | nindent 4 }}
+
+  # Resources
+  resources:
+  {{- toYaml .Values.agentPod.resources | nindent 4 }}
+
+  {{ with .Values.instrumentationConfig -}}
+  {{ if .enabled -}}
+  # Instrumentation config
+  {{ if .defaultAppName -}}
+  defaultAppName: {{ .defaultAppName }}
+  {{- end }}
+  {{ if .defaultEnv -}}
+  defaultEnv: {{ .defaultEnv }}
+  {{- end }}
+  {{ if .defaultInstrumentationLabelMatch -}}
+  defaultInstrumentationLabelMatch:
+  {{- toYaml .defaultInstrumentationLabelMatch | nindent 4 }}
+  {{- end }}
+  {{ if .defaultInstrumentMatchString -}}
+  defaultInstrumentMatchString: {{ .defaultInstrumentMatchString }}
+  {{- end }}
+  {{ if .defaultCustomConfig -}}
+  defaultCustomConfig: {{ .defaultCustomConfig }}
+  {{- end }}
+  {{ if .appNameStrategy -}}
+  appNameStrategy: {{ .appNameStrategy }}
+  {{- end }}
+  {{ if .tierNameStrategy -}}
+  tierNameStrategy: {{ .tierNameStrategy }}
+  {{- end }}
+  {{ if .appNameLabel -}}
+  appNameLabel: {{ .appNameLabel }}
+  {{- end }}
+  {{ if .tierNameLabel -}}
+  tierNameLabel: {{ .tierNameLabel }}
+  {{- end }}
+  {{ if .nodeName -}}
+  nodeName: {{ .nodeName }}
+  {{- end }}
+  {{ if .imageInfo -}}
+  imageInfo:
+  {{- toYaml .imageInfo | nindent 4}}
+  {{- end }}
+  {{ if .instrumentationMethod -}}
+  instrumentationMethod: {{ .instrumentationMethod }}
+  {{- end }}
+  {{ if .resourcesToInstrument -}}
+  resourcesToInstrument:
+  {{- toYaml .resourcesToInstrument | nindent 4 }}
+  {{- end }}
+  {{ if .instrumentationRules -}}
+  instrumentationRules:
+  {{- toYaml .instrumentationRules | nindent 4 }}
+  {{- end }}
+  {{ if .nsToInstrumentRegex -}}
+  nsToInstrumentRegex: {{ .nsToInstrumentRegex }}
+  {{- end }}
+  {{ if .netvizInfo -}}
+  netvizInfo:
+  {{- toYaml .netvizInfo | nindent 4 }}
+  {{- end }}
+  {{ if .runAsUser -}}
+  runAsUser: {{ .runAsUser }}
+  {{- end }}
+  {{ if .runAsGroup -}}
+  runAsGroup: {{ .runAsGroup }}
+  {{- end }}
+  {{ if .runAsNonRoot -}}
+  runAsNonRoot: {{ .runAsNonRoot }}
+  {{- end }}
+  {{ if .readOnlyRootFilesystem -}}
+  readOnlyRootFilesystem: {{ .readOnlyRootFilesystem }}
+  {{- end }}
+  {{ if .allowPrivilegeEscalation -}}
+  allowPrivilegeEscalation: {{ .allowPrivilegeEscalation }}
+  {{- end }}
+  {{ if .capabilities -}}
+  capabilities: {{ .capabilities }}
+  {{- end }}
+  {{ if .seccompProfile -}}
+  seccompProfile: {{ .seccompProfile }}
+  {{- end }}
+  {{ if .windowsOptions -}}
+  windowsOptions: {{ .windowsOptions }}
+  {{- end }}
+  {{ if .seLinuxOptions -}}
+  seLinuxOptions: {{ .seLinuxOptions }}
+  {{- end }}
+  {{ if .procMount -}}
+  procMount: {{ .procMount }}
+  {{- end }}
+  {{ if .privileged -}}
+  privileged: {{ .privileged }}
+  {{- end }}
+  {{ if .numberOfTaskWorkers -}}
+  numberOfTaskWorkers: {{ .numberOfTaskWorkers }}
+  {{- end }}
+  {{ if .defaultAnalyticsHost -}}
+  defaultAnalyticsHost: {{ .defaultAnalyticsHost }}
+  {{- end }}
+  {{ if .defaultAnalyticsPort -}}
+  defaultAnalyticsPort: {{ .defaultAnalyticsPort }}
+  {{- end }}
+  {{ if .defaultAnalyticsSslEnabled -}}
+  defaultAnalyticsSslEnabled: {{ .defaultAnalyticsSslEnabled }}
+  {{- end }}
+  {{ if .enableInstallationReport -}}
+  enableInstallationReport: {{ .enableInstallationReport }}
+  {{ end -}}
+  {{ if .enableForceReInstrumentation -}}
+  enableForceReInstrumentation: {{ .enableForceReInstrumentation }}
+  {{ end -}}
+  {{if .containerAppCorrelationMethod -}}
+  containerAppCorrelationMethod: {{ .containerAppCorrelationMethod }}
+  {{ end -}}
+  {{if .metadataServerPort -}}
+  metadataServerPort: {{ .metadataServerPort }}
+  {{ end -}}
+  {{ end -}}
+  {{ end -}}
+{{ end -}}

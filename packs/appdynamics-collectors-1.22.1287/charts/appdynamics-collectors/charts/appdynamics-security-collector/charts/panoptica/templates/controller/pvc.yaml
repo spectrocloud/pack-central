@@ -1,0 +1,26 @@
+{{- if .Values.controller.persistence.enabled -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  {{- if .Values.global.dummyPlaceHolderForTest }}
+  name: {{ include "product.name" . }}-pvc-for-test
+  {{- else }}
+  name: {{ include "product.name" . }}-{{ .Values.controller.persistence.pvcSuffix }}
+  {{- end }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.controller.persistence.accessMode | quote  }}
+  resources:
+    requests:
+      storage: {{ .Values.controller.persistence.size }}
+  {{- if .Values.controller.persistence.storageClass }}
+  {{- if (eq "-" .Values.controller.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.controller.persistence.storageClass }}
+  {{- end }}
+  {{- end }}
+{{- end }}

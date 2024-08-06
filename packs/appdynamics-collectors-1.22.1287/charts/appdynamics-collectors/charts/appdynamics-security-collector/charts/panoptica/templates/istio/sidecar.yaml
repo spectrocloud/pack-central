@@ -1,0 +1,13 @@
+{{- if and .Values.global.isConnectionEnforcementEnabled .Values.istio.global.serviceDiscoveryIsolationEnabled -}}
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"
+        - "{{ .Release.Namespace }}/*"
+{{- end }}

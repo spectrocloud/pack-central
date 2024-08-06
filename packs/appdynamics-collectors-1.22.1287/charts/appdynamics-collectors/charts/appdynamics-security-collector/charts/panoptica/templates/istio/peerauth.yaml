@@ -1,0 +1,10 @@
+{{- if and .Values.global.isConnectionEnforcementEnabled .Values.global.isAPISecurityEnabled (not .Values.istio.global.alreadyInstalled) -}}
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: {{ include "product.name" . }}-mtls-pa
+  namespace: {{ .Release.Namespace }}
+spec:
+  mtls:
+    mode: STRICT
+{{- end }}

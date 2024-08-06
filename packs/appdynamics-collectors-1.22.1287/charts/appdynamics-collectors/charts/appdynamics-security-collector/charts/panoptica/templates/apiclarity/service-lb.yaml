@@ -1,0 +1,18 @@
+{{- if and .Values.global.isAPISecurityEnabled .Values.apiclarity.traceSource.external -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apiclarity.fullname" . }}-external
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "apiclarity.labels" . | nindent 4 }}
+spec:
+  type: LoadBalancer
+  ports:
+    - name: https-external
+      port: 10443
+      protocol: TCP
+      targetPort: 10443
+  selector:
+    {{- include "apiclarity.selectorLabels" . | nindent 4 }}
+{{- end }}

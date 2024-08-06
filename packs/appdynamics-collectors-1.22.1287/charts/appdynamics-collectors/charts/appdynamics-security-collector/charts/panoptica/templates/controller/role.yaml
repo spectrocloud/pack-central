@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+rules:
+  # Leases and configmaps are required for leader election, legacy leader
+  # election uses configmaps, new deploys will use leases.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "update", "create", "delete", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "update", "create", "delete", "list", "watch"]

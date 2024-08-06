@@ -1,0 +1,22 @@
+{{- if .Values.global.isAPISecurityEnabled -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "apiclarity.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "apiclarity.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.apiclarity.persistence.accessMode | quote  }}
+  resources:
+    requests:
+      storage: {{ .Values.apiclarity.persistence.size }}
+  {{- if .Values.apiclarity.persistence.storageClass }}
+  {{- if (eq "-" .Values.apiclarity.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.apiclarity.persistence.storageClass }}
+  {{- end }}
+  {{- end }}
+{{- end }}

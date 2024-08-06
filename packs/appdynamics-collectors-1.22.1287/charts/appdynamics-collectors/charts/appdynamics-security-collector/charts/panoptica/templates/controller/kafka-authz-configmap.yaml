@@ -1,0 +1,12 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "product.name" . }}-kafka-authz
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  broker.port: |-
+    9092
+{{- end }}

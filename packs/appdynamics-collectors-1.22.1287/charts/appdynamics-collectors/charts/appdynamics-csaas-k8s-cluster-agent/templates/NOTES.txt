@@ -1,0 +1,15 @@
+Check HELM release status:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+List cluster agent and machine agent pods:
+
+  $ kubectl get pods -n {{ .Release.Namespace }}
+
+Release state:
+  Install ClusterAgent: {{ .Values.installClusterAgent }}
+  Install InfraViz: {{ .Values.installInfraViz }}
+  Controller URL: {{ .Values.controllerInfo.url }}
+  Auto-Instrumentation enabled: {{ .Values.instrumentationConfig.enabled }}
+  Installing metrics-server: {{ get .Values.install "metrics-server" }} 

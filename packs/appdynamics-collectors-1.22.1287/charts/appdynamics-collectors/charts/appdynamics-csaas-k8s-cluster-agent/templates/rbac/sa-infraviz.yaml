@@ -1,0 +1,7 @@
+{{ if .Values.installInfraViz -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: {{ .Values.infravizServiceAccount }}
+    namespace: {{ .Release.Namespace }}
+{{ end -}}

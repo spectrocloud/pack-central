@@ -1,0 +1,71 @@
+{{- if .Values.global.isAPISecurityEnabled -}}
+{{- $caCert := "" }}
+{{- $controllerServerCert := "" }}
+{{- $controllerServerKey := "" }}
+{{- $apiclarityServerCert := "" }}
+{{- $apiclarityServerKey := "" }}
+{{- $productName := include "product.name" . -}}
+{{- $rootCAConfigName := print $productName "-root-ca.crt" -}}
+{{- $rootCAConfig := (lookup "v1" "ConfigMap" .Release.Namespace $rootCAConfigName) }}
+{{- $controllerName := include "controller.fullname" . -}}
+{{- $controllerCertSecretName := print $controllerName "-tls" -}}
+{{- $controllerCertSecret := (lookup "v1" "Secret" .Release.Namespace $controllerCertSecretName) }}
+{{- $apiclarityCertSecret := (lookup "v1" "Secret" .Release.Namespace "apiclarity-tls") }}
+{{- if and $rootCAConfig $controllerCertSecret $apiclarityCertSecret }}
+{{- $caCert = get $rootCAConfig.data "ca.crt" -}}
+{{- $controllerServerCert = get $controllerCertSecret.data "server.crt" -}}
+{{- $controllerServerKey = get $controllerCertSecret.data "server.key" -}}
+{{- $apiclarityServerCert = get $apiclarityCertSecret.data "server.crt" -}}
+{{- $apiclarityServerKey = get $apiclarityCertSecret.data "server.key" -}}
+{{- else }}
+{{- $controllerCN := include "controller.fullname" . -}}
+{{- $controllerExternalDNS := print $controllerCN "." .Release.Namespace -}}
+{{- $controllerExternalDNSWithSVC := print $controllerExternalDNS ".svc" -}}
+{{- $controllerExternalDNSFullFQDN := print $controllerExternalDNS ".svc.cluster.local" -}}
+{{- $apiclarityCN := include "apiclarity.fullname" . -}}
+{{- $apiclarityExternalDNS := print $apiclarityCN "." .Release.Namespace -}}
+{{- $apiclarityExternalDNSWithSVC := print $apiclarityExternalDNS ".svc" -}}
+{{- $apiclarityExternalDNSFullFQDN := print $apiclarityExternalDNS ".svc.cluster.local" -}}
+{{- $ca := genCA "root-ca" 3650 -}}
+{{- $controllerCert := genSignedCert $controllerCN (list "127.0.0.1") (list $controllerCN $controllerExternalDNS $controllerExternalDNSWithSVC $controllerExternalDNSFullFQDN ) 730 $ca -}}
+{{- $apiclarityCert := genSignedCert $apiclarityCN (list "127.0.0.1") (list $apiclarityCN $apiclarityExternalDNS $apiclarityExternalDNSWithSVC $apiclarityExternalDNSFullFQDN ) 730 $ca -}}
+{{- $caCert = $ca.Cert -}}
+{{- $controllerServerCert = ($controllerCert.Cert | b64enc) -}}
+{{- $controllerServerKey = ($controllerCert.Key | b64enc) -}}
+{{- $apiclarityServerCert = ($apiclarityCert.Cert | b64enc) -}}
+{{- $apiclarityServerKey = ($apiclarityCert.Key | b64enc) -}}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "product.name" . }}-root-ca.crt
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  ca.crt: |
+    {{- $caCert | nindent 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "controller.fullname" . }}-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  server.crt: {{ $controllerServerCert }}
+  server.key: {{ $controllerServerKey }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apiclarity-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+data:
+  server.crt: {{ $apiclarityServerCert }}
+  server.key: {{ $apiclarityServerKey }}
+{{- end }}

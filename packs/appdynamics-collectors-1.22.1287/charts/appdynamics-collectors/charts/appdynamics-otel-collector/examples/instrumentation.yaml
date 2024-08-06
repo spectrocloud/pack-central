@@ -1,0 +1,12 @@
+# required 
+endpoint: "https://data.appdynamics.com"
+clientId: "id"
+clientSecret: "secret"
+tokenUrl: "https://token_ur.com/oauth2l"
+
+# add namespace you want to instrument
+# The resources you want to instrument should have annotation:
+# instrumentation.opentelemetry.io/inject-<language>: "true"
+instrumentation:
+  namespaces: 
+    default:

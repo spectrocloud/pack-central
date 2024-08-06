@@ -1,0 +1,25 @@
+apiVersion: v2
+appVersion: 24.1.0
+dependencies:
+- condition: install.metrics-server
+  name: metrics-server
+  repository: https://kubernetes-sigs.github.io/metrics-server/
+  version: 3.7.0
+description: Sophisticated helm chart to deploy cluster agent and machine agent in
+  addition with advanced features like multiple cluster agent deployments, Granular
+  control over config with intuitive boolean switches
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+keywords:
+- appdynamics
+- cluster
+- kubernetes
+- openshift
+- monitoring
+- pod
+- deployment
+maintainers:
+- email: support@appdynamics.com
+  name: AppDynamics
+name: appdynamics-csaas-k8s-cluster-agent
+version: 1.19.0

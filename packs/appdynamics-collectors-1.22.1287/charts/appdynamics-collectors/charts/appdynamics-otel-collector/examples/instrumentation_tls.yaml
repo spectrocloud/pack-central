@@ -1,0 +1,33 @@
+global:
+  tls:
+    otelReceiver:
+      secret:
+        secretName: root-secret
+        secretKeys:
+          tlsCert: tls.crt
+          tlsKey: tls.key
+      settings:
+        min_version: 1.2
+        max_version: 1.3
+# required 
+endpoint: "https://data.appdynamics.com"
+clientId: "id"
+clientSecret: "secret"
+tokenUrl: "https://token_ur.com/oauth2l"
+
+# add namespace you want to instrument
+# The resources you want to instrument should have annotation:
+# instrumentation.opentelemetry.io/inject-<language>: "true"
+instrumentation:
+# by default insecure is true, when insecure is false, tls will be used to protect the communication with AppDynamics Distribution of OpenTelemetry Collector.
+  insecure: false
+  namespaces: 
+    default:
+      metadata:
+        labels:
+          my-label: tls
+      spec:
+        java:
+          env:
+          - name: OTEL_EXPORTER_OTLP_CERTIFICATE # The tls.crt should contain dns name appdynamics-otel-collector-service.appdynamics.svc.cluster.local
+            value: /etc/agent/cert/tls.crt # path to the crt should exist in the instrumented pod.

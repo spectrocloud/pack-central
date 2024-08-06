@@ -1,0 +1,16 @@
+{{- if not .Values.global.isManagedByHelm -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "product.name" . }}-upgrader
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "product.name" . }}-upgrader
+    namespace: {{ .Release.Namespace }}
+{{- end }}

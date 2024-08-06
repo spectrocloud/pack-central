@@ -1,0 +1,34 @@
+global:
+  clusterName: "ClusterName"
+appdynamics-cloud-k8s-monitoring:
+  install:
+    clustermon: true
+    defaultInfraCollectors: true
+    logCollector: true
+  logCollectorConfig:
+    container:
+      defaultConfig:
+        multiLinePattern: "^{"
+        multiLineMatch: "after"
+        multiLineNegate: true
+        messageParser:
+          json:
+            enabled: true
+      conditionalConfigs:
+        - condition:
+            operator: equals
+            key: kubernetes.container.name
+            value: log-gen-app-log4j
+          config:
+            multiLinePattern: '^\d{4}-\d{2}-\d{2}'
+            multiLineNegate: true
+            multiLineMatch: "after"
+            messageParser:
+              log4J:
+                enabled: true
+                pattern: "%d{yyyy-MM-dd'T'HH:mm:ss} %p %C{1.} [%t] %m%n"
+
+appdynamics-otel-collector:
+  clientId: <ClientId>
+  clientSecret: <ClientSec>
+  endpoint: <ClientEndPoint>

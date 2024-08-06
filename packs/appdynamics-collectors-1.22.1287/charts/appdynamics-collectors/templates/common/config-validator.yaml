@@ -1,0 +1,11 @@
+{{- $autoInstrumentationAgentEnabled :=  index .Values "appdynamics-auto-instrumentation-agent" "enabled" }}
+{{- $clusterAgentEnabled := index .Values "appdynamics-csaas-k8s-cluster-agent" "installClusterAgent" }}
+{{- $clusterCollectorEnabled := index .Values "appdynamics-cloud-k8s-monitoring" "install" "clustermon" }}
+
+{{if and $autoInstrumentationAgentEnabled $clusterAgentEnabled -}}
+{{ fail "Configuration Conflict - The settings 'appdynamics-auto-instrumentation-agent.enabled' and 'appdynamics-csaas-k8s-cluster-agent.installClusterAgent' must not be activated at the same time. Please choose only one option to enable automatic application performance monitoring (APM) agent instrumentation within the Kubernetes cluster." -}}
+{{ end -}}
+
+{{if and $clusterCollectorEnabled $clusterAgentEnabled -}}
+{{ fail "Overlapping Configuration - The options 'appdynamics-csaas-k8s-cluster-agent.installClusterAgent' and 'appdynamics-cloud-k8s-monitoring.install.clustermon' should not both be active at the same time. Please select only one of these for Kubernetes cluster monitoring across the distinct product lines csaas or cco." -}}
+{{ end -}}

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "Values",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "customService": {
+        "description": "A custom service which its name and namespace can be configured for user application, shared with collector helm chart.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enable" : {
+            "description": "Whether the custom service will be created, false by default",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "The name for the custom service",
+            "type": "string"
+          },
+          "namespace": {
+            "description": "The namespace for the custom service",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "name": {
+      "description": "name for the opentelemetry instrumentation custom resource.",
+      "type": "string"
+    },
+    "exporter": {
+      "description": "exporter config for the instrumentation agent.",
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "description": "protocol used for communication, could be http or grpc, endpoint will be auto selected for the protocol.",
+          "type": "string",
+          "enum": [
+            "http",
+            "grpc"
+          ]
+        },
+        "insecure": {
+          "description": "whether use TLS for communication, disable TLS by set it to true.",
+          "type": "boolean"
+        },
+        "grpc": {
+          "properties": {
+            "endpoint": {
+              "description": "grpc exporter endpoint.",
+              "type": "string"
+            }
+          }
+        },
+        "http": {
+          "properties": {
+            "endpoint": {
+              "description": "http exporter  endpoint.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "spec": {
+      "description": "instrumentation spec.",
+      "type": "object"
+    },
+    "enabled" : {
+      "description": " whether instrumentation enabled.",
+      "type": "boolean"
+    }
+  }
+}

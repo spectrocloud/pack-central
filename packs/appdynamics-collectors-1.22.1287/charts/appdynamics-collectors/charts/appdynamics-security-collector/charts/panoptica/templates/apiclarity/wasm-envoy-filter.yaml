@@ -1,0 +1,150 @@
+{{- if and .Values.global.isAPISecurityEnabled .Values.apiclarity.traceSource.istio -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ include "product.name" . }}-filter
+  namespace: istio-system
+  labels:
+    owner: {{ include "product.name" . }}
+    component: trace-analyzer
+spec:
+  {{- if .Values.global.isContainerSecurityEnabled }}
+  workloadSelector:
+    labels:
+      {{ include "product.name" . }}.io/envoy-auth-config: pod
+  {{- end }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.wasm
+          typedConfig:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            typeUrl: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            value:
+              config:
+                name: {{ include "product.name" . }}-outbound-filter
+                rootId: {{ include "product.name" . }}-outbound-filter
+                configuration:
+                  "@type": "type.googleapis.com/google.protobuf.StringValue"
+                  value: |
+                    {"trace_sampling_enabled": "true"}
+                vmConfig:
+                  code:
+                    remote:
+                      http_uri:
+                        cluster: wasm_file_server
+                        timeout: 10s
+                        uri: "{{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:8081/http-trace-filter.wasm"
+                      sha256: {{ .Values.apiclarity.traceWasmFilterSHA256 }}
+                  runtime: envoy.wasm.runtime.v8
+                  vmId: {{ include "product.name" . }}-outbound-filter
+    - applyTo: CLUSTER
+      match:
+        context: SIDECAR_OUTBOUND
+      patch:
+        operation: ADD
+        value:
+          connect_timeout: 1s
+          dns_lookup_family: V4_ONLY
+          dns_refresh_rate: 5s
+          load_assignment:
+            cluster_name: wasm_file_server
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: {{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+                          port_value: 8081
+          name: wasm_file_server
+          type: LOGICAL_DNS
+    - applyTo: CLUSTER
+      match:
+        context: SIDECAR_OUTBOUND
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: trace_analyzer
+          type: LOGICAL_DNS
+          connect_timeout: 0.5s
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: trace_analyzer
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          protocol: TCP
+                          address: {{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+                          port_value: 9000
+{{- if and .Values.global.isConnectionEnforcementEnabled (not .Values.istio.global.alreadyInstalled) }}
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+              sni: outbound_.9000_._.{{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+              common_tls_context:
+                alpn_protocols:
+                  - "istio-peer-exchange"
+                  - "istio"
+                tls_certificate_sds_secret_configs:
+                  - name: default
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+                combined_validation_context:
+                  default_validation_context:
+                    match_subject_alt_names:
+                      - exact: spiffe://cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "apiclarity.serviceAccountName" . }}
+                  validation_context_sds_secret_config:
+                    name: "ROOTCA"
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+{{- end }}
+    - applyTo: CLUSTER
+      match:
+        context: SIDECAR_OUTBOUND
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: trace-sampling-manager
+          type: LOGICAL_DNS
+          connect_timeout: 0.5s
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: trace-sampling-manager
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          protocol: TCP
+                          address: {{ include "apiclarity.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+                          port_value: 9990
+{{- end }}
