@@ -1,0 +1,385 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+{{- if semverCompare "1.10 - 1.12" .Values.istio.global.version -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ext-authz-1.10
+  namespace: istio-system
+  labels:
+    owner: {{ include "product.name" . }}
+    workload-type: pod
+spec:
+  workloadSelector:
+    labels:
+      {{ include "product.name" . }}.io/envoy-auth-config: pod
+  configPatches:
+    - applyTo: CLUSTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: ANY
+        cluster:
+          name: "outbound-ext-authz"
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: "outbound-ext-authz"
+          type: STRICT_DNS
+          http2_protocol_options: {}
+          connect_timeout: 10s
+          load_assignment:
+            cluster_name: "outbound-ext-authz"
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: "{{ include "controller.fullname" . }}.{{ .Release.Namespace }}"
+                          port_value: 24226
+  {{- if and .Values.global.isAPISecurityEnabled (not .Values.istio.global.alreadyInstalled) }}
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+              sni: outbound_.24226_._.{{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+              common_tls_context:
+                alpn_protocols:
+                  - "istio-peer-exchange"
+                  - "istio"
+                  - "h2"
+                tls_certificate_sds_secret_configs:
+                  - name: default
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+                combined_validation_context:
+                  default_validation_context:
+                    match_subject_alt_names:
+                      - exact: spiffe://cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "controller.serviceAccountName" . }}
+                  validation_context_sds_secret_config:
+                    name: "ROOTCA"
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+  {{- end }}
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+        cluster:
+          name: "inbound-ext-authz"
+        proxy:
+          proxyVersion: ^1\.10.*
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: "inbound-ext-authz"
+          type: STRICT_DNS
+          http2_protocol_options: {}
+          connect_timeout: 10s
+          load_assignment:
+            cluster_name: "inbound-ext-authz"
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: "{{ include "controller.fullname" . }}.{{ .Release.Namespace }}"
+                          port_value: 24229
+  {{- if and .Values.global.isAPISecurityEnabled (not .Values.istio.global.alreadyInstalled) }}
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+              sni: outbound_.24229_._.{{ include "controller.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+              common_tls_context:
+                alpn_protocols:
+                  - "istio-peer-exchange"
+                  - "istio"
+                  - "h2"
+                tls_certificate_sds_secret_configs:
+                  - name: default
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+                combined_validation_context:
+                  default_validation_context:
+                    match_subject_alt_names:
+                      - exact: spiffe://cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "controller.serviceAccountName" . }}
+                  validation_context_sds_secret_config:
+                    name: "ROOTCA"
+                    sds_config:
+                      api_config_source:
+                        api_type: "GRPC"
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: "sds-grpc"
+                        set_node_on_first_message_only: true
+                        transport_api_version: V3
+                      initial_fetch_timeout: 0s
+                      resource_api_version: V3
+  {{- end }}
+    - applyTo: NETWORK_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.tcp_proxy"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.network.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.ext_authz.v3.ExtAuthz"
+            stat_prefix: ext_authz
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: outbound-ext-authz
+    - applyTo: HTTP_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.http.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz"
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: outbound-ext-authz
+    - applyTo: NETWORK_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.tcp_proxy"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.network.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.ext_authz.v3.ExtAuthz"
+            stat_prefix: ext_authz
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: inbound-ext-authz
+    - applyTo: HTTP_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.http.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz"
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: inbound-ext-authz
+{{- if .Values.istio.expansion.enabled -}}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ext-authz-expansion-1.10
+  namespace: istio-system
+  labels:
+    owner: {{ include "product.name" . }}
+    workload-type: expansion
+spec:
+  workloadSelector:
+    labels:
+      {{ include "product.name" . }}.io/envoy-auth-config: expansion
+  configPatches:
+    - applyTo: CLUSTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: ANY
+        cluster:
+          name: "outbound-ext-authz"
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: "outbound-ext-authz"
+          type: STATIC
+          http2_protocol_options: {}
+          connect_timeout: 10s
+          load_assignment:
+            cluster_name: "outbound-ext-authz"
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: "127.0.0.1"
+                          port_value: 24226
+    - applyTo: CLUSTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: ANY
+        cluster:
+          name: "inbound-ext-authz"
+      patch:
+        operation: ADD
+        value: # cluster specification
+          name: "inbound-ext-authz"
+          type: STATIC
+          http2_protocol_options: {}
+          connect_timeout: 10s
+          load_assignment:
+            cluster_name: "inbound-ext-authz"
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: "127.0.0.1"
+                          port_value: 24229
+    - applyTo: NETWORK_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.tcp_proxy"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.network.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.ext_authz.v3.ExtAuthz"
+            stat_prefix: ext_authz
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: outbound-ext-authz
+    - applyTo: HTTP_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_OUTBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.http.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz"
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: outbound-ext-authz
+    - applyTo: NETWORK_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.tcp_proxy"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.network.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.ext_authz.v3.ExtAuthz"
+            stat_prefix: ext_authz
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: inbound-ext-authz
+    - applyTo: HTTP_FILTER
+      match:
+        proxy:
+          proxyVersion: ^1\.10.*
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: "envoy.filters.http.ext_authz"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz"
+            transport_api_version: V3
+            include_peer_certificate: true
+            failure_mode_allow: {{ .Values.global.connectionFailPolicyAllow }}
+            grpc_service:
+              envoy_grpc:
+                cluster_name: inbound-ext-authz
+{{- end }}
+{{- end }}
+{{- end }}
