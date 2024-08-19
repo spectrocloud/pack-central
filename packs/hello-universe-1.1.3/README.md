@@ -25,7 +25,7 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
 | `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | Yes           |
-| `manifests.images.hellouniverse` | The [`hello-universe`](https://github.com/spectrocloud/hello-universe) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.2`/ `ghcr.io/spectrocloud/hello-universe:1.1.2-proxy` | Yes           |
+| `manifests.images.hellouniverse` | The [`hello-universe`](https://github.com/spectrocloud/hello-universe) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.3`/ `ghcr.io/spectrocloud/hello-universe:1.1.3-proxy` | Yes           |
 | `manifests.images.hellouniverseapi` | The [`hello-universe-api`](https://github.com/spectrocloud/hello-universe-api) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-api:1.0.12` | No           |
 | `manifests.images.hellouniversedb` | The [`hello-universe-db`](https://github.com/spectrocloud/hello-universe-db) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-db:1.0.2` | No           |
 | `manifests.apiEnabled`                  | The flag that indicates whether to deploy the UI application as standalone or together with the API server. | `false`                                      | Yes           |
@@ -33,6 +33,18 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |
 | `manifests.dbPassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
 | `manifests.authToken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
+| `manifests.hello-universe.ui.useTolerations`            | Flag to indicate whether to use tolerations for the UI pods.                          |      `false`                                       | No          |
+| `manifests.hello-universe.api.useTolerations`            | Flag to indicate whether to use tolerations for the API pods.                          |      `false`                                       | No          |
+| `manifests.hello-universe.postgres.useTolerations`            | Flag to indicate whether to use tolerations for the Postgres pods.                          |      `false`                                   | No          |
+| `manifests.hello-universe.ui.tolerations.effect`            | The toleration effect to use for the Hello Universe UI pods. The allowed values are `PreferNoSchedule`, `NoSchedule` and `NoExecute`.                          |      `PreferNoSchedule`                                 | No          |
+| `manifests.hello-universe.api.tolerations.effect`            | The toleration effect to use for the Hello Universe API pods. The allowed values are `PreferNoSchedule`, `NoSchedule` and `NoExecute`.                          |      `PreferNoSchedule`                                   | No          |
+| `manifests.hello-universe.postgres.tolerations.effect`            | The toleration effect to use for the Hello Universe Postgres pods. The allowed values are `PreferNoSchedule`, `NoSchedule` and `NoExecute`.                          |      `PreferNoSchedule`                                   | No          |
+| `manifests.hello-universe.ui.tolerations.key`            | The tolerations key to use for the Hello Universe UI pods.                         |      `app`                                   | No          |
+| `manifests.hello-universe.api.tolerations.key`            | The tolerations key to use for the Hello Universe API pods.                         |      `app`                                   | No          |
+| `manifests.hello-universe.postgres.tolerations.key`            | The tolerations key to use for the Hello Universe Postgres pods.                         |      `app`                                   | No          |
+| `manifests.hello-universe.ui.tolerations.value`            | The tolerations value to use for the Hello Universe UI pods.                         |      `ui`                                   | No          |
+| `manifests.hello-universe.api.tolerations.value`            | The tolerations value to use for the Hello Universe API pods.                         |      `api`                                   | No          |
+| `manifests.hello-universe.postgres.tolerations.value`            | The tolerations value to use for the Hello Universe Postgres pods.                         |      `postgres`                                | No          |
 
 ## Upgrade
 
@@ -52,6 +64,20 @@ After defining the cluster profile, use it to deploy a new cluster or attach it 
 
 Once the cluster status displays **Running** and **Healthy**, access the Hello Universe application through the exposed service URL along with the displayed port number.
 
+### Tolerations
+
+The Hello Universe pack provides parameters for providing pod tolerations. These make it possible to provide [Kubernetes Taints](https://docs.spectrocloud.com/clusters/cluster-management/taints/#taints). You can only apply toleration for the UI, API, and Postgres pods.
+
+The parameters are applied using the `Equal` operator as demonstrated below:
+
+```yaml
+    tolerations:
+    - effect: {{ .Values.ui.tolerations.effect }}
+    key: {{ .Values.ui.tolerations.key }}
+    operator: Equal
+    value: {{ .Values.ui.tolerations.value }}
+```
+
 ## References
 
 - [Hello Universe GitHub Repository](https://github.com/spectrocloud/hello-universe)
@@ -61,3 +87,5 @@ Once the cluster status displays **Running** and **Healthy**, access the Hello U
 - [Deploy a Custom Pack Tutorial](https://docs.spectrocloud.com/registries-and-packs/deploy-pack/)
 
 - [Registries and Packs](https://docs.spectrocloud.com/registries-and-packs/)
+
+- [Node Labels and Taints](https://docs.spectrocloud.com/clusters/cluster-management/taints/)
