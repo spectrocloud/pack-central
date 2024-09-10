@@ -1,4 +1,4 @@
-<img src="logo.png" alt="NetApp Trident" width="100" height="100">
+<img src="logo/trident.png" alt="NetApp Trident" width="100" height="100">
 
 [![Support](https://img.shields.io/badge/support-official-0067C5.svg)](http://mysupport.netapp.com/info/web/ECMLP2619434.html)
 [![Chat](https://img.shields.io/badge/chat-slack-4C9689.svg)](http://netapp.io/slack/)
@@ -23,6 +23,18 @@ Kubernetes workloads leveraging NetApp's industry-leading data management techno
 Detailed documentation for Trident can be found [here](https://docs.netapp.com/us-en/trident/index.html).
 
 Take a look at the [Astra documentation](https://docs.netapp.com/us-en/astra/) to get started today.
+
+See [NetApp's Support site](https://mysupport.netapp.com/site/info/version-support) for details on Trident's support policy under the [Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support) tab.
+
+:::tip
+
+Check out the [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/) to learn how to backup and restore your cluster.
+
+::::
+
+### Snapshot Creation
+
+The NetApp Trident operator pack supports snapshot creation. Snapshot creation requies the cluster profile to have the [Volume-Snapshot-controller](https://docs.spectrocloud.com/integrations/packs/?pack=volume-snapshot-controller) pack. You can add the Volume-Snapshot-controller pack to the cluster profile as an addon pack. Refer to the [Volume-Snapshot-controller](https://docs.spectrocloud.com/integrations/packs/?pack=volume-snapshot-controller) README for more information.
 
 # References:
 
