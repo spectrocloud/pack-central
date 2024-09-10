@@ -23,6 +23,8 @@ Detailed documentation for Trident can be found [here](https://docs.netapp.com/u
 
 Take a look at the [Astra documentation](https://docs.netapp.com/us-en/astra/) to get started today.
 
+See [NetApp's Support site](https://mysupport.netapp.com/site/info/version-support) for details on Trident's support policy under the [Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support) tab.
+
 :::tip
 
 Check out the [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/) to learn how to backup and restore your cluster.
