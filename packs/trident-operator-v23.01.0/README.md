@@ -11,8 +11,7 @@ Trident is a fully supported open source project maintained by [NetApp](https://
 from the ground up to help you meet your containerized applications' persistence demands using industry-standard
 interfaces, such as the [Container Storage Interface (CSI)](https://kubernetes-csi.github.io/docs/introduction.html).
 
-### StorageClass
-
+## Usage
 Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly and easily consume persistent storage from NetApp’s broad portfolio that
 includes [ONTAP](https://www.netapp.com/data-management/ontap-data-management-software) (AFF/FAS/Select/Cloud), [Element](https://www.netapp.com/data-management/element-software) (HCI/SolidFire), as well as the [Azure NetApp Files](https://cloud.netapp.com/azure-netapp-files)
 service, [Cloud Volumes Service on Google Cloud](https://cloud.netapp.com/cloud-volumes-service-for-gcp), and [Amazon FSx for ONTAP](https://cloud.netapp.com/fsx-for-ontap).
@@ -23,6 +22,16 @@ Kubernetes workloads leveraging NetApp's industry-leading data management techno
 Detailed documentation for Trident can be found [here](https://docs.netapp.com/us-en/trident/index.html).
 
 Take a look at the [Astra documentation](https://docs.netapp.com/us-en/astra/) to get started today.
+
+:::tip
+
+Check out the [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/) to learn how to backup and restore your cluster.
+
+::::
+
+### Snapshot Creation
+
+The NetApp Trident operator pack supports snapshot creation. Snapshot creation requies the cluster profile to have the [Volume-Snapshot-controller](https://docs.spectrocloud.com/integrations/packs/?pack=volume-snapshot-controller) pack. You can add the Volume-Snapshot-controller pack to the cluster profile as an addon pack. Refer to the [Volume-Snapshot-controller](https://docs.spectrocloud.com/integrations/packs/?pack=volume-snapshot-controller) README for more information.
 
 # References:
 
