@@ -1,4 +1,4 @@
-<img src="logo/trident.png" alt="NetApp Trident" width="100" height="100">
+<img src="logo.png" alt="NetApp Trident" width="100" height="100">
 
 [![Support](https://img.shields.io/badge/support-official-0067C5.svg)](http://mysupport.netapp.com/info/web/ECMLP2619434.html)
 [![Chat](https://img.shields.io/badge/chat-slack-4C9689.svg)](http://netapp.io/slack/)
@@ -11,6 +11,8 @@ Trident is a fully supported open source project maintained by [NetApp](https://
 from the ground up to help you meet your containerized applications' persistence demands using industry-standard
 interfaces, such as the [Container Storage Interface (CSI)](https://kubernetes-csi.github.io/docs/introduction.html).
 
+### StorageClass
+
 Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly and easily consume persistent storage from NetApp’s broad portfolio that
 includes [ONTAP](https://www.netapp.com/data-management/ontap-data-management-software) (AFF/FAS/Select/Cloud), [Element](https://www.netapp.com/data-management/element-software) (HCI/SolidFire), as well as the [Azure NetApp Files](https://cloud.netapp.com/azure-netapp-files)
 service, [Cloud Volumes Service on Google Cloud](https://cloud.netapp.com/cloud-volumes-service-for-gcp), and [Amazon FSx for ONTAP](https://cloud.netapp.com/fsx-for-ontap).
@@ -22,4 +24,13 @@ Detailed documentation for Trident can be found [here](https://docs.netapp.com/u
 
 Take a look at the [Astra documentation](https://docs.netapp.com/us-en/astra/) to get started today.
 
-See [NetApp's Support site](https://mysupport.netapp.com/site/info/version-support) for details on Trident's support policy under the [Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support) tab.
+# References:
+
+- [NetApp's Support site](https://mysupport.netapp.com/site/info/version-support) 
+
+- [Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support) 
+
+- [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/)
+
+
+
