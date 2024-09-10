@@ -11,7 +11,7 @@ Trident is a fully supported open source project maintained by [NetApp](https://
 from the ground up to help you meet your containerized applications' persistence demands using industry-standard
 interfaces, such as the [Container Storage Interface (CSI)](https://kubernetes-csi.github.io/docs/introduction.html).
 
-### StorageClass
+## Usage
 
 Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly and easily consume persistent storage from NetApp’s broad portfolio that
 includes [ONTAP](https://www.netapp.com/data-management/ontap-data-management-software) (AFF/FAS/Select/Cloud), [Element](https://www.netapp.com/data-management/element-software) (HCI/SolidFire), as well as the [Azure NetApp Files](https://cloud.netapp.com/azure-netapp-files)
