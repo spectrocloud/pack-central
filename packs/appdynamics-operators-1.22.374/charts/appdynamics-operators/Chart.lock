@@ -1,0 +1,12 @@
+dependencies:
+- name: appdynamics-cloud-operator
+  repository: ""
+  version: 1.22.0
+- name: opentelemetry-operator
+  repository: ""
+  version: 0.43.0
+- name: appdynamics-smartagent
+  repository: https://artifactory.bare.appdynamics.com/artifactory/cosmosx-helm
+  version: 24.4.72
+digest: sha256:5f54d2005b3ffee9e5e913909c06353bac8e6eaf2de39a427baa42b0e7ec5550
+generated: "2024-07-25T10:55:08.939862768Z"

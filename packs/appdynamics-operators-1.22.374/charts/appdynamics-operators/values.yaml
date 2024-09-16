@@ -1,0 +1,25 @@
+appdynamics-cloud-operator:
+  enabled: true
+  operatorPod:
+    image: appdynamics/appdynamics-cloud-operator:24.7.0-1475
+    imagePullPolicy: Always
+    imagePullSecrets: []
+    nodeSelector:
+      kubernetes.io/os: linux
+  kubeRbacProxy: {}
+
+opentelemetry-operator:
+  enabled: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  manager:
+    serviceAccount:
+      name: opentelemetry-operator
+
+appdynamics-smartagent:
+  enabled: true
+  # Manually setting the operator helm chart version.
+  # Temp fix until the smartagent is installed via the operator helm chart.
+  # Ultimately, customer will install only the smartagent helm chart.
+  # Operator helm chart will be installed via the smartagent (with Agent Mgmt UI).
+  helmChartVersion: 1.21.0
