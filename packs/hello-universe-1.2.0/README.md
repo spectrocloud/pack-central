@@ -3,8 +3,8 @@
 [Hello Universe](https://github.com/spectrocloud/hello-universe) is a demo web application utilized to help users learn more about [Palette](https://docs.spectrocloud.com/introduction) and its features.
 
 You can deploy it using two preset configurations: 
-- A standalone front-end application. It provides a click counter that is saved locally and displays Spectro Cloud themed images.
-- A three-tier application with a front-end application, API server and PostgreSQL database into a Kubernetes cluster. It provides a click counter that is saved in the deployed database and displays Spectro Cloud themed images. You can read more about this configuration on the Hello Universe [README](https://github.com/spectrocloud/hello-universe?tab=readme-ov-file#reverse-proxy-with-kubernetes).
+- A standalone front-end application. It provides a frontend for Spacetastic, a fictional company used as a Spectro Cloud use case. It provides multiple pages with facts about space.
+- A three-tier application with a front-end application, API server and PostgreSQL database into a Kubernetes cluster. It provides an events counter that is saved in the deployed database which tracks the activity on the Spacetastic pages provided by the frontend. You can read more about this configuration on the Hello Universe [README](https://github.com/spectrocloud/hello-universe?tab=readme-ov-file#reverse-proxy-with-kubernetes).
 
 ## Prerequisites
 
@@ -25,9 +25,9 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | **Parameter**                     | **Description**                                                                | **Default Value**                           | **Required** |
 | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- | ------------ |
 | `manifests.namespace`             | The namespace in which the application will be deployed.                       | `hello-universe`                            | Yes           |
-| `manifests.images.hellouniverse` | The [`hello-universe`](https://github.com/spectrocloud/hello-universe) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.1.3`/ `ghcr.io/spectrocloud/hello-universe:1.1.3-proxy` | Yes           |
-| `manifests.images.hellouniverseapi` | The [`hello-universe-api`](https://github.com/spectrocloud/hello-universe-api) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-api:1.0.12` | No           |
-| `manifests.images.hellouniversedb` | The [`hello-universe-db`](https://github.com/spectrocloud/hello-universe-db) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-db:1.0.2` | No           |
+| `manifests.images.hellouniverse` | The [`hello-universe`](https://github.com/spectrocloud/hello-universe) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe:1.2.0`/ `ghcr.io/spectrocloud/hello-universe:1.2.0-proxy` | Yes           |
+| `manifests.images.hellouniverseapi` | The [`hello-universe-api`](https://github.com/spectrocloud/hello-universe-api) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-api:1.1.0` | No           |
+| `manifests.images.hellouniversedb` | The [`hello-universe-db`](https://github.com/spectrocloud/hello-universe-db) application image that will be utilized to create the containers.          | `ghcr.io/spectrocloud/hello-universe-db:1.1.0` | No           |
 | `manifests.apiEnabled`                  | The flag that indicates whether to deploy the UI application as standalone or together with the API server. | `false`                                      | Yes           |
 | `manifests.port`                  | The cluster port number on which the service will listen for incoming traffic. | `8080`                                      | Yes           |
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |
