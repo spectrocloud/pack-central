@@ -22,7 +22,7 @@ metadata:
   name: database
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.postgres.replicas }}
   selector:
     matchLabels:
       app: database
@@ -116,9 +116,8 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   type: LoadBalancer
-  # loadBalancerIP: 192.168.1.40
-  # loadBalancerClass: kube-vip.io/kube-vip-class
-  loadBalancerClass: default
+  loadBalancerIP: {{ .Values.edgemanager.service.loadBalancerIP }}
+  loadBalancerClass: {{ .Values.edgemanager.service.loadBalancerClass }}
   ports:
     - name: http
       port: {{ .Values.edgemanager.http.port }}

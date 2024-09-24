@@ -17,12 +17,16 @@ manifests:
         requests:
           memory: "512Mi"
           cpu: "250m"
-      http:
-        port: 8080
-      opc_ua:
-        port: 4840
+      service:
+        loadBalancerIP: ""
+        loadBalancerClass: kube-vip.io/kube-vip-class
+        http:
+          port: 8080
+        opc_ua:
+          port: 4840
     postgres:
       images: 3pings/postgres:latest
+      replicas: 1
       storageClassName: ""
       storageSize: "10Gi"
       resources:
