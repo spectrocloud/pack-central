@@ -1,0 +1,39 @@
+pack:
+  content:
+    images:
+      - image: 3pings/edgemanager:3.5.5.0
+      - image: 3pings/postgres:latest
+
+manifests:
+  eacm:
+    namespace: "autosoln"
+    edgemanager:
+      images: 3pings/edgemanager:3.5.5.0
+      replicas: 1
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+      http:
+        port: 8080
+      opc_ua:
+        port: 4840
+    postgres:
+      images: 3pings/postgres:latest
+      storageClassName: ""
+      storageSize: "10Gi"
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+      
+    
+
+
+

@@ -1,0 +1,16 @@
+{
+    "addonType":"app services",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },  
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Autosol",
+    "kubeManifests": ["manifests/eacm.yaml"],
+    "layer": "addon",
+    "name": "autosol",
+    "version": "3.5.5"
+  }
+  

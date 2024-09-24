@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-vol
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storageSize }}
+  storageClassName: {{ .Values.postgres.storageClassName }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.images }}
+          env:
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: "ASIServerDB"
+            - name: PGDATA                   # Specify the PGDATA environment variable
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: db-storage
+          resources:
+            limits:
+              memory: {{ .Values.postgres.resources.limits.memory }}
+              cpu: {{ .Values.postgres.resources.limits.cpu }}
+            requests:
+              memory: {{ .Values.postgres.resources.requests.memory }}
+              cpu: {{ .Values.postgres.resources.requests.cpu }}
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: db-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: database
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edgemanager
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.edgemanager.replicas }}
+  selector:
+    matchLabels:
+      app: edgemanager
+  template:
+    metadata:
+      labels:
+        app: edgemanager
+    spec:
+      containers:
+        - name: edgemanager
+          image: {{ .Values.edgemanager.images }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 4840
+            - containerPort: 40000
+            - containerPort: 40001
+            - containerPort: 40002
+            - containerPort: 40003
+            - containerPort: 40004
+            - containerPort: 40005
+            - containerPort: 40006
+            - containerPort: 40007
+            - containerPort: 40008
+            - containerPort: 40009
+            - containerPort: 40010
+          resources:
+            limits:
+              memory: {{ .Values.edgemanager.resources.limits.memory }}
+              cpu: {{ .Values.edgemanager.resources.limits.cpu }}
+            requests:
+              memory: {{ .Values.edgemanager.resources.requests.memory }}
+              cpu: {{ .Values.edgemanager.resources.requests.cpu }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgemanager
+  namespace: {{ .Values.namespace }}
+spec:
+  type: LoadBalancer
+  # loadBalancerIP: 192.168.1.40
+  # loadBalancerClass: kube-vip.io/kube-vip-class
+  loadBalancerClass: default
+  ports:
+    - name: http
+      port: {{ .Values.edgemanager.http.port }}
+      targetPort: 8080
+    - name: opc-ua
+      port: {{ .Values.edgemanager.opc_ua.port }}
+      targetPort: 4840
+    - name: custom-port-40000
+      port: 40000
+      targetPort: 40000
+    - name: custom-port-40001
+      port: 40001
+      targetPort: 40001
+    - name: custom-port-40002
+      port: 40002
+      targetPort: 40002
+    - name: custom-port-40003
+      port: 40003
+      targetPort: 40003
+    - name: custom-port-40004
+      port: 40004
+      targetPort: 40004
+    - name: custom-port-40005
+      port: 40005
+      targetPort: 40005
+    - name: custom-port-40006
+      port: 40006
+      targetPort: 40006
+    - name: custom-port-40007
+      port: 40007
+      targetPort: 40007
+    - name: custom-port-40008
+      port: 40008
+      targetPort: 40008
+    - name: custom-port-40009
+      port: 40009
+      targetPort: 40009
+    - name: custom-port-40010
+      port: 40010
+      targetPort: 40010
+  selector:
+    app: edgemanager
+
+
