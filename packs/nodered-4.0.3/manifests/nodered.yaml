@@ -1,0 +1,70 @@
+# PersistentVolumeClaim
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nodered-claim
+  namespace: {{ .Values.namespace }}
+spec:
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+  accessModes:
+    - ReadWriteOnce
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nodered
+  name: nodered
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: nodered
+  template:
+    metadata:
+      labels:
+        app: nodered
+    spec:
+      containers:
+      - name: nodered
+        image: {{ .Values.image }}
+        resources:
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+        ports:
+        - containerPort: 1880
+        volumeMounts:
+        - name: nodered-claim
+          mountPath: /data/nodered
+      volumes:
+      - name: nodered-claim
+        persistentVolumeClaim:
+          claimName: nodered-claim
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: nodered-lb
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: nodered
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  loadBalancerClass: {{ .Values.service.loadBalancerClass }}
+  ports:
+    - name: http
+      port: {{ .Values.port }}
+      targetPort: 1880

@@ -1,0 +1,25 @@
+pack:
+  content:
+    images:
+      - image: nodered/node-red:latest-22-minimal
+
+
+manifests:
+  nodered:
+    namespace: nodered-enterprise
+    image: nodered/node-red:latest-22-minimal
+    replicas: 1
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: "1"
+      requests:
+        memory: 256Mi
+        cpu: "0.2"
+    service:
+      loadBalancerIP:
+      loadBalancerClass: kube-vip.io/kube-vip-class
+      port: 1880
+    storage:
+      size: 10Gi
+

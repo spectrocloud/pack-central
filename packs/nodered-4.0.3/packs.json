@@ -1,0 +1,16 @@
+{
+    "addonType": "app services",
+    "annotations": {
+      "source": "community",
+      "contributor": "spectrocloud"
+    },
+    "cloudTypes": ["all"],
+    "displayName": "Node Red",
+    "kubeManifests": [
+      "manifests/nodered.yaml"
+    ],
+    "layer": "addon",
+    "name": "nodered",
+    "version": "4.0.3"
+  }
+  
