@@ -64,7 +64,4 @@ spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.service.loadBalancerIP }}
   loadBalancerClass: {{ .Values.service.loadBalancerClass }}
-  ports:
-    - name: http
-      port: {{ .Values.port }}
-      targetPort: 1880
+  port: {{ .Values.service.http.port }}

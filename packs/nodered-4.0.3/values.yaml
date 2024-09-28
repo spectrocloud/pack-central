@@ -19,7 +19,8 @@ manifests:
     service:
       loadBalancerIP:
       loadBalancerClass: kube-vip.io/kube-vip-class
-      port: 1880
+      http:
+        port: 1880
     storage:
       size: 10Gi
 
