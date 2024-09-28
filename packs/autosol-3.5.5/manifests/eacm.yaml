@@ -120,10 +120,10 @@ spec:
   loadBalancerClass: {{ .Values.edgemanager.service.loadBalancerClass }}
   ports:
     - name: http
-      port: {{ .Values.edgemanager.http.port }}
+      port: {{ .Values.edgemanager.service.http.port }}
       targetPort: 8080
     - name: opc-ua
-      port: {{ .Values.edgemanager.opc_ua.port }}
+      port: {{ .Values.edgemanager.service.opc_ua.port }}
       targetPort: 4840
     - name: custom-port-40000
       port: 40000
