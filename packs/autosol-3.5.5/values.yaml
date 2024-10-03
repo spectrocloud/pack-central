@@ -3,6 +3,7 @@ pack:
     images:
       - image: 3pings/edgemanager:3.5.5.0
       - image: 3pings/postgres:latest
+      - image: busybox:latest
 
 manifests:
   eacm:
