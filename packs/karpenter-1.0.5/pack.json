@@ -9,9 +9,9 @@
   ],
   "displayName": "Karpenter",
   "charts": [
-    "charts/karpenter-1.0.1.tgz"
+    "charts/karpenter-1.0.5.tgz"
   ],
   "layer": "addon",
   "name": "karpenter",
-  "version": "1.0.1"
+  "version": "1.0.5"
 }
