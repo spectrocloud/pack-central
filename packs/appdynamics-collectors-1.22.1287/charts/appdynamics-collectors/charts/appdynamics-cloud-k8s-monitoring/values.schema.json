@@ -1,0 +1,1499 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "title": "Values",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "smartAgentInstall": {
+          "description": "enabled when installed via smartagent. Installation takes all the common values used by the smartagent.",
+          "type": "boolean"
+        },
+        "namespace": {
+          "description": "namespace to use when installed via smartagent",
+          "type": "string"
+        },
+        "helmChartVersion": {
+          "description": "version of helm chart",
+          "type": "string"
+        },
+        "clusterName": {
+          "description": "name of cluster",
+          "type": "string"
+        },
+        "clusterId": {
+          "description": "The uid of kube-system namespace, required when helm lookup is not supported",
+          "type": "string"
+        },
+        "oauth": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "description": "AppDynamics oauth2 client id"
+            },
+            "clientSecret": {
+              "type": "string",
+              "description": "AppDynamics oauth2 client secret plain text"
+            },
+            "clientIdEnvVar": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "The clientIdEnvVar Schema",
+              "properties": {
+                "valueFrom": {
+                  "type": "object",
+                  "properties": {
+                    "secretKeyRef": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "key": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "clientSecretEnvVar": {
+              "type": "object",
+              "description": "The clientSecretEnvVar Schema",
+              "properties": {
+                "valueFrom": {
+                  "type": "object",
+                  "properties": {
+                    "secretKeyRef": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "key": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "endpoint": {
+              "type": "string",
+              "description": "AppDynamics endpoint url"
+            },
+            "tokenUrl": {
+              "type": "string",
+              "description": "AppDynamics oauth2 token refresh url"
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": ["clientSecret"]
+                },
+                {
+                  "required": ["clientSecretEnvVar"]
+                }
+              ]
+            },
+            {
+              "anyOf": [
+                {
+                  "required": ["clientId"]
+                },
+                {
+                  "required": ["clientIdEnvVar"]
+                }
+              ]
+            }
+          ]
+        },
+        "agentManagementProxy": {
+          "type": "object",
+          "properties": {
+            "httpProxy": {
+              "type": "string",
+              "description": "http proxy for agent management"
+            },
+            "httpsProxy": {
+              "type": "string",
+              "description": "https proxy for agent management"
+            },
+            "noProxy": {
+              "type": "array",
+              "description": "hostnames to skip proxying the request for agent management",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "appdCollectors": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "enable TLS for communication between Cisco AppDynamics Collectors and the Cisco AppDynamics Distribution of OpenTelemetry Collector (service).",
+                  "type": "boolean"
+                },
+                "secret": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "secretName": {
+                      "description": "name of the Kubernetes secret that holds the certificates",
+                      "type": "string"
+                    },
+                    "secretKeys": {
+                      "description": "secret keys for specifying TLS certificate, key, and CA certificate",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "caCert": {
+                          "description": "kubernetes secret key name that points to the CA certificate",
+                          "type": "string"
+                        },
+                        "tlsCert": {
+                          "description": "kubernetes secret key name that points to the TLS certificate",
+                          "type": "string"
+                        },
+                        "tlsKey": {
+                          "description": "kubernetes secret key name that points to the TLS key",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "install": {
+      "description": "contain flags to control installation of cluster collector, infra collector and log collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clustermon": {
+          "type": "boolean"
+        },
+        "defaultInfraCollectors": {
+          "type": "boolean"
+        },
+        "logCollector": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "clustermon",
+        "defaultInfraCollectors",
+        "logCollector"
+      ]
+    },
+    "agentManagementEnabled": {
+      "description": "opt in and out from Agent Management for cluster collector, infra collector and log collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clustermon": {
+          "type": "boolean"
+        },
+        "defaultInfraCollectors": {
+          "type": "boolean"
+        },
+        "logCollector": {
+          "type": "boolean"
+        }
+      }
+    },
+    "clustermonServiceAccount": {
+      "description": "serviceAccount name for clustermon",
+      "type": "string"
+    },
+    "inframonServiceAccount": {
+      "description": "serviceAccount name for inframon",
+      "type": "string"
+    },
+    "logCollectorServiceAccount": {
+      "description": "serviceAccount name for log collector",
+      "type": "string"
+    },
+    "clustermonConfig": {
+      "description": "configuration for clustermon",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "description": "log level for cluster collector",
+          "type": "string"
+        },
+        "logFilesMaxSizeMb": {
+          "description": "maximum size of one log file (in MB)",
+          "type": "integer"
+        },
+        "logFilesNumBackups": {
+          "description": "maximum number of log files created before overwriting the oldest one",
+          "type": "integer"
+        },
+        "os": {
+          "description": "operating system of the nodes on which cluster collector will be installed",
+          "type": "string",
+          "enum": ["linux", "windows"]
+        },
+        "printToStdout": {
+          "description": "Whether Kubernetes logs will report logs.",
+          "type": "string"
+        },
+        "filters": {
+          "description": "filters based on namespace, entity and label for monitoring K8s objects",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "includeRegex": {
+                  "type": "string"
+                },
+                "excludeRegex": {
+                  "type": "string"
+                }
+              }
+            },
+            "entity": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "excludeRegex": {
+                  "type": "string"
+                },
+                "excludeLabels": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "label": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "excludeRegex": {
+                  "type": "string"
+                }
+              }
+            },
+            "annotation": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "excludeRegex": {
+                  "type": "string"
+                }
+              }
+            },
+            "scopedFilters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "scope": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "namespaceRegex": {
+                        "type": "string"
+                      },
+                      "entityTypes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["configmap", "cronjob", "daemonset", "deployment", "horizontalpodautoscaler", "job", "replicaset", "replicationcontroller", "secret", "statefulset"]
+                        }
+                      }
+                    }
+                  },
+                  "entityFilter": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "excludeRegex": {
+                        "type": "string"
+                      },
+                      "excludeLabels": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ingressControllers": {
+          "description": "ingressControllers property",
+          "type": "object"
+        },
+        "events": {
+          "description": "configuration for collecting events",
+          "type": "object"
+        },
+        "configurations": {
+          "description": "enable or disable monitoring Configurations (ConfigMap, Secret)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "maxGoRoutine": {
+          "description": "maximum number of go routines used",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "helmChartVersion": {
+          "description": "version of the helm chart used",
+          "type": "string"
+        },
+        "labels": {
+          "description": "allows you to enable or disable labels collection",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "autoscalers": {
+          "description": "allows you to enable or disable monitoring autoscalers (hpa)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hpaVpaEnabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "profiler": {
+          "description": "allow you to enable or disable profiler",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "infraManagerConfig": {
+      "description": "configuration for infra manager",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "description": "log level for infra manager",
+          "type": "string"
+        },
+        "logFilesMaxSizeMb": {
+          "description": "maximum size of one log file for infra manager",
+          "type": "number"
+        },
+        "logFilesNumBackups": {
+          "description": "maximum number of log files created for infra manager before overwriting the oldest one",
+          "type": "number"
+        },
+        "printToStdout": {
+          "description": "determines whether infra manager logs report through Kubernetes logs",
+          "type": "string"
+        }
+      }
+    },
+    "servermonConfig": {
+      "description": "configuration for server collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "os": {
+          "description": "operating system of the nodes on which server collector will be installed",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux", "windows"]
+          }
+        },
+        "logLevel": {
+          "description": "log level for server collector",
+          "type": "string"
+        },
+        "logFilesMaxSizeMb": {
+          "description": "maximum size of one log file for server collector",
+          "type": "number"
+        },
+        "logFilesNumBackups": {
+          "description": "maximum number of log files created for server collector before overwriting the oldest one",
+          "type": "number"
+        },
+        "exporterPort": {
+          "description": "port used to start Node Exporter in Linux",
+          "type": "number"
+        },
+        "gatherInterval": {
+          "description": "gather interval for server collector",
+          "type": "number",
+          "enum": [10, 20, 30, 60]
+        },
+        "skipProviderCheck": {
+          "description": "skip the cloud provider check in server collector",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "override the server collector configuration for a specific operating system",
+          "type": "object"
+        }
+      },
+      "required": [
+        "os"
+      ]
+    },
+    "containermonConfig": {
+      "description": "configuration for container collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "os": {
+          "description": "operating system of the nodes on which container collector will be installed",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux", "windows"]
+          }
+        },
+        "logLevel": {
+          "description": "log level for container collector",
+          "type": "string"
+        },
+        "logFilesMaxSizeMb": {
+          "description": "maximum size of one log file for container collector",
+          "type": "number"
+        },
+        "logFilesNumBackups": {
+          "description": "maximum number of log files created for container collector before overwriting the oldest one",
+          "type": "number"
+        },
+        "gatherInterval": {
+          "description": "gather interval for container collector",
+          "type": "number",
+          "enum": [10, 20, 30, 60]
+        },
+        "env": {
+          "description": "override the container collector configuration for a specific operating system",
+          "type": "object"
+        }
+      },
+      "required": [
+        "os"
+      ]
+    },
+    "logCollectorConfig": {
+      "description": "configuration for log collector",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "os": {
+          "description": "OS on which Log Collector should be deployed, accepted values are linux and windows",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "env": {
+          "description": "Specifies OS-specific overrides.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "linux": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "container": {
+                  "$ref": "#/definitions/logCollectorConfigContainerProp"
+                },
+                "filebeatYaml": {
+                  "description": "Advanced config for LCA",
+                  "type": "string"
+                }
+              }
+            },
+            "windows": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "container": {
+                  "$ref": "#/definitions/logCollectorConfigContainerProp"
+                },
+                "filebeatYaml": {
+                  "description": "Advanced config for LCA",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "container": {
+          "$ref": "#/definitions/logCollectorConfigContainerProp"
+        },
+        "filebeatYaml": {
+          "description": "Advanced config for LCA",
+          "type": "string"
+        }
+      }
+    },
+    "clustermonPod": {
+      "description": "configuration for clustermon pod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "description": "image URL of cluster collector",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for cluster collector image",
+          "type": "string"
+        },
+        "affinity": {
+          "description": "affinity for the cluster collector pod",
+          "type": "object"
+        },
+        "annotations": {
+          "description": "annotations for the cluster collector pod.",
+          "type": "object"
+        },
+        "imagePullSecrets": {
+          "description": "image pull secrets for cluster collector image",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "labels": {
+          "description": "labels for the cluster collector pod",
+          "type": "object"
+        },
+        "nodeSelector": {
+          "description": "node selector for the cluster collector pod",
+          "type": "object"
+        },
+        "priorityClassName": {
+          "description": "name of the pod priority class, which is used in the cluster collector pod specification to set the priority.",
+          "type": "string"
+        },
+        "resources": {
+          "type": "object",
+          "description": "resources for the cluster collector pod",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "securityContext": {
+          "description": "security context for the cluster collector pod.",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the cluster collector pod.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "inframonPod": {
+      "description": "configuration for inframon pod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "description": "image URL of infra collector",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for infra collector image",
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "image pull secrets for infra collector image",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "priorityClassName": {
+          "description": "name of the pod priority class, which is used in the infra collector pod specification to set the priority",
+          "type": "string"
+        },
+        "resources": {
+          "description": "resources for the infra collector pod",
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "labels": {
+          "description": "labels for the infra collector pod",
+          "type": "object"
+        },
+        "annotations": {
+          "description": "annotations for the infra collector pod",
+          "type": "object"
+        },
+        "nodeSelector": {
+          "description": "node selector for the infra collector pod",
+          "type": "object"
+        },
+        "affinity": {
+          "description": "affinity for the infra collector pod",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the infra collector pod",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "securityContext": {
+          "description": "security context for the infra collector pod",
+          "type": "object"
+        },
+        "env": {
+          "description": "override the infra collector pod configuration for a specific operating system",
+          "type": "object"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "windowsExporterPod": {
+      "description": "configuration for windowsExporter pod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "description": "image URL of windows exporter",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for windows exporter image",
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "image pull secrets for windows exporter image",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "priorityClassName": {
+          "description": "name of the pod priority class, which is used in the windows exporter pod specification to set the priority",
+          "type": "string"
+        },
+        "resources": {
+          "description": "resources for the windows exporter pod",
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "labels": {
+          "description": "labels for the windows exporter pod",
+          "type": "object"
+        },
+        "annotations": {
+          "description": "annotations for the windows exporter pod",
+          "type": "object"
+        },
+        "nodeSelector": {
+          "description": "node selector for the windows exporter pod",
+          "type": "object"
+        },
+        "affinity": {
+          "description": "affinity for the windows exporter pod",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the windows exporter pod",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "securityContext": {
+          "description": "security context for the windows exporter pod",
+          "type": "object"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "logCollectorPod": {
+      "description": "configuration for log collector pod",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "description": "image URL of log collector",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "image pull policy for log collector image",
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "image pull secrets for log collector image",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "resources": {
+          "description": "resources for the log collector pod",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "type": "string"
+                },
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "labels": {
+          "description": "labels for the log collector pod",
+          "type": "object"
+        },
+        "annotations": {
+          "description": "annotations for the log collector pod",
+          "type": "object"
+        },
+        "nodeSelector": {
+          "description": "node selector for the log collector pod",
+          "type": "object"
+        },
+        "affinity": {
+          "description": "affinity for the log collector pod",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the log collector pod",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "securityContext": {
+          "description": "security context for the log collector pod",
+          "type": "object"
+        },
+        "env": {
+          "description": "override the log collector pod configuration for a specific operating system",
+          "type": "object"
+        },
+        "rollingUpdateMaxUnavailable": {
+          "description": "override the number of log collector pods that can be unavailable during the update process",
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "image"
+      ]
+    }
+  },
+  "definitions": {
+    "logCollectorSimpleConditionProp": {
+      "description": "Log Collector's simple condition format (operator, key, value)",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "enum": ["equals", "contains", "regexp", "range", "network"]
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "logCollectorFilebeatConditionProp": {
+      "description": "Log Collector's condition format (follows Filebeat's autodiscover condition format)",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "equals": {
+          "type": "object"
+        },
+        "contains": {
+          "type": "object"
+        },
+        "regexp": {
+          "type": "object"
+        },
+        "range": {
+          "type": "object"
+        },
+        "network": {
+          "type": "object"
+        },
+        "has_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "or": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/logCollectorFilebeatConditionProp"
+          }
+        },
+        "and": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/logCollectorFilebeatConditionProp"
+          }
+        },
+        "not": {
+          "$ref": "#/definitions/logCollectorFilebeatConditionProp"
+        }
+      }
+    },
+    "logCollectorConfigContainerProp": {
+      "description": "Log collector config for log collection from containers",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "monitorCollectors": {
+          "description": "Enables or disables log collection from the Log Collector and other collectors running on your cluster",
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "defaultConfig": {
+          "description": "Default condition for harvesting logs from any container on your cluster",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enable default log collection",
+              "type": [
+                "boolean",
+                "string"
+              ]
+            },
+            "multiLinePattern": {
+              "type": "string"
+            },
+            "multiLineMatch": {
+              "type": "string"
+            },
+            "multiLineNegate": {
+              "type": [
+                "boolean",
+                "string"
+              ]
+            },
+            "logFormat": {
+              "type": "string"
+            },
+            "messageParser": {
+              "description": "Single-line message pattern for messages. Include only one log type in each condition block, and delete all others",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "timestamp": {
+                  "description": "Single-line message pattern for Timestamp parser",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "format": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "logback": {
+                  "description": "Single-line message pattern for logback parser",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "pattern": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "json": {
+                  "description": "Single-line message pattern for json parser",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "timestampField": {
+                      "type": "string"
+                    },
+                    "timestampPattern": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "log4J": {
+                  "description": "Single-line message pattern for log4J parser",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "pattern": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "grok": {
+                  "description": "Single-line message pattern for grok parser",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "patterns": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "timestampField": {
+                      "type": "string"
+                    },
+                    "timestampPattern": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "infra": {
+                  "description": "Single-line message pattern for Kubernetes infrastructure log messages",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "multi": {
+                  "description": "Applies multiple parsers to a single log message",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": [
+                        "boolean",
+                        "string"
+                      ]
+                    },
+                    "parsers": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "subparsers": {
+                  "description": "Applies subparsers to each Grok log message",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "conditionalConfigs": {
+          "description": "The block which contains all the settings for a specific log source, type, and pattern as a pair of condition+config blocks. There can be multiple condition+config pairs within conditionalConfigs",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/logCollectorSimpleConditionProp"
+                  },
+                  {
+                    "$ref": "#/definitions/logCollectorFilebeatConditionProp"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "logFormat": {
+                    "type": "string"
+                  },
+                  "multiLinePattern": {
+                    "type": "string"
+                  },
+                  "multiLineNegate": {
+                    "type": [
+                      "boolean",
+                      "string"
+                    ]
+                  },
+                  "multiLineMatch": {
+                    "type": "string"
+                  },
+                  "messageParser": {
+                    "description": "Single-line message pattern for messages. Include only one log type in each condition block, and delete all others",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "timestamp": {
+                        "description": "Single-line message pattern for Timestamp parser",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "format": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "logback": {
+                        "description": "Single-line message pattern for logback parser",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "pattern": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "json": {
+                        "description": "Single-line message pattern for json parser",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "timestampField": {
+                            "type": "string"
+                          },
+                          "timestampPattern": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "log4J": {
+                        "description": "Single-line message pattern for log4J parser",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "pattern": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "grok": {
+                        "description": "Single-line message pattern for grok parser",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "patterns": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "timestampField": {
+                            "type": "string"
+                          },
+                          "timestampPattern": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "infra": {
+                        "description": "Single-line message pattern for Kubernetes infrastructure log messages",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "multi": {
+                        "description": "Applies multiple parsers to a single log message",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "enabled": {
+                            "type": [
+                              "boolean",
+                              "string"
+                            ]
+                          },
+                          "parsers": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "subparsers": {
+                        "description": "Applies subparsers to each Grok log message",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "excludeCondition": {
+          "$ref": "#/definitions/logCollectorFilebeatConditionProp"
+        },
+        "dropFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "logging": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "level": {
+              "type": "string"
+            },
+            "selectors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "files": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "Enable logging to files",
+                  "type": [
+                    "boolean",
+                    "string"
+                  ]
+                },
+                "keepFiles": {
+                  "type": "integer"
+                }
+              }
+            },
+            "metrics": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "Enable metrics logging",
+                  "type": [
+                    "boolean",
+                    "string"
+                  ]
+                },
+                "period": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "batchSize": {
+          "type": "integer"
+        },
+        "maxBytes": {
+          "type": "integer"
+        },
+        "summaryDebugLogsInterval": {
+          "description": "Logging interval. Example: 10s.",
+          "type": "string"
+        },
+        "worker": {
+          "description": "The number of worker threads to an output host. Default: 1. ",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "monitoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "otlpmetric": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": [
+                    "boolean",
+                    "string"
+                  ]
+                },
+                "endpoint": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "enum": ["grpc", "http"]
+                },
+                "collectPeriod": {
+                  "type": "string"
+                },
+                "reportPeriod": {
+                  "type": "string"
+                },
+                "resourceAttrs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "metrics": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "retry": {
+                  "enabled": {
+                    "type": [
+                      "boolean",
+                      "string"
+                    ]
+                  },
+                  "initialInterval": {
+                    "type": "string"
+                  },
+                  "maxInterval": {
+                    "type": "string"
+                  },
+                  "maxElapsedTime": {
+                    "type": "string"
+                  }
+                },
+                "ssl": {
+                  "enabled": {
+                    "type": [
+                      "boolean",
+                      "string"
+                    ]
+                  },
+                  "certificateAuthorities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "certificate": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

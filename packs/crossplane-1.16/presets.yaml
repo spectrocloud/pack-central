@@ -9,13 +9,3 @@ presets:
           provider:
             packages: 
               - "xpkg.upbound.io/crossplane-contrib/provider-palette:v0.19.2"
-  - name: "no-provider"
-    displayName: "Remove Preset Providers"
-    group: "Provider"
-    remove: |
-      charts:
-        crossplane:
-          provider:
-            packages: 
-              - "xpkg.upbound.io/crossplane-contrib/provider-palette:v0.19.2"
-    add: []

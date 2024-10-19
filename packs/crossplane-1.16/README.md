@@ -10,7 +10,8 @@ Custom APIs, created by platform teams, allow security and compliance enforcemen
 
 ## Prerequisites
 
-Kuberernetes >= 1.27.0
+Kubernetes >= 1.27.0
+
 ## Usage
 
 Installing a provider creates new Kubernetes resources representing the Provider’s APIs. Installing a provider also creates a Provider pod that’s responsible for reconciling the Provider’s APIs into the Kubernetes cluster. Providers constantly watch the state of the desired managed resources and create any external resources that are missing.
@@ -28,8 +29,9 @@ metadata:
 spec:
   package: xpkg.upbound.io/crossplane-contrib/provider-palette:v0.19.2
 ```
+
 ## References
 
-Crossplane Provider Guide - https://docs.crossplane.io/latest/concepts/providers/
-Crossplane Concepts - https://docs.crossplane.io/latest/concepts/
-Upbound Marketplace - https://marketplace.upbound.io/
+Crossplane Provider Guide - <https://docs.crossplane.io/latest/concepts/providers/>
+Crossplane Concepts - <https://docs.crossplane.io/latest/concepts/>
+Upbound Marketplace - <https://marketplace.upbound.io/>
