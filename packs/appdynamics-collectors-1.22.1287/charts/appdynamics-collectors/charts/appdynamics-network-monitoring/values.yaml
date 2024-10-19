@@ -1,0 +1,80 @@
+global:
+  clusterName: ""
+  tls:
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+enabled: false
+nameOverride: ""
+
+log:
+  console: false
+  # possible values: { error | warning | info | debug | trace }
+  level: warning
+
+kernelCollector:
+  enabled: true
+  image: otel/opentelemetry-ebpf-kernel-collector:v0.10.2
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  nodeSelector:
+    kubernetes.io/arch: amd64
+    kubernetes.io/os: linux
+
+  serviceAccount:
+    create: false
+    name: ""
+
+  tolerations:
+  - operator: "Exists"
+    effect: "NoExecute"
+  - operator: "Exists"
+    effect: "NoSchedule"
+
+  affinity: {}
+  resources: {}
+
+k8sCollector:
+  enabled: true
+  relay:
+    image: otel/opentelemetry-ebpf-k8s-relay:v0.10.2
+    imagePullPolicy: Always
+    resources: {}
+  watcher:
+    image: otel/opentelemetry-ebpf-k8s-watcher:v0.10.2
+    imagePullPolicy: Always
+    resources: {}
+  imagePullSecrets: []
+  nodeSelector:
+    kubernetes.io/arch: amd64
+    kubernetes.io/os: linux
+  affinity: {}
+  tolerations: []
+  serviceAccount:
+    create: false
+    name: ""
+
+reducer:
+  ingestShards: 1
+  matchingShards: 1
+  aggregationShards: 1
+  disableMetrics:
+  - ebpf_net.all
+  enableMetrics: []
+  telemetryPort: 7000
+  image: otel/opentelemetry-ebpf-reducer:v0.10.2
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  resources: {}
+  nodeSelector:
+    kubernetes.io/arch: amd64
+    kubernetes.io/os: linux
+  affinity: {}
+  tolerations: []
+
+rbac:
+  create: true

@@ -1,0 +1,31 @@
+# Default values for appdynamics-otel-instrumentation.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+name: appd-instrumentation
+#namespace: appdynamics
+
+global:
+  customService:
+    enable: false
+
+# exporter configuration - default grpc with insecure
+exporter:
+  protocol: grpc
+  insecure: true
+  grpc:
+    endpoint:  "{{ include \"appdynamics-otel-collector.endpoint\" .}}:4317"
+  http:
+    endpoint:  "{{ include \"appdynamics-otel-collector.endpoint\" .}}:4318"
+
+spec:
+  # environment variables (common)
+  #env: []
+  sampler:
+    type: parentbased_always_on
+  # common resource attributes, comment out default values which will cause argocd out of sync.
+  #resource:
+  #  addK8sUIDAttributes: false
+  #  resourceAttributes: {}
+  # trace propogators
+  propagators:
+    - tracecontext

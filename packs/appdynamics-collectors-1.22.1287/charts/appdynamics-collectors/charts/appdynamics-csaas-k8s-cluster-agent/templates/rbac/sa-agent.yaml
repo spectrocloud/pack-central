@@ -1,0 +1,9 @@
+{{ if .Values.installClusterAgent -}}
+{{ if .Values.createServiceAccount -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.agentServiceAccount }}
+  namespace: {{ .Release.Namespace }}
+{{ end -}}
+{{ end -}}
