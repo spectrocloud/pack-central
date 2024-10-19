@@ -1,0 +1,58 @@
+{{- if .Values.global.isConnectionEnforcementEnabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "product.name" . }}-sidecar-injector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+  {{- if .Values.global.dummyPlaceHolderForTest }}
+    role: test
+  {{- end }}
+data:
+  config: |-
+    name: dns-detector
+    image: "{{ default .Values.global.registry .Values.dnsDetector.image.registry }}/{{ .Values.dnsDetector.image.repository }}:{{ .Values.dnsDetector.image.tag }}"    
+    imagePullPolicy: {{ .Values.dnsDetector.image.pullPolicy }}
+    args:
+      - -dev
+      - eth0
+      - -pod_status_grpc_address
+      - {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:24225
+      - -capture_export_addr
+      - {{ include "controller.fullname" . }}.{{ .Release.Namespace }}:24232
+    {{- if .Values.istio.global.alreadyInstalled }}
+      - -passive_capture
+    {{- end }}
+      - -assembly_debug_log
+      - -debug
+      - warning
+      - -quiet
+    securityContext:
+    {{- if .Values.istio.global.alreadyInstalled }}
+      runAsUser: 0
+    {{- else }}
+      capabilities:
+          drop:
+          - ALL
+      runAsNonRoot: true
+      runAsUser: 1337
+      runAsGroup: 1337
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+    {{- end }}
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    resources:
+      {{- toYaml .Values.dnsDetector.resources | nindent 6 }}
+{{- end }}

@@ -1,0 +1,526 @@
+nameOverride: ""
+fullnameOverride: ""
+
+install: true
+enabled: true
+
+# data endpoint
+endpoint: ""
+
+#oauth2client required settings
+clientId: ""
+clientSecretEnvVar: {}
+tokenUrl: ""
+
+labels: {}
+
+annotations:
+  "prometheus.io/scrape": "false"
+
+global:
+  clusterName: ""
+  tls:
+    otelReceiver:
+      secret: {}
+      settings: {}
+    otelExporter:
+      secret: {}
+      settings: {}
+
+# spec is the spec section for opentelemetry collector CRD defined by opentelemetry operator.
+spec:
+  image: appdynamics/appdynamics-cloud-otel-collector:24.7.0-1639
+  # based on the perf testing
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1Gi
+    requests:
+      cpu: 10m
+      memory: 256Mi
+
+
+# status is the status section for opentelemtry operator
+status: {}
+
+# config is the Collector configs. Other resources configs are in seperated sections below.
+config:
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+    zpages:
+      endpoint: 0.0.0.0:55679
+
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    otlp/lca:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14317
+        http:
+          endpoint: 0.0.0.0:14318
+
+  processors:
+    # https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
+    batch:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/traces:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/metrics:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    batch/logs:
+      send_batch_size: 1000
+      timeout: 10s
+      send_batch_max_size: 1000
+    filter/appd:
+      logs:
+        include:
+          match_type: strict
+          resource_attributes:
+            - key: telemetry.sdk.name
+              value: infra-agent
+    filter/non_appd:
+      logs:
+        exclude:
+          match_type: strict
+          resource_attributes:
+            - key: telemetry.sdk.name
+              value: infra-agent
+    filter/jvm:
+      metrics:
+        metric:
+          - 'name == "jvm.gc.duration"'
+    transform/truncate:
+    transform/jvmmetric:
+      metric_statements:
+        - context: metric
+          statements:
+            - extract_count_metric(true) where name == "jvm.gc.duration"
+            - extract_sum_metric(true) where name == "jvm.gc.duration"
+            - set(unit, "ms") where name == "jvm.gc.duration_sum"
+            - set(description, "Time spent in a given JVM garbage collector in milliseconds.") where name == "jvm.gc.duration_sum"
+            - set(unit, "{collections}") where name == "jvm.gc.duration_count"
+            - set(description, "The number of collections that have occurred for a given JVM garbage collector.") where name == "jvm.gc.duration_count"
+    metricstransform/jvmdatapoint:
+      transforms:
+        - include: ^jvm\.gc\.(duration_count|duration_sum)
+          match_type: regexp
+          action: update
+          operations:
+            - action: update_label
+              label: "jvm.gc.action"
+              new_label: "action"
+            - action: update_label
+              label: "jvm.gc.name"
+              new_label: "gc"
+        - include: "jvm.gc.duration_sum"
+          match_type: strict
+          action: update
+          new_name: "runtime.jvm.gc.time"
+          operations:
+            - action: experimental_scale_value
+              experimental_scale: 1000
+            - action: toggle_scalar_data_type
+        - include: "jvm.gc.duration_count"
+          match_type: strict
+          action: update
+          new_name: "runtime.jvm.gc.count"
+    batchbybytesize: {}
+
+  exporters:
+    otlphttp:
+      auth:
+        authenticator: oauth2client
+
+    logging:
+      verbosity: detailed
+
+    debug:
+      verbosity: detailed
+
+  service:
+    extensions: [health_check, oauth2client]
+    pipelines:
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, transform/jvmmetric, filter/jvm, metricstransform/jvmdatapoint, transform/truncate, batch/metrics, batchbybytesize] # according to doc, "The memory_limiter processor should be the 1st processor configured in the pipeline (immediately after the receivers)."
+        exporters: [otlphttp]
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, transform/truncate, batch/traces, batchbybytesize]
+        exporters: [otlphttp]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, filter/non_appd, k8sattributes/logs, transform/logs, transform/truncate, batch/logs, batchbybytesize]
+        exporters: [otlphttp]
+      logs/appd:
+        receivers: [otlp]
+        processors: [memory_limiter, filter/appd, batch]
+        exporters: [otlphttp]
+      logs/lca:
+        receivers: [otlp/lca]
+        processors: [memory_limiter]
+        exporters: [otlphttp]
+
+# extra otel collector configuration
+configOverride: {}
+
+# service expose collector for external traffics.
+service:
+  name: "appdynamics-otel-collector-service"
+  ports:
+    - name: http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    - name: grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: grpc-lca
+      port: 14317
+      protocol: TCP
+      targetPort: 14317
+    - name: grpc-ebpf
+      port: 24317
+      protocol: TCP
+      targetPort: 24317
+  type: ClusterIP
+  internalTrafficPolicy: Local
+
+customService:
+  enable: false
+  name: ""
+  namespace: ""
+
+# serviceAccount is the serviceAccount associated with the collector, set serviceAccount.create to false if you don't need it
+serviceAccount:
+  annotations: {}
+  create: true
+  imagePullSecrets: []
+  #name: default to be the full name
+
+rbac:
+  create: true
+  rules:
+    # k8sattributes prcoessor needed rules.
+    - apiGroups: [""]
+      resources: ["pods", "namespaces", "endpoints"]
+      verbs: ["get", "watch", "list"]
+    - apiGroups: ["apps"]
+      resources: ["replicasets"]
+      verbs: ["get", "watch", "list"]
+
+# tracecontext propgation
+traceContextPropagation: true
+
+# enablePrometheus enable the prometheus related deployment, it will deploy a target allocator and a statefulset.
+enablePrometheus: false
+# enablePrometheus enable the filelog, it will deploy a daemonset to collector logs on each host.
+enableFileLog: false
+# disable agent management Opamp communication
+disableOpamp: false
+# Enable agent management extension
+agentManagement: true
+# Collector self telemetry
+agentManagementSelfTelemetry: false
+# Collector self telemetry, will be deprecated in Jan 2024
+selfTelemetry: false
+# enableNetworkMonitoring enables the Network Monitoring related receiver & processors
+enableNetworkMonitoring: false
+# when node local traffic node is enabled, the otel collector will only handle traffic from local node and k8sattributes processor will only watch local resource
+# it will save the resources cost by k8sattributes processor
+nodeLocalTrafficMode: false
+# when useGOMEMLIMIT turned on, GOMEMLIMIT environment variable will be added, with value of 80% of the memory limit, GOMEMLIMIT help protect otel collector from OOM, but may cause more GC and cpu consumption.
+useGOMEMLIMIT: true
+
+# targetAllocatorServiceAccount only enabled when enablePrometheus=true,
+# It will create a service account with a cluster role that have necessary permissions for the allocator to run.
+targetAllocatorServiceAccount:
+  annotations: {}
+  create: true
+  imagePullSecrets: []
+  #name: default to be the collector name with "-target-allocator" suffix, e.g. "my-collector-target-allocator"
+
+
+# deployment mode specific spec and config overrides.
+mode:
+  statefulset:
+    spec:
+      mode: statefulset
+  daemonset:
+    spec:
+      mode: daemonset
+
+# OS specific spec and config overrides.
+os: [linux]
+env:
+  linux:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: "linux"
+    # mode:
+      # statefulset: deployment and OS specific spec/config overrides    
+  windows:
+    spec:
+      nodeSelector:
+        kubernetes.io/os: "windows"
+      livenessProbe:
+        initialDelaySeconds: 5
+
+presets:
+  samplerDebug:
+    enable: false
+    config:
+      extensions:
+        appd_data_router: {}
+      processors:
+        tracerecord/received:
+          appd_router_ext: appd_data_router
+        tracerecord/sampled:
+          appd_router_ext: appd_data_router
+      receivers:
+        appdeventsreceiver:
+          appd_router_ext: appd_data_router
+      service:
+        extensions: [health_check, oauth2client, appd_data_router]
+        pipelines:
+          logs/sampler_debug:
+            receivers: [appdeventsreceiver]
+            exporters: [otlphttp]
+  presampler:
+    enable: false
+    deploy_mode: gateway # sidecar
+    pipeline: [memory_limiter, consistent_proportional_sampler/presampler, k8sattributes, batch/traces]
+    pipeline_sidecar: [memory_limiter, consistent_proportional_sampler/presampler, batch/traces]
+    #pipeline: [memory_limiter, k8sattributes, consistent_sampler/presampler, batch/traces] replace with this pipeline when testing adding configured p value directly.
+    consistent_proportional_sampler:
+      export_period: 1s # the export period for specifying the expected output rate, it is for rate calculation only, NOT for batch interval. The batch interval can be configured at trace_classification_and_sampling.samplers.export_period, or you can add a batch processor before this.
+      spans_per_period: 1000 # number of spans per request, the expected rate limit is calculated by dividing this number by export_period. The spans per packet is limited by the max packet size, assuming 1MB limit, and each span with size of 1KB
+      exponential_smooth: 0.1 # start with small number
+      initial_estimate_rate: 1000 # number of incomming span rate, just give a reasonable guess.
+      rate_estimator: batch_rate_estimator
+      sample_mode: presampling
+    consistent_sampler:
+      p_value: 1 # user can configure a p value to add to the trace state directly, it is mainly for testing purpose
+
+  # default configuration resulted in about 48% of tier 1 limit, which is 480 request/minute with 1000 spans/request
+  tailsampler:
+    enable: false
+    deploy_mode: gateway_sampler # gateway_sampler, sidecar_gateway, sidecar_sampler, specify the loadbalancer and tailsampling position with <loadbalancer>_<tailsampler>
+    replicas: 1
+    service:
+      name: "appdynamics-otel-collector-sampler-service"
+      type: ClusterIP
+      clusterIP: None
+      ports:
+      - name: sampler
+        port: 24317
+        protocol: TCP
+        targetPort: 24317
+    # groupbyattrs/compact is for compressing the traces with the same resource or scope
+    pipeline: [memory_limiter, batch/input, intermediate_sampler, trace_classification_and_sampling, consistent_proportional_sampler, groupbyattrs/compact, batch/traces, batchbybytesize] # the sampler pipeline set up
+    # when deployed as sidecar_sampler, sidecar will export trace to tail sampler directly, thus we need k8sattributes
+    pipeline_sidecar_loadbalancer: [memory_limiter, k8sattributes, groupbytrace, trace_classification_and_sampling, consistent_proportional_sampler, groupbyattrs/compact, batchbybytesize]
+    # classification and balanced sampling
+    groupbytrace:
+      wait_duration: 30s
+    trace_classification_and_sampling:
+      decision_wait: 30s
+      num_traces: 1000000 # Limit number of traces to keep in memory waiting for decision.
+      # classification, example considers error, high latency and all other traces, each category will be rate limit separately.
+      no_wait: true
+      independent_grouping: true
+      policies:
+        - name: errors-policy
+          type: status_code
+          sampler_name: "consistent_reservoir_sampler/error"
+          status_code:
+            status_codes: [ERROR]
+        - name: high-latency
+          type: latency
+          sampler_name: "consistent_reservoir_sampler/latency"
+          latency:
+            threshold_ms: 10000
+        - name: always-on
+          type: always_sample
+          sampler_name: "consistent_reservoir_sampler/anyother"
+      # balanced sampler controls the max rate for a category, the proportion among categories is more important because the final export rate is controlled by the following proportional sampler.
+      samplers:
+        export_period: 1s
+        consistent_reservoir_sampler:
+          error:
+            reservoir_size: 1000
+          latency:
+            reservoir_size: 1000
+          anyother:
+            reservoir_size: 1000
+    # consistent_proportional_sampler controls the final export rate.
+    consistent_proportional_sampler:
+      export_period: 1s # the export period for specifying the expected output rate, it is for rate calculation only, NOT for batch interval. The batch interval can be configured at trace_classification_and_sampling.samplers.export_period, or you can add a batch processor before this.
+      spans_per_period: 1000 # number of spans per request, the expected rate limit is calculated by dividing this number by export_period. The spans per packet is limited by the max packet size, assuming 1MB limit, and each span with size of 1KB
+      exponential_smooth: 0.1 # start with small number
+      initial_estimate_rate: 3000 # number of incomming span rate, just give a reasonable guess.
+    intermediate_sampler:
+      export_period: 1s
+      size_limit: 10000 # the output rate will be at [size_limit, 2*size_limit], i.e. 10000~20000 spans per second
+      size_limit_type: SpanCount
+      estimated_sampling: true
+      exponential_smooth: 0.2
+
+  selfTelemetry:
+    exporters:
+      otlphttp: {}
+
+
+  multi_tier:
+    sidecar:
+      enable: false
+      client_side_loadbalancing: false
+      env:
+        linux:
+          spec:
+            nodeSelector:
+              kubernetes.io/os: "linux"
+        windows:
+          spec:
+            nodeSelector:
+              kubernetes.io/os: "windows"
+            livenessProbe:
+              initialDelaySeconds: 5
+      spec:
+        image: appdynamics/appdynamics-cloud-apm-collector
+        mode: sidecar
+        # based on the perf testing
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      config:
+        extensions:
+          health_check:
+            endpoint: 0.0.0.0:13133
+          zpages:
+            endpoint: 0.0.0.0:55679
+        processors:
+          batch/traces:
+            send_batch_size: 100
+            timeout: 1s
+          batch/metrics:
+            send_batch_size: 100
+            timeout: 1s
+          batch/logs:
+            send_batch_size: 100
+            timeout: 1s
+        exporters:
+          otlp:
+            endpoint: appdynamics-otel-collector-service.appdynamics.svc.cluster.local:4317
+            tls:
+              insecure: true
+          logging:
+            verbosity: detailed
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: localhost:4317
+              http:
+                endpoint: localhost:4318
+        service:
+          extensions: [health_check]
+          pipelines:
+            metrics:
+              receivers: [otlp]
+              processors: [memory_limiter, batch/metrics] 
+              exporters: [otlp]
+            traces:
+              receivers: [otlp]
+              processors: [memory_limiter, batch/traces]
+              exporters: [otlp]
+            logs:
+              receivers: [otlp]
+              processors: [memory_limiter, batch/logs]
+              exporters: [otlp]
+    tailsampler:
+      enable: false
+      os: [linux]
+      env:
+        linux:
+          spec:
+            nodeSelector:
+              kubernetes.io/os: "linux"
+        windows:
+            nodeSelector:
+              kubernetes.io/os: "windows"
+            livenessProbe:
+              initialDelaySeconds: 5
+      spec:
+        image: appdynamics/appdynamics-cloud-otel-collector:24.7.0-1639
+        mode: deployment
+        # based on the perf testing
+        resources:
+          limits:
+            cpu: 1500m
+            memory: 1536Mi
+          requests:
+            cpu: '1'
+            memory: 1Gi
+      config:
+        extensions:
+          health_check:
+            endpoint: 0.0.0.0:13133
+          zpages:
+            endpoint: 0.0.0.0:55679
+        processors:
+          batch/input:
+            send_batch_size: 500
+          batch/traces:
+            send_batch_size: 1000
+            send_batch_max_size: 1000
+          batchbybytesize: {}
+        exporters:
+          otlphttp:
+            auth:
+              authenticator: oauth2client  
+          logging:
+            verbosity: detailed
+        service:
+          extensions: [health_check, oauth2client]
+  truncated:
+    trace:
+      resource: 512
+      scope: 512
+      span: 512
+      spanevent: 512
+    metric:
+      resource:
+      scope:
+      datapoint:
+    log:
+      resource:
+      scope:
+      log:
+
+
+
+
+filelogReceiverConfig:
+  includeLogsPath: ["/var/log/*/*/*/*log"]
+  excludeLogsPath: ["/var/log/pods/*otel-collector*/*/*.log"]
+  messageParserPattern: "timestamp"
+  messageParserType: "ABSOLUTE"
+
