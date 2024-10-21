@@ -2,9 +2,9 @@
 
 Karpenter is an open-source node lifecycle management project built for Kubernetes. Adding Karpenter to a Kubernetes cluster can dramatically improve the efficiency and cost of running workloads on that cluster. Karpenter works by:
 
-    Watching for pods that the Kubernetes scheduler has marked as unschedulable
-    Evaluating scheduling constraints (resource requests, nodeselectors, affinities, tolerations, and topology spread constraints) requested by the pods
-    Provisioning nodes that meet the requirements of the pods
+* Watching for pods that the Kubernetes scheduler has marked as unschedulable
+* Evaluating scheduling constraints (resource requests, nodeselectors, affinities, tolerations, and topology spread constraints) requested by the pods
+* Provisioning nodes that meet the requirements of the pods
     Disrupting the nodes when the nodes are no longer needed
 
 ## Contraints
