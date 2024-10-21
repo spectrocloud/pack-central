@@ -46,9 +46,11 @@ managedMachinePool:
 
 Karpenter uses tags in AWS to discover the resources needed to autoscale.  Palette creates several tags on resources it creates, but in most uses cases Palette is not managing the Security Groups and Subnets.  Because of this, tags should be added to those resources for Karpenter to auto discover.  The tag is then referenced in the `ec2NodeClass` Custom Resource that you create after Karpenter is installed.
 
-### nodePool
+## Parameters
 
-Th
+## Usage
+
+### nodePool
 
 ```yaml
 apiVersion: karpenter.sh/v1
@@ -108,10 +110,6 @@ spec:
 #   - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
 #   - name: "amazon-eks-node-${K8S_VERSION}-*" # <- automatically upgrade when a new AL2 EKS Optimized AMI is released. This is unsafe for production workloads. Validate AMIs in lower environments before deploying them to production.
 ```
-
-## Parameters
-
-## Usage
 
 ## References
 
