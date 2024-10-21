@@ -115,12 +115,11 @@ subnetSelectorTerms:
 securityGroupSelectorTerms:
     - tags:
         karpenter.sh/discovery: "${CLUSTER_NAME}" # replace with your cluster name
-amiSelectorTerms:
-    - id: "${ARM_AMI_ID}"
-    - id: "${AMD_AMI_ID}"
-#   - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
-#   - name: "amazon-eks-node-${K8S_VERSION}-*" # <- automatically upgrade when a new AL2 EKS Optimized AMI is released. This is unsafe for production workloads. Validate AMIs in lower environments before deploying them to production.
+  amiSelectorTerms:
+    - alias: al2@v20241011 # example Alias for looking up images.
 ```
+
+For more information on AMI selectors and how to find other AMIs, reference the [Karpenter Docs](https://karpenter.sh/docs/concepts/nodeclasses/#specamiselectorterms)
 
 ## References
 
