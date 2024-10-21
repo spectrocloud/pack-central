@@ -9,8 +9,8 @@ Karpenter is an open-source node lifecycle management project built for Kubernet
 
 ## Contraints
 
-Minimum Kubernetes Version is 1.25
-Pack support is for EKS only today.
+* Minimum Kubernetes Version is 1.25
+* Pack support is for EKS only today.
 
 ## Prerequisites
 
