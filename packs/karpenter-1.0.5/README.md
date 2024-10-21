@@ -118,5 +118,6 @@ Karpenter uses tags in AWS to discover the resources needed to autoscale.  Palet
 
 ## References
 
-- [Karpenter Best Practices](https://aws.github.io/aws-eks-best-practices/karpenter/)
-- [Karpenter Troubleshooting](https://karpenter.sh/docs/troubleshooting/)
+* [Karpenter Best Practices](https://aws.github.io/aws-eks-best-practices/karpenter/)
+
+* [Karpenter Troubleshooting](https://karpenter.sh/docs/troubleshooting/)
