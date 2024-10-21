@@ -1,6 +1,6 @@
 # Karpenter
 
-Karpenter is an open-source node lifecycle management project built for Kubernetes. Adding Karpenter to a Kubernetes cluster can dramatically improve the efficiency and cost of running workloads on that cluster. Karpenter works by:
+Karpenter is an open-source node lifecycle management project built for Kubernetes. Adding Karpenter to a Kubernetes cluster can dramatically improve the efficiency and cost of active workloads in the cluster. Karpenter automatically launches the right compute resources to handle your cluster's applications. Karpenter works by:
 
 * Watching for pods that the Kubernetes scheduler has marked as unschedulable
 * Evaluating scheduling constraints (resource requests, nodeselectors, affinities, tolerations, and topology spread constraints) requested by the pods
@@ -12,6 +12,11 @@ Karpenter is an open-source node lifecycle management project built for Kubernet
 * Minimum Kubernetes Version is 1.25
 * Pack support is for EKS only today.
 * IRSA Roles must be created and used.  Review the following section for additional guidance.
+* AWS Account Number - This is a required value in the pack for annotations of the service account
+
+### Pack Values
+
+Provide your AWS Account Number in the `awsAccountNumber` value of the pack.
 
 ### AWS IAM Roles for Service Accounts (IRSA)
 
@@ -53,6 +58,8 @@ managedMachinePool:
 Karpenter uses tags in AWS to discover the resources needed to autoscale.  Palette creates several tags on resources it creates, but in most uses cases Palette is not managing the Security Groups and Subnets.  Because of this, tags should be added to those resources for Karpenter to auto discover.  The tag is then referenced in the `ec2NodeClass` Custom Resource that you create after Karpenter is installed.
 
 ## Usage
+
+Make sure to checkout the [Karpenter Best Practices](https://aws.github.io/aws-eks-best-practices/karpenter/) when using Karpenter.
 
 ### Node Pool
 

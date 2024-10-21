@@ -4,6 +4,9 @@ pack:
       - image: public.ecr.aws/karpenter/controller:1.0.5
   namespace: karpenter
 
+# Provide your AWS account number below for karpenter annotations.
+awsAccountNumber: ""
+
 charts:
   karpenter:
     # -- Overrides the chart's name.
@@ -27,8 +30,8 @@ charts:
       # If not set and create is true, a name is generated using the fullname template.
       name: ""
       # -- Additional annotations for the ServiceAccount.
-      annotations: {}
-        # "eks.amazonaws.com/role-arn": "arn:aws:iam::<AWS_ACCOUNT_NUMBER>:role/{{.spectro.system.cluster.name}}-karpenterControllerRole"
+      annotations:
+        "eks.amazonaws.com/role-arn": "arn:aws:iam::{{.spectro.pack.karpenter.awsAccountNumber}}:role/{{.spectro.system.cluster.name}}-karpenterControllerRole"
     # -- Specifies additional rules for the core ClusterRole.
     additionalClusterRoleRules: []
     serviceMonitor:
