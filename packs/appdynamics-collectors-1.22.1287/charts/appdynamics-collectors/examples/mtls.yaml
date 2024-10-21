@@ -1,0 +1,36 @@
+global:
+  clusterName: "cluster-name"
+  tls:
+    appdCollectors:
+      enabled: true
+      secret:
+        secretName: client-secret
+        secretKeys:
+          caCert: ca.crt
+          tlsCert: tls.crt
+          tlsKey: tls.key
+    otelReceiver:
+      secret:
+        secretName: server-secret
+        secretKeys:
+          caCert: ca.crt
+          tlsCert: tls.crt
+          tlsKey: tls.key
+      settings:
+        min_version: 1.2
+        max_version: 1.3
+      mtlsEnabled: true # receiver will use server CA file for mTLS to auth the client, i.e. set client_ca_file with ca.crt
+
+
+
+
+appdynamics-otel-collector:
+  clientId: "id" # clientId for oauth2 extension
+  clientSecret: "oauth-client-secret"
+  tokenUrl: "https://token_ur.com/oauth2l" # tokenUrl for oauth2 extension
+  endpoint: "https://data.appdynamics.com" # endpoint for otlphttp exporter
+  configOverride:
+    service:
+      pipelines:
+        metrics:
+          exporters: [ otlphttp, logging ]
