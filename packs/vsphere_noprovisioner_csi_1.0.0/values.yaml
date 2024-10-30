@@ -1,3 +1,16 @@
+pack:
+  content:
+    images:
+      - image: gcr.io/spectro-images-public/cloud-provider-vsphere/cpi/release/manager:v1.22.8
+      - image: gcr.io/spectro-images-public/cloud-provider-vsphere/cpi/release/manager:v1.23.4
+      - image: gcr.io/spectro-images-public/cloud-provider-vsphere/cpi/release/manager:v1.24.5
+      - image: gcr.io/spectro-images-public/cloud-provider-vsphere/cpi/release/manager:v1.25.3
+      - image: gcr.io/spectro-images-public/cloud-provider-vsphere/cpi/release/manager:v1.26.2
+      - image: gcr.io/spectro-images-public/packs/csi-vsphere-csi/3.3.1/cpi-manager:v1.27.0
+      - image: gcr.io/spectro-images-public/packs/csi-vsphere-csi/3.3.1/cpi-manager:v1.28.0
+      - image: gcr.io/spectro-images-public/packs/csi-vsphere-csi/3.3.1/cpi-manager:v1.29.0
+      - image: gcr.io/spectro-images-public/packs/csi-vsphere-csi/3.3.1/cpi-manager:v1.30.0
+
 manifests:
   vsphere-cloud-controller-manager:
     k8sVersion: "{{ .spectro.system.kubernetes.version }}"
