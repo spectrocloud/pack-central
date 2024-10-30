@@ -1,0 +1,9 @@
+manifests:
+  vsphere-cloud-controller-manager:
+    k8sVersion: "{{ .spectro.system.kubernetes.version }}"
+    # Override CPI image
+    image: ""
+    extraArgs:
+      - "--cloud-provider=vsphere"
+      - "--v=2"
+      - "--cloud-config=/etc/cloud/vsphere.conf"
