@@ -1,0 +1,15 @@
+{
+  "cloudTypes": [
+    "vsphere"
+  ],
+  "annotations": {
+    "description": "Dummy CSI for vSphere, only installs cloud-controller"
+  },
+  "displayName": "vSphere No-Provisioner",
+  "kubeManifests": [
+    "manifests/vsphere-cloud-controller-manager.yaml"
+  ],
+  "layer": "csi",
+  "name": "csi-vsphere-noprovisioner",
+  "version": "1.0.0"
+}
