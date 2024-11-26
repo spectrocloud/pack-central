@@ -1,14 +1,14 @@
 # Netapp-Trident
 Trident is a fully supported open source project maintained by NetApp. It has been designed from the ground up to help you meet your containerized applications' persistence demands using industry-standard interfaces, such as the Container Storage Interface.
 
-Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly and easily consume persistent storage from NetApp's broad portfolio that
+Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly consume persistent storage from NetApp's broad portfolio that
 includes ONTAP, Element, HCI/SolidFire, as well as the Azure NetApp Files service, Cloud Volumes Service on Google Cloud, and Amazon FSx for ONTAP.
 
 Trident features also address data protection, disaster recovery, portability, and migration use cases for Kubernetes workloads leveraging NetApp's industry-leading data management technology for snapshots, backups,
 replication, and cloning.
 
-## Pre-requisites:
-For a full list of Trident requirements, please see [Getting Started](https://docs.netapp.com/us-en/trident/trident-get-started/requirements.html) 
+## Prerequisites
+For a full list of Trident requirements, check out the [Getting Started](https://docs.netapp.com/us-en/trident/trident-get-started/requirements.html) guide. 
 
 Critical information about Trident:
 * Kubernetes 1.31 is now supported in Trident. Upgrade Trident prior to upgrading Kubernetes.
