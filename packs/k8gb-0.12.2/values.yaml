@@ -1,0 +1,216 @@
+pack:
+  content:
+    images:
+      - image: docker.io/absaoss/k8gb:v0.12.2
+      - image: absaoss/k8s_crd:v0.0.11
+      - image: ghcr.io/k8gb-io/external-dns:v0.13.4-azure-ns
+      - image: otel/opentelemetry-collector:0.57.2
+      - image: jaegertracing/all-in-one:1.37.0
+
+    charts:
+      - repository: https://absaoss.github.io/coredns-helm
+        name: coredns
+        version: 1.15.3
+
+  namespace: "k8gb"
+
+charts:
+  k8gb:
+    global:
+      # -- Reference to one or more secrets to be used when pulling images
+      # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      imagePullSecrets: []
+      # - name: "image-pull-secret"
+
+    k8gb:
+      # -- image repository
+      imageRepo: "docker.io/absaoss/k8gb"
+      # -- ( string ) image tag defaults to Chart.AppVersion, see Chart.yaml, but can be overrided with imageTag key
+      imageTag:
+      # -- whether it should also deploy the gslb and dnsendpoints CRDs
+      deployCrds: true
+      # -- whether it should also deploy the service account, cluster role and cluster role binding
+      deployRbac: true
+      # -- dnsZone controlled by gslb
+      dnsZone: "cloud.example.com"
+      # -- Negative TTL for SOA record
+      dnsZoneNegTTL: 300
+      # -- main zone which would contain gslb zone to delegate
+      edgeDNSZone: "example.com" # main zone which would contain gslb zone to delegate
+      # -- host/ip[:port] format is supported here where port defaults to 53
+      edgeDNSServers:
+          # -- use this DNS server as a main resolver to enable cross k8gb DNS based communication
+          # Defaults to Route 53 Resolver (see: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-dns.html#AmazonDNS)
+          - "169.254.169.253"
+      # -- used for places where we need to distinguish between different Gslb instances
+      clusterGeoTag: "eu"
+      # -- comma-separated list of external gslb geo tags to pair with
+      extGslbClustersGeoTags: "us"
+      # -- Reconcile time in seconds
+      reconcileRequeueSeconds: 30
+      # -- Extra CoreDNS plugins to be enabled (yaml object)
+      coredns:
+        extra_plugins: ""
+      log:
+        # -- log format (simple,json)
+        format: simple # log format (simple,json)
+        # -- log level (panic,fatal,error,warn,info,debug,trace)
+        level: info # log level (panic,fatal,error,warn,info,debug,trace)
+      # -- Enable SplitBrain check (Infoblox only)
+      splitBrainCheck: false
+      # -- Metrics server address
+      metricsAddress: "0.0.0.0:8080"
+      securityContext:
+        # -- For more options consult https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        runAsUser: 1000
+      # -- Exposing metrics
+      exposeMetrics: false
+      # -- enable ServiceMonitor
+      serviceMonitor:
+        enabled: false
+
+    externaldns:
+      # -- `.spec.template.spec.dnsPolicy` for ExternalDNS deployment
+      dnsPolicy: "ClusterFirst"
+      # -- external-dns image repo:tag
+      # It is important to use the image from k8gb external-dns fork to get the full
+      # functionality. See links below
+      # https://github.com/k8gb-io/external-dns
+      # https://github.com/k8gb-io/external-dns/pkgs/container/external-dns
+      image: ghcr.io/k8gb-io/external-dns:v0.13.4-azure-ns
+      # -- external-dns sync interval
+      interval: "20s"
+      securityContext:
+        # -- For more options consult https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core
+        runAsUser: 1000
+        # -- For ExternalDNS to be able to read Kubernetes and AWS token files
+        fsGroup: 65534 # For ExternalDNS to be able to read Kubernetes and AWS token files
+        runAsNonRoot: true
+
+    coredns:
+      # -- service: refer to https://www.k8gb.io/docs/service_upgrade.html for upgrading CoreDNS service steps
+      isClusterService: false
+      serviceType: LoadBalancer
+      service:
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      deployment:
+        # -- Skip CoreDNS creation and uses the one shipped by k8gb instead
+        skipConfig: true
+      image:
+        # -- CoreDNS CRD plugin image
+        repository: absaoss/k8s_crd
+        # -- image tag
+        tag: v0.0.11
+      # -- Creates serviceAccount for coredns
+      serviceAccount:
+        create: true
+        name: coredns
+
+    infoblox:
+      # -- infoblox provider enabled
+      enabled: false
+      # -- WAPI address
+      gridHost: 10.0.0.1
+      # -- WAPI version
+      wapiVersion: 2.3.1
+      # -- WAPI port
+      wapiPort: 443
+      # -- use SSL
+      sslVerify: true
+      # -- Request Timeout in secconds
+      httpRequestTimeout: 20
+      # -- Size of connections pool
+      httpPoolConnections: 10
+
+    route53:
+      # -- Enable Route53 provider
+      enabled: false
+      # -- Route53 ZoneID
+      hostedZoneID: ZXXXSSS
+      # -- specify IRSA Role in AWS ARN format or disable it by setting to `null`
+      irsaRole: null
+      # -- specify IRSA Role in AWS ARN format for assume role permissions or disable it by setting to `null`
+      assumeRoleArn: null
+      # -- alternatively specify the secret name with static credentials for IAM user (make sure this user has limited privileges)
+      # this can be useful when IRSA is not present or when using say Azure cluster and Route53
+      # docs: https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#create-iam-user-and-attach-the-policy
+      secret: null
+
+    ns1:
+      # -- Enable NS1 provider
+      enabled: false
+      # -- optional custom NS1 API endpoint for on-prem setups
+      # endpoint: https://api.nsone.net/v1/
+      ignoreSSL: false
+
+    rfc2136:
+      enabled: false
+      rfc2136Opts:
+        - host: host.k3d.internal
+        - port: 1053
+      rfc2136auth:
+        insecure: 
+          enabled: false
+        tsig:
+          enabled: true
+          tsigCreds:
+            - tsig-secret-alg: hmac-sha256
+            - tsig-keyname: externaldns-key
+        gssTsig:
+          enabled: false
+          kerberosConfigMap: kerberos-config
+          gssTsigCreds:
+            - kerberos-username: ad-user
+            - kerberos-password: ad-user-pass
+            - kerberos-realm: ad-domain-realm
+
+    cloudflare:
+      # -- Enable Cloudflare provider
+      enabled: false
+      # -- Cloudflare Zone ID
+      # follow https://developers.cloudflare.com/fundamentals/setup/find-account-and-zone-ids/
+      # to find your zoneID value
+      zoneID: replaceme
+      # -- Configure how many DNS records to fetch per request
+      # see https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md#throttling
+      dnsRecordsPerPage: 5000
+
+    openshift:
+      # -- Install OpenShift specific RBAC
+      enabled: false
+
+    tracing:
+      # -- if the application should be sending the traces to OTLP collector (env var `TRACING_ENABLED`)
+      enabled: false
+
+      # -- should the Jaeger be deployed together with the k8gb operator? In case of using another OpenTracing solution,
+      # make sure that configmap for OTEL agent has the correct exporters set up (`tracing.otelConfig`).
+      deployJaeger: false
+
+      # -- `host:port` where the spans from the applications (traces) should be sent, sets the `OTEL_EXPORTER_OTLP_ENDPOINT` env var
+      # This is not the final destination where all the traces are going. Otel collector has its configuration in the associated configmap (`tracing.otelConfig`).
+      endpoint: localhost:4318
+
+      # -- float representing the ratio of how often the span should be kept/dropped (env var `TRACING_SAMPLING_RATIO`)
+      # if not specified, the AlwaysSample will be used which is the same as 1.0. `0.1` would mean that 10% of samples will be kept
+      samplingRatio: null
+
+      # -- configuration for OTEL collector, this will be represented as configmap called `agent-config`
+      otelConfig: null
+
+      sidecarImage:
+        # -- OpenTelemetry collector into which the k8gb operator sends the spans. It can be further configured to send its data
+        # to somewhere else using exporters (Jaeger for instance)
+        repository: otel/opentelemetry-collector
+        tag: 0.57.2
+        pullPolicy: Always
+
+      jaegerImage:
+        # -- if `tracing.deployJaeger==true` this image will be used in the deployment for Jaeger
+        repository: jaegertracing/all-in-one
+        tag: 1.37.0
+        pullPolicy: Always

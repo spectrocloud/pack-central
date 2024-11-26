@@ -2,6 +2,9 @@ pack:
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
   namespace: "crossplane"
+  content:
+    images:
+      - image: xpkg.upbound.io/crossplane/crossplane:v1.7.0
 
 charts:
   crossplane:
