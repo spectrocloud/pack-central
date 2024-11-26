@@ -88,12 +88,12 @@ This table and the values.yaml file, which is part of the Helm chart, provide th
 Please refer to the Trident Documentation for usage related to Trident Backend Setup, Storage Class parameters, and other features - [Trident Docs](https://docs.netapp.com/us-en/trident/index.html)
 
 ## Upgrade
-This pack is maintained by NetApp and new version of this pack will be updated along with new versions of Trident according to the regular [release cycle](https://mysupport.netapp.com/site/info/trident-support  	
+This pack is maintained by NetApp and new version of this pack will be updated along with new versions of Trident according to the regular [release cycle](https://mysupport.netapp.com/site/info/trident-support)  	
 
 ## References:
-[Trident Docs](https://docs.netapp.com/us-en/trident/index.html)
-[NetApp's Support site](https://mysupport.netapp.com/site/info/version-support)
-[Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support)
-[Chat](http://netapp.io/slack/)
-[GitHub last commit](https://github.com/NetApp/trident/commits)
-[Go Report Card](https://goreportcard.com/report/github.com/netapp/trident)
+* [Trident Docs](https://docs.netapp.com/us-en/trident/index.html)
+* [NetApp's Support site](https://mysupport.netapp.com/site/info/version-support)
+* [Trident's Release and Support Lifecycle](https://mysupport.netapp.com/site/info/trident-support)
+* [Chat](http://netapp.io/slack/)
+* [GitHub last commit](https://github.com/NetApp/trident/commits)
+* [Go Report Card](https://goreportcard.com/report/github.com/netapp/trident)
