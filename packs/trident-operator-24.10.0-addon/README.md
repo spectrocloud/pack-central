@@ -1,4 +1,4 @@
-# Netapp-Trident
+# NetApp-Trident
 Trident is a fully supported open source project maintained by NetApp. It has been designed from the ground up to help you meet your containerized applications' persistence demands using industry-standard interfaces, such as the Container Storage Interface.
 
 Trident deploys in Kubernetes clusters as pods and provides dynamic storage orchestration services for your Kubernetes workloads. It enables your containerized applications to quickly consume persistent storage from NetApp's broad portfolio that
@@ -40,7 +40,7 @@ To use Trident, you need one or more of the following supported backends:
 * NetApp HCI/Element software 11 or above
 
 ## Parameters
-This table and the values.yaml file, which is part of the Helm chart, provide the list of keys and their default valueshis table and the values.yaml file, which is part of the Helm chart, provide the list of keys and their default values.
+This table and the values.yaml file, which is part of the Helm chart, provide the list of keys and their default values.
 | Parameter  | Description | Default  | Required | 
 | --- | --- | --- | --- | 
 | nodeSelector | Node labels for pod assignment | Empty | No |
