@@ -4,41 +4,13 @@
 
 Helm chart for Archivista - a graph and storage service for in-toto attestations.
 
-## Requirements
+## Prerequisites
 
 A MySQL database and S3 compatible store are needed to successfully install this Helm chart.
 See [Archivista configuration](https://github.com/in-toto/archivista#configuration) for environment variables needed
 to establish connections to each datastore. These environment variables can be added to this Helm chart using the value `deployment.env[]`.
 
-## Quick Installation
-
-To install the helm chart with default values run following command.
-The [Values](#Values) section describes the configuration options for this chart.
-
-```shell
-helm install archivista .
-```
-
-## Uninstallation
-
-To uninstall the Helm chart run following command.
-
-```shell
-helm uninstall archivista
-```
-
-## Maintainers
-
-| Name            | Email | Url                           |
-| ---             | ---   | ---                           |
-| in-toto project |       | <https://github.com/in-toto/> |
-
-## Source Code
-
-* Helm chart: <https://github.com/in-toto/archivista/chart>
-* Archivista: <https://github.com/in-toto/archivista>
-
-## Values
+## Parameters
 
 | Key                                        | Type   | Default       |
 |---                                         |---     |---            |
@@ -70,3 +42,15 @@ helm uninstall archivista
 | service.port                               | int    | `8082`        |
 | service.type                               | string | `"ClusterIP"` |
 | tolerations                                | list   | `[]`          |
+
+
+## Reference
+
+* Helm chart: <https://github.com/in-toto/archivista/chart>
+* Archivista: <https://github.com/in-toto/archivista>
+
+### Maintainers
+
+| Name            | Email | Url                           |
+| ---             | ---   | ---                           |
+| in-toto project |       | <https://github.com/in-toto/> |
