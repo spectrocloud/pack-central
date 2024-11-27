@@ -44,10 +44,10 @@ to establish connections to each datastore. These environment variables can be a
 | tolerations                                | list   | `[]`          |
 
 
-## Reference
+## References
 
-* Helm chart: <https://github.com/in-toto/archivista/chart>
-* Archivista: <https://github.com/in-toto/archivista>
+- Helm chart: [github.com/in-toto/archivista/chart](https://github.com/in-toto/archivista/chart)
+- Archivista: [github.com/in-toto/archivista](https://github.com/in-toto/archivista)
 
 ### Maintainers
 
