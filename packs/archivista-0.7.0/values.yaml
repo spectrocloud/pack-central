@@ -1,5 +1,8 @@
 pack:
   namespace: "archivista"
+  content:
+    images:
+      - image: ghcr.io/in-toto/archivista:0.7.0
 
 charts:
   archivista:
