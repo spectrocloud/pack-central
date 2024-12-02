@@ -46,11 +46,6 @@ to establish connections to each datastore. These environment variables can be a
 
 ## References
 
-- Helm chart: [github.com/in-toto/archivista/chart](https://github.com/in-toto/archivista/chart)
-- Archivista: [github.com/in-toto/archivista](https://github.com/in-toto/archivista)
-
-### Maintainers
-
-| Name            | Email | Url                           |
-| ---             | ---   | ---                           |
-| in-toto project |       | <https://github.com/in-toto/> |
+- [Archivista Helm Chart](https://github.com/in-toto/archivista/chart)
+- [Archivista](https://github.com/in-toto/archivista)
+- [in-toto](https://in-toto.io/)
