@@ -16,6 +16,6 @@
       "charts/trident-operator-24.10.0.tgz"
   ],
   "layer": "addon",
-  "name": "csi-trident",
+  "name": "csi-trident-addon",
   "version": "24.10.0"
 }
