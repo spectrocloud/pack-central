@@ -29,6 +29,7 @@ We welcome contributions of new packs and updates to existing packs. This reposi
   * Push your changes to your fork, then open a pull request against this repository.
   * While opening a pull request, mention the purpose of the pack and the scenarios that have been validated.
   * If you are making changes that address an existing issue, please make a comment in the issue so we can assign it to you. This helps to prevent accidentally doubling up on work.
+  * If you already have a pack and working on a new version for it, retain the name and display name of the pack across versions. Else, it will show up as a new pack.
 
 ## Rules for contributors
 Your contribution must be your own original work. You may not submit copyrighted content you do not own. Please do not plagiarize.
