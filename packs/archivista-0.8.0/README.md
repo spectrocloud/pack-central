@@ -7,7 +7,7 @@ Helm chart for Archivista - a graph and storage service for in-toto attestations
 ## Prerequisites
 
 A MySQL database and S3 compatible store are needed to successfully install this Helm chart.
-See [Archivista configuration](https://github.com/in-toto/archivista#configuration) for environment variables needed
+Refer to the [Archivista configuration](https://github.com/in-toto/archivista#configuration) configuration guide for environment variables needed
 to establish connections to each datastore. These environment variables can be added to this Helm chart using the value `deployment.env[]`.
 
 ## Parameters
