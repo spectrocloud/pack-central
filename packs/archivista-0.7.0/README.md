@@ -43,6 +43,8 @@ to establish connections to each datastore. These environment variables can be a
 | service.type                               | string | `"ClusterIP"` |
 | tolerations                                | list   | `[]`          |
 
+## Usage
+Please refer to [Archivista Github](https://github.com/in-toto/archivista/blob/main/README.md) for further information.
 
 ## References
 
