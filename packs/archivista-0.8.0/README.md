@@ -44,7 +44,7 @@ to establish connections to each datastore. These environment variables can be a
 | tolerations                                | list   | `[]`          |
 
 ## Usage
-Please refer to [Archivista Github](https://github.com/in-toto/archivista/blob/main/README.md) for further information.
+You can find additional guidance in the [Archivista Github](https://github.com/in-toto/archivista/blob/main/README.md) README.
 
 ## References
 
