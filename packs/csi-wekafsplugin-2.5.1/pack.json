@@ -1,0 +1,13 @@
+{
+  "addonType": "system app",
+  "cloudTypes": ["all"],
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "displayName": "WekaFS Plugin",
+  "charts": ["charts/csi-wekafsplugin-2.5.1.tgz"],
+  "layer": "addon",
+  "name": "csi-wekafsplugin",
+  "version": "2.5.1"
+}
