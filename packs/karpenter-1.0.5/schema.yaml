@@ -1,0 +1,2 @@
+awsAccountNumber:
+ schema: '{{ required }}'

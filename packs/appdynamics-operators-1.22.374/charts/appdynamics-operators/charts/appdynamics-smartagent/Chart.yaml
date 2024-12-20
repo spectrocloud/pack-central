@@ -1,0 +1,8 @@
+apiVersion: v2
+appVersion: 24.4.72
+description: Helm Charts for installing Appdynamics Smart Agent
+home: https://appdynamics.com
+icon: https://raw.githubusercontent.com/CiscoDevNet/appdynamics-charts/master/logo.png
+name: appdynamics-smartagent
+type: application
+version: 24.4.72

@@ -17,5 +17,34 @@ Please see [here](https://dell.github.io/csm-docs/docs/deployment/csmoperator/dr
 # Cloud types supported:
 This pack was designed to be used with clusters on Canonical MAAS
 
+### Usage
+
+Dell Container Storage Modules Operator is a Kubernetes native application which helps in installing and managing CSI Drivers and CSM Modules provided by Dell Technologies for its various storage platforms. Dell Container Storage Modules Operator uses Kubernetes CRDs (Custom Resource Definitions) to define a manifest that describes the deployment specifications for each driver to be deployed.
+
+`StorageClass` are created and set as default. This creates the storageclass `vxflexos` for `powerflex-v2100`, `powermax` for `powermax-v2100` & `powerstore` for `powerstore-v2100`.
+
+
+:::tip
+
+Check out the [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/) to learn how to backup and restore your cluster.
+
+::::
+
+### CSM Snapshot Controller Creation
+
+The Dell Container Storage Modules Operator pack supports snapshot controller creation. After selecting the right `Platform` **preset**, modify the parameter `charts.csm-operator.snapshot-controller.enabled` to enable the controller snapshotter for `powerflex-v2100`, `powermax-v2100` &  `powerstore-v2100`. Default value is `true`.
+
+### CSM Volume Snapshot Creation
+
+The Dell Container Storage Modules Operator pack supports creation of volume snapshots. After selecting the right `Platform` **preset**, modify the parameter `charts.csm-operator.snapshot-controller.volumeSnapshotClass.create` to enable the creation of `VolumeSnapshotClass` for `powerflex-v2100`, `powermax-v2100` &  `powerstore-v2100`. By default, it is `true` for `powerflex-v2100` &  `powerstore-v2100`. By default, it is `false` for `powermax-v2100`
+
+### CSM Webhook Snapshot Creation
+
+The Dell Container Storage Modules Operator pack supports snapshot volume creation. After selecting the right `Platform` **preset**, modify the parameter`charts.csm-operator.snapshot-controller.webhook.enable` to enable the snapshot webhook for `powerflex-v2100`, `powermax-v2100` &  `powerstore-v2100`. By default it is `true` for `powerflex-v2100`, `powermax-v2100` &  `powerstore-v2100`. 
+
+
 # References:
-  - https://github.com/dell/csm-operator
+
+- [GITHUB](https://github.com/dell/csm-operator)
+
+- [Palette Backup and Restore Documentation](https://docs.spectrocloud.com/clusters/cluster-management/backup-restore/)

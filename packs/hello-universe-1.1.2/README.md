@@ -16,7 +16,7 @@ You can deploy it using two preset configurations:
 
 - If you are using the **Enable Hello Universe API** preset, you will need the `:3000` port available on your cluster too. Check out the [Usage](#usage) section for further details.
 
-- Ensure sufficient CPU resources within the cluster to allocate a minimum of 500 milliCPU and a maximum of 500 milliCPU per replica.
+- Ensure sufficient CPU resources within the cluster to allocate a minimum of 100 milliCPU and a maximum of 200 milliCPU per replica.
 
 ## Parameters
 
@@ -33,6 +33,10 @@ The following parameters are applied to the **hello-universe.yaml** manifest thr
 | `manifests.replicas`              | The number of Pods to be created.                                              | `1`                                         | Yes           |
 | `manifests.dbPassword`           | The base64 encoded database password to connect to the API database.           |            `REPLACE_ME`                                 | No          |
 | `manifests.authToken`            | The base64 encoded auth token for the API connection.                          |      `REPLACE_ME`                                       | No          |
+
+## Upgrade
+
+Upgrades from the [hello-universe-1.1.1](../hello-universe-1.1.1/README.md) pack are not supported. If you want to upgrade the pack, you must first remove it from the cluster profile. Then, you can add the upgraded version as a cluster profile layer.
 
 ## Usage
 
