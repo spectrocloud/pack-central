@@ -1,0 +1,16 @@
+{
+  "addonType": "security",
+  "ansibleRoles": [],
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Archivista",
+  "eol": "",
+  "group": "",
+  "charts": ["charts/archivista-0.8.0.tgz"],
+  "layer": "addon",
+  "name": "archivista",
+  "version": "0.8.0"
+}
