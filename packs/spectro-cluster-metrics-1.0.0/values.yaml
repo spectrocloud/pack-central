@@ -1,0 +1,14 @@
+pack:
+  content:
+    images:
+      - image: ahmed117/prometheus-golang:latest
+
+  namespace: "spectro-cluster-metrics"
+
+charts:
+  spectro-cluster-metrics:
+    config:
+      image: ahmed117/prometheus-golang:latest
+      serviceType: "ClusterIP"
+      namespace: spectro-cluster-metrics
+      tolerations: {}
