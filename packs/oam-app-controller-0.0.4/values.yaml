@@ -1,7 +1,7 @@
 pack:
   content:
     images:
-      - image: quay.io/spectrocloud-labs/app-core:v0.0.3
+      - image: quay.io/spectrocloud-labs/app-core:v0.0.4
       - image: cgr.dev/chainguard/kube-webhook-certgen:latest
       - image: ghcr.io/fluxcd/helm-controller:v0.37.4
       - image: ghcr.io/fluxcd/image-automation-controller:v0.37.1
@@ -14,7 +14,7 @@ pack:
     charts:
       - repo: https://spectrocloud-labs.github.io/app-renderer
         name: app-core
-        version: 0.0.3
+        version: 0.0.4
       - repo: https://fluxcd-community.github.io/helm-charts
         name: flux2
         version: 2.12.4
@@ -61,7 +61,7 @@ charts:
     ## @param image.pullPolicy Image pull policy
     image:
       repository: quay.io/spectrocloud-labs/app-core
-      tag: v0.0.3
+      tag: v0.0.4
       pullPolicy: Always
 
     ## @param resources.limits.cpu app controller's cpu limit
@@ -164,18 +164,11 @@ charts:
       certificate:
         mountPath: /etc/k8s-webhook-certs
       patch:
-        enabled: true
-        image:
-          repository: cgr.dev/chainguard/kube-webhook-certgen
-          tag: latest
-          pullPolicy: IfNotPresent
-        nodeSelector: {}
-        affinity: {}
-        tolerations: []
+        enabled: false
       appConversion:
         enabled: false
       certManager:
-        enabled: false
+        enabled: true
         revisionHistoryLimit: 3
 
     ## @param kubeClient.qps The qps for reconcile clients
