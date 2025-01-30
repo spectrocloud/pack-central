@@ -188,14 +188,14 @@ charts:
 
     # Auto generated ANF backend related fields consumed by the configurator controller.
     anfConfigurator:
-    enabled: false
-    virtualNetwork: ""
-    subnet: ""
-    subscriptionID: ""
-    tenantID: ""
-    location: ""
-    clientCredentials: ""
-    capacityPools: []
-    netappAccounts: []
-    resourceGroups: []
-    customerEncryptionKeys: {}
+      enabled: false
+      virtualNetwork: ""
+      subnet: ""
+      subscriptionID: ""
+      tenantID: ""
+      location: ""
+      clientCredentials: ""
+      capacityPools: []
+      netappAccounts: []
+      resourceGroups: []
+      customerEncryptionKeys: {}
