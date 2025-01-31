@@ -1,0 +1,18 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "kubearmor"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "KubeArmor",
+    "charts": [
+      "charts/kubearmor-operator-v1.4.6.tgz"
+    ],
+    "layer":"addon",
+    "name": "kubearmor",
+    "version": "1.4.6"
+  }
+  
