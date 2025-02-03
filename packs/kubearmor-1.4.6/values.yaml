@@ -1,6 +1,15 @@
 pack:
   namespace: "kubearmor"
 
+  content:
+    images:
+      - image: kubearmor/kubearmor:v1.4.6
+      - image: kubearmor/kubearmor-init:v1.4.6
+      - image: kubearmor/kubearmor-relay-server:v1.4.6
+      - image: kubearmor/kubearmor-controller:v1.4.6
+      - image: kubearmor/kubearmor-snitch:v1.4.6
+      - image: kubearmor/kubearmor-operator:v1.4.6
+
 charts:
   kubearmor-operator:
 

@@ -1,5 +1,5 @@
 {
-    "addonType": "system app",
+    "addonType": "security",
     "annotations": {
       "source": "community",
       "contributor" : "kubearmor"
