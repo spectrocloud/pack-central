@@ -1,2 +1,2 @@
-charts.piraeus-cluster.cluster.masterPassphrase:
+charts.piraeus-cluster.cluster.masterPassphrase.value:
   schema: '{{ format "${password}" | hints "To override the master passphrase, enter one here" }}'
