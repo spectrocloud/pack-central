@@ -1,0 +1,9 @@
+{{- range .Values.linstorNodeConnections }}
+---
+apiVersion: piraeus.io/v1
+kind: LinstorNodeConnection
+metadata:
+  name: {{ .name }}
+spec:
+{{ .spec | toYaml | indent 2 }}
+{{- end }}
