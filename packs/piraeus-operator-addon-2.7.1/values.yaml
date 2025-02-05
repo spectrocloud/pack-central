@@ -2,7 +2,7 @@
 pack:
   content:
     images:
-      - image: quay.io/piraeusdatastore/piraeus-operator:2.7.1
+      - image: quay.io/piraeusdatastore/piraeus-operator:v2.7.1
       - image: quay.io/piraeusdatastore/piraeus-server:v1.29.2
       - image: quay.io/piraeusdatastore/piraeus-csi:v1.6.4
       - image: quay.io/piraeusdatastore/drbd-reactor:v1.6.0
