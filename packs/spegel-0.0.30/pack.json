@@ -1,6 +1,9 @@
 {
   "addonType":"registry",
-  "annotations": {},
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
   "cloudTypes": [
     "all"
   ],
