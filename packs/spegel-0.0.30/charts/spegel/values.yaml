@@ -134,6 +134,7 @@ spegel:
     - https://registry.k8s.io
     - https://k8s.gcr.io
     - https://lscr.io
+    - https://us-docker.pkg.dev
   # -- Additional target mirror registries other than Spegel.
   additionalMirrorRegistries: []
   # -- Max ammount of mirrors to attempt.
