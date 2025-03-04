@@ -1,0 +1,83 @@
+pack:
+  namespace: "kubearmor"
+
+  content:
+    images:
+      - image: kubearmor/kubearmor:v1.4.6
+      - image: kubearmor/kubearmor-init:v1.4.6
+      - image: kubearmor/kubearmor-relay-server:v1.4.6
+      - image: kubearmor/kubearmor-controller:v1.4.6
+      - image: kubearmor/kubearmor-snitch:v1.4.6
+      - image: kubearmor/kubearmor-operator:v1.4.6
+
+charts:
+  kubearmor-operator:
+
+    autoDeploy: true
+
+    # operator will deploy pinned images for each application
+    imagePinning: false
+
+    # pinned images
+    oci_meta:
+      repo: kubearmor
+      images:
+        kubearmor:
+          image: kubearmor
+          tag: stable
+        kubearmorInit:
+          image: kubearmor-init
+          tag: stable
+        kubearmorRelay:
+          image: kubearmor-relay-server
+          tag: latest
+        kubearmorController:
+          image: kubearmor-controller
+          tag: latest
+        kubearmorSnitch:
+          image: kubearmor-snitch
+          tag: latest
+        kubearmorOperator:
+          image: kubearmor-operator
+          tag: latest
+
+    # in case if image pinning is disabled
+    kubearmorOperator:
+      annotateResource: false
+      name: kubearmor-operator
+      image:
+        repository: kubearmor/kubearmor-operator
+        tag: ""
+      imagePullPolicy: IfNotPresent
+      args: []
+      # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+      tolerations: ""
+      # Optional, but if there are a lot of image pulls required, Docker might be rate-limited. So, it's good to add pull secrets for production.
+      imagePullSecrets: ""
+      resources: {}
+      podLabels: {}
+      podAnnotations: {}
+      podSecurityContext: {}
+      securityContext: {}
+
+    kubearmorConfig:
+      defaultCapabilitiesPosture: audit
+      defaultFilePosture: audit
+      defaultNetworkPosture: audit
+      defaultVisibility: process,network
+      enableStdOutLogs: false
+      enableStdOutAlerts: false
+      enableStdOutMsgs: false
+      seccompEnabled: true
+      alertThrottling: true
+      maxAlertPerSec: 10
+      throttleSec: 30
+
+    # DO NOT CHANGE THIS VALUES 
+    # changing these values will require code changes with the operator
+    # these secret names should match with the secrets managed by the operator
+    tlsSecrets:
+      kubearmorCa: kubearmor-ca
+      kubearmorClient: kubearmor-client-certs
+      relayServer: kubearmor-relay-server-certs
+      controllerWebhook: kubearmor-controller-webhook-server-cert
