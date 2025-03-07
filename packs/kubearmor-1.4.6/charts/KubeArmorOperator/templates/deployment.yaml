@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.kubearmorOperator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kubearmor-app: {{ .Values.kubearmorOperator.name }}
+spec:
+  selector:
+    matchLabels:
+      kubearmor-app: {{ .Values.kubearmorOperator.name }}
+  template:
+    metadata:
+      labels:
+        kubearmor-app: {{ .Values.kubearmorOperator.name }}
+      {{- with .Values.kubearmorOperator.podLabels }}
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.kubearmorOperator.podAnnotations }}
+      annotations:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.kubearmorOperator.podSecurityContext }}
+      securityContext:
+            {{- toYaml . | nindent 8 }}
+      {{- end }}      
+      {{- if .Values.kubearmorOperator.image.imagePullSecrets }}
+      imagePullSecrets:
+      {{ toYaml .Values.kubearmorOperator.image.imagePullSecrets | indent 6 }}
+      {{- end }}
+      {{- if .Values.kubearmorOperator.image.tolerations }}
+      tolerations:
+      {{ toYaml .Values.kubearmorOperator.tolerations | indent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.kubearmorOperator.name }}
+        env:
+        - name: KUBEARMOR_OPERATOR_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- if .Values.imagePinning -}}
+          {{ include "pinnedImages" .Values.oci_meta | trim | nindent 8 }}
+        {{- end }}
+        image: {{ include "operatorImage" . }}
+        imagePullPolicy: {{ .Values.kubearmorOperator.imagePullPolicy }}
+        args:
+        {{- if .Values.kubearmorOperator.args -}}
+          {{- toYaml .Values.kubearmorOperator.args | trim | nindent 8 }}
+        {{- end }}
+        {{- with .Values.kubearmorOperator.securityContext }}
+        securityContext:
+              {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.kubearmorOperator.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      serviceAccountName: {{ .Values.kubearmorOperator.name }}
+  
