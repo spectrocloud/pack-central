@@ -1,0 +1,123 @@
+{{- if or .Values.olm.install .Values.operators.cleanupOnDelete.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: medik8s-resource-cleanup
+  namespace: kube-system
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  template:
+    metadata:
+      name: medik8s-resource-cleanup
+    spec:
+      serviceAccountName: sa-medik8s-resource-cleanup
+      restartPolicy: OnFailure
+{{- if and (not .Values.olm.install) .Values.operators.cleanupOnDelete.enabled }}
+      containers:
+{{- else if and .Values.olm.install .Values.operators.cleanupOnDelete.enabled }}
+      initContainers:
+{{- end }}
+{{- if .Values.operators.cleanupOnDelete.enabled }}
+        - name: medik8s-operators-cleanup
+          image: bitnami/kubectl
+          imagePullPolicy: {{ .Values.olm.packageserver.imagePullPolicy }}
+          command:
+          - bash
+          - -c
+          - >
+              echo "Cleaning up operator custom resources";
+          {{- range $item := .Values.operators.cleanupOnDelete.subscriptions }}
+              kubectl delete subscriptions.operators.coreos.com --ignore-not-found=true -n {{ $.Values.operators.namespace }} {{ $item }};
+          {{- end -}}
+          {{- range $item := .Values.operators.cleanupOnDelete.operators }}
+              kubectl delete operators.operators.coreos.com --ignore-not-found=true -n {{ $.Values.operators.namespace }} {{ $item }};
+          {{- end -}}
+          {{- range $item := .Values.operators.cleanupOnDelete.clusterServiceVersions }}
+              kubectl delete clusterserviceversions.operators.coreos.com -A --field-selector='metadata.name={{ $item }}';
+          {{- end -}}
+          {{- range $item := .Values.operators.cleanupOnDelete.daemonSets }}
+              kubectl delete daemonsets --ignore-not-found=true -n {{ $.Values.operators.namespace }} {{ $item }};
+          {{- end }}
+{{- end }}
+{{- if .Values.olm.install }}
+      containers:
+        - name: medik8s-olm-cleanup
+          image: bitnami/kubectl
+          imagePullPolicy: {{ .Values.olm.packageserver.imagePullPolicy }}
+          command:
+          - bash
+          - -c
+          - >
+              kubectl delete subscriptions.operators.coreos.com -A --all;
+              kubectl delete operators.operators.coreos.com -A --all;
+              kubectl delete clusterserviceversions.operators.coreos.com -A --all;
+              kubectl delete daemonset -l k8s-app=self-node-remediation -n {{ .Values.operators.namespace }};
+{{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-medik8s-resource-cleanup
+  namespace: kube-system
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medik8s-resource-cleanup
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+rules:
+  - apiGroups:
+      - "operators.coreos.com"
+    resources:
+      - "clusterserviceversions"
+      - "operators"
+      - "subscriptions"
+    verbs:
+      - "get"
+      - "list"
+      - "delete"
+  - apiGroups:
+      - "apps"
+    resources:
+      - "daemonsets"
+    verbs:
+      - "get"
+      - "list"
+      - "delete"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: medik8s-resource-cleanup
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: medik8s-resource-cleanup
+subjects:
+  - kind: ServiceAccount
+    name: sa-medik8s-resource-cleanup
+    namespace: kube-system
+{{- end }}
