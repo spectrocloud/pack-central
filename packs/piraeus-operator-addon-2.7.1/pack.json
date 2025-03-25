@@ -15,7 +15,7 @@
     "charts/piraeus-dashboard-1.0.0.tgz"
   ],
   "layer": "addon",
-  "name": "csi-piraeus-operator",
+  "name": "piraeus-operator-addon",
   "version": "2.7.1",
   "constraints": {
     "dependencies": [
