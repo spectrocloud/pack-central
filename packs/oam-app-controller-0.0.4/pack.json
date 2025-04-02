@@ -5,9 +5,9 @@
         "description": "OAM Application Controller",
         "contributor": "spectrocloud"
     },
-    "version": "0.0.3",
+    "version": "0.0.4",
     "charts": [
-        "charts/app-core-0.0.3.tgz",
+        "charts/app-core-0.0.4.tgz",
         "charts/flux2-2.12.4.tgz",
         "charts/zot-0.1.50.tgz"
     ],
