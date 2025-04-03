@@ -1,0 +1,8 @@
+{{- range $nhc := .Values.nodeHealthChecks }}
+---
+apiVersion: remediation.medik8s.io/v1alpha1
+kind: NodeHealthCheck
+metadata:
+  name: {{ $nhc.name }}
+spec: {{ toYaml $nhc.spec | nindent 2 }}
+{{ end }}

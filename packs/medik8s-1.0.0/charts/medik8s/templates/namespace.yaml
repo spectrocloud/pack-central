@@ -1,0 +1,25 @@
+{{- if .Values.olm.install }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.olm.namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+{{- end }}
+{{- if not (lookup "v1" "Namespace" "" .Values.operators.namespace).kind }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.operators.namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+{{- end }}

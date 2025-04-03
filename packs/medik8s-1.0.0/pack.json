@@ -1,0 +1,14 @@
+{
+  "addonType":"monitoring",
+  "annotations": {},
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Medik8s",
+  "layer":"addon",
+  "name": "medik8s",
+  "version": "1.0.0",
+  "charts": [
+    "charts/medik8s-1.0.0.tgz"
+  ]
+}
