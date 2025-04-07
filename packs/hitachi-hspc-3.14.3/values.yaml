@@ -33,7 +33,7 @@ charts:
       # Delete or Retain
       reclaimPolicy: Delete
       # WaitForFirstConsumer or Immediate
-      volumeBindingMode: WaitForFirstConsumer
+      volumeBindingMode: Immediate
       parameters:
         # Storage serial number
         serialNumber: "54321"
