@@ -69,3 +69,18 @@ charts:
             - type: Ready
               status: Unknown
               duration: 300s
+
+    selfNodeRemediationConfigs:
+      - name: self-node-remediation-config
+        namespace: operators
+        spec:
+          apiCheckInterval: 15s
+          apiServerTimeout: 5s
+          hostPort: 30001
+          isSoftwareRebootEnabled: true
+          maxApiErrorThreshold: 3
+          peerApiServerTimeout: 5s
+          peerDialTimeout: 5s
+          peerRequestTimeout: 5s
+          peerUpdateInterval: 15m
+          watchdogFilePath: /dev/watchdog

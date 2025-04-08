@@ -1,6 +1,9 @@
 {
   "addonType":"monitoring",
-  "annotations": {},
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
   "cloudTypes": [
     "all"
   ],

@@ -1,0 +1,9 @@
+{{- range $snr := .Values.selfNodeRemediationConfigs }}
+---
+apiVersion: self-node-remediation.medik8s.io/v1alpha1
+kind: SelfNodeRemediationConfig
+metadata:
+  name: {{ $snr.name }}
+  namespace: {{ $snr.namespace }}
+spec: {{ toYaml $snr.spec | nindent 2 }}
+{{ end }}
