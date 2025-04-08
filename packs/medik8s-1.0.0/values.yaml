@@ -1,4 +1,13 @@
-pack: {}
+pack:
+  content:
+    images:
+      - image: quay.io/operator-framework/olm@sha256:40d0363f4aa684319cd721c2fcf3321785380fdc74de8ef821317cd25a10782a
+      - image: quay.io/operator-framework/opm@sha256:3a84d90a43cd2a808837178cdc7a2e19f508ad0a6093f8dd00f813d5fb20575b
+      - image: quay.io/operator-framework/configmap-operator-registry:latest
+      - image: quay.io/operatorhubio/catalog:latest
+      - image: quay.io/brancz/kube-rbac-proxy:v0.15.0
+      - image: quay.io/medik8s/node-healthcheck-operator:v0.7.0
+      - image: quay.io/medik8s/self-node-remediation-operator:v0.9.0
 
 charts:
   medik8s:
