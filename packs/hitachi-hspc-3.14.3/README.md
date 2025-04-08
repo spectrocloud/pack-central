@@ -65,6 +65,19 @@ charts:
 
 Once you have confiogured the pack, you can deploy a cluster with it.
 
+In order to use this CSI for snapshots, the following `VolumeSnapshotClass` can be created (manually, not part of this pack):
+```
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: hspc-snapshotclass
+driver: hspc.csi.hitachi.com
+deletionPolicy: Delete
+parameters:
+  poolID: "1"
+  csi.storage.k8s.io/snapshotter-secret-name: "hspc-secret"
+  csi.storage.k8s.io/snapshotter-secret-namespace: "hspc-system"
+```
 
 ## References
 
