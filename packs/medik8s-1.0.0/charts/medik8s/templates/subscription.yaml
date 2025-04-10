@@ -1,0 +1,9 @@
+{{- range $sub := .Values.operators.subscriptions }}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ $sub.name }}
+  namespace: {{ $.Values.operators.namespace }}
+spec: {{ toYaml $sub.spec | nindent 2 }}
+{{ end }}
