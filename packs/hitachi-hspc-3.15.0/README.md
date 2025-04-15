@@ -29,7 +29,7 @@ To deploy the Hitachi HSPC pack, you need to set, at minimum, the following para
 | `hspc.storageClass.parameters.csi.storage.k8s.io/fstype` | Filesystem type, ext4 and xfs are supported. Defaults to ext4 if not set. | String  | ext4 | No |
 
 
-Review the [Hitachi Storage Plug-in for Containers Quick Reference Guide](https://docs.hitachivantara.com/v/u/en-us/adapters-and-drivers/3.14.x/mk-92adptr142) for more details on parameters. 
+Review the [Hitachi Storage Plug-in for Containers Quick Reference Guide](https://docs.hitachivantara.com/v/u/en-us/adapters-and-drivers/3.15.x/mk-92adptr142) for more details on parameters. 
 
 ## Upgrade
 
@@ -82,4 +82,4 @@ parameters:
 ## References
 
 - [Hitachi Vantara website](https://www.hitachivantara.com/)
-- [Hitachi HSPC Quick Reference Guide](https://docs.hitachivantara.com/v/u/en-us/adapters-and-drivers/3.14.x/mk-92adptr142)
+- [Hitachi HSPC Quick Reference Guide](https://docs.hitachivantara.com/v/u/en-us/adapters-and-drivers/3.15.x/mk-92adptr142)

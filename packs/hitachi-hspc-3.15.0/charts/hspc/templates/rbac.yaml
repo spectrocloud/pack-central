@@ -52,6 +52,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - pods
   verbs:
   - get
   - list
@@ -60,14 +61,6 @@ rules:
   - ""
   resources:
   - nodes
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - persistentvolumeclaims
   verbs:
   - get
@@ -85,37 +78,7 @@ rules:
   - ""
   resources:
   - persistentvolumes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - serviceaccounts
   verbs:
   - create
@@ -141,23 +104,6 @@ rules:
   - apps
   resources:
   - daemonsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - daemonsets/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - apps
-  resources:
   - deployments
   verbs:
   - create
@@ -170,6 +116,7 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - daemonsets/finalizers
   - deployments/finalizers
   verbs:
   - update
@@ -224,17 +171,6 @@ rules:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - clusterroles
   verbs:
   - create
@@ -256,29 +192,9 @@ rules:
   - snapshot.storage.k8s.io
   resources:
   - volumesnapshotclasses
-  verbs:
-  - '*'
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
   - volumesnapshotcontents
-  verbs:
-  - '*'
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
   - volumesnapshotcontents/status
-  verbs:
-  - '*'
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
   - volumesnapshots
-  verbs:
-  - '*'
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
   - volumesnapshots/status
   verbs:
   - '*'
@@ -297,13 +213,6 @@ rules:
   - storage.k8s.io
   resources:
   - csinodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
   - storageclasses
   verbs:
   - get

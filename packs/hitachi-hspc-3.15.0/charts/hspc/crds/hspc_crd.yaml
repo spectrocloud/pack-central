@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.16.3
   name: hspcs.csi.hitachi.com
 spec:
   group: csi.hitachi.com
@@ -26,14 +26,19 @@ spec:
         description: HSPC is the Schema for the hspcs API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -51,22 +56,20 @@ spec:
                           the pod.
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
-                            description: The scheduler will prefer to schedule pods
-                              to nodes that satisfy the affinity expressions specified
-                              by this field, but it may choose a node that violates
-                              one or more of the expressions. The node that is most
-                              preferred is the one with the greatest sum of weights,
-                              i.e. for each node that meets all of the scheduling
-                              requirements (resource request, requiredDuringScheduling
-                              affinity expressions, etc.), compute a sum by iterating
-                              through the elements of this field and adding "weight"
-                              to the sum if the node matches the corresponding matchExpressions;
-                              the node(s) with the highest sum are the most preferred.
+                            description: |-
+                              The scheduler will prefer to schedule pods to nodes that satisfy
+                              the affinity expressions specified by this field, but it may choose
+                              a node that violates one or more of the expressions. The node that is
+                              most preferred is the one with the greatest sum of weights, i.e.
+                              for each node that meets all of the scheduling requirements (resource
+                              request, requiredDuringScheduling affinity expressions, etc.),
+                              compute a sum by iterating through the elements of this field and adding
+                              "weight" to the sum if the node matches the corresponding matchExpressions; the
+                              node(s) with the highest sum are the most preferred.
                             items:
-                              description: An empty preferred scheduling term matches
-                                all objects with implicit weight 0 (i.e. it's a no-op).
-                                A null preferred scheduling term matches no objects
-                                (i.e. is also a no-op).
+                              description: |-
+                                An empty preferred scheduling term matches all objects with implicit weight 0
+                                (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
                               properties:
                                 preference:
                                   description: A node selector term, associated with
@@ -76,78 +79,70 @@ spec:
                                       description: A list of node selector requirements
                                         by node's labels.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                     matchFields:
                                       description: A list of node selector requirements
                                         by node's fields.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 weight:
@@ -160,103 +155,96 @@ spec:
                               - weight
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            description: If the affinity requirements specified by
-                              this field are not met at scheduling time, the pod will
-                              not be scheduled onto the node. If the affinity requirements
-                              specified by this field cease to be met at some point
-                              during pod execution (e.g. due to an update), the system
-                              may or may not try to eventually evict the pod from
-                              its node.
+                            description: |-
+                              If the affinity requirements specified by this field are not met at
+                              scheduling time, the pod will not be scheduled onto the node.
+                              If the affinity requirements specified by this field cease to be met
+                              at some point during pod execution (e.g. due to an update), the system
+                              may or may not try to eventually evict the pod from its node.
                             properties:
                               nodeSelectorTerms:
                                 description: Required. A list of node selector terms.
                                   The terms are ORed.
                                 items:
-                                  description: A null or empty node selector term
-                                    matches no objects. The requirements of them are
-                                    ANDed. The TopologySelectorTerm type implements
-                                    a subset of the NodeSelectorTerm.
+                                  description: |-
+                                    A null or empty node selector term matches no objects. The requirements of
+                                    them are ANDed.
+                                    The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
                                   properties:
                                     matchExpressions:
                                       description: A list of node selector requirements
                                         by node's labels.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                     matchFields:
                                       description: A list of node selector requirements
                                         by node's fields.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 type: array
+                                x-kubernetes-list-type: atomic
                             required:
                             - nodeSelectorTerms
                             type: object
@@ -270,17 +258,17 @@ spec:
                         k8s.io/api/core/v1.Container
                       properties:
                         args:
-                          description: Arguments to the entrypoint. It replaces all
-                            parameters that have already been set as default.
+                          description: |-
+                            Arguments to the entrypoint.
+                            It replaces all parameters that have already been set as default.
                           items:
                             type: string
                           type: array
                         env:
-                          description: List of environment variables to set in the
-                            container. If the key is not present, the key and the
-                            value will be added. If the key is already present as
-                            default, the value will be replaced with the specified
-                            one.
+                          description: |-
+                            List of environment variables to set in the container.
+                            If the key is not present, the key and the value will be added.
+                            If the key is already present as default, the value will be replaced with the specified one.
                           items:
                             description: EnvVar represents an environment variable
                               present in a Container.
@@ -290,17 +278,16 @@ spec:
                                   be a C_IDENTIFIER.
                                 type: string
                               value:
-                                description: 'Variable references $(VAR_NAME) are
-                                  expanded using the previously defined environment
-                                  variables in the container and any service environment
-                                  variables. If a variable cannot be resolved, the
-                                  reference in the input string will be unchanged.
-                                  Double $$ are reduced to a single $, which allows
-                                  for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)"
-                                  will produce the string literal "$(VAR_NAME)". Escaped
-                                  references will never be expanded, regardless of
-                                  whether the variable exists or not. Defaults to
-                                  "".'
+                                description: |-
+                                  Variable references $(VAR_NAME) are expanded
+                                  using the previously defined environment variables in the container and
+                                  any service environment variables. If a variable cannot be resolved,
+                                  the reference in the input string will be unchanged. Double $$ are reduced
+                                  to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                  "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                  Escaped references will never be expanded, regardless of whether the variable
+                                  exists or not.
+                                  Defaults to "".
                                 type: string
                               valueFrom:
                                 description: Source for the environment variable's
@@ -313,10 +300,13 @@ spec:
                                         description: The key to select.
                                         type: string
                                       name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -327,11 +317,9 @@ spec:
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   fieldRef:
-                                    description: 'Selects a field of the pod: supports
-                                      metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                      `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                      spec.serviceAccountName, status.hostIP, status.podIP,
-                                      status.podIPs.'
+                                    description: |-
+                                      Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                      spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                     properties:
                                       apiVersion:
                                         description: Version of the schema the FieldPath
@@ -346,11 +334,9 @@ spec:
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   resourceFieldRef:
-                                    description: 'Selects a resource of the container:
-                                      only resources limits and requests (limits.cpu,
-                                      limits.memory, limits.ephemeral-storage, requests.cpu,
-                                      requests.memory and requests.ephemeral-storage)
-                                      are currently supported.'
+                                    description: |-
+                                      Selects a resource of the container: only resources limits and requests
+                                      (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                     properties:
                                       containerName:
                                         description: 'Container name: required for
@@ -380,10 +366,13 @@ spec:
                                           from.  Must be a valid secret key.
                                         type: string
                                       name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -402,12 +391,15 @@ spec:
                           description: Container image name.
                           type: string
                         imagePullPolicy:
-                          description: Image pull policy. One of Always, Never, IfNotPresent.
-                            Defaults to Always if :latest tag is specified, or IfNotPresent
-                            otherwise.
+                          description: |-
+                            Image pull policy.
+                            One of Always, Never, IfNotPresent.
+                            Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
                           type: string
                         name:
-                          description: Name of the container. It is the key of merge.
+                          description: |-
+                            Name of the container.
+                            It is the key of merge.
                           type: string
                       required:
                       - name
@@ -419,41 +411,39 @@ spec:
                   tolerations:
                     description: If specified, the pod's tolerations.
                     items:
-                      description: The pod this Toleration is attached to tolerates
-                        any taint that matches the triple <key,value,effect> using
-                        the matching operator <operator>.
+                      description: |-
+                        The pod this Toleration is attached to tolerates any taint that matches
+                        the triple <key,value,effect> using the matching operator <operator>.
                       properties:
                         effect:
-                          description: Effect indicates the taint effect to match.
-                            Empty means match all taint effects. When specified, allowed
-                            values are NoSchedule, PreferNoSchedule and NoExecute.
+                          description: |-
+                            Effect indicates the taint effect to match. Empty means match all taint effects.
+                            When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                           type: string
                         key:
-                          description: Key is the taint key that the toleration applies
-                            to. Empty means match all taint keys. If the key is empty,
-                            operator must be Exists; this combination means to match
-                            all values and all keys.
+                          description: |-
+                            Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                            If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                           type: string
                         operator:
-                          description: Operator represents a key's relationship to
-                            the value. Valid operators are Exists and Equal. Defaults
-                            to Equal. Exists is equivalent to wildcard for value,
-                            so that a pod can tolerate all taints of a particular
-                            category.
+                          description: |-
+                            Operator represents a key's relationship to the value.
+                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Exists is equivalent to wildcard for value, so that a pod can
+                            tolerate all taints of a particular category.
                           type: string
                         tolerationSeconds:
-                          description: TolerationSeconds represents the period of
-                            time the toleration (which must be of effect NoExecute,
-                            otherwise this field is ignored) tolerates the taint.
-                            By default, it is not set, which means tolerate the taint
-                            forever (do not evict). Zero and negative values will
-                            be treated as 0 (evict immediately) by the system.
+                          description: |-
+                            TolerationSeconds represents the period of time the toleration (which must be
+                            of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                            it is not set, which means tolerate the taint forever (do not evict). Zero and
+                            negative values will be treated as 0 (evict immediately) by the system.
                           format: int64
                           type: integer
                         value:
-                          description: Value is the taint value the toleration matches
-                            to. If the operator is Exists, the value should be empty,
-                            otherwise just a regular string.
+                          description: |-
+                            Value is the taint value the toleration matches to.
+                            If the operator is Exists, the value should be empty, otherwise just a regular string.
                           type: string
                       type: object
                     type: array
@@ -482,22 +472,20 @@ spec:
                           the pod.
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
-                            description: The scheduler will prefer to schedule pods
-                              to nodes that satisfy the affinity expressions specified
-                              by this field, but it may choose a node that violates
-                              one or more of the expressions. The node that is most
-                              preferred is the one with the greatest sum of weights,
-                              i.e. for each node that meets all of the scheduling
-                              requirements (resource request, requiredDuringScheduling
-                              affinity expressions, etc.), compute a sum by iterating
-                              through the elements of this field and adding "weight"
-                              to the sum if the node matches the corresponding matchExpressions;
-                              the node(s) with the highest sum are the most preferred.
+                            description: |-
+                              The scheduler will prefer to schedule pods to nodes that satisfy
+                              the affinity expressions specified by this field, but it may choose
+                              a node that violates one or more of the expressions. The node that is
+                              most preferred is the one with the greatest sum of weights, i.e.
+                              for each node that meets all of the scheduling requirements (resource
+                              request, requiredDuringScheduling affinity expressions, etc.),
+                              compute a sum by iterating through the elements of this field and adding
+                              "weight" to the sum if the node matches the corresponding matchExpressions; the
+                              node(s) with the highest sum are the most preferred.
                             items:
-                              description: An empty preferred scheduling term matches
-                                all objects with implicit weight 0 (i.e. it's a no-op).
-                                A null preferred scheduling term matches no objects
-                                (i.e. is also a no-op).
+                              description: |-
+                                An empty preferred scheduling term matches all objects with implicit weight 0
+                                (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
                               properties:
                                 preference:
                                   description: A node selector term, associated with
@@ -507,78 +495,70 @@ spec:
                                       description: A list of node selector requirements
                                         by node's labels.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                     matchFields:
                                       description: A list of node selector requirements
                                         by node's fields.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 weight:
@@ -591,103 +571,96 @@ spec:
                               - weight
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            description: If the affinity requirements specified by
-                              this field are not met at scheduling time, the pod will
-                              not be scheduled onto the node. If the affinity requirements
-                              specified by this field cease to be met at some point
-                              during pod execution (e.g. due to an update), the system
-                              may or may not try to eventually evict the pod from
-                              its node.
+                            description: |-
+                              If the affinity requirements specified by this field are not met at
+                              scheduling time, the pod will not be scheduled onto the node.
+                              If the affinity requirements specified by this field cease to be met
+                              at some point during pod execution (e.g. due to an update), the system
+                              may or may not try to eventually evict the pod from its node.
                             properties:
                               nodeSelectorTerms:
                                 description: Required. A list of node selector terms.
                                   The terms are ORed.
                                 items:
-                                  description: A null or empty node selector term
-                                    matches no objects. The requirements of them are
-                                    ANDed. The TopologySelectorTerm type implements
-                                    a subset of the NodeSelectorTerm.
+                                  description: |-
+                                    A null or empty node selector term matches no objects. The requirements of
+                                    them are ANDed.
+                                    The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
                                   properties:
                                     matchExpressions:
                                       description: A list of node selector requirements
                                         by node's labels.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                     matchFields:
                                       description: A list of node selector requirements
                                         by node's fields.
                                       items:
-                                        description: A node selector requirement is
-                                          a selector that contains values, a key,
-                                          and an operator that relates the key and
-                                          values.
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
                                         properties:
                                           key:
                                             description: The label key that the selector
                                               applies to.
                                             type: string
                                           operator:
-                                            description: Represents a key's relationship
-                                              to a set of values. Valid operators
-                                              are In, NotIn, Exists, DoesNotExist.
-                                              Gt, and Lt.
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                             type: string
                                           values:
-                                            description: An array of string values.
-                                              If the operator is In or NotIn, the
-                                              values array must be non-empty. If the
-                                              operator is Exists or DoesNotExist,
-                                              the values array must be empty. If the
-                                              operator is Gt or Lt, the values array
-                                              must have a single element, which will
-                                              be interpreted as an integer. This array
-                                              is replaced during a strategic merge
-                                              patch.
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
+                                            x-kubernetes-list-type: atomic
                                         required:
                                         - key
                                         - operator
                                         type: object
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 type: array
+                                x-kubernetes-list-type: atomic
                             required:
                             - nodeSelectorTerms
                             type: object
@@ -701,17 +674,17 @@ spec:
                         k8s.io/api/core/v1.Container
                       properties:
                         args:
-                          description: Arguments to the entrypoint. It replaces all
-                            parameters that have already been set as default.
+                          description: |-
+                            Arguments to the entrypoint.
+                            It replaces all parameters that have already been set as default.
                           items:
                             type: string
                           type: array
                         env:
-                          description: List of environment variables to set in the
-                            container. If the key is not present, the key and the
-                            value will be added. If the key is already present as
-                            default, the value will be replaced with the specified
-                            one.
+                          description: |-
+                            List of environment variables to set in the container.
+                            If the key is not present, the key and the value will be added.
+                            If the key is already present as default, the value will be replaced with the specified one.
                           items:
                             description: EnvVar represents an environment variable
                               present in a Container.
@@ -721,17 +694,16 @@ spec:
                                   be a C_IDENTIFIER.
                                 type: string
                               value:
-                                description: 'Variable references $(VAR_NAME) are
-                                  expanded using the previously defined environment
-                                  variables in the container and any service environment
-                                  variables. If a variable cannot be resolved, the
-                                  reference in the input string will be unchanged.
-                                  Double $$ are reduced to a single $, which allows
-                                  for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)"
-                                  will produce the string literal "$(VAR_NAME)". Escaped
-                                  references will never be expanded, regardless of
-                                  whether the variable exists or not. Defaults to
-                                  "".'
+                                description: |-
+                                  Variable references $(VAR_NAME) are expanded
+                                  using the previously defined environment variables in the container and
+                                  any service environment variables. If a variable cannot be resolved,
+                                  the reference in the input string will be unchanged. Double $$ are reduced
+                                  to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                  "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                  Escaped references will never be expanded, regardless of whether the variable
+                                  exists or not.
+                                  Defaults to "".
                                 type: string
                               valueFrom:
                                 description: Source for the environment variable's
@@ -744,10 +716,13 @@ spec:
                                         description: The key to select.
                                         type: string
                                       name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -758,11 +733,9 @@ spec:
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   fieldRef:
-                                    description: 'Selects a field of the pod: supports
-                                      metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                      `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                      spec.serviceAccountName, status.hostIP, status.podIP,
-                                      status.podIPs.'
+                                    description: |-
+                                      Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                      spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
                                     properties:
                                       apiVersion:
                                         description: Version of the schema the FieldPath
@@ -777,11 +750,9 @@ spec:
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   resourceFieldRef:
-                                    description: 'Selects a resource of the container:
-                                      only resources limits and requests (limits.cpu,
-                                      limits.memory, limits.ephemeral-storage, requests.cpu,
-                                      requests.memory and requests.ephemeral-storage)
-                                      are currently supported.'
+                                    description: |-
+                                      Selects a resource of the container: only resources limits and requests
+                                      (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
                                     properties:
                                       containerName:
                                         description: 'Container name: required for
@@ -811,10 +782,13 @@ spec:
                                           from.  Must be a valid secret key.
                                         type: string
                                       name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -833,12 +807,15 @@ spec:
                           description: Container image name.
                           type: string
                         imagePullPolicy:
-                          description: Image pull policy. One of Always, Never, IfNotPresent.
-                            Defaults to Always if :latest tag is specified, or IfNotPresent
-                            otherwise.
+                          description: |-
+                            Image pull policy.
+                            One of Always, Never, IfNotPresent.
+                            Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
                           type: string
                         name:
-                          description: Name of the container. It is the key of merge.
+                          description: |-
+                            Name of the container.
+                            It is the key of merge.
                           type: string
                       required:
                       - name
@@ -850,41 +827,39 @@ spec:
                   tolerations:
                     description: If specified, the pod's tolerations.
                     items:
-                      description: The pod this Toleration is attached to tolerates
-                        any taint that matches the triple <key,value,effect> using
-                        the matching operator <operator>.
+                      description: |-
+                        The pod this Toleration is attached to tolerates any taint that matches
+                        the triple <key,value,effect> using the matching operator <operator>.
                       properties:
                         effect:
-                          description: Effect indicates the taint effect to match.
-                            Empty means match all taint effects. When specified, allowed
-                            values are NoSchedule, PreferNoSchedule and NoExecute.
+                          description: |-
+                            Effect indicates the taint effect to match. Empty means match all taint effects.
+                            When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                           type: string
                         key:
-                          description: Key is the taint key that the toleration applies
-                            to. Empty means match all taint keys. If the key is empty,
-                            operator must be Exists; this combination means to match
-                            all values and all keys.
+                          description: |-
+                            Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                            If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                           type: string
                         operator:
-                          description: Operator represents a key's relationship to
-                            the value. Valid operators are Exists and Equal. Defaults
-                            to Equal. Exists is equivalent to wildcard for value,
-                            so that a pod can tolerate all taints of a particular
-                            category.
+                          description: |-
+                            Operator represents a key's relationship to the value.
+                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Exists is equivalent to wildcard for value, so that a pod can
+                            tolerate all taints of a particular category.
                           type: string
                         tolerationSeconds:
-                          description: TolerationSeconds represents the period of
-                            time the toleration (which must be of effect NoExecute,
-                            otherwise this field is ignored) tolerates the taint.
-                            By default, it is not set, which means tolerate the taint
-                            forever (do not evict). Zero and negative values will
-                            be treated as 0 (evict immediately) by the system.
+                          description: |-
+                            TolerationSeconds represents the period of time the toleration (which must be
+                            of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                            it is not set, which means tolerate the taint forever (do not evict). Zero and
+                            negative values will be treated as 0 (evict immediately) by the system.
                           format: int64
                           type: integer
                         value:
-                          description: Value is the taint value the toleration matches
-                            to. If the operator is Exists, the value should be empty,
-                            otherwise just a regular string.
+                          description: |-
+                            Value is the taint value the toleration matches to.
+                            If the operator is Exists, the value should be empty, otherwise just a regular string.
                           type: string
                       type: object
                     type: array
