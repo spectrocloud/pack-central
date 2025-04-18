@@ -1,0 +1,7 @@
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+  namespace: piraeus-system
+spec:
+{{ .Values.cluster.spec | toYaml | indent 2 }}

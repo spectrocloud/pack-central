@@ -1,0 +1,18 @@
+apiVersion: v2
+name: piraeus-cluster
+description: |
+  This chart creates the custom resources to form the Piraeus Cluster.
+type: application
+version: 1.0.0
+appVersion: "v1.0.0"
+maintainers:
+  - name: Spectro Cloud
+    url: https://spectrocloud.com
+home: https://spectrocloud.com
+icon: https://raw.githubusercontent.com/piraeusdatastore/piraeus/master/artwork/sandbox-artwork/icon/color.svg
+keywords:
+  - storage
+sources:
+  - https://github.com/piraeusdatastore/piraeus-operator
+  - https://github.com/piraeusdatastore/linstor-csi
+  - https://github.com/LINBIT/linstor-server
