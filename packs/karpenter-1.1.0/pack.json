@@ -1,0 +1,22 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },  
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "Karpenter",
+  "charts": [
+    "charts/karpenter-1.1.0.tgz"
+  ],
+  "manifests": [
+    "manifests/karpenter.k8s.aws_ec2nodelasses.yaml",
+    "manifests/karpenter.sh_nodeclaims.yaml",
+    "manifests/karpenter.sh_nodepools.yaml"
+  ],
+  "layer": "addon",
+  "name": "karpenter",
+  "version": "1.1.0"
+}
