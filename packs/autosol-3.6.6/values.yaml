@@ -1,0 +1,81 @@
+pack:
+  content:
+    images:
+      - image: yelana13/edgemanager:3.6.6.0
+      - image: 3pings/postgres:latest
+      - image: busybox:latest
+
+manifests:
+  eacm:
+    namespace: "autosoln"
+    edgemanager:
+      image: yelana13/edgemanager:3.6.6.0
+      replicas: 1
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+      service:
+        # Service type configuration:
+        # - Use "NodePort" when you want to expose services on specific ports on all nodes
+        # - Use "LoadBalancer" when you want cloud provider to assign an external IP
+        type: NodePort
+        
+        # LoadBalancer specific settings (only used when type: LoadBalancer):
+        # - loadBalancerIP: Set to specific IP if you need a static IP for the LoadBalancer
+        # - loadBalancerClass: Set if you need to specify a specific LoadBalancer implementation
+        loadBalancerIP: ""         # Optional, will be ignored for NodePort
+        loadBalancerClass: ""      # Optional, will be ignored for NodePort
+        
+        # HTTP service configuration
+        # For NodePort: Both port and nodePort are used
+        # For LoadBalancer: Only port is used, nodePort is ignored
+        # IMPORTANT: NodePort values MUST be in the range 30000-32767 (Kubernetes requirement)
+        http:
+          port: 8080              # Internal port for the service
+          nodePort: 30080         # External port when using NodePort (MUST be 30000-32767)
+        
+        # OPC UA service configuration
+        # For NodePort: Both port and nodePort are used
+        # For LoadBalancer: Only port is used, nodePort is ignored
+        # IMPORTANT: NodePort values MUST be in the range 30000-32767 (Kubernetes requirement)
+        opcua:
+          port: 4840              # Internal port for the service
+          nodePort: 30484         # External port when using NodePort (MUST be 30000-32767)
+        
+        # Custom ports configuration
+        # For NodePort: All nodePort values are used
+        # For LoadBalancer: All nodePort values are ignored
+        # IMPORTANT: NodePort values MUST be in the range 30000-32767 (Kubernetes requirement)
+        autosolPort:
+          port40000: 30000    # External port when using NodePort (MUST be 30000-32767)
+          port40001: 30001    # External port when using NodePort (MUST be 30000-32767)
+          port40002: 30002    # External port when using NodePort (MUST be 30000-32767)
+          port40003: 30003    # External port when using NodePort (MUST be 30000-32767)
+          port40004: 30004    # External port when using NodePort (MUST be 30000-32767)
+          port40005: 30005    # External port when using NodePort (MUST be 30000-32767)
+          port40006: 30006    # External port when using NodePort (MUST be 30000-32767)
+          port40007: 30007    # External port when using NodePort (MUST be 30000-32767)
+          port40008: 30008    # External port when using NodePort (MUST be 30000-32767)
+          port40009: 30009    # External port when using NodePort (MUST be 30000-32767)
+          port40010: 30010    # External port when using NodePort (MUST be 30000-32767)
+    postgres:
+      image: 3pings/postgres:latest
+      replicas: 1
+      storageClassName: "local-path"
+      storageSize: "10Gi"
+      resources:
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+      
+    
+
+
+

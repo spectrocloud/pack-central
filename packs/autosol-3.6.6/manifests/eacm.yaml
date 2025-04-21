@@ -1,0 +1,218 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-vol
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storageSize }}
+  storageClassName: {{ .Values.postgres.storageClassName }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.postgres.replicas }}
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          env:
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: "ASIServerDB"
+            - name: PGDATA                   # Specify the PGDATA environment variable
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: db-storage
+          resources:
+            limits:
+              memory: {{ .Values.postgres.resources.limits.memory }}
+              cpu: {{ .Values.postgres.resources.limits.cpu }}
+            requests:
+              memory: {{ .Values.postgres.resources.requests.memory }}
+              cpu: {{ .Values.postgres.resources.requests.cpu }}
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: db-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: database
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edgemanager
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.edgemanager.replicas }}
+  selector:
+    matchLabels:
+      app: edgemanager
+  template:
+    metadata:
+      labels:
+        app: edgemanager
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z -v -w30 database 5432; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 5
+              done
+      containers:
+        - name: edgemanager
+          image: {{ .Values.edgemanager.image }}
+          ports:
+            - containerPort: {{ .Values.edgemanager.service.http.port }}
+            - containerPort: 4840
+            - containerPort: 40000
+            - containerPort: 40001
+            - containerPort: 40002
+            - containerPort: 40003
+            - containerPort: 40004
+            - containerPort: 40005
+            - containerPort: 40006
+            - containerPort: 40007
+            - containerPort: 40008
+            - containerPort: 40009
+            - containerPort: 40010
+          resources:
+            limits:
+              memory: {{ .Values.edgemanager.resources.limits.memory }}
+              cpu: {{ .Values.edgemanager.resources.limits.cpu }}
+            requests:
+              memory: {{ .Values.edgemanager.resources.requests.memory }}
+              cpu: {{ .Values.edgemanager.resources.requests.cpu }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgemanager
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ default "NodePort" .Values.edgemanager.service.type }}
+  {{- if eq (default "NodePort" .Values.edgemanager.service.type) "LoadBalancer" }}
+  {{- with .Values.edgemanager.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .Values.edgemanager.service.loadBalancerClass }}
+  loadBalancerClass: {{ . }}
+  {{- end }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.edgemanager.service.http.port }}
+      targetPort: 8080
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.http.nodePort) }}
+      nodePort: {{ .Values.edgemanager.service.http.nodePort }}
+      {{- end }}
+    - name: opc-ua
+      port: 4840
+      targetPort: 4840
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.opcua.nodePort) }}
+      nodePort: {{ .Values.edgemanager.service.opcua.nodePort }}
+      {{- end }}
+    - name: autosol-port-40000
+      port: 40000
+      targetPort: 40000
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40000) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40000 }}
+      {{- end }}
+    - name: autosol-port-40001
+      port: 40001
+      targetPort: 40001
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40001) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40001 }}
+      {{- end }}
+    - name: autosol-port-40002
+      port: 40002
+      targetPort: 40002
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40002) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40002 }}
+      {{- end }}
+    - name: autosol-port-40003
+      port: 40003
+      targetPort: 40003
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40003) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40003 }}
+      {{- end }}
+    - name: autosol-port-40004
+      port: 40004
+      targetPort: 40004
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40004) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40004 }}
+      {{- end }}
+    - name: autosol-port-40005
+      port: 40005
+      targetPort: 40005
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40005) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40005 }}
+      {{- end }}
+    - name: autosol-port-40006
+      port: 40006
+      targetPort: 40006
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40006) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40006 }}
+      {{- end }}
+    - name: autosol-port-40007
+      port: 40007
+      targetPort: 40007
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40007) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40007 }}
+      {{- end }}
+    - name: autosol-port-40008
+      port: 40008
+      targetPort: 40008
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40008) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40008 }}
+      {{- end }}
+    - name: autosol-port-40009
+      port: 40009
+      targetPort: 40009
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40009) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40009 }}
+      {{- end }}
+    - name: autosol-port-40010
+      port: 40010
+      targetPort: 40010
+      {{- if and (eq (default "NodePort" .Values.edgemanager.service.type) "NodePort") (.Values.edgemanager.service.autosolPort.port40010) }}
+      nodePort: {{ .Values.edgemanager.service.autosolPort.port40010 }}
+      {{- end }}
+  selector:
+    app: edgemanager
