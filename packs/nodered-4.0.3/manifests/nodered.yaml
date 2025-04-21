@@ -61,13 +61,24 @@ metadata:
 spec:
   selector:
     app: nodered
-  type: LoadBalancer
-  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
-  loadBalancerClass: {{ .Values.service.loadBalancerClass }}
+  type: {{ default "NodePort" .Values.service.type }}
+  {{- if eq (default "NodePort" .Values.service.type) "LoadBalancer" }}
+    {{- with .Values.service.loadBalancerIP }}
+      {{- if . }}
+        loadBalancerIP: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- with .Values.service.loadBalancerClass }}
+      {{- if . }}
+        loadBalancerClass: {{ . }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   ports: 
     - name: http 
       port: {{ .Values.service.http.port }}
       targetPort: 1880
       protocol: TCP
-
-
+      {{- if and (eq (default "NodePort" .Values.service.type) "NodePort") (.Values.service.http.nodePort) }}
+      nodePort: {{ .Values.service.http.nodePort }}
+      {{- end }}

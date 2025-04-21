@@ -17,10 +17,24 @@ manifests:
         memory: 256Mi
         cpu: "0.2"
     service:
-      loadBalancerIP:
-      loadBalancerClass: kube-vip.io/kube-vip-class
+      # Service type configuration:
+      # - Use "NodePort" when you want to expose services on specific ports on all nodes
+      # - Use "LoadBalancer" when you want cloud provider to assign an external IP
+      type: NodePort
+      
+      # LoadBalancer specific settings (only used when type: LoadBalancer):
+      # - loadBalancerIP: Set to specific IP if you need a static IP for the LoadBalancer
+      # - loadBalancerClass: Set if you need to specify a specific LoadBalancer implementation
+      loadBalancerIP: ""         # Optional, will be ignored for NodePort
+      loadBalancerClass: ""      # Optional, will be ignored for NodePort
+      
+      # HTTP service configuration
+      # For NodePort: Both port and nodePort are used
+      # For LoadBalancer: Only port is used, nodePort is ignored
+      # IMPORTANT: NodePort values MUST be in the range 30000-32767 (Kubernetes requirement)
       http:
-        port: 1880
+        port: 1880              # Internal port for the service
+        nodePort: 31880         # External port when using NodePort (MUST be 30000-32767)
     storage:
       size: 10Gi
 
