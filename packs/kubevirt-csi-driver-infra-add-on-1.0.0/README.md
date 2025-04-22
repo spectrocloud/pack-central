@@ -35,7 +35,6 @@ To use the Kubevirt CSI Driver Infra add-on pack, we recommend adding it to the 
 ```yaml
 charts:
   kubevirt-csi-driver-infra:
-    fullNameOverride: kubevirt-csi-driver-infra
     deployment:
       model: tenant
       namespaces:
