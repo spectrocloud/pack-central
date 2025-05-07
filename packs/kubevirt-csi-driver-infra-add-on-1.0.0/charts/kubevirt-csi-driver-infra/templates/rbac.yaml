@@ -1,0 +1,37 @@
+{{- range .Values.deployment.namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubevirt-csi
+  namespace: {{ . | quote }}
+rules:
+- apiGroups: ["cdi.kubevirt.io"]
+  resources: ["datavolumes"]
+  verbs: ["get", "create", "delete"]
+- apiGroups: ["kubevirt.io"]
+  resources: ["virtualmachineinstances", "virtualmachines"]
+  verbs: ["list", "get"]
+- apiGroups: ["subresources.kubevirt.io"]
+  resources: ["virtualmachines/addvolume", "virtualmachines/removevolume"]
+  verbs: ["update"]
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshots"]
+  verbs: ["get", "create", "delete"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubevirt-csi
+  namespace: {{ . | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubevirt-csi
+subjects:
+- kind: ServiceAccount
+  name: kubevirt-csi
+{{- end }}

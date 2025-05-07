@@ -1,0 +1,23 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "docsURL": "",
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "edge-native",
+    "maas"
+  ],
+  "displayName": "Kubevirt CSI Driver Infra add-on",
+  "charts": [
+    "charts/kubevirt-csi-driver-infra-1.0.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubevirt-csi-driver-infra",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": []
+  } 
+}

@@ -1,0 +1,19 @@
+pack:
+  content:
+    images:
+      - image: quay.io/kubevirt/kubevirt-csi-driver:latest
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.8.0
+      - image: registry.k8s.io/sig-storage/csi-provisioner:v5.1.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
+      - image: registry.k8s.io/sig-storage/livenessprobe:v2.14.0
+charts:
+  kubevirt-csi-driver-infra:
+    deployment:
+      # Deployment model, currently only "tenant" is supported
+      model: tenant
+
+      # Namespaces in which to deploy the Kubevirt CSI service account on the host VMO cluster.
+      # Kubernetes clusters on VMs in these namespaces will be able to use the Kubevirt CSI Driver.
+      namespaces:
+      - default
+      - virtual-machines
