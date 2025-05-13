@@ -1,0 +1,71 @@
+pack:
+  content:
+    images:
+      - image: "docker.io/openvino/model_server:latest"
+  namespace: ovms-app
+charts:
+  ovms:
+    #
+    # Copyright (c) 2020-2021 Intel Corporation
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #    http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    #
+
+    image_name: openvino/model_server:latest
+    deployment_parameters:
+      replicas: 1
+      openshift_service_mesh: false
+      extra_envs_secret: ""
+      extra_envs_configmap: ""
+    service_parameters:
+        grpc_port: 8080
+        rest_port: 8081
+        service_type: "ClusterIP"
+    models_settings:
+      single_model_mode: true
+      config_configmap_name: ""
+      config_path: ""
+      model_name: "resnet"
+      model_path: "gs://<bucket_name>/<model_dir>"
+      nireq: 0
+      plugin_config: '{"PERFORMANCE_HINT":"LATENCY"}'
+      batch_size: ""
+      shape: ""
+      model_version_policy: '{"latest": { "num_versions":1 }}'
+      layout: ""
+      target_device: "CPU"
+      is_stateful: false
+      idle_sequence_cleanup: false
+      low_latency_transformation: true
+      max_sequence_number: 0
+    server_settings:
+      file_system_poll_wait_seconds: 1
+      sequence_cleaner_poll_wait_minutes: 0
+      log_level: "INFO"
+      grpc_workers: 1
+      rest_workers: 0
+    models_repository:
+      https_proxy: ""
+      http_proxy: ""
+      storage_type: "google"
+      models_host_path: ""
+      models_volume_claim: ""
+      aws_secret_access_key: ""
+      aws_access_key_id: ""
+      aws_region: ""
+      s3_compat_api_endpoint: ""
+      gcp_creds_secret_name: ""
+      azure_storage_connection_string: ""
+    monitoring:
+      metrics_enable: false
+      metrics_list: ""

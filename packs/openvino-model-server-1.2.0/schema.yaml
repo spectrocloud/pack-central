@@ -1,0 +1,5 @@
+charts.ovms.models_repository.aws_secret_access_key:
+  schema: '{{ format "${password}" }}'
+
+charts.ovms.models_repository.aws_access_key_id:
+  schema: '{{ format "${password}" }}'

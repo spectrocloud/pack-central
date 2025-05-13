@@ -1,0 +1,13 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "spectrocloud"
+  },
+  "displayName": "OpenVINO Model Server",
+  "charts": [
+    "charts/ovms-1.2.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "openvino-model-server",
+  "version": "1.2.0"
+}
