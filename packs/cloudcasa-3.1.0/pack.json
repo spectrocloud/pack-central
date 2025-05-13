@@ -1,0 +1,13 @@
+{
+  "name": "cloudcasa",
+  "version": "3.1.0",
+  "displayName": "CloudCasa Kubernetes Agent",
+  "annotations": {
+    "source": "community",
+    "contributor" : "catalogic"
+  },
+  "layer": "addon",
+  "addonType": "system app",
+  "cloudTypes": [ "all" ],
+  "charts": [ "charts/cloudcasa-3.4.4.tgz" ]
+}
