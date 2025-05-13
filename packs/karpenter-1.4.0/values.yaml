@@ -12,7 +12,7 @@ charts:
     # -- Overrides the chart's name.
     nameOverride: ""
     # -- Overrides the chart's computed fullname.
-    fullnameOverride: ""
+    fullnameOverride: "karpenter"
     # -- Additional labels to add into metadata.
     additionalLabels: {}
     # app: karpenter
