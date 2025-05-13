@@ -16,7 +16,7 @@ This pack installs and configures the CloudCasa agent on a Kubernetes cluster.
 ## Parameters
 
 To deploy the CloudCasa agent, you **must** set the `clusterID` parameter to the Cluster ID provided by CloudCasa.
-All other parmeters are optional or can be left at their default values.
+All other parameters are optional or can be left at their default values.
 
 | Key                              | Type   | Default                                     | Required |
 |---                               |---     |---                                          |---       |
@@ -32,7 +32,7 @@ All other parmeters are optional or can be left at their default values.
 
 This will install the CloudCasa agent and complete registration of the cluster with the CloudCasa service.
 
-###Using an alternate image repository
+### Using an alternate image repository
 
 The agent manager container can be installed from an alternate repository by setting values for image.repository and image.tag.
 Note that the alternate repository will also need to be set for the cluster in CloudCasa so that all agent containers will be loaded from it.

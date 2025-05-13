@@ -3,6 +3,9 @@ pack:
   # When the namespace is not found, a new namespace will be created with the name specified.
   # Note this namespace MUST NOT BE CHANGED from "cloudcasa-io".
   namespace: "cloudcasa-io"
+  content:
+    images:
+      - image: docker.io/catalogicsoftware/amds-kagent:3.1.0-prod
 
 charts:
   cloudcasa:
