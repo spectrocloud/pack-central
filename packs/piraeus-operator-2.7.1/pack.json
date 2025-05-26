@@ -1,5 +1,5 @@
 {
-  "addonType": "system app",
+
   "annotations": {
     "prerequisitesRequired": "true",
     "source": "spectrocloud"
@@ -14,16 +14,18 @@
     "charts/piraeus-cluster-1.0.0.tgz",
     "charts/piraeus-dashboard-1.0.0.tgz"
   ],
-  "layer": "addon",
-  "name": "piraeus-operator-addon",
+  "layer": "csi",
+  "name": "piraeus-operator",
   "version": "2.7.1",
   "constraints": {
     "dependencies": [
       {
-        "packName": "kubernetes",
-        "layer": "k8s",
-        "type": "optional"
+        "packName": "piraeus-operator",
+        "layer": "csi",
+        "minVersion": "2.7.1",
+        "maxVersion": "",
+        "type": "upgrade"
       }
     ]
-  } 
+  }
 }
