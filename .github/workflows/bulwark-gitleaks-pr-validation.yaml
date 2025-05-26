@@ -28,7 +28,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         shell: sh
         run: |
-          git clone https://github.com/${{ github.event.pull_request.head.repo.full_name }}.git -b ${BRANCH}
+          git clone https://github.com/${{ github.event.pull_request.head.repo.full_name }}.git -b ${BRANCH} ${REPO}
           cd ${REPO}
           git remote add scRepo https://github.com/${{ github.repository }}.git
           git fetch scRepo
