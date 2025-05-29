@@ -31,4 +31,4 @@ maintainers:
 dependencies:
   - name: libcoder
     version: 0.1.0
-    repository: file://../libcoder
+    repository: file://libcoder
