@@ -1,0 +1,22 @@
+{
+  "annotations": {
+    "docsURL": "",
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "edge-native",
+    "maas"
+  ],
+  "displayName": "Hitachi Storage Plug-in for Containers",
+  "charts": [
+    "charts/hspc-3.15.0.tgz"
+  ],
+  "layer": "csi",
+  "name": "csi-hitachi-hspc",
+  "version": "3.15.0",
+  "constraints": {
+    "dependencies": []
+  } 
+}
