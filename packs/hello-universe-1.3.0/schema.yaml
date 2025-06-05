@@ -1,0 +1,104 @@
+manifests.hello-universe.namespace:
+  # The namespace in which the UI application will be deployed.
+  # The namespace should be specified as a string.
+  schema: '{{ required | format "${string}" | hints "Enter the namespace in which the application will be deployed."}}'
+
+manifests.hello-universe.images.hellouniverse:
+  # The application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ required | format "${string}" | hints "Enter the UI application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.hello-universe.images.hellouniverseapi:
+  # The hello-universe-api application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ format "${string}" | hints "Enter the API application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.hello-universe.images.hellouniversedb:
+  # The hello-universe-db application image.
+  # Ensure that the image follows the required format: registry/repository:version.
+  schema: '{{ format "${string}" | hints "Enter the API application image. Ensure that it follows the required format: registry/repository:version." }}'
+
+manifests.hello-universe.port:
+  # The cluster port number on which the UI service will listen for incoming traffic.
+  # The port should be specified as a number.
+  schema: '{{ required | format "${number}" | hints "Enter the cluster port number on which the UI service will listen for incoming traffic."}}'
+
+manifests.hello-universe.replicas:
+  # The number of replicas of the UI application to be created.
+  # The replicas should be specified as a number.
+  schema: '{{ required | format "${number}" | hints "Enter the number of replicas of the  UI application."}}'
+
+manifests.hello-universe.dbPassword:
+  # The database password to connect the hello-universe-api to the hello-universe-db.
+  # The password should be specified as a base64 encoded string.
+  schema: '{{ format "${string}" | hints "Enter the base64 encoded database password to connect to."}}'
+
+manifests.hello-universe.authToken:
+  # The auth token to connect the hello-universe-api to the hello-universe-db.
+  # The token should be specified as a base64 encoded string.
+  schema: '{{ format "${string}" | hints "Enter the base64 encoded auth token to connect to the API with."}}'
+
+manifests.hello-universe.apiEnabled:
+  # Flag to indicate whether Hello Universe should be deployed with API server or not.
+  # The flag should be specified with true or false. 
+  schema: '{{ required | format "${boolean}" | hints "Enter whether to deploy Hello Universe as a three-tier application."}}'
+
+manifests.hello-universe.ui.useTolerations:
+  # Flag to indicate whether to use tolerations for the UI pods.
+  # The flag should be specified with true or false. 
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe UI pods."}}'
+
+manifests.hello-universe.api.useTolerations:
+  # Flag to indicate whether to use tolerations for the API pods.
+  # The flag should be specified with true or false. 
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
+
+manifests.hello-universe.postgres.useTolerations:
+  # Flag to indicate whether to use tolerations for the postgres pods.
+  # The flag should be specified with true or false. 
+  schema: '{{ format "${boolean}" | hints "Enter whether to use toleratios for the Hello Universe API pods."}}'
+
+manifests.hello-universe.ui.tolerations.effect:
+  # The toleration effect to use for the Hello Universe UI pods. 
+  # The allowed values are PreferNoSchedule, NoSchedule and NoExecute. 
+  schema: '{{ format "${list:[PreferNoSchedule,NoSchedule,NoExecute]}"  | hints "Enter the toleration effect for the UI pods."}}'
+
+manifests.hello-universe.api.tolerations.effect:
+  # The effect to use for the Hello Universe API pods. 
+  # The allowed values are PreferNoSchedule, NoSchedule and NoExecute. 
+  schema: '{{ format "${list:[PreferNoSchedule,NoSchedule,NoExecute]}"  | hints "Enter the toleration effect for the API pods."}}'
+
+manifests.hello-universe.postgres.tolerations.effect:
+  # The effect to use for the Hello Universe API pods. 
+  # The allowed values are PreferNoSchedule, NoSchedule and NoExecute. 
+  schema: '{{ format "${list:[PreferNoSchedule,NoSchedule,NoExecute]}"  | hints "Enter the toleration effect for the Postgres pods."}}'
+
+manifests.hello-universe.ui.tolerations.key:
+  # The tolerations key to use for the Hello Universe UI pods.
+  # The key should be specified as a string.
+  schema: '{{ format "${string}" | hints "Enter the toleration key for the UI pods."}}'
+
+manifests.hello-universe.api.tolerations.key:
+  # The tolerations key to use for the Hello Universe API pods.
+  # The key should be specified as a string. 
+  schema: '{{ format "${string}" | hints "Enter the toleration key for the API pods."}}'
+
+manifests.hello-universe.postgres.tolerations.key:
+  # The tolerations key to use for the Hello Universe Postgres pods.
+  # The key should be specified as a string.
+  schema: '{{ format "${string}" | hints "Enter the toleration key for the Postgres pods."}}'
+
+manifests.hello-universe.ui.tolerations.value:
+  # The tolerations value to use for the Hello Universe UI pods.
+  # The value should be specified as a string.
+  schema: '{{ format "${string}" | hints "Enter the toleration value for the UI pods."}}'
+
+manifests.hello-universe.api.tolerations.value:
+  # The tolerations value to use for the Hello Universe API pods.
+  # The value should be specified as a string. 
+  schema: '{{ format "${string}" | hints "Enter the toleration value for the API pods."}}'
+
+manifests.hello-universe.postgres.tolerations.value:
+  # The tolerations value to use for the Hello Universe Postgres pods.
+  # The value should be specified as a string.
+  schema: '{{ format "${string}" | hints "Enter the toleration value for the Postgres pods."}}'
