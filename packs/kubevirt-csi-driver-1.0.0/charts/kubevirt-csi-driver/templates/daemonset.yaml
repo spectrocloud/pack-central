@@ -74,8 +74,6 @@ spec:
     spec:
       serviceAccount: kubevirt-csi-node-sa
       priorityClassName: system-node-critical
-      tolerations:
-        - operator: Exists
       containers:
         - name: csi-driver
           securityContext:
