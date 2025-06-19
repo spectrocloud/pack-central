@@ -1,0 +1,50 @@
+presets:
+  - name: "disable-api"
+    displayName: "Disable Hello Universe API"
+    group: "Backend"
+    remove: []
+    add: |
+      manifests:
+        hello-universe:
+          images:
+            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.3.0
+          apiEnabled: false
+          namespace: hello-universe
+          port: 8080
+          replicas: 1
+
+  - name: "enable-api"
+    displayName: "Enable Hello Universe API"
+    group: "Backend"
+    remove: []
+    add: |
+      manifests:
+        hello-universe:
+          images:
+            hellouniverse: ghcr.io/spectrocloud/hello-universe:1.3.0-proxy
+            hellouniverseapi: ghcr.io/spectrocloud/hello-universe-api:1.1.1
+            hellouniversedb: ghcr.io/spectrocloud/hello-universe-db:1.1.0
+          apiEnabled: true
+          namespace: hello-universe
+          port: 8080
+          replicas: 1
+          dbPassword: REPLACE_ME # Add base64 encoded password
+          authToken: REPLACE_ME # Add base64 encoded token
+          ui:
+            useTolerations: false
+            tolerations:
+              effect: PreferNoSchedule
+              key: app
+              value: ui
+          api:
+            useTolerations: false
+            tolerations:
+              effect: PreferNoSchedule
+              key: app
+              value: api
+          postgres:
+            useTolerations: false
+            tolerations:
+              effect: PreferNoSchedule
+              key: app
+              value: postgres
