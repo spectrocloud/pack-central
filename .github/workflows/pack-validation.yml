@@ -21,14 +21,17 @@
          sudo apt-get install -y nodejs npm
          sudo npm install -g validate-json
          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
-         sudo chmod +x /usr/bin/yq    
+         sudo chmod +x /usr/bin/yq
+         VERSION=$(curl -s "https://api.github.com/repos/google/go-containerregistry/releases/latest" | jq -r '.tag_name')
+         curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_$(uname -a | awk '{print $1}')_$(arch).tar.gz"  > go-containerregistry.tar.gz
+         sudo tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane 
 #     # Checkout code
      - name: Checkout branch
        uses: actions/checkout@v3
      
      - name: Get changed files
        id: changed-files
-       uses: tj-actions/changed-files@v35
+       uses: tj-actions/changed-files@v46.0.1
     
 #     # Run Validations
      - name: Check Packs

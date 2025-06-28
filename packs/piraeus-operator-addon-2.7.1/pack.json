@@ -1,0 +1,29 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "prerequisitesRequired": "true",
+    "source": "spectrocloud"
+  },
+  "cloudTypes": [
+    "edge-native"
+  ],
+  "displayName": "Piraeus Operator",
+  "charts": [
+    "charts/piraeus-2.7.1.tgz",
+    "charts/linstor-gui-1.8.2.tgz",
+    "charts/piraeus-cluster-1.0.0.tgz",
+    "charts/piraeus-dashboard-1.0.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "piraeus-operator-addon",
+  "version": "2.7.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "type": "optional"
+      }
+    ]
+  } 
+}

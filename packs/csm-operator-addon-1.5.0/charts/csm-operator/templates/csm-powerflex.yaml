@@ -1,0 +1,224 @@
+{{- if eq .Values.csm.type "powerflex" }}
+apiVersion: storage.dell.com/v1
+kind: ContainerStorageModule
+metadata:
+  name: vxflexos
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  driver:
+    csiDriverType: "powerflex"
+    csiDriverSpec:
+      # fsGroupPolicy: Defines if the underlying volume supports changing ownership and permission of the volume before being mounted.
+      # Allowed values: ReadWriteOnceWithFSType, File , None
+      # Default value: ReadWriteOnceWithFSType
+      fSGroupPolicy: "{{ .Values.csm.config.driver.fSGroupPolicy }}"
+      # storageCapacity: Helps the scheduler to schedule the pod on a node satisfying the topology constraints, only if the requested capacity is available on the storage array
+      # Allowed values:
+      #   true: enable storage capacity tracking
+      #   false: disable storage capacity tracking
+      storageCapacity: {{ .Values.csm.config.driver.storageCapacity }}
+    configVersion: "{{ include "csm-operator.powerflex" (dict "lookup" "driver-config") }}"
+    authSecret: {{ default .Values.csm.config.driver.authSecret "vxflexos-config" | quote }}
+    replicas: {{ .Values.csm.config.driver.replicas }}
+    dnsPolicy: {{ .Values.csm.config.driver.dnsPolicy }}
+    forceUpdate: {{ .Values.csm.config.driver.forceUpdate }}
+    forceRemoveDriver: {{ .Values.csm.config.driver.forceRemoveDriver }}
+    common:
+      image: "dellemc/csi-vxflexos:{{ include "csm-operator.powerflex" (dict "lookup" "driver-image") }}"
+      imagePullPolicy: IfNotPresent
+      envs:
+{{ toYaml .Values.csm.config.driver.envs | indent 8 }}
+
+    sideCars:
+{{ toYaml .Values.csm.config.driver.sideCars | indent 6 }}
+
+    controller:
+      envs:
+{{ toYaml .Values.csm.config.controller.envs | indent 8 }}
+
+      #"controller.nodeSelector" defines what nodes would be selected for pods of controller deployment
+      # Leave as blank to use all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.controller.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/master taint
+      #  node-role.kubernetes.io/master: ""
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # "controller.tolerations" defines tolerations that would be applied to controller deployment
+      # Leave as blank to install controller on worker nodes
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.controller.tolerations | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/master taint 
+      # - key: "node-role.kubernetes.io/master"   
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint 
+      # - key: "node-role.kubernetes.io/control-plane"   
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+
+    node:
+      envs:
+{{ toYaml .Values.csm.config.node.envs | indent 8 }}
+
+      # "node.nodeSelector" defines what nodes would be selected for pods of node daemonset
+      # Leave as blank to use all nodes
+      # Allowed values: map of key-value pairs
+      # Default value: None
+      nodeSelector:
+{{ toYaml .Values.csm.config.node.nodeSelector | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/master taint
+      #  node-role.kubernetes.io/master: ""
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+      #  node-role.kubernetes.io/control-plane: ""
+
+      # "node.tolerations" defines tolerations that would be applied to node daemonset
+      # Leave as blank to install node driver only on worker nodes
+      # Default value: None
+      tolerations:
+{{ toYaml .Values.csm.config.node.tolerations | indent 8 }}
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/master taint
+      # - key: "node-role.kubernetes.io/master"   
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+      # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint 
+      # - key: "node-role.kubernetes.io/control-plane"   
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+
+    initContainers:
+      - image: dellemc/sdc:4.5.1
+        imagePullPolicy: IfNotPresent
+        name: sdc
+        envs:
+          - name: MDM
+            value: "10.xx.xx.xx,10.xx.xx.xx"  #provide MDM value
+
+  modules:
+    # Authorization: enable csm-authorization for RBAC
+    - name: authorization
+      # enable: Enable/Disable csm-authorization
+      enabled: {{ .Values.csm.config.modules.authorization.enabled }}
+      configVersion: "{{ include "csm-operator.powerflex" (dict "lookup" "module-auth-config") }}"
+      components:
+      - name: karavi-authorization-proxy
+        image: "dellemc/csm-authorization-sidecar:{{ include "csm-operator.powerflex" (dict "lookup" "module-auth-image") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.authorization.envs | indent 10 }}
+
+    # observability: allows to configure observability
+    - name: observability
+      # enabled: Enable/Disable observability
+      enabled: {{ .Values.csm.config.modules.observability.enabled }}
+      configVersion: "{{ include "csm-operator.powerflex" (dict "lookup" "module-obsv-config") }}"
+      components:
+        - name: topology
+          # enabled: Enable/Disable topology
+          enabled: {{ .Values.csm.config.modules.observability.topology.enabled }}
+          # image: Defines karavi-topology image. This shouldn't be changed
+          # Allowed values: string
+          image: "dellemc/csm-topology:{{ include "csm-operator.powerflex" (dict "lookup" "module-obsv-image") }}"
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: "{{ .Values.csm.config.modules.observability.topology.certificate }}"
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: "{{ .Values.csm.config.modules.observability.topology.privateKey }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.topology.envs | indent 12 }}
+
+        - name: otel-collector
+          # enabled: Enable/Disable OpenTelemetry Collector
+          enabled: {{ .Values.csm.config.modules.observability.otelCollector.enabled }}
+          # image: Defines otel-collector image. This shouldn't be changed
+          # Allowed values: string
+          image: otel/opentelemetry-collector:0.42.0
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: "{{ .Values.csm.config.modules.observability.otelCollector.certificate }}"
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: "{{ .Values.csm.config.modules.observability.otelCollector.privateKey }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.otelCollector.envs | indent 12 }}
+
+        - name: cert-manager
+        # enabled: Enable/Disable cert-manager
+        # Allowed values:
+        #   true: enable deployment of cert-manager
+        #   false: disable deployment of cert-manager only if it's already deployed
+        # Default value: false
+          enabled: false
+
+        - name: metrics-powerflex
+          # enabled: Enable/Disable PowerFlex metrics
+          enabled: {{ .Values.csm.config.modules.observability.metricsPowerflex.enabled }}
+          # image: Defines PowerFlex metrics image. This shouldn't be changed
+          image: "dellemc/csm-metrics-powerflex:{{ include "csm-operator.powerflex" (dict "lookup" "module-metrics-image") }}"
+          envs:
+{{ toYaml .Values.csm.config.modules.observability.metricsPowerflex.envs | indent 12 }}
+
+    # Replication: allows to configure replication
+    # Replication CRDs must be installed before installing driver
+    - name: replication
+      # enabled: Enable/Disable replication feature
+      # Allowed values:
+      #   true: enable replication feature(install dell-csi-replicator sidecar)
+      #   false: disable replication feature(do not install dell-csi-replicator sidecar)
+      # Default value: false
+      enabled: {{ .Values.csm.config.modules.replication.enabled }}
+      configVersion: "{{ include "csm-operator.powerflex" (dict "lookup" "module-repl-config") }}"
+      components:
+      - name: dell-csi-replicator
+        # image: Image to use for dell-csi-replicator. This shouldn't be changed
+        # Allowed values: string
+        # Default value: None
+        image: "dellemc/dell-csi-replicator:{{ include "csm-operator.powerflex" (dict "lookup" "module-repl-image-replicator") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.replication.dellCsiReplicator.envs | indent 10 }}
+
+      - name: dell-replication-controller-manager
+        # image: Defines controller image. This shouldn't be changed
+        # Allowed values: string
+        image: "dellemc/dell-replication-controller:{{ include "csm-operator.powerflex" (dict "lookup" "module-repl-image-controller") }}"
+        envs:
+{{ toYaml .Values.csm.config.modules.replication.dellReplicationControllerManager.envs | indent 10 }}
+
+    - name: resiliency
+      # enabled: Enable/Disable Resiliency feature
+      # Allowed values:
+      #   true: enable Resiliency feature(deploy podmon sidecar)
+      #   false: disable Resiliency feature(do not deploy podmon sidecar)
+      # Default value: false
+      enabled: {{ .Values.csm.config.modules.resiliency.enabled }}
+      configVersion: "{{ include "csm-operator.powerflex" (dict "lookup" "module-resiliency-config") }}"
+      components:
+        - name: podmon-controller
+          image: "dellemc/podmon:{{ include "csm-operator.powerflex" (dict "lookup" "module-resiliency-image-podmon") }}"
+          imagePullPolicy: IfNotPresent
+          args:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonController.args | indent 12 }}
+            # Below 3 args should not be modified.
+            - "--csisock=unix:/var/run/csi/csi.sock"
+            - "--mode=controller"
+            - "--driver-config-params=/vxflexos-config-params/driver-config-params.yaml"
+        - name: podmon-node
+          image: "dellemc/podmon:{{ include "csm-operator.powerflex" (dict "lookup" "module-resiliency-image-podmon") }}"
+          imagePullPolicy: IfNotPresent
+          envs:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonNode.envs | indent 12 }}
+          args:
+{{ toYaml .Values.csm.config.modules.resiliency.podmonNode.args | indent 12 }}
+            # Below 3 args should not be modified.
+            - "--csisock=unix:/var/lib/kubelet/plugins/vxflexos.emc.dell.com/csi_sock"
+            - "--mode=node"
+            - "--driver-config-params=/vxflexos-config-params/driver-config-params.yaml"
+{{- end }}

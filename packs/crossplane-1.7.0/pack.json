@@ -2,7 +2,8 @@
     "addonType": "system app",
     "annotations": {
       "source": "community",
-      "contributor" : "spectrocloud"
+      "contributor" : "spectrocloud",
+      "system_state": "deprecated"
     },    
     "cloudTypes": [
       "all"

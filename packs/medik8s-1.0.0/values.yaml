@@ -1,0 +1,95 @@
+pack:
+  content:
+    images:
+      - image: quay.io/operator-framework/olm@sha256:40d0363f4aa684319cd721c2fcf3321785380fdc74de8ef821317cd25a10782a
+      - image: quay.io/operator-framework/opm@sha256:3a84d90a43cd2a808837178cdc7a2e19f508ad0a6093f8dd00f813d5fb20575b
+      - image: quay.io/operator-framework/configmap-operator-registry:latest
+      - image: quay.io/operatorhubio/catalog:latest
+      - image: quay.io/brancz/kube-rbac-proxy:v0.15.0
+      - image: quay.io/medik8s/node-healthcheck-operator:v0.7.0
+      - image: quay.io/medik8s/self-node-remediation-operator:v0.9.0
+
+charts:
+  medik8s:
+    olm:
+      install: true
+      namespace: olm
+      image: quay.io/operator-framework/olm@sha256:40d0363f4aa684319cd721c2fcf3321785380fdc74de8ef821317cd25a10782a
+      packageserver:
+        url: https://github.com/operator-framework/operator-lifecycle-manager/tree/master/pkg/package-server
+        replicas: 2
+        imagePullPolicy: Always
+      catalogOperator:
+        configmapImage: quay.io/operator-framework/configmap-operator-registry:latest
+      catalog:
+        name: operatorhubio-catalog
+        spec:
+          sourceType: grpc
+          image: quay.io/operatorhubio/catalog:latest
+          displayName: Community Operators
+          publisher: OperatorHub.io
+          grpcPodConfig:
+            securityContextConfig: restricted
+          updateStrategy:
+            registryPoll:
+              interval: 60m
+
+    operators:
+      namespace: operators
+      subscriptions:
+        - name: node-healthcheck-operator
+          spec:
+            channel: stable
+            name: node-healthcheck-operator
+            source: operatorhubio-catalog
+            sourceNamespace: olm
+      cleanupOnDelete:
+        enabled: true
+        subscriptions:
+          - node-healthcheck-operator
+          - self-node-remediation-stable-operatorhubio-catalog-olm
+        operators:
+          - node-healthcheck-operator.operators
+          - self-node-remediation.operators
+        clusterServiceVersions:
+          - node-healthcheck-operator.v0.7.0
+          - self-node-remediation.v0.9.0
+        daemonSets:
+          - self-node-remediation-ds
+
+    nodeHealthChecks:
+      - name: reboot-if-unhealthy
+        spec:
+          minHealthy: 51%
+          pauseRequests: []
+          remediationTemplate: 
+            apiVersion: self-node-remediation.medik8s.io/v1alpha1
+            name: self-node-remediation-automatic-strategy-template
+            namespace: operators
+            kind: SelfNodeRemediationTemplate
+          selector: 
+            matchExpressions:
+              - key: kubernetes.io/os
+                operator: Exists
+          unhealthyConditions: 
+            - type: Ready
+              status: "False"
+              duration: 300s 
+            - type: Ready
+              status: Unknown
+              duration: 300s
+
+    selfNodeRemediationConfigs:
+      - name: self-node-remediation-config
+        namespace: operators
+        spec:
+          apiCheckInterval: 15s
+          apiServerTimeout: 5s
+          hostPort: 30001
+          isSoftwareRebootEnabled: true
+          maxApiErrorThreshold: 3
+          peerApiServerTimeout: 5s
+          peerDialTimeout: 5s
+          peerRequestTimeout: 5s
+          peerUpdateInterval: 15m
+          watchdogFilePath: /dev/watchdog

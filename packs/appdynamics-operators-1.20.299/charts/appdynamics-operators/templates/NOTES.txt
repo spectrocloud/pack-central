@@ -1,0 +1,31 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+** Please be patient while the chart is being deployed **
+
+The chart installs the following components
+
+1) OpenTelemetry Operator
+  Enabled: {{ index .Values "opentelemetry-operator" "enabled"}}
+
+2) AppDynamics Cloud Operator
+  Enabled: {{ index .Values "appdynamics-cloud-operator" "enabled" }}
+  Description: Uses custom resources to manage the life cycle of Cluster Collector, Infrastructure Collector and Log Collector.
+
+3) FSO Agent Management Orchestration Client
+  Enabled: {{ index .Values "appdynamics-smartagent" "enabled" }}
+  Description: Performs and manages operations of collector agents in a couple of ways
+    1. create, update and delete agents provided in orchestration client config, it can work with multiple agents
+    2. manages configuration by fetching it from the fso management solution and passing down to collector agents
+
+THIRD PARTY LICENSE DISCLOSURE
+===============================
+
+AppDynamics Cloud Operator
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppDynamics_Cloud_Operator-2430-1711045418.pdf
+
+AppDynamics Cloud FSO Agent Management
+--------------------------------------------------
+https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/AppDynamics_Cloud_FSO_Agent_management-2420-1709021052.pdf

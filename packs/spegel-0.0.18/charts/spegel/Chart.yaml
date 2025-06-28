@@ -1,0 +1,6 @@
+apiVersion: v2
+name: spegel
+description: Stateless cluster local OCI registry mirror.
+type: application
+version: 0.0.18
+appVersion: v0.0.18

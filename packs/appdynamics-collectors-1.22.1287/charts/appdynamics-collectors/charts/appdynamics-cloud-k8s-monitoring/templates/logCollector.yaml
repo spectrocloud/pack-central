@@ -1,0 +1,87 @@
+{{$linux :="linux"}}
+{{$windows :="windows"}}
+{{ if and (.Values.install.logCollector) (has $linux .Values.logCollectorConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: LogCollector
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-log-collector" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  {{- template "appdynamics-cloud-k8s-monitoring.podConfigs" (mustMergeOverwrite .Values.logCollectorPod .Values.logCollectorPod.env.linux) }}
+  os: {{$linux}}
+  serviceAccountName: {{ .Values.logCollectorServiceAccount}}
+  rollingUpdateMaxUnavailable: {{ .Values.logCollectorPod.rollingUpdateMaxUnavailable}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  {{ if (coalesce .Values.logCollectorConfig.env.linux.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) -}}
+  filebeatYaml: {{ (coalesce .Values.logCollectorConfig.env.linux.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) | quote }}
+  {{ else -}}
+  {{$data := dict "osVal" $linux "Values" .Values }}
+  filebeatYaml: |-
+    {{- include "appdynamics-cloud-k8s-monitoring.filebeatYml" $data | nindent 8}}
+  {{- end }}
+
+  agentManagementEnabled: {{ .Values.agentManagementEnabled.logCollector | quote }}
+  {{ if .Values.agentManagementEnabled.logCollector -}}
+  collectorName: {{ .Release.Name }}
+  clusterName: {{ include "appdynamics-cloud-k8s-monitoring.getClusterName" . }}
+  helmChartVersion: {{ .Values.global.helmChartVersion }}
+  clusterID: {{ include "appdynamics-cloud-k8s-monitoring.getClusterId" . }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getOAuth" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getAgentManagementProxy" . | nindent 2 }}
+  {{- end }}
+{{- end }}
+---
+{{ if and (.Values.install.logCollector) (has $windows .Values.logCollectorConfig.os) -}}
+apiVersion: cluster.appdynamics.com/v1alpha1
+kind: LogCollector
+metadata:
+  name: {{ printf "%s-%s" .Release.Name "appdynamics-log-collector-windows" | trunc 63 }}
+  namespace: {{ include "appdynamics-cloud-k8s-monitoring.getNamespace" . }}
+spec:
+  {{- template "appdynamics-cloud-k8s-monitoring.podConfigs" (mustMergeOverwrite .Values.logCollectorPod .Values.logCollectorPod.env.windows) }}
+  os: {{$windows}}
+  serviceAccountName: {{ .Values.logCollectorServiceAccount}}
+
+  {{ with .Values.global.tls.appdCollectors -}}
+  mTLS:
+    enabled: {{ .enabled | quote }}
+    {{ if .enabled -}}
+    secretName: {{ required "A valid secret name entry required!" .secret.secretName }}
+    secretKeys:
+      caCert: {{ .secret.secretKeys.caCert }}
+      tlsCert: {{ .secret.secretKeys.tlsCert }}
+      tlsKey: {{ .secret.secretKeys.tlsKey }}
+    {{- end }}
+  {{- end }}
+
+  {{ if (coalesce .Values.logCollectorConfig.env.windows.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) -}}
+  filebeatYaml: |-
+    {{- (coalesce .Values.logCollectorConfig.env.windows.filebeatYaml .Values.logCollectorConfig.filebeatYaml ) | nindent 8 }}
+  {{ else -}}
+  {{$data := dict "osVal" $windows "Values" .Values }}
+  filebeatYaml: |-
+    {{- include "appdynamics-cloud-k8s-monitoring.filebeatYml" $data | nindent 8}} # appdynamics-cloud-k8s-monitoring.filebeatYml change this when simplified/default config
+  {{- end }}
+
+  agentManagementEnabled: {{ .Values.agentManagementEnabled.logCollector | quote }}
+  {{ if .Values.agentManagementEnabled.logCollector -}}
+  collectorName: {{ .Release.Name }}
+  clusterName: {{ include "appdynamics-cloud-k8s-monitoring.getClusterName" . }}
+  helmChartVersion: {{ .Values.global.helmChartVersion }}
+  clusterID: {{ include "appdynamics-cloud-k8s-monitoring.getClusterId" . }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getOAuth" . | nindent 2 }}
+  {{- include "appdynamics-cloud-k8s-monitoring.getAgentManagementProxy" . | nindent 2 }}
+  {{- end }}
+{{- end }}

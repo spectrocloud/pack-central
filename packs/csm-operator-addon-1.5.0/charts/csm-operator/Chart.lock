@@ -1,0 +1,6 @@
+dependencies:
+- name: snapshot-controller
+  repository: ""
+  version: '>= 0.1.0'
+digest: sha256:cc85e44ccf1c64ccaa4ab7b9b6d29b6ebe800fd85f0d350d76a7b9dccafd10ab
+generated: "2023-07-26T15:00:55.02669+02:00"

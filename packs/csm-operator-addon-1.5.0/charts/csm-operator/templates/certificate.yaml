@@ -1,0 +1,39 @@
+{{- if eq .Values.csm.type "powermax" }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: csirevproxy-tls-cert
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  secretName: csirevproxy-tls-secret
+  commonName: powermax-reverseproxy
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dellemc
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - powermax-reverseproxy
+    - powermax-reverseproxy.powermax.svc.cluster.local
+    - reverseproxy
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+{{- end }}

@@ -1,0 +1,32 @@
+{{ if .Values.install.logCollector -}}
+{{ if .Capabilities.APIVersions.Has "security.openshift.io/v1/SecurityContextConstraints" -}}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: 'logcollector-privileged-scc is a custom SCC for AppDynamics Cloud Log Collector'
+  name: logcollector-privileged-scc
+  namespace: {{ .Release.Namespace }}
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: true
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.logCollectorServiceAccount }}
+volumes:
+  - configMap
+  - hostPath # LCA uses hostPath for config and registry files
+  - secret
+  - emptyDir
+  - downwardAPI
+  - persistentVolumeClaim
+  - projected
+{{- end }}
+{{- end }}

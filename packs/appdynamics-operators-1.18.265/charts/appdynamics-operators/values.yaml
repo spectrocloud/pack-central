@@ -1,0 +1,20 @@
+appdynamics-cloud-operator:
+  enabled: true
+  operatorPod:
+    image: appdynamics/appdynamics-cloud-operator:24.1.0-1230
+    imagePullPolicy: Always
+    imagePullSecrets: []
+    nodeSelector:
+      kubernetes.io/os: linux
+  kubeRbacProxy: {}
+
+opentelemetry-operator:
+  enabled: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  manager:
+    serviceAccount:
+      name: opentelemetry-operator
+
+appdynamics-smartagent:
+  enabled: true

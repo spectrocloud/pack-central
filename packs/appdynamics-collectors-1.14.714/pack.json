@@ -3,7 +3,8 @@
   "annotations": {
     "ingressSupported": "false",
     "source": "community",
-    "contributor": "appdynamics"
+    "contributor": "appdynamics",
+    "system_state" : "deleted"
   },
   "cloudTypes": [
     "all"

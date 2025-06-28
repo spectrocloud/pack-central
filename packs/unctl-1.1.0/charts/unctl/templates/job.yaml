@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: {{ template "unctl.name" . }}
+    chart: {{ template "unctl.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "unctl.fullname" . }}-job
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+spec:
+  template:
+    spec:
+      containers:
+      - name: curl-container
+        image: curlimages/curl:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -e
+          echo "Waiting for 1 minute..."
+          sleep 60
+          echo "Checking if unctl service is ready..."
+          until curl -f -s http://{{ template "unctl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/docs; do
+            echo "Waiting for unctl service..."
+            sleep 5
+          done
+          echo "unctl is ready, proceeding to make the execution call"
+          curl -X POST "http://{{ template "unctl.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/api/v1/executions" -H 'accept: application/json' -H 'Content-Type: application/json' -d '{}'
+      restartPolicy: Never
+  backoffLimit: 10

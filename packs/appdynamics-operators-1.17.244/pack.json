@@ -1,0 +1,18 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "false",
+    "source": "community",
+    "contributor": "appdynamics"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/appdynamics-operators-1.17.244.tgz"
+  ],
+  "displayName": "Cisco AppDynamics Operators",
+  "layer": "addon",
+  "name": "cisco-appdynamics-operators",
+  "version": "1.17.244"
+}

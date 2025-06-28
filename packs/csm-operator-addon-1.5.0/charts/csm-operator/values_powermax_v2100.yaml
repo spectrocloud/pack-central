@@ -1,0 +1,550 @@
+namespace: dell-csm-operator
+
+image:
+  repository: docker.io/dellemc/dell-csm-operator
+  pullPolicy: IfNotPresent
+  tag: "v1.5.0"
+
+csm:
+  # Select a preset to populate the default configuration for your platform
+  namespace: powermax
+
+  type: powermax
+  version: v2.10.0
+
+  config:
+    driver:
+      # fsGroupPolicy: Defines if the underlying volume supports changing ownership and permission of the volume before being mounted.
+      # Allowed values: ReadWriteOnceWithFSType, File , None
+      # Default value: ReadWriteOnceWithFSType
+      fSGroupPolicy: "File"
+      # storageCapacity: Helps the scheduler to schedule the pod on a node satisfying the topology constraints, only if the requested capacity is available on the storage array
+      # Allowed values:
+      #   true: enable storage capacity tracking
+      #   false: disable storage capacity tracking
+      storageCapacity: true
+      replicas: 2
+      dnsPolicy: ClusterFirstWithHostNet
+      # To specify a different credentials secret than the default, set the authSecret value.
+      # authSecret: name-of-secret
+
+      envs:
+        # X_CSI_MANAGED_ARRAYS: Serial ID of the arrays that will be used for provisioning
+        # Default value: None
+        # Examples: "000000000001", "000000000002"
+        - name: X_CSI_MANAGED_ARRAYS
+          value: "000000000000,000000000001"
+        # X_CSI_POWERMAX_ENDPOINT: Address of the Unisphere server that is managing the PowerMax arrays
+        # In case of multi-array, provide an endpoint of locally attached array
+        # Default value: None
+        # Example: https://0.0.0.1:8443
+        - name: X_CSI_POWERMAX_ENDPOINT
+          value: "https://0.0.0.0:8443/"
+        # X_CSI_K8S_CLUSTER_PREFIX: Define a prefix that is appended onto
+        # all resources created in the Array
+        # This should be unique per K8s/CSI deployment
+        # maximum length of this value is 3 characters
+        # Default value: None
+        # Examples: "XYZ", "EMC"
+        - name: X_CSI_K8S_CLUSTER_PREFIX
+          value: "XYZ"
+        # Specify kubelet config dir path.
+        # Ensure that the config.yaml file is present at this path.
+        # Default value: /var/lib/kubelet
+        - name: KUBELET_CONFIG_DIR
+          value: /var/lib/kubelet
+        # X_CSI_POWERMAX_PORTGROUPS: Define the set of existing port groups that the driver will use.
+        # It is a comma separated list of portgroup names.
+        # Required only in case of iSCSI port groups
+        # Allowed values: iSCSI Port Group names
+        # Default value: None
+        # Examples: "pg1", "pg1, pg2"
+        - name: X_CSI_POWERMAX_PORTGROUPS
+          value: ""
+        # "X_CSI_TRANSPORT_PROTOCOL" can be "FC" or "FIBRE" for fibrechannel,
+        # "ISCSI" for iSCSI, or "" for autoselection.
+        # Allowed values:
+        #   "FC"    - Fiber Channel protocol
+        #   "FIBER" - Fiber Channel protocol
+        #   "ISCSI" - iSCSI protocol
+        #   ""      - Automatic selection of transport protocol
+        # Default value: "" <empty>
+        - name: X_CSI_TRANSPORT_PROTOCOL
+          value: ""
+        # X_CSI_POWERMAX_PROXY_SERVICE_NAME: Refers to the name of the proxy service in kubernetes
+        # Allowed values: "csipowermax-reverseproxy"
+        # default values: "csipowermax-reverseproxy"
+        - name: X_CSI_POWERMAX_PROXY_SERVICE_NAME
+          value: "csipowermax-reverseproxy"
+        # VMware/vSphere virtualization support
+        # set X_CSI_VSPHERE_ENABLED to true, if you to enable VMware virtualized environment support via RDM
+        # Allowed values:
+        #   "true" - vSphere volumes are enabled
+        #   "false" - vSphere volumes are disabled
+        # Default value: "false"
+        - name: "X_CSI_VSPHERE_ENABLED"
+          value: "false"
+        # X_CSI_VSPHERE_PORTGROUP: An existing portGroup that driver will use for vSphere
+        # recommended format: csi-x-VC-PG, x can be anything of user choice
+        # Allowed value: valid existing port group on the array
+        # Default value: "" <empty>
+        - name: "X_CSI_VSPHERE_PORTGROUP"
+          value: ""
+        # X_CSI_VSPHERE_HOSTNAME: An existing host(initiator group)/ host group(cascaded initiator group) that driver will use for vSphere
+        # this host should contain initiators from all the ESXs/ESXi host where the cluster is deployed
+        # recommended format: csi-x-VC-HN, x can be anything of user choice
+        # Allowed value: valid existing host/host group on the array
+        # Default value: "" <empty>
+        - name: "X_CSI_VSPHERE_HOSTNAME"
+          value: ""
+        # X_CSI_VCENTER_HOST: URL/endpoint of the vCenter where all the ESX are present
+        # Allowed value: valid vCenter host endpoint
+        # Default value: "" <empty>
+        - name: "X_CSI_VCENTER_HOST"
+          value: ""
+
+      controller:
+        envs:
+          # X_CSI_HEALTH_MONITOR_ENABLED: Enable/Disable health monitor of CSI volumes from node plugin- volume usage, volume condition
+          # Allowed values:
+          #   true: enable checking of health condition of CSI volumes
+          #   false: disable checking of health condition of CSI volumes
+          # Default value: false
+          - name: X_CSI_HEALTH_MONITOR_ENABLED
+            value: "false"
+
+        # nodeSelector: Define node selection constraints for controller pods.
+        # For the pod to be eligible to run on a node, the node must have each
+        # of the indicated key-value pairs as labels.
+        # Leave as blank to consider all nodes
+        # Allowed values: map of key-value pairs
+        # Default value: None
+        nodeSelector: {}
+        # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+        #  node-role.kubernetes.io/control-plane: ""
+
+        # tolerations: Define tolerations that would be applied to controller deployment
+        # Leave as blank to install controller on worker nodes
+        # Allowed values: map of key-value pairs
+        # Default value: None
+        tolerations: []
+        # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+        #  - key: "node-role.kubernetes.io/control-plane"
+        #    operator: "Exists"
+        #    effect: "NoSchedule"
+
+      node:
+        envs:
+          # X_CSI_POWERMAX_ISCSI_ENABLE_CHAP: Determine if the driver is going to configure
+          # ISCSI node databases on the nodes with the CHAP credentials
+          # If enabled, the CHAP secret must be provided in the credentials secret
+          # and set to the key "chapsecret"
+          # Allowed values:
+          #   "true"  - CHAP is enabled
+          #   "false" - CHAP is disabled
+          # Default value: "false"
+          - name: X_CSI_POWERMAX_ISCSI_ENABLE_CHAP
+            value: "false"
+          # X_CSI_HEALTH_MONITOR_ENABLED: Enable/Disable health monitor of CSI volumes from node plugin- volume usage, volume condition
+          # Allowed values:
+          #   true: enable checking of health condition of CSI volumes
+          #   false: disable checking of health condition of CSI volumes
+          # Default value: false
+          - name: X_CSI_HEALTH_MONITOR_ENABLED
+            value: "false"
+          # X_CSI_TOPOLOGY_CONTROL_ENABLED provides a way to filter topology keys on a node based on array and transport protocol
+          # if enabled, user can create custom topology keys by editing node-topology-config configmap.
+          # Allowed values:
+          #   true: enable the filtration based on config map
+          #   false: disable the filtration based on config map
+          # Default value: false
+          - name: X_CSI_TOPOLOGY_CONTROL_ENABLED
+            value: "false"
+          # X_CSI_MAX_VOLUMES_PER_NODE: Defines the maximum PowerMax volumes that the controller can schedule on the node
+          # Allowed values: Any value greater than or equal to 0
+          # Default value: "0"
+          - name: X_CSI_MAX_VOLUMES_PER_NODE
+            value: "0"
+
+        # nodeSelector: Define node selection constraints for node pods.
+        # For the pod to be eligible to run on a node, the node must have each
+        # of the indicated key-value pairs as labels.
+        # Leave as blank to consider all nodes
+        # Allowed values: map of key-value pairs
+        # Default value: None
+        nodeSelector: {}
+        # Uncomment if nodes you wish to use have the node-role.kubernetes.io/control-plane taint
+        #  node-role.kubernetes.io/control-plane: ""
+
+        # tolerations: Define tolerations that would be applied to node daemonset
+        # Add/Remove tolerations as per requirement
+        # Leave as blank if you wish to not apply any tolerations
+        # Allowed values: map of key-value pairs
+        tolerations:
+          - key: "node.kubernetes.io/memory-pressure"
+            operator: "Exists"
+            effect: "NoExecute"
+          - key: "node.kubernetes.io/disk-pressure"
+            operator: "Exists"
+            effect: "NoExecute"
+          - key: "node.kubernetes.io/network-unavailable"
+            operator: "Exists"
+            effect: "NoExecute"
+
+      sideCars:
+        # 'pmax' represents a string prepended to each volume created by the CSI driver
+        - name: provisioner
+          image: registry.k8s.io/sig-storage/csi-provisioner:v4.0.0
+          args: ["--volume-name-prefix=pmax"]
+        - name: attacher
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.5.0
+        - name: registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0
+        - name: resizer
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.10.0
+        - name: snapshotter
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v7.0.1
+        - name: csi-metadata-retriever
+          image: dellemc/csi-metadata-retriever:v1.7.2
+        # health monitor is disabled by default, refer to driver documentation before enabling it
+        - name: external-health-monitor
+          enabled: false
+          args: [ "--monitor-interval=60s" ]
+          image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.11.0
+        
+        # Uncomment the following to configure how often external-provisioner polls the driver to detect changed capacity
+        # Configure only when the storageCapacity is set as "true"
+        # Allowed values: 1m,2m,3m,...,10m,...,60m etc. Default value: 5m
+        #- name: provisioner
+        #  args: ["--capacity-poll-interval=5m"]
+
+    modules:
+      # CSI Powermax Reverseproxy is a mandatory module for Powermax
+      csireverseproxy:
+        enabled: true
+        envs:
+          # "tlsSecret" defines the TLS secret that is created with certificate
+          # and its associated key
+          # Default value: None
+          # Example: "tls-secret"
+          - name: X_CSI_REVPROXY_TLS_SECRET
+            value: "csirevproxy-tls-secret"
+          - name: X_CSI_REVPROXY_PORT
+            value: "2222"
+          - name: X_CSI_CONFIG_MAP_NAME
+            value: "powermax-reverseproxy-config"                
+
+      authorization:
+        enabled: false
+        envs:
+          # proxyHost: hostname of the csm-authorization server
+          - name: "PROXY_HOST"
+            value: "csm-authorization.com"
+          # skipCertificateValidation: Enable/Disable certificate validation of the csm-authorization server
+          - name: "SKIP_CERTIFICATE_VALIDATION"
+            value: "true"
+
+      replication:
+        enabled: false
+        dellCsiReplicator:
+          envs:
+          # replicationPrefix: prefix to prepend to storage classes parameters
+          # Allowed values: string
+          # Default value: replication.storage.dell.com
+          - name: "X_CSI_REPLICATION_PREFIX"
+            value: "replication.storage.dell.com"
+          # replicationContextPrefix: prefix to use for naming of resources created by replication feature
+          # Allowed values: string
+          - name: "X_CSI_REPLICATION_CONTEXT_PREFIX"
+            value: "powermax"
+
+        dellReplicationControllerManager:
+          envs:
+            # TARGET_CLUSTERS_IDS: comma separated list of cluster IDs of the targets clusters. DO NOT include the source(wherever CSM Operator is deployed) cluster ID
+            # Set the value to "self" in case of stretched/single cluster configuration
+            # Allowed values: string
+            - name: "TARGET_CLUSTERS_IDS"
+              value: "target-cluster-1"
+            # Replication log level
+            # Allowed values: "error", "warn"/"warning", "info", "debug"
+            # Default value: "debug"
+            - name: "REPLICATION_CTRL_LOG_LEVEL"
+              value: "debug"
+            
+            # replicas: Defines number of controller replicas
+            # Allowed values: int
+            # Default value: 1
+            - name: "REPLICATION_CTRL_REPLICAS"
+              value: "1"
+            # retryIntervalMin: Initial retry interval of failed reconcile request.
+            # It doubles with each failure, upto retry-interval-max
+            # Allowed values: time
+            - name: "RETRY_INTERVAL_MIN"
+              value: "1s"
+            # RETRY_INTERVAL_MAX: Maximum retry interval of failed reconcile request
+            # Allowed values: time
+            - name: "RETRY_INTERVAL_MAX"
+              value: "5m"
+
+      observability:
+        enabled: false
+        topology:
+          enabled: false
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: ""
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: ""
+          envs:
+            # topology log level
+            # Valid values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+            # Default value: "INFO"
+            - name: "TOPOLOGY_LOG_LEVEL"
+              value: "INFO"
+
+        otelCollector:
+          enabled: false
+          # certificate: base64-encoded certificate for cert/private-key pair -- add cert here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          certificate: ""
+          # privateKey: base64-encoded private key for cert/private-key pair -- add private key here to use custom certificates
+          #  for self-signed certs, leave empty string
+          # Allowed values: string
+          privateKey: ""
+          envs:
+            # image of nginx proxy image
+            # Allowed values: string
+            # Default value: "nginxinc/nginx-unprivileged:1.20"
+            - name: "NGINX_PROXY_IMAGE"
+              value: "nginxinc/nginx-unprivileged:1.20"
+
+        metricsPowerMax:
+          enabled: false
+          envs:
+            # POWERMAX_MAX_CONCURRENT_QUERIES: set the default max concurrent queries to PowerMax
+            # Allowed values: int
+            # Default value: 10
+            - name: "POWERMAX_MAX_CONCURRENT_QUERIES"
+              value: "10"
+            # POWERMAX_CAPACITY_METRICS_ENABLED: enable/disable collection of capacity metrics
+            # Allowed values: ture, false
+            # Default value: true
+            - name: "POWERMAX_CAPACITY_METRICS_ENABLED"
+              value: "true"
+            # POWERMAX_PERFORMANCE_METRICS_ENABLED: enable/disable collection of volume performance metrics
+            # Allowed values: ture, false
+            # Default value: true
+            - name: "POWERMAX_PERFORMANCE_METRICS_ENABLED"
+              value: "true"
+            # POWERMAX_CAPACITY_POLL_FREQUENCY: set polling frequency to get capacity metrics data
+            # Allowed values: int
+            # Default value: 10
+            - name: "POWERMAX_CAPACITY_POLL_FREQUENCY"
+              value: "10"
+            # POWERMAX_PERFORMANCE_POLL_FREQUENCY: set polling frequency to get volume performance data
+            # Allowed values: int
+            # Default value: 10
+            - name: "POWERMAX_PERFORMANCE_POLL_FREQUENCY"
+              value: "10"
+            # PowerMax metrics log level
+            # Valid values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+            # Default value: "INFO"
+            - name: "POWERMAX_LOG_LEVEL"
+              value: "INFO"
+            # PowerMax Metrics Output logs in the specified format
+            # Valid values: TEXT, JSON
+            # Default value: "TEXT"
+            - name: "POWERMAX_LOG_FORMAT"
+              value: "TEXT"
+            # otel collector address
+            # Allowed values: String
+            # Default value: "otel-collector:55680"
+            - name: "COLLECTOR_ADDRESS"
+              value: "otel-collector:55680"
+            # configMap name which has all array/endpoint related info
+            - name: "X_CSI_CONFIG_MAP_NAME"
+              value: "powermax-reverseproxy-config"
+
+    secret:
+      encoded: false # if set to true, provide a base64 encoded value instead
+      # Default secret names:
+      # PowerFlex:  vxflexos-config
+      # PowerMax:   powermax-creds
+      # PowerScale: isilon-creds
+      name: powermax-creds
+      value:
+        username: '<username>'
+        password: '<password>'
+        # Uncomment the following key if you wish to use ISCSI CHAP authentication (v1.3.0 onwards)
+        # chapsecret: '<CHAP secret>'
+
+      # Example value for encoded
+      # value:
+      #   username: Rkg2UnVyY2R...
+      #   password: ZGVmYXVsd...
+      #   chapsecret: MjAyMy0wNi0yMlQ...
+
+reverseProxyConfig:
+  mode: StandAlone
+  port: 2222
+  logLevel: debug
+  logFormat: TEXT
+  standAloneConfig:
+    storageArrays:
+      - storageArrayId: "000000000001" # arrayID
+        primaryURL: https://primary-1.unisphe.re:8443 # primary unisphere for arrayID
+        backupURL: https://backup-1.unisphe.re:8443   # backup unisphere for arrayID
+        proxyCredentialSecrets:
+          - powermax-creds # credential secret for primary unisphere, e.g., powermax-creds
+          - powermax-creds # credential secret for backup unisphere, e.g., powermax-creds
+      - storageArrayId: "000000000002"
+        primaryURL: https://primary-2.unisphe.re:8443
+        backupURL: https://backup-2.unisphe.re:8443
+        proxyCredentialSecrets:
+          - powermax-creds
+          - powermax-creds
+    managementServers:
+      - url: https://primary-1.unisphe.re:8443 # primary unisphere endpoint
+        arrayCredentialSecret: powermax-creds  # primary credential secret e.g., powermax-creds
+        skipCertificateValidation: true # value false, to verify unisphere certificate and provide certSecret
+        #certSecret: primary-1-cert       # unisphere verification certificate
+      - url: https://backup-1.unisphe.re:8443 # backup unisphere endpoint
+        arrayCredentialSecret: powermax-creds # backup credential secret e.g., powermax-creds
+        skipCertificateValidation: true
+        #certSecret: backup-1-cert
+      - url: https://primary-2.unisphe.re:8443
+        arrayCredentialSecret: powermax-creds
+        skipCertificateValidation: true
+        #certSecret: primary-2-cert
+      - url: https://backup-2.unisphe.re:8443
+        arrayCredentialSecret: powermax-creds
+        skipCertificateValidation: true
+        #certSecret: backup-2-cert
+
+storageclass:
+  name: powermax
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  provisioner: csi-powermax.dellemc.com
+  # reclaimPolicy: PVs that are dynamically created by a StorageClass will have the reclaim policy specified here
+  # Allowed values:
+  #   Reclaim: retain the PV after PVC deletion
+  #   Delete: delete the PV after PVC deletion
+  # Optional: true
+  # Default value: Delete
+  reclaimPolicy: Delete
+  # allowVolumeExpansion: allows the users to resize the volume by editing the corresponding PVC object
+  # Allowed values:
+  #   true: allow users to resize the PVC
+  #   false: does not allow users to resize the PVC
+  # Optional: true
+  # Default value: false
+  allowVolumeExpansion: true
+  parameters:
+    # "csi.storage.k8s.io/fstype" is used to set the filesystem type which will be used to format the new volume
+    # Allowed values:
+    #   "ext4" - EXT4 File system
+    #   "xfs"  - XFS File system
+    # Optional: true
+    # Default value: None if defaultFsType is not mentioned in values.yaml
+    # Else defaultFsType value mentioned in values.yaml
+    # will be used as default value
+    csi.storage.k8s.io/fstype: ext4
+    # Name of SRP on the PowerMax array that should be used for provisioning
+    # Optional: false
+    # Examples: "DEFAULT_SRP" , "SRP_1"
+    SRP: SRP_1
+    # Serial ID of the array that is used for provisioning
+    # Optional: false
+    # Example: "000000000001"
+    SYMID: "000000000001"
+    # Name of Service Level on PowerMax array that should be used for provisioning
+    # Optional: true, Default value: Optimized
+    # Examples: "Diamond" , "Bronze"
+    #ServiceLevel: Diamond
+    # Name of application to be used to group volumes
+    # This is used in naming storage group
+    # Optional: true, Default value: None
+    # Examples: APP, app, sanity, tests
+    #ApplicationPrefix: app
+    # Following params are for HostLimits, set them only if you want to set IOLimits
+    # HostLimitName uniquely identifies given set of limits on a storage class
+    # This is used in naming storage group, max of 3 letter
+    # Optional: true
+    # Example: "HL1", "HL2"
+    #HostLimitName: "HL1"
+    # The MBs per Second Host IO limit for the storage class
+    # Optional: true, Default: ""
+    # Examples: 100, 200, NOLIMIT
+    #HostIOLimitMBSec: ""
+    # The IOs per Second Host IO limit for the storage class
+    # Optional: true, Default: ""
+    # Examples: 100, 200, NOLIMIT
+    #HostIOLimitIOSec: ""
+    # distribution of the Host IO limits for the storage class
+    # Optional: true, Default: ""
+    # Allowed values: Never","Always" or "OnFailure" only
+    #DynamicDistribution: ""
+  # volumeBindingMode determines how volume binding and dynamic provisioning should occur
+  # Allowed values: 
+  #  Immediate: volume binding and dynamic provisioning occurs once PVC is created
+  #  WaitForFirstConsumer: delay the binding and provisioning of PV until a pod using the PVC is created.
+  #  Optional: false
+  # Default value: WaitForFirstConsumer (required for topology section below) 
+  volumeBindingMode: WaitForFirstConsumer
+  # allowedTopologies helps scheduling pods on worker nodes which match all of below expressions.
+  #allowedTopologies:
+  #- matchLabelExpressions:
+  #  - key: csi-powermax.dellemc.com/SYM_ID # replace SYM_ID with Serial ID of the array
+  #    values:
+  #      - csi-powermax.dellemc.com
+  #  - key: csi-powermax.dellemc.com/SYM_ID.fc # replace SYM_ID with Serial ID of the array
+  #    values:
+  #      - csi-powermax.dellemc.com
+
+snapshot-controller:
+  enabled: true
+  replicas: 2
+  # controller image and policies
+  image:
+    repository: registry.k8s.io/sig-storage/snapshot-controller
+    pullPolicy: IfNotPresent
+    tag: "v7.0.1"
+
+  # A list/array of extra args that should be used 
+  # when running the controller. Default args include log verbose level 
+  # and leader election
+  extraArgs: []
+
+  # snapshot webhook config
+  webhook:
+    # enable or disable the snapshot webhook 
+    enabled: true
+    # all below values take effect only if webhook is enabled
+
+    # webhook controller image and policies
+    image:
+      # change the image if you wish to use your own custom validation server image
+      repository: registry.k8s.io/sig-storage/snapshot-validation-webhook 
+      pullPolicy: IfNotPresent
+      tag: "v7.0.1"
+
+  # create a default volume snapshot class
+  volumeSnapshotClass:
+    create: false
+    name: "powermax-snapshot-class"
+    driver: "csi-powermax.dellemc.com"
+    # deletionPolicy determines whether a VolumeSnapshotContent created through
+    # the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted.
+    # Supported values are "Retain" and "Delete".
+    deletionPolicy: "Delete"
+    # params is a key-value map with storage driver specific parameters for creating snapshots.
+    params:
+      SYMID: "SYM_ID" # replace SYM_ID with Serial ID of the array
+
+    # key-value pair of extra labels to apply to the volumesnapshotclass
+    extraLabels: {}

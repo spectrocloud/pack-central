@@ -3,7 +3,8 @@
   "annotations": {
     "ingressSupported": "true",
     "source": "community",
-    "contributor" : "spectrocloud"
+    "contributor" : "spectrocloud",
+    "system_state": "deprecated"
   },
   "charts": [
     "charts/wordpress.tgz"

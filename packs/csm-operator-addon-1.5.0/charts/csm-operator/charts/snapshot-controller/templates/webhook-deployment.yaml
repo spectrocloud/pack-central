@@ -1,0 +1,119 @@
+{{- if .Values.webhook.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapshot-validation-deployment
+  namespace: kube-system 
+  labels:
+    app: snapshot-validation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-validation
+  template:
+    metadata:
+      labels:
+        app: snapshot-validation
+        spectrocloud.com/connection: proxy
+    spec:
+      serviceAccountName: snapshot-webhook
+      containers:
+        - name: webhook
+          image: "{{ .Values.webhook.image.repository }}:{{ .Values.webhook.image.tag }}"
+          imagePullPolicy: {{ .Values.webhook.image.pullPolicy | default "IfNotPresent" }}
+          args: [-v={{ .Values.webhook.logVerbosityLevel }}, --tls-private-key-file=/snapshot-validation-webhook-tls/tls.key,--tls-cert-file=/snapshot-validation-webhook-tls/tls.crt, --port=8443]
+          volumeMounts:
+            - name: tls-cert-secret
+              mountPath: /snapshot-validation-webhook-tls
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /readyz
+              port: https
+              scheme: HTTPS
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: https
+              scheme: HTTPS
+          resources:
+            {{- toYaml .Values.webhook.resources | nindent 12 }}
+        - name: tls-cert-updater
+          image: "{{ .Values.webhook.tlsCertUpdaterImage.repository }}:{{ .Values.webhook.tlsCertUpdaterImage.tag }}"
+          imagePullPolicy: {{ .Values.webhook.tlsCertUpdaterImage.pullPolicy }}
+          command:
+            - /bin/sh
+            - -cxe
+            - inotifyd /tls-cert-updater/tls-cert-updater.sh /tls-cert-secret:d
+          volumeMounts:
+            - name: tls-cert-secret
+              mountPath: /tls-cert-secret
+              readOnly: true
+            - name: tls-cert-effective
+              mountPath: /tls-cert-effective
+            - name: tls-cert-updater
+              mountPath: /tls-cert-updater
+              readOnly: true
+      volumes:
+        - name: tls-cert-secret
+          secret:
+            secretName: snapshot-validation-secret
+        - name: tls-cert-effective
+          emptyDir: {}
+        - name: tls-cert-updater
+          emptyDir: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/volume-snapshot-cert
+  name: "validation-webhook.snapshot.storage.k8s.io"
+webhooks:
+- name: "validation-webhook.snapshot.storage.k8s.io"
+  rules:
+  - apiGroups:   ["snapshot.storage.k8s.io"]
+    apiVersions: ["v1"]
+    operations:  ["CREATE", "UPDATE"]
+    resources:   ["volumesnapshots", "volumesnapshotcontents", "volumesnapshotclasses"]
+    scope:       "*"
+  clientConfig:
+    service:
+      namespace: "kube-system"
+      name: "snapshot-validation-service"
+      path: "/volumesnapshot"
+      port: {{ .Values.webhook.service.port }}
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  failurePolicy: Fail 
+  timeoutSeconds: 2
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/volume-snapshot-cert
+  name: "validation-webhook.groupsnapshot.storage.k8s.io"
+webhooks:
+- name: "validation-webhook.groupsnapshot.storage.k8s.io"
+  rules:
+  - apiGroups:   ["groupsnapshot.storage.k8s.io"]
+    apiVersions: ["v1alpha1"]
+    operations:  ["CREATE", "UPDATE"]
+    resources:   ["volumegroupsnapshots", "volumegroupsnapshotcontents", "volumegroupsnapshotclasses"]
+    scope:       "*"
+  clientConfig:
+    service:
+      namespace: "kube-system"
+      name: "snapshot-validation-service"
+      path: "/volumegroupsnapshot"
+      port: {{ .Values.webhook.service.port }}
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  failurePolicy: Fail 
+  timeoutSeconds: 2
+{{- end }}
