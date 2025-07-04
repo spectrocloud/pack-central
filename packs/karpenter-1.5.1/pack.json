@@ -9,8 +9,7 @@
   ],
   "displayName": "Karpenter",
   "charts": [
-    "charts/karpenter-1.5.1.tgz",
-    "charts/karpenter-crd-1.5.1.tgz"
+    "charts/karpenter-1.5.1.tgz"
   ],
   "layer": "addon",
   "name": "karpenter",
