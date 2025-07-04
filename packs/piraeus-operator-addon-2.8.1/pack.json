@@ -2,7 +2,9 @@
 
   "annotations": {
     "prerequisitesRequired": "true",
-    "source": "spectrocloud"
+
+    "source": "community",
+    "contributor": "spectrocloud"
   },
   "cloudTypes": [
     "edge-native"
