@@ -1,0 +1,17 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },  
+  "cloudTypes": [
+    "eks"
+  ],
+  "displayName": "Karpenter",
+  "charts": [
+    "charts/karpenter-1.5.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "karpenter",
+  "version": "1.5.1"
+}
