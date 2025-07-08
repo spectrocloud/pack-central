@@ -29,3 +29,8 @@ a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/argocd-3.26.7/values.yaml:private
 a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/hipster-1.1.0/manifests/hipster.yaml:kubernetes-secret-yaml:27
 a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/hipster-2.0.0/manifests/hipster.yaml:kubernetes-secret-yaml:27
 a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/hipster-3.0.0/manifests/hipster.yaml:kubernetes-secret-yaml:27
+f867358ce68eef9e5e3d800bd6bd9103e81567f0:packs/kubeflow-serving-1.5.0/manifests/base_manifests.yaml:azure-ad-client-secret:4547
+f867358ce68eef9e5e3d800bd6bd9103e81567f0:packs/kubeflow-pipelines-1.5.0/manifests/base_manifests.yaml:azure-ad-client-secret:4547
+f867358ce68eef9e5e3d800bd6bd9103e81567f0:packs/kubeflow-full-1.5.0/manifests/base_manifests.yaml:azure-ad-client-secret:4547
+f867358ce68eef9e5e3d800bd6bd9103e81567f0:packs/kubeflow-training-1.5.0/manifests/base_manifests.yaml:azure-ad-client-secret:4547
+f867358ce68eef9e5e3d800bd6bd9103e81567f0:packs/consul-k8s-1.3.0/charts/consul/test/terraform/openshift/main.tf:azure-ad-client-secret:123
