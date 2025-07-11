@@ -1,0 +1,33 @@
+{
+
+  "annotations": {
+    "prerequisitesRequired": "true",
+    "source": "spectrocloud",
+    "architecture": "amd64,arm64",
+    "airgap": "true"
+  },
+  "cloudTypes": [
+    "edge-native"
+  ],
+  "displayName": "Piraeus Operator",
+  "charts": [
+    "charts/piraeus-2.9.0.tgz",
+    "charts/linstor-gui-1.9.5.tgz",
+    "charts/piraeus-cluster-1.0.1.tgz",
+    "charts/piraeus-dashboard-1.0.0.tgz"
+  ],
+  "layer": "csi",
+  "name": "piraeus-operator",
+  "version": "2.9.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "piraeus-operator",
+        "layer": "csi",
+        "minVersion": "2.9.0",
+        "maxVersion": "",
+        "type": "upgrade"
+      }
+    ]
+  }
+}
