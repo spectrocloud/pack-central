@@ -9,7 +9,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ include "piraeus-operator.fullname" . }}
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
   {{- include "piraeus-operator.labels" . | nindent 4 }}
 spec:
@@ -37,7 +37,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "piraeus-operator.certifcateName" . }}
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "piraeus-operator.labels" . | nindent 4 }}
 type: kubernetes.io/tls
@@ -51,7 +51,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "piraeus-operator.fullname" . }}-validating-webhook-configuration
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "piraeus-operator.labels" . | nindent 4 }}
   {{- if .Values.tls.certManagerIssuerRef }}
