@@ -2,9 +2,8 @@
 
   "annotations": {
     "prerequisitesRequired": "true",
-    "source": "spectrocloud",
-    "architecture": "amd64,arm64",
-    "airgap": "true"
+    "source": "community",
+    "contributor": "spectrocloud"
   },
   "cloudTypes": [
     "edge-native"
