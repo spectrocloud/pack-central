@@ -1,0 +1,13 @@
+enabled: true
+image:
+  repository: us-docker.pkg.dev/palette-images/packs/csi-piraeus-operator/2.8.1/linstor-gui:v1.9.5
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+replicas: 1
+service:
+  type: NodePort
+  nodePort: 30337
+  # type: LoadBalancer
+  # port: 8000
+apiHost: "http://linstor-controller.piraeus-system.svc.cluster.local:3370"

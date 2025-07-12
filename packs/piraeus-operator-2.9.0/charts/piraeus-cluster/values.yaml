@@ -1,0 +1,76 @@
+cluster:
+  masterPassphrase:
+    # Leave empty to auto-generate
+    value: ""
+  spec: {}
+    # linstorPassphraseSecret: linstor-passphrase
+    # # Don't run on control plane nodes by default. Remove if you want to use control plane nodes.
+    # nodeAffinity:
+    #   nodeSelectorTerms:
+    #     - matchExpressions:
+    #         - key: node-role.kubernetes.io/control-plane
+    #           operator: DoesNotExist
+    # # If you need to pull images from a different registry, change the value below
+    # repository: quay.io/piraeusdatastore
+
+linstorSatelliteConfigurations: []
+  # - name: host-network
+  #   spec:
+  #     podTemplate:
+  #       spec:
+  #         hostNetwork: true
+  # - name: lvm-thin-storage-pool
+  #   spec:
+  #     storagePools:
+  #       - name: lvm-thin
+  #         lvmThinPool:
+  #           volumeGroup: drbd-vg
+  #           thinPool: thinpool
+  #         source:
+  #           hostDevices:
+  #             - /dev/sdb
+  # - name: http-proxy
+  #   spec:
+  #     podTemplate:
+  #       spec:
+  #         initContainers:
+  #           - name: drbd-module-loader
+  #             env:
+  #               - name: HTTP_PROXY
+  #                 value: http://10.0.0.1:3128 # Add your proxy connection here
+  #               - name: HTTPS_PROXY
+  #                 value: http://10.0.0.1:3128 # Add your proxy connection here
+  #               - name: NO_PROXY
+  #                 value: localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12 # Add internal IP ranges and domains here
+
+linstorNodeConnections: []
+  # - name: network-paths
+  #   spec:
+  #     paths:
+  #       - name: path1
+  #         interface: data-nic
+
+storageClasses: []
+  # - name: linstor-lvm-storage
+  #   annotations:
+  #     storageclass.kubernetes.io/is-default-class: "true"
+  #     #storageclass.kubevirt.io/is-default-virt-class: "true"
+  #   reclaimPolicy: Delete
+  #   allowVolumeExpansion: true
+  #   volumeBindingMode: WaitForFirstConsumer
+  #   parameters:
+  #     placementCount: "2"
+  #     storagePool: "lvm-thin"
+  #     resourceGroup: "lvm"
+  #     #replicasOnDifferent: topology.kubernetes.io/zone
+  #     DrbdOptions/Net/allow-two-primaries: "yes"
+  #     allowRemoteVolumeAccess: "false"
+  #     DrbdOptions/Disk/disk-flushes: "no"
+  #     DrbdOptions/Disk/md-flushes: "no"
+  #     DrbdOptions/Disk/al-extents: "65534"
+  #     DrbdOptions/Net/max-buffers: "10000"
+  #     DrbdOptions/Net/max-epoch-size: "10000"
+  #     DrbdOptions/Net/sndbuf-size: "0"
+
+monitoring:
+  installPrometheusRules: true
