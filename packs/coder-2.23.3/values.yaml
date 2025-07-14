@@ -1,5 +1,14 @@
-# coder -- Primary configuration for `coder server`.
-coder:
+pack:
+  content:
+    images:
+      - image: ghcr.io/coder/coder:v2.23.3
+    charts:
+      - repo: helm.coder.com/v2
+        name: coder
+        version: 2.23.3
+  namespace: "monitoring"
+    # coder -- Primary configuration for `coder server`.
+  coder:
   # coder.env -- The environment variables to set for Coder. These can be used
   # to configure all aspects of `coder server`. Please see `coder server --help`
   # for information about what environment variables can be set.
@@ -17,7 +26,7 @@ coder:
   #
   # We will additionally set CODER_ACCESS_URL if unset to the cluster service
   # URL, unless coder.envUseClusterAccessURL is set to false.
-  env: []
+    env: []
   # - name: "CODER_ACCESS_URL"
   #   value: "https://coder.example.com"
 
@@ -28,7 +37,7 @@ coder:
   #
   # If setting CODER_ACCESS_URL in coder.envFrom, then you must set
   # coder.envUseClusterAccessURL to false.
-  envFrom: []
+    envFrom: []
   # - configMapRef:
   #     name: coder-config
   # - secretRef:
@@ -37,52 +46,52 @@ coder:
   # coder.envUseClusterAccessURL -- Determines whether the CODER_ACCESS_URL env
   # is added to coder.env if it's not already set there. Set this to false if
   # defining CODER_ACCESS_URL in coder.envFrom to avoid conflicts.
-  envUseClusterAccessURL: true
+    envUseClusterAccessURL: true
 
   # coder.image -- The image to use for Coder.
-  image:
+    image:
     # coder.image.repo -- The repository of the image.
-    repo: "ghcr.io/coder/coder"
+      repo: "ghcr.io/coder/coder"
     # coder.image.tag -- The tag of the image, defaults to {{.Chart.AppVersion}}
     # if not set. If you're using the chart directly from git, the default
     # app version will not work and you'll need to set this value. The helm
     # chart helpfully fails quickly in this case.
-    tag: ""
+      tag: ""
     # coder.image.pullPolicy -- The pull policy to use for the image. See:
     # https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy
-    pullPolicy: IfNotPresent
+      pullPolicy: IfNotPresent
     # coder.image.pullSecrets -- The secrets used for pulling the Coder image from
     # a private registry.
-    pullSecrets: []
+      pullSecrets: []
     #  - name: "pull-secret"
 
   # coder.initContainers -- Init containers for the deployment. See:
   # https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-  initContainers:
-    []
+    initContainers:
+      []
     # - name: init-container
     #   image: busybox:1.28
     #   command: ['sh', '-c', "sleep 2"]
 
   # coder.annotations -- The Deployment annotations. See:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  annotations: {}
+    annotations: {}
 
   # coder.labels -- The Deployment labels. See:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-  labels: {}
+    labels: {}
 
   # coder.podAnnotations -- The Coder pod annotations. See:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  podAnnotations: {}
+    podAnnotations: {}
 
   # coder.podLabels -- The Coder pod labels. See:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-  podLabels: {}
+    podLabels: {}
 
   # coder.serviceAccount -- Configuration for the automatically created service
   # account. Creation of the service account cannot be disabled.
-  serviceAccount:
+    serviceAccount:
     # coder.serviceAccount.workspacePerms -- Whether or not to grant the coder
     # service account permissions to manage workspaces. This includes
     # permission to manage pods and persistent volume claims in the deployment
@@ -90,13 +99,13 @@ coder:
     #
     # It is recommended to keep this on if you are using Kubernetes templates
     # within Coder.
-    workspacePerms: true
+      workspacePerms: true
     # coder.serviceAccount.enableDeployments -- Provides the service account
     # permission to manage Kubernetes deployments. Depends on workspacePerms.
-    enableDeployments: true
+      enableDeployments: true
     # coder.serviceAccount.extraRules -- Additional permissions added to the SA
     # role. Depends on workspacePerms.
-    extraRules: []
+      extraRules: []
     # - apiGroups: [""]
     #   resources: ["services"]
     #   verbs:
@@ -110,62 +119,62 @@ coder:
     #     - watch
 
     # coder.serviceAccount.annotations -- The Coder service account annotations.
-    annotations: {}
+      annotations: {}
     # coder.serviceAccount.name -- The service account name
-    name: coder
+      name: coder
     # coder.serviceAccount.disableCreate -- Whether to create the service account or use existing service account.
-    disableCreate: false
+      disableCreate: false
 
   # coder.securityContext -- Fields related to the container's security
   # context (as opposed to the pod). Some fields are also present in the pod
   # security context, in which case these values will take precedence.
-  securityContext:
+    securityContext:
     # coder.securityContext.runAsNonRoot -- Requires that the coder container
     # runs as an unprivileged user. If setting runAsUser to 0 (root), this
     # will need to be set to false.
-    runAsNonRoot: true
+      runAsNonRoot: true
     # coder.securityContext.runAsUser -- Sets the user id of the container.
     # For security reasons, we recommend using a non-root user.
-    runAsUser: 1000
+      runAsUser: 1000
     # coder.securityContext.runAsGroup -- Sets the group id of the container.
     # For security reasons, we recommend using a non-root group.
-    runAsGroup: 1000
+      runAsGroup: 1000
     # coder.securityContext.readOnlyRootFilesystem -- Mounts the container's
     # root filesystem as read-only.
-    readOnlyRootFilesystem: null
+      readOnlyRootFilesystem: null
     # coder.securityContext.seccompProfile -- Sets the seccomp profile for
     # the coder container.
-    seccompProfile:
-      type: RuntimeDefault
+      seccompProfile:
+        type: RuntimeDefault
     # coder.securityContext.allowPrivilegeEscalation -- Controls whether
     # the container can gain additional privileges, such as escalating to
     # root. It is recommended to leave this setting disabled in production.
-    allowPrivilegeEscalation: false
+      allowPrivilegeEscalation: false
 
   # coder.volumes -- A list of extra volumes to add to the Coder pod.
-  volumes: []
+    volumes: []
   # - name: "my-volume"
   #   emptyDir: {}
 
   # coder.volumeMounts -- A list of extra volume mounts to add to the Coder pod.
-  volumeMounts: []
+    volumeMounts: []
   # - name: "my-volume"
   #   mountPath: "/mnt/my-volume"
 
   # coder.tls -- The TLS configuration for Coder.
-  tls:
+    tls:
     # coder.tls.secretNames -- A list of TLS server certificate secrets to mount
     # into the Coder pod. The secrets should exist in the same namespace as the
     # Helm deployment and should be of type "kubernetes.io/tls". The secrets
     # will be automatically mounted into the pod if specified, and the correct
     # "CODER_TLS_*" environment variables will be set for you.
-    secretNames: []
+      secretNames: []
 
   # coder.replicaCount -- The number of Kubernetes deployment replicas. This
   # should only be increased if High Availability is enabled.
   #
   # This is an Enterprise feature. Contact sales@coder.com.
-  replicaCount: 1
+    replicaCount: 1
 
   # coder.workspaceProxy -- Whether or not this deployment of Coder is a Coder
   # Workspace Proxy. Workspace Proxies reduce the latency between the user and
@@ -182,13 +191,13 @@ coder:
   #
   # This is an Enterprise feature. Contact sales@coder.com
   # Docs: https://coder.com/docs/admin/workspace-proxies
-  workspaceProxy: false
+    workspaceProxy: false
 
   # coder.lifecycle -- container lifecycle handlers for the Coder container, allowing
   # for lifecycle events such as postStart and preStop events
   # See: https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/
-  lifecycle:
-    {}
+    lifecycle:
+      {}
     # postStart:
     #   exec:
     #     command: ["/bin/sh", "-c", "echo postStart"]
@@ -198,8 +207,8 @@ coder:
 
   # coder.resources -- The resources to request for Coder. These are optional
   # and are not set by default.
-  resources:
-    {}
+    resources:
+      {}
     # limits:
     #   cpu: 2000m
     #   memory: 4096Mi
@@ -208,35 +217,35 @@ coder:
     #   memory: 4096Mi
 
   # coder.certs -- CA bundles to mount inside the Coder pod.
-  certs:
+    certs:
     # coder.certs.secrets -- A list of CA bundle secrets to mount into the Coder
     # pod. The secrets should exist in the same namespace as the Helm
     # deployment.
     #
     # The given key in each secret is mounted at
     # `/etc/ssl/certs/{secret_name}.crt`.
-    secrets:
-      []
+      secrets:
+        []
       # - name: "my-ca-bundle"
       #   key: "ca-bundle.crt"
 
   # coder.affinity -- Allows specifying an affinity rule for the `coder` deployment.
   # The default rule prefers to schedule coder pods on different
   # nodes, which is only applicable if coder.replicaCount is greater than 1.
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                    - "coder"
-            topologyKey: kubernetes.io/hostname
-          weight: 1
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                      - "coder"
+              topologyKey: kubernetes.io/hostname
+            weight: 1
 
-  topologySpreadConstraints:
+    topologySpreadConstraints:
     # - maxSkew: 1
     #   topologyKey: kubernetes.io/hostname
     #   whenUnsatisfiable: DoNotSchedule
@@ -246,8 +255,8 @@ coder:
 
   # coder.tolerations -- Tolerations for tainted nodes.
   # See: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  tolerations:
-    []
+    tolerations:
+      []
     # - key: "key"
     #   operator: "Equal"
     #   value: "value"
@@ -255,99 +264,99 @@ coder:
 
   # coder.nodeSelector -- Node labels for constraining coder pods to nodes.
   # See: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
-  nodeSelector: {}
+    nodeSelector: {}
   #  kubernetes.io/os: linux
 
   # coder.service -- The Service object to expose for Coder.
-  service:
+    service:
     # coder.service.enable -- Whether to create the Service object.
-    enable: true
+      enable: true
     # coder.service.type -- The type of service to expose. See:
     # https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-    type: LoadBalancer
+      type: LoadBalancer
     # coder.service.sessionAffinity -- Must be set to ClientIP or None
     # AWS ELB does not support session stickiness based on ClientIP, so you must set this to None.
     # The error message you might see: "Unsupported load balancer affinity: ClientIP"
     # https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity
-    sessionAffinity: None
+      sessionAffinity: None
     # coder.service.externalTrafficPolicy -- The external traffic policy to use.
     # You may need to change this to "Local" to preserve the source IP address
     # in some situations.
     # https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
-    externalTrafficPolicy: Cluster
+      externalTrafficPolicy: Cluster
     # coder.service.loadBalancerIP -- The IP address of the LoadBalancer. If not
     # specified, a new IP will be generated each time the load balancer is
     # recreated. It is recommended to manually create a static IP address in
     # your cloud and specify it here in production to avoid accidental IP
     # address changes.
-    loadBalancerIP: ""
+      loadBalancerIP: ""
     # coder.service.loadBalancerClass -- The class name of the LoadBalancer. See:
     # https://kubernetes.io/docs/concepts/services-networking/service/#load-balancer-class
-    loadBalancerClass: ""
+      loadBalancerClass: ""
     # coder.service.annotations -- The service annotations. See:
     # https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-    annotations: {}
+      annotations: {}
     # coder.service.httpNodePort -- Enabled if coder.service.type is set to
     # NodePort or LoadBalancer. If not set, Kubernetes will allocate a port from the default
     # range, 30000-32767.
-    httpNodePort: ""
+      httpNodePort: ""
     # coder.service.httpsNodePort -- Enabled if coder.service.type is set to
     # NodePort or LoadBalancer. If not set, Kubernetes will allocate a port from the default
     # range, 30000-32767.
-    httpsNodePort: ""
+      httpsNodePort: ""
 
   # coder.ingress -- The Ingress object to expose for Coder.
-  ingress:
+    ingress:
     # coder.ingress.enable -- Whether to create the Ingress object. If using an
     # Ingress, we recommend not specifying coder.tls.secretNames as the Ingress
     # will handle TLS termination.
-    enable: false
+      enable: false
     # coder.ingress.className -- The name of the Ingress class to use.
-    className: ""
+      className: ""
     # coder.ingress.host -- The hostname to match on.
     # Be sure to also set CODER_ACCESS_URL within coder.env[]
-    host: ""
+      host: ""
     # coder.ingress.wildcardHost -- The wildcard hostname to match on. Should be
     # in the form "*.example.com" or "*-suffix.example.com". If you are using a
     # suffix after the wildcard, the suffix will be stripped from the created
     # ingress to ensure that it is a legal ingress host. Optional if not using
     # applications over subdomains.
     # Be sure to also set CODER_WILDCARD_ACCESS_URL within coder.env[]
-    wildcardHost: ""
+      wildcardHost: ""
     # coder.ingress.annotations -- The ingress annotations.
-    annotations: {}
+      annotations: {}
     # coder.ingress.tls -- The TLS configuration to use for the Ingress.
-    tls:
+      tls:
       # coder.ingress.tls.enable -- Whether to enable TLS on the Ingress.
-      enable: false
+        enable: false
       # coder.ingress.tls.secretName -- The name of the TLS secret to use.
-      secretName: ""
+        secretName: ""
       # coder.ingress.tls.wildcardSecretName -- The name of the TLS secret to
       # use for the wildcard host.
-      wildcardSecretName: ""
+        wildcardSecretName: ""
 
   # coder.command -- The command to use when running the Coder container. Used
   # for customizing the location of the `coder` binary in your image.
-  command:
-    - /opt/coder
+    command:
+      - /opt/coder
 
   # coder.commandArgs -- Set arguments for the entrypoint command of the Coder pod.
-  commandArgs: []
+    commandArgs: []
 
 # provisionerDaemon -- Configuration for external provisioner daemons.
 #
 # This is an Enterprise feature. Contact sales@coder.com.
-provisionerDaemon:
+  provisionerDaemon:
   # provisionerDaemon.pskSecretName -- The name of the Kubernetes secret that contains the
   # Pre-Shared Key (PSK) to use to authenticate external provisioner daemons with Coder.  The
   # secret must be in the same namespace as the Helm deployment, and contain an item called "psk"
   # which contains the pre-shared key.
-  pskSecretName: ""
+    pskSecretName: ""
 
 # extraTemplates -- Array of extra objects to deploy with the release. Strings
 # are evaluated as a template and can use template expansions and functions. All
 # other objects are used as yaml.
-extraTemplates:
+  extraTemplates:
   #- |
   #    apiVersion: v1
   #    kind: ConfigMap
