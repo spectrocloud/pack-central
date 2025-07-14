@@ -6,7 +6,7 @@ pack:
       - repo: helm.coder.com/v2
         name: coder
         version: 2.23.3
-  namespace: "monitoring"
+  namespace: "coder"
     # coder -- Primary configuration for `coder server`.
   coder:
   # coder.env -- The environment variables to set for Coder. These can be used
