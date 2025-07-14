@@ -6,7 +6,7 @@
     "contributor" : "Coder Technologies, Inc."
   },
   "charts": [
-    "charts/coder-2.21.3.tgz"
+    "charts/coder-2.23.3.tgz"
   ],
   "cloudTypes": [
     "all"
@@ -14,5 +14,5 @@
   "displayName": "Coder",
   "layer":"addon",
   "name": "coder-chart",
-  "version": "2.21.3"
+  "version": "2.23.3"
 }

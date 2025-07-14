@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 2.21.3
+appVersion: 2.23.3
 dependencies:
 - name: libcoder
   repository: file://libcoder
@@ -19,4 +19,4 @@ name: coder
 sources:
 - https://github.com/coder/coder/tree/main/helm/coder
 type: application
-version: 2.21.3
+version: 2.23.3
