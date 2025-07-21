@@ -8,6 +8,7 @@ pack:
         version: 2.23.3
   namespace: "coder"
     # coder -- Primary configuration for `coder server`.
+charts:
   coder:
   # coder.env -- The environment variables to set for Coder. These can be used
   # to configure all aspects of `coder server`. Please see `coder server --help`
