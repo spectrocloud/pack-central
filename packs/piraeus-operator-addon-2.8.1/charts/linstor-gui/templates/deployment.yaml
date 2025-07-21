@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: linstor-gui
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
     app: linstor-gui
 spec:

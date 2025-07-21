@@ -158,7 +158,7 @@ charts:
           memory: 256Mi
         requests:
           cpu: 10m
-          memory: 64Mi 
+          memory: 64Mi
     kubeRbacProxy:
       enabled: false
       image:
