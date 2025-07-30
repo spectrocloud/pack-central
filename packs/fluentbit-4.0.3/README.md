@@ -13,9 +13,8 @@ The default configuration in this package collects logs from containers in `/var
 Kubernetes 1.27 and higher are supported.
 
 The following cloud types are supported:
-* EKS
-* GKE
-* AKS
+* all clouds
+
 
 
 ## Parameters
