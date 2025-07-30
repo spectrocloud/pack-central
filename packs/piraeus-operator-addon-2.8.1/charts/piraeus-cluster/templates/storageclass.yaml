@@ -4,6 +4,7 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   annotations:
+    helm.sh/hook: post-install,post-upgrade
 {{ .annotations | toYaml | indent 4 }}
   name: {{ .name }}
 provisioner: linstor.csi.linbit.com
