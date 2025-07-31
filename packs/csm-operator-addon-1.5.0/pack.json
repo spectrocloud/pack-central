@@ -9,6 +9,6 @@
     "charts/csm-operator-1.5.0.tgz"
   ],
   "layer": "addon",
-  "name": "csm-operator-addon",
+  "name": "dell-csm-operator-addon",
   "version": "1.5.0"
 }
