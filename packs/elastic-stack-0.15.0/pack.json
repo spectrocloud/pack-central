@@ -1,0 +1,36 @@
+{
+    "addonType": "logging",
+    "annotations": {
+      "commit_msg": "Elastic Cloud on Kubernetes (ECK) Stack",
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "charts": [
+      "charts/eck-stack-0.15.0.tgz"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "ECK Stack",
+    "layer":"addon",
+    "name": "elastic-stack",
+    "version": "0.15.0",
+    "constraints": {
+      "dependencies": [
+        {
+          "packName": "elastic-operator",
+          "minVersion": "3.0.0",
+          "maxVersion": "",
+          "layer": "addon",
+          "type": "required"
+        },
+        {
+          "packName": "kubernetes",
+          "layer": "k8s",
+          "minVersion": "1.27",
+          "maxVersion": "",
+          "type": "optional"
+        }
+      ]
+    }
+}
