@@ -3,7 +3,7 @@
     "annotations": {
       "commit_msg": "LocalAI - The free, Open Source OpenAI alternative",
       "source": "community",
-      "contributor" : "pedro@spectrocloud"
+      "contributor" : "spectrocloud"
     },
     "charts": [
       "charts/local-ai-3.4.2.tgz"
