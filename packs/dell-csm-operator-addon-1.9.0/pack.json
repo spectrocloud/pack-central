@@ -1,0 +1,18 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "docsURL": "",
+    "source": "spectrocloud"
+  },
+  "cloudTypes": [
+    "maas",
+    "edge-native"
+  ],
+  "displayName": "Dell CSM Operator",
+  "charts": [
+    "charts/csm-operator-1.9.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "dell-csm-operator-addon",
+  "version": "1.9.0"
+}

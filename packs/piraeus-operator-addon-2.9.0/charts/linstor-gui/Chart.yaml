@@ -1,0 +1,16 @@
+apiVersion: v2
+name: linstor-gui
+description: |
+  The LINSTOR GUI provides a dashboard for Piraeus.
+type: application
+version: 1.9.5
+appVersion: "v1.9.5"
+maintainers:
+  - name: Spectro Cloud
+    url: https://www.spectrocloud.com
+home: https://github.com/LINBIT/linstor-gui
+icon: https://raw.githubusercontent.com/piraeusdatastore/piraeus/master/artwork/sandbox-artwork/icon/color.svg
+keywords:
+  - storage
+sources:
+  - https://github.com/LINBIT/linstor-gui

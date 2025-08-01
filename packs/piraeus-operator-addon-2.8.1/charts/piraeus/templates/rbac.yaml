@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "piraeus-operator.serviceAccountName" . }}
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
   {{- include "piraeus-operator.labels" . | nindent 4 }}
 ---
@@ -410,7 +410,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "piraeus-operator.fullname" . }}-leader-election-role
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "piraeus-operator.labels" . | nindent 4 }}
 rules:
@@ -450,7 +450,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "piraeus-operator.fullname" . }}-leader-election-rolebinding
-  namespace: piraeus-system
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "piraeus-operator.labels" . | nindent 4 }}
 roleRef:
