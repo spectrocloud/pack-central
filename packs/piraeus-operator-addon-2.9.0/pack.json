@@ -1,5 +1,5 @@
 {
-
+  "addonType": "system app",
   "annotations": {
     "prerequisitesRequired": "true",
     "source": "community",
