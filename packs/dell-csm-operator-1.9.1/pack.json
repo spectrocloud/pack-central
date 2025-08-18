@@ -1,0 +1,16 @@
+{
+  "annotations": {
+    "docsURL": "",
+    "source": "spectrocloud"
+  },
+  "cloudTypes": [
+    "maas"
+  ],
+  "displayName": "Dell CSM Operator",
+  "charts": [
+    "charts/csm-operator-1.9.1.tgz"
+  ],
+  "layer": "csi",
+  "name": "csi-dell-csm-operator",
+  "version": "1.9.1"
+}
