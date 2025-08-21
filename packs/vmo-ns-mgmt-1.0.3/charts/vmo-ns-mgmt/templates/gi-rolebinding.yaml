@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-golden-images
+  namespace: {{ .Values.goldenImagesNamespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vmo-role-golden-images
+subjects:
+{{- range .Values.vmEnabledNamespaces }}
+- kind: ServiceAccount
+  name: default
+  namespace: {{ . | quote }}
+{{- end }}

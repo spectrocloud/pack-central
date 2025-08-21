@@ -1,0 +1,123 @@
+{{ range $index, $cluster := (lookup "cluster.spectrocloud.com/v1alpha1" "SpectroCluster" "" "").items }}
+  {{- range $rbac := $.Values.rbac -}}
+    {{- if or (has $cluster.metadata.name $rbac.clusters) (not (hasKey $rbac "clusters")) }}
+{{- if $rbac.admins }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-admins
+  namespace:  {{ $rbac.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spectro-vm-admin
+subjects:
+{{- range $group := $rbac.admins.groups }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ $group | quote }}
+{{- end }}
+{{- range $user := $rbac.admins.users }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+{{- end }}
+---
+{{- if $rbac.powerusers }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-powerusers
+  namespace:  {{ $rbac.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spectro-vm-power-user
+subjects:
+{{- range $group := $rbac.powerusers.groups }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ $group | quote }}
+{{- end }}
+{{- range $user := $rbac.powerusers.users }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+{{- end }}
+---
+{{- if $rbac.users }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-users
+  namespace:  {{ $rbac.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spectro-vm-user
+subjects:
+{{- range $group := $rbac.users.groups }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ $group | quote }}
+{{- end }}
+{{- range $user := $rbac.users.users }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+{{- end }}
+---
+{{- if $rbac.viewers }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-viewers
+  namespace:  {{ $rbac.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spectro-vm-viewer
+subjects:
+{{- range $group := $rbac.viewers.groups }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ $group | quote }}
+{{- end }}
+{{- range $user := $rbac.viewers.users }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+{{- end }}
+---
+{{- if $rbac.custom }}
+{{- range $custom := $rbac.custom }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmo-rolebinding-custom-{{ $custom.role }}
+  namespace:  {{ $rbac.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $custom.role | quote }}
+subjects:
+{{- range $group := $custom.groups }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ $group | quote }}
+{{- end }}
+{{- range $user := $custom.users }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
