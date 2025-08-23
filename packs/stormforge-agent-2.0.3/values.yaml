@@ -1,0 +1,124 @@
+pack:
+  namespace: "stormforge-system"
+  content:
+    images:
+      - image: registry.stormforge.io/optimize/workload-agent:2.0.3
+    charts:
+      - repo: https://registry.stormforge.io/chartrepo/library/
+        name: stormforge-agent
+        version: 2.0.3
+      #- repo: https://registry.stormforge.io/chartrepo/library/
+      #  name: stormforge-applier
+      #  version: 2.0.3
+
+# Default values for optimize-live.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+charts:
+  stormforge-agent:
+    ##
+    # StormForge Agent Settings
+    ##
+
+    ### Required Configuration ###
+
+    # The following required values will be supplied by `stormforge create auth`.
+    #
+    # ---
+    stormforge:
+      address: "https://api.stormforge.io/"
+      clusterName:
+    authorization:
+      clientID:
+      clientSecret:
+      issuer: "https://api.stormforge.io/"
+
+    ### End Required Configuration ###
+
+    # proxyUrl: "https://proxy.example.com"
+    # noProxy: "10.76.0.0/16"
+    #
+    # imagePullSecrets:
+    # - name: secret-name
+    resetSecret: false
+    workload:
+      autoDiscovery: true
+      denyNamespaces:
+      - kube-system
+      # `allowNamespaces` can be used as an alternative to `denyNamespaces`. Note
+      # that `allowNamespaces` and `denyNamespaces` are mututally exclusive; only
+      # one of them may be specified.
+      # `allowNamespaces` takes precedence over `denyNamespaces` in case both are
+      # specified.
+      allowNamespaces: []
+      # - app-1
+      # - app-2
+      # - monitoring
+
+      debug: false
+      image:
+        repository: registry.stormforge.io/optimize/workload-agent
+        pullPolicy: IfNotPresent
+        tag: "2.0.3"
+      resources:
+        requests:
+          cpu: 250m
+          memory: 100M
+        limits:
+          cpu: 500m
+          memory: 1000M
+    prom:
+      image:
+        repository: prom/prometheus
+        pullPolicy: IfNotPresent
+        tag: v2.44.0
+      resources:
+        requests:
+          cpu: 200m
+          memory: 100M
+        limits:
+          cpu: 1
+          memory: 1000M
+      remoteWriteUrl: "https://in.stormforge.io/prometheus/write"
+      tokenUrl: "https://api.stormforge.io/oauth/token"
+      scrapeTimeout: 8s
+    serviceAccount:
+      create: true
+      name: ""
+      annotations: {}
+    rbac:
+      # If set to false, user needs to handle all rbac needed for agent + workload manager
+      # there is a minimum of rules for metrics required, see template
+      create: true
+      # Leverage k8s "view" role for resources, minimizing RBAC rules needed
+      # and creating an additional clusterrolebinding for the service account
+      useViewRole: true
+      additional: |-
+        # In this section, we add resources that are not usually part of the view role
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheuses
+          - alertmanagers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - optimize.stormforge.io
+          resources:
+          - lives
+          verbs:
+          - get
+          - list
+          - watch
+    # Volume for WAL - https://grafana.com/blog/2021/04/12/how-to-troubleshoot-remote-write-issues-in-prometheus/
+    # Assumption on needed_disk_space = (retention_time_in_seconds / scrapeInterval) * number_of_collected_metrics * bytes_per_sample )) * workloads_per_cluster
+    # Assuming each metric takes 512 bytes and 2000 workloads with 2 containers
+    # needed_disk_space = ((30 * 60 / 10) * 11 * 512) * 2000 ~= 200Mi
+    storageVolumeSize: 250Mi
+    agentRetentionMaxTime: 30m
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
