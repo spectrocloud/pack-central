@@ -1,7 +1,8 @@
 {
   "annotations": {
     "docsURL": "",
-    "source": "spectrocloud"
+    "source": "community",
+    "contributor": "spectrocloud"
   },
   "cloudTypes": [
     "maas"
