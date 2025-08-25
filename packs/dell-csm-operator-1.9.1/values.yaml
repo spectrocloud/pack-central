@@ -23,7 +23,7 @@ pack:
       - image: quay.io/dell/container-storage-modules/csm-metrics-powermax:v1.7.0
       - image: quay.io/dell/container-storage-modules/csm-metrics-powerflex:v1.12.0
       - image: quay.io/dell/container-storage-modules/podmon:v1.13.0
-      - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202409051837.p0.g8ea2c99.assembly.stream.el9
+#      - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202409051837.p0.g8ea2c99.assembly.stream.el9
       - image: registry.k8s.io/sig-storage/csi-attacher:v4.8.0
       - image: registry.k8s.io/sig-storage/csi-provisioner:v5.1.0
       - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
