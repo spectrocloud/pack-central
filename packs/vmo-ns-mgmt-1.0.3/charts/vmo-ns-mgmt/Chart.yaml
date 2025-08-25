@@ -1,0 +1,4 @@
+apiVersion: v2
+name: vmo-ns-mgmt
+version: 1.0.3
+appVersion: 1.0.3
