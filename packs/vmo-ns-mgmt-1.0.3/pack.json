@@ -1,0 +1,16 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "source": "spectrocloud"
+  },
+  "cloudTypes": [
+   "all"
+  ],
+  "displayName": "VMO Namespace Management",
+  "charts": [
+    "charts/vmo-ns-mgmt-1.0.3.tgz"
+  ],
+  "layer": "addon",
+  "name": "vmo-ns-mgmt",
+  "version": "1.0.3"
+}
