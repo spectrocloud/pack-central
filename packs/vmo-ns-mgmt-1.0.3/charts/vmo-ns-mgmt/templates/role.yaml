@@ -1,0 +1,9 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vmo-role-golden-images
+  namespace: {{ .Values.goldenImagesNamespace | quote }}
+rules:
+- apiGroups: ["cdi.kubevirt.io"]
+  resources: ["datavolumes/source"]
+  verbs: ["create"]
