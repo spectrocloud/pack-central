@@ -1,0 +1,9 @@
+{{- range (without .Values.vmEnabledNamespaces list "default" "virtual-machines" .Values.goldenImagesNamespace) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . | quote }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+---
+{{- end }}

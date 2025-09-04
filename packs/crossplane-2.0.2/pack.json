@@ -1,0 +1,18 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Crossplane",
+    "charts": [
+      "charts/crossplane-2.0.2.tgz"
+    ],
+    "layer":"addon",
+    "name": "crossplane",
+    "version": "2.0.2"
+  }
+  
