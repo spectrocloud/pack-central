@@ -1,0 +1,28 @@
+{{- if (include "kubeflow.trainingOperator.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.trainingOperator.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+    - name: monitoring-port
+      port: {{ .Values.trainingOperator.service.monitoring.port }}
+      targetPort: {{ .Values.trainingOperator.service.monitoring.targetPort }}
+    - name: webhook-server
+      port: {{ .Values.trainingOperator.service.webhookServer.port }}
+      protocol: TCP
+      targetPort: {{ .Values.trainingOperator.service.webhookServer.targetPort }}
+  selector:
+    {{- include "kubeflow.trainingOperator.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.trainingOperator.service.type }}
+
+{{- end }}

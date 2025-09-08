@@ -1,0 +1,31 @@
+{{- if (include "kubeflow.centraldashboard.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.roleName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+rules:
+- apiGroups:
+  - ""
+  - "app.k8s.io"
+  resources:
+  - applications
+  - pods
+  - pods/exec
+  - pods/log
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - get
+
+{{- end }}

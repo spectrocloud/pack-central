@@ -1,0 +1,11 @@
+{{- if (include "kubeflow.knativeIntegration.knativeEventing.enabled" .) }}
+
+apiVersion: operator.knative.dev/v1beta1
+kind: KnativeEventing
+metadata:
+  name: {{ .Values.knativeIntegration.knativeEventing.name }}
+  namespace: {{ .Values.knativeIntegration.knativeEventing.namespace }}
+spec:
+  {{- toYaml .Values.knativeIntegration.knativeEventing.operatorSpec | nindent 2 -}}
+{{- end }}
+

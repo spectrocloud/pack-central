@@ -1,0 +1,20 @@
+{
+  "addonType":"ai",
+  "annotations": {
+    "docsURL": "",
+    "source": "spectrocloud"
+  },
+  "cloudTypes": [
+      "all"
+  ],
+  "displayName": "Kubeflow",
+  "charts": [
+    "charts/metacontroller-4.11.22.tgz",
+    "charts/kubeflow-0.5.1.tgz",
+    "charts/kserve-0.13.0.tgz",
+    "charts/profile-0.1.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubeflow",
+  "version": "1.9.1"
+}

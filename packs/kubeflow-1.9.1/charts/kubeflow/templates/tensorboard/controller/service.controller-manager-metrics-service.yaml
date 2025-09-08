@@ -1,0 +1,28 @@
+{{- if (include "kubeflow.tensorboard.controller.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.tensorboard.controller.kubeRbacProxy.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.tensorboard.controller.labels" . | nindent 4 }}
+    control-plane: controller-manager
+  name: {{ include "kubeflow.tensorboard.controller.metricsService.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: https
+    # port: 8443
+    port: {{ .Values.tensorboard.controller.kubeRbacProxy.service.port }}
+    protocol: TCP
+    targetPort: https
+  selector:
+    {{- include "kubeflow.tensorboard.controller.selectorLabels" . | nindent 4 }}
+    control-plane: controller-manager
+  sessionAffinity: None
+  type: {{ .Values.tensorboard.controller.kubeRbacProxy.service.type }}
+
+{{- end }}

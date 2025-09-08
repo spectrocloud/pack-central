@@ -1,0 +1,36 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.autoscaling.enabled" . | eq "true") -}}
+
+{{- $componentName := include "kubeflow.notebooks.jupyterWebApp.name" . -}}
+{{- $minReplicas := include "kubeflow.notebooks.jupyterWebApp.autoscaling.minReplicas" . -}}
+{{- $maxReplicas := include "kubeflow.notebooks.jupyterWebApp.autoscaling.maxReplicas" . -}}
+{{- $targetCPUUtilizationPercentage := include "kubeflow.notebooks.jupyterWebApp.autoscaling.targetCPUUtilizationPercentage" . -}}
+{{- $targetMemoryUtilizationPercentage := include "kubeflow.notebooks.jupyterWebApp.autoscaling.targetMemoryUtilizationPercentage" . -}}
+
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ $componentName }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $componentName }}
+  minReplicas: {{ $minReplicas }}
+  maxReplicas: {{ $maxReplicas }}
+  metrics:
+    {{- if $targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ $targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ $targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

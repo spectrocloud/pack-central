@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.centraldashboard.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.centraldashboard.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8082
+  selector:
+    {{- include "kubeflow.centraldashboard.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.centraldashboard.service.type }}
+
+{{- end }}

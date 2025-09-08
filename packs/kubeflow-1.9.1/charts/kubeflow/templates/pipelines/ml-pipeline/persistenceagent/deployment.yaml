@@ -1,0 +1,100 @@
+{{- if (include "kubeflow.pipelines.persistenceAgent.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.persistenceAgent.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.persistenceAgent.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.persistenceAgent.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.persistenceAgent.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.persistenceAgent.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.persistenceAgent.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-persistenceagent
+        image: {{ include "kubeflow.pipelines.persistenceAgent.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.persistenceAgent.imagePullPolicy" . }}
+
+        env:
+        - name: TTL_SECONDS_AFTER_WORKFLOW_FINISH
+          value: {{ .Values.pipelines.persistenceAgent.config.ttlSecondsAfterWorkflowFinish | quote }}
+        - name: NUM_WORKERS
+          value: {{ .Values.pipelines.persistenceAgent.config.numWorkers | quote }}
+        - name: NAMESPACE
+          {{- if (include "kubeflow.deploymentMode.namespace" .) }}
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+          {{- else }}
+          value: ""
+          {{- end }}
+
+        {{- with .Values.pipelines.persistenceAgent.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.persistenceAgent.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+          - mountPath: /var/run/secrets/kubeflow/tokens
+            name: persistenceagent-sa-token
+
+      volumes:
+        - name: persistenceagent-sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: persistenceagent-sa-token
+                  expirationSeconds: 3600
+                  audience: pipelines.kubeflow.org
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.persistenceAgent.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.persistenceAgent.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.persistenceAgent.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.persistenceAgent.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.persistenceAgent.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+
+{{- end }}

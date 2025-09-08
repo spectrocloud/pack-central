@@ -1,0 +1,55 @@
+{{- if (include "kubeflow.istioIntegration.kubeflowJwksProxy.enabled" . | eq "true") -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.name" . }}
+  namespace: {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.namespace" . }}
+  labels:
+    {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "kubeflow.istioIntegration.kubeflowJwksProxy.name" . }}
+      containers:
+        - name: kubectl-proxy
+          image: docker.io/bitnami/kubectl
+          ports:
+            - name: http
+              containerPort: 8080
+          startupProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            httpGet:
+              path: /openid/v1/jwks
+              port: http
+          livenessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            httpGet:
+              path: /openid/v1/jwks
+              port: http
+          readinessProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            httpGet:
+              path: /openid/v1/jwks
+              port: http
+          args:
+            - proxy
+            - --address=0.0.0.0
+            - --port=8080
+            - --accept-hosts=.*
+            - --accept-paths=^(?:/openid/v1/jwks)|(?:/.well-known/openid-configuration)$
+            - --reject-methods=^(POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)$
+{{- end }}
