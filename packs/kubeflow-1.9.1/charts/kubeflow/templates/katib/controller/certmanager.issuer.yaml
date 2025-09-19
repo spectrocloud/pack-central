@@ -1,0 +1,12 @@
+{{- if (include "kubeflow.katib.controller.enabledWithCertManager" . )}}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.certIssuerName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selfSigned: {}
+{{- end }}

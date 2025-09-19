@@ -1,0 +1,16 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.createIstioIntegrationObjects" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  host: {{ include "kubeflow.tensorboard.tensorboardsWebApp.svc.fqdn" . }}
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+{{- end }}

@@ -1,0 +1,88 @@
+{{- if (include "kubeflow.admissionWebhook.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.admissionWebhook.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.admissionWebhook.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.admissionWebhook.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.admissionWebhook.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.admissionWebhook.baseName" . }}
+        image: {{ include "kubeflow.admissionWebhook.image" . }}
+        imagePullPolicy: {{ include "kubeflow.admissionWebhook.imagePullPolicy" . }}
+
+        args:
+        - --tlsCertFile=/etc/webhook/certs/tls.crt
+        - --tlsKeyFile=/etc/webhook/certs/tls.key
+
+        ports:
+        - containerPort: {{ .Values.admissionWebhook.service.targetPort }}
+          name: https-webhook
+
+        {{- with .Values.admissionWebhook.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        - mountPath: /etc/webhook/certs
+          name: webhook-cert
+          readOnly: true
+
+        {{- with include "kubeflow.admissionWebhook.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.admissionWebhook.serviceAccountName" . }}
+
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: {{ include "kubeflow.admissionWebhook.tlsCertSecretName" . }}
+
+      {{- with include "kubeflow.admissionWebhook.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.admissionWebhook.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.admissionWebhook.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.admissionWebhook.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -1,0 +1,13 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.certIssuerName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selfSigned: {}
+
+{{- end }}

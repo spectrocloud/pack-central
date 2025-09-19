@@ -1,0 +1,76 @@
+{{- if (include "kubeflow.pipelines.metadataEnvoy.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.metadataEnvoy.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.metadataEnvoy.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataEnvoy.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataEnvoy.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.metadataEnvoy.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.pipelines.metadataEnvoy.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: metadata-envoy
+        image: {{ include "kubeflow.pipelines.metadataEnvoy.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.metadataEnvoy.imagePullPolicy" . }}
+
+        ports:
+        - name: md-envoy
+          containerPort: 9090
+        - name: envoy-admin
+          containerPort: 9901
+
+        {{- with .Values.pipelines.metadataEnvoy.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.metadataEnvoy.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.metadataEnvoy.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.metadataEnvoy.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataEnvoy.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataEnvoy.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataEnvoy.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -1,0 +1,21 @@
+apiVersion: kubeflow.org/v1
+kind: Profile
+metadata:
+  labels:
+    {{- include "profile.labels" . | nindent 4 }}
+  name: {{ .Release.Name }}
+spec:
+  {{- with .Values.owner }}
+  owner:
+    {{- toYaml . | nindent 4}}
+  {{- end }}
+
+  {{- with .Values.resourceQuotaSpec }}
+  resourceQuotaSpec:
+    {{- toYaml . | nindent 4}}
+  {{- end }}
+
+  {{- with .Values.plugins }}
+  plugins:
+    {{- toYaml . | nindent 2 }}
+  {{- end }}

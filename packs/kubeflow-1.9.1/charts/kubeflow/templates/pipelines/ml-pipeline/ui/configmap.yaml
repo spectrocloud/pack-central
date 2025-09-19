@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.pipelines.ui.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.ui.configMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+   viewer-pod-template.json:  |-
+    {
+        "spec": {
+            "serviceAccountName": "{{ .Values.pipelines.ui.config.viewerPodServiceAccountName }}"
+        }
+    }
+
+{{- end }}

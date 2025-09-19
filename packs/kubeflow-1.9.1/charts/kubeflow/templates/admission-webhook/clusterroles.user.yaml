@@ -1,0 +1,52 @@
+{{- if (include "kubeflow.admissionWebhook.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.kfPdAdminClusterRoleName" . }}
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      {{- include "kubeflow.admissionWebhook.kfPdAdminClusterRoleLabel" . | nindent 6 }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowEditRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.kfPdEditClusterRoleName" . }}
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      {{- include "kubeflow.admissionWebhook.kfPdEditClusterRoleLabel" . | nindent 6 }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowViewRoleLabel" . | nindent 4 }}
+    {{- include "kubeflow.admissionWebhook.kfPdAdminClusterRoleLabel" . | nindent 4 }}
+    {{- include "kubeflow.admissionWebhook.kfPdEditClusterRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.kfPdViewClusterRoleName" . }}
+rules:
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - poddefaults
+  verbs:
+  - get
+  - list
+  - watch
+
+{{- end }}

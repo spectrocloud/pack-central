@@ -1,0 +1,23 @@
+{{- if (include "kubeflow.pipelines.cache.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.cache.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.cache.certName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  commonName: {{ include "kubeflow.pipelines.cache.certName" . }}
+  isCA: true
+  dnsNames:
+  - {{ include "kubeflow.pipelines.cache.svc.name" . }}
+  - {{ include "kubeflow.pipelines.cache.svc.addressWithNs" . }}
+  - {{ include "kubeflow.pipelines.cache.svc.addressWithSvc" . }}
+  - {{ include "kubeflow.pipelines.cache.svc.fqdn" . }}
+  issuerRef:
+    kind: Issuer
+    name: {{ include "kubeflow.pipelines.cache.certIssuerName" . }}
+  secretName: {{ include "kubeflow.pipelines.cache.tlsCertSecretName" . }}
+
+{{- end }}

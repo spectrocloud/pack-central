@@ -1,0 +1,17 @@
+{
+  "addonType":"ai",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+      "all"
+  ],
+  "displayName": "Kubeflow CRDs",
+  "charts": [
+    "charts/kubeflow-crds-0.4.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubeflow-crds",
+  "version": "1.9.1"
+}

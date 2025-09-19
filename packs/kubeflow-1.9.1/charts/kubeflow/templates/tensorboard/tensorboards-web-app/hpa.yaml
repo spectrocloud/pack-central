@@ -1,0 +1,36 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.enabled" . | eq "true") -}}
+
+{{- $componentName := include "kubeflow.tensorboard.tensorboardsWebApp.name" . -}}
+{{- $minReplicas := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.minReplicas" . -}}
+{{- $maxReplicas := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.maxReplicas" . -}}
+{{- $targetCPUUtilizationPercentage := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.targetCPUUtilizationPercentage" . -}}
+{{- $targetMemoryUtilizationPercentage := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.targetMemoryUtilizationPercentage" . -}}
+
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ $componentName }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $componentName }}
+  minReplicas: {{ $minReplicas }}
+  maxReplicas: {{ $maxReplicas }}
+  metrics:
+    {{- if $targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ $targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ $targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

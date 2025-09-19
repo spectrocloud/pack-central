@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.katib.enabled" . | eq "true") -}}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.mainClusterRoleBindingName" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubeflow.katib.controller.mainClusterRoleName" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubeflow.katib.controller.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

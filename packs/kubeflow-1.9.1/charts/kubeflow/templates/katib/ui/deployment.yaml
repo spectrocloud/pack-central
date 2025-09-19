@@ -1,0 +1,52 @@
+{{- if (include "kubeflow.katib.enabled" . | eq "true") -}}
+{{- if (include "kubeflow.katib.ui.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.katib.ui.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.katib.ui.autoscaling.minReplicas" . -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.katib.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.katib.ui.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.katib.ui.selectorLabels" . | nindent 8 }}
+      {{- with .Values.katib.ui.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: {{ include "kubeflow.katib.ui.baseName" . }}
+          image: {{ include "kubeflow.katib.ui.image" . }} # kubeflowkatib/katib-ui
+          command:
+            - "./katib-ui"
+          args:
+            - "--port=8080"
+          env:
+            - name: KATIB_CORE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: APP_DISABLE_AUTH
+              value: 'false'
+          ports:
+            - name: ui
+              containerPort: 8080
+      serviceAccountName: {{ include "kubeflow.katib.ui.serviceAccountName" . }}
+
+{{- end }}
+{{- end }}

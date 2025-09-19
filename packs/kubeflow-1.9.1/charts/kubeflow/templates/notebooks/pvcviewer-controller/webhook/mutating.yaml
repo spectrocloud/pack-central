@@ -1,0 +1,38 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabled" .) -}}
+
+{{- $ca := printf "%s/%s"
+  (include "kubeflow.namespace" .)
+  (include "kubeflow.notebooks.pvcviewerController.certName" .)
+-}}
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ $ca }}
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.mutatingWebhookName" . }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.name" .}}
+      namespace: {{ include "kubeflow.namespace" . }}
+      path: /mutate-kubeflow-org-v1alpha1-pvcviewer
+  failurePolicy: Fail
+  name: {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.addressWithSvc" . }}
+  rules:
+  - apiGroups:
+    - kubeflow.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pvcviewers
+  sideEffects: None
+
+{{- end }}

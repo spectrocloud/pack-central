@@ -1,0 +1,144 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.notebooks.pvcviewerController.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.notebooks.pvcviewerController.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.pvcviewerController.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        traffic.sidecar.istio.io/excludeInboundPorts: {{ include "kubeflow.notebooks.pvcviewerController.webhook.port" . | quote }}
+      labels:
+        {{- include "kubeflow.notebooks.pvcviewerController.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: manager
+        image: {{ include "kubeflow.notebooks.pvcviewerController.manager.image" . }}
+        imagePullPolicy: {{ include "kubeflow.notebooks.pvcviewerController.manager.imagePullPolicy" . }}
+
+        args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+
+        ports:
+        - containerPort: {{ include "kubeflow.notebooks.pvcviewerController.webhook.port" . }}
+          name: webhook-server
+          protocol: TCP
+
+        {{- with .Values.notebooks.pvcviewerController.manager.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+
+        {{- with include "kubeflow.notebooks.pvcviewerController.manager.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      - name: kube-rbac-proxy
+        image: {{ include "kubeflow.notebooks.pvcviewerController.kubeRbacProxy.image" . }}
+        imagePullPolicy: {{ include "kubeflow.notebooks.pvcviewerController.kubeRbacProxy.imagePullPolicy" . }}
+
+        args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+
+        {{- with .Values.notebooks.pvcviewerController.kubeRbacProxy.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.notebooks.pvcviewerController.kubeRbacProxy.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.notebooks.pvcviewerController.serviceAccountName" . }}
+
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ include "kubeflow.notebooks.pvcviewerController.tlsCertSecretName" . }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.terminationGracePeriodSeconds" . }}
+      terminationGracePeriodSeconds:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.pvcviewerController.securityContext" . }}
+      securityContext:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

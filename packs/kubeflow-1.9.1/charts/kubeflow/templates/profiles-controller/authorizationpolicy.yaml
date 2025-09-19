@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.profilesController.createIstioIntegrationObjects" . | eq "true") -}}
+
+{{ $namespace := include "kubeflow.namespace" . }}
+{{ $centraldashboardSaName := include "kubeflow.centraldashboard.serviceAccountName" . }}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.profilesController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.profilesController.kfam.name" . }}
+  namespace: {{ $namespace }}
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              # TODO: change me
+              - cluster.local/ns/{{ $namespace }}/sa/{{ $centraldashboardSaName }}
+  selector:
+    matchLabels:
+      {{- include "kubeflow.profilesController.selectorLabels" . | nindent 6 }}
+
+{{- end }}

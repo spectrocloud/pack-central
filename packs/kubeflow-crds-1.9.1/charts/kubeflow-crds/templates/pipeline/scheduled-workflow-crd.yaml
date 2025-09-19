@@ -1,0 +1,45 @@
+{{- if (include "kubeflowCrds.pipelines.scheduledWorkflow.enabled" . | eq "true") -}}
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    {{- include "kubeflowCrds.pipelines.scheduledWorkflow.labels" . | nindent 4 }}
+  name: {{ include "kubeflowCrds.pipelines.scheduledWorkflow.fullName" . }}
+spec:
+  group: {{ include "kubeflowCrds.pipelines.scheduledWorkflow.group" . }}
+  names:
+    kind: ScheduledWorkflow
+    listKind: ScheduledWorkflowList
+    plural: {{ include "kubeflowCrds.pipelines.scheduledWorkflow.pluralName" . }}
+    shortNames:
+    - swf
+    singular: {{ include "kubeflowCrds.pipelines.scheduledWorkflow.singularName" . }}
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+            x-kubernetes-map-type: atomic
+          status:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+            x-kubernetes-map-type: atomic
+        required:
+        - spec
+        - status
+        type: object
+    served: true
+    storage: true
+
+{{- end }}

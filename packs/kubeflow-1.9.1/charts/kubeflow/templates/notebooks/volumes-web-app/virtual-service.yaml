@@ -1,0 +1,31 @@
+{{- if (include "kubeflow.notebooks.volumesWebApp.createIstioIntegrationObjects" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.notebooks.volumesWebApp.config.urlPrefix }}/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: {{ include "kubeflow.notebooks.volumesWebApp.svc.fqdn" . }}
+        port:
+          number: 80
+    headers:
+      request:
+        add:
+          x-forwarded-prefix: {{ .Values.notebooks.volumesWebApp.config.urlPrefix }}
+
+{{- end }}

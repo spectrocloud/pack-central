@@ -1,0 +1,44 @@
+{{- if (include "kubeflow.pipelines.scheduledWorkflow.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ include "kubeflow.deploymentMode.scopedRoleKind" . }}
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.scheduledWorkflow.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.scheduledWorkflow.roleName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+rules:
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflows
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - scheduledworkflows
+  - scheduledworkflows/finalizers
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+
+{{- end }}

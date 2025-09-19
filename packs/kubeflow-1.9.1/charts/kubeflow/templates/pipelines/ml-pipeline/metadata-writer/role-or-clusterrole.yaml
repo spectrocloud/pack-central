@@ -1,0 +1,38 @@
+{{- if (include "kubeflow.pipelines.metadataWriter.rbac.createRoles" .) -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ include "kubeflow.deploymentMode.scopedRoleKind" . }}
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataWriter.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataWriter.roleName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflows
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+
+{{- end }}

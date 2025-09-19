@@ -1,0 +1,23 @@
+{{- if (include "kubeflow.admissionWebhook.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.certName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  commonName: {{ include "kubeflow.admissionWebhook.certName" . }}
+  dnsNames:
+  - {{ include "kubeflow.admissionWebhook.svc.name" . }}
+  - {{ include "kubeflow.admissionWebhook.svc.addressWithNs" . }}
+  - {{ include "kubeflow.admissionWebhook.svc.addressWithSvc" . }}
+  - {{ include "kubeflow.admissionWebhook.svc.fqdn" . }}
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: {{ include "kubeflow.admissionWebhook.certIssuerName" . }}
+  secretName: {{ include "kubeflow.admissionWebhook.tlsCertSecretName" . }}
+
+{{- end }}

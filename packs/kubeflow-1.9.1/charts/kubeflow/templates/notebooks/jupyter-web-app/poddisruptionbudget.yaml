@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.pdb.create" . | eq "true") -}}
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.jupyterWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.jupyterWebApp.selectorLabels" . | nindent 6 }}
+  {{- with (include "kubeflow.notebooks.jupyterWebApp.pdb.values" .) }}
+    {{- . | nindent 2 }}
+  {{- end }}
+
+{{- end }}

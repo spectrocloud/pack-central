@@ -1,0 +1,27 @@
+{{- $replicaCount := .Values.replicaCount | default 1 | int }}
+{{- if .Values.autoscaling.enabled }}
+  {{- $replicaCount = .Values.autoscaling.minReplicas | default 1 | int }}
+{{- end }}
+{{- if and .Values.podDisruptionBudget.enabled (gt $replicaCount 1) }}
+apiVersion: {{ include "capabilities.podDisruptionBudget.apiVersion" . }}
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: {{ template "oauth2-proxy.name" . }}
+{{- include "oauth2-proxy.labels" . | indent 4 }}
+  name: {{ template "oauth2-proxy.fullname" . }}
+  namespace: {{ template "oauth2-proxy.namespace" $ }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "oauth2-proxy.selectorLabels" . | indent 6 }}
+  {{- with .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
+  {{- with .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.podDisruptionBudget.unhealthyPodEvictionPolicy }}
+  unhealthyPodEvictionPolicy: {{ . }}
+  {{- end }}
+{{- end }}

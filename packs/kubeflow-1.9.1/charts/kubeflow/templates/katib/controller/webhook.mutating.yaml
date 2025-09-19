@@ -1,0 +1,67 @@
+{{- if (include "kubeflow.katib.controller.enabled" .) -}}
+
+{{- $ca := printf "%s/%s"
+  (include "kubeflow.namespace" .)
+  (include "kubeflow.katib.controller.certName" .)
+-}}
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ $ca }}
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.mutatingWebhook.name" . }}
+webhooks:
+  - name: defaulter.experiment.katib.kubeflow.org
+    clientConfig:
+      service:
+        name: {{ include "kubeflow.katib.controller.svc.name" .}}
+        namespace: {{ include "kubeflow.namespace" . }}
+        path: /mutate-experiment
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - apiGroups:
+          - kubeflow.org
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - experiments
+  - name: mutator.pod.katib.kubeflow.org
+    clientConfig:
+      service:
+        name: {{ include "kubeflow.katib.controller.svc.name" .}}
+        namespace: {{ include "kubeflow.namespace" . }}
+        path: /mutate-pod
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    namespaceSelector:
+      matchLabels:
+        katib.kubeflow.org/metrics-collector-injection: enabled
+    # Once the AdmissionWebhookMatchConditions feature gate is enabled by default, we should switch to control based on userInfo.
+    # REF:
+    # - AdmissionWebhookMatchConditions: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchconditions
+    # - Tracking issue: https://github.com/kubeflow/katib/issues/2206
+    objectSelector:
+      matchExpressions:
+        - key: katib.kubeflow.org/metrics-collector-injection
+          operator: NotIn
+          values:
+            - disabled
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+{{- end }}

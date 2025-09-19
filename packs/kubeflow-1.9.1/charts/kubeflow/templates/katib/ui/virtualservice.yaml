@@ -1,0 +1,38 @@
+{{- if (include "kubeflow.katib.ui.createIstioIntegrationObjects" .) -}}
+
+# apps/katib/upstream/installs/katib-with-kubeflow/ui-virtual-service.yaml
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.katib.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+    - {{ .Values.katib.istioIntegration.gateway.name }}
+  hosts:
+    - '*'
+  http:
+    - match:
+        - uri:
+            prefix: {{ .Values.katib.urlPrefix }}  # upstream contains trailing forward slash
+      rewrite:
+        uri: {{ .Values.katib.urlPrefix }}  # upstream contains trailing forward slash
+      route:
+        - destination:
+            host: {{ include "kubeflow.katib.ui.svc.fqdn" . }}
+            port:
+              number: 80
+      # maybe we don't need this...
+      headers:
+        request:
+          add:
+            x-forwarded-prefix: {{ .Values.katib.urlPrefix }}
+            Tracing-Context: {{ include "kubeflow.katib.ui.baseName" . }}
+        response:
+          add:
+            Tracing-Context: {{ include "kubeflow.katib.ui.baseName" . }}
+
+{{- end }}

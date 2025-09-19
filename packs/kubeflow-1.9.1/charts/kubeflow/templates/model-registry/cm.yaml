@@ -1,0 +1,16 @@
+{{- if (include "kubeflow.modelRegistry.enabled" . | eq "true" ) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.modelRegistry.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.modelRegistry.configMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  MODEL_REGISTRY_REST_SERVICE_HOST: "{{ include "kubeflow.modelRegistry.svc.name" . }}"
+  MODEL_REGISTRY_REST_SERVICE_PORT: "{{ .Values.modelRegistry.service.restPort }}"
+  MODEL_REGISTRY_GRPC_SERVICE_HOST: "{{ include "kubeflow.modelRegistry.svc.name" . }}"
+  MODEL_REGISTRY_GRPC_SERVICE_PORT: "{{ .Values.modelRegistry.service.grpcPort }}"
+
+{{- end }}

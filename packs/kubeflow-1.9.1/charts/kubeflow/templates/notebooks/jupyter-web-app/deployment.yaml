@@ -1,0 +1,100 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.notebooks.jupyterWebApp.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.notebooks.jupyterWebApp.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.jupyterWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.jupyterWebApp.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.notebooks.jupyterWebApp.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.notebooks.jupyterWebApp.baseName" . }}
+        image: {{ include "kubeflow.notebooks.jupyterWebApp.image" . }}
+        imagePullPolicy: {{ include "kubeflow.notebooks.jupyterWebApp.imagePullPolicy" . }}
+
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+
+        {{- with .Values.notebooks.jupyterWebApp.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config-volume
+        - mountPath: /src/apps/default/static/assets/logos
+          name: logos-volume
+
+        env:
+        - name: APP_PREFIX
+          value: {{ .Values.notebooks.jupyterWebApp.urlPrefix }}
+        - name: UI
+          value: {{ .Values.notebooks.jupyterWebApp.uiFlavor }}
+        - name: USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: USERID_PREFIX
+          value: {{ .Values.auth.userIdPrefix | quote }}
+        - name: APP_SECURE_COOKIES
+          value: {{ .Values.notebooks.jupyterWebApp.secureCookies | quote }}
+
+        {{- with include "kubeflow.notebooks.jupyterWebApp.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.notebooks.jupyterWebApp.serviceAccountName" . }}
+
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "kubeflow.notebooks.jupyterWebApp.spawnerUI.configMapName" . }}
+      - name: logos-volume
+        configMap:
+          name: {{ include "kubeflow.notebooks.jupyterWebApp.logos.configMapName" . }}
+
+      {{- with include "kubeflow.notebooks.jupyterWebApp.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.jupyterWebApp.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.jupyterWebApp.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.jupyterWebApp.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

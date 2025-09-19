@@ -1,0 +1,17 @@
+{{/*
+Cache Deployer is currently not supported
+*/}}
+
+{{/*
+{{- if (include "kubeflow.pipelines.cache.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.rbac.cacheDeployer.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}
+*/}}

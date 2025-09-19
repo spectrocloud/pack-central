@@ -1,0 +1,84 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.tensorboard.tensorboardsWebApp.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.baseName" . }}
+        image: {{ include "kubeflow.tensorboard.tensorboardsWebApp.image" . }}
+        imagePullPolicy: {{ include "kubeflow.tensorboard.tensorboardsWebApp.imagePullPolicy" . }}
+
+        ports:
+        - containerPort: {{ .Values.tensorboard.tensorboardsWebApp.service.targetPort }}
+          protocol: TCP
+
+        {{- with .Values.tensorboard.tensorboardsWebApp.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        env:
+        - name: APP_PREFIX
+          value: {{ .Values.tensorboard.tensorboardsWebApp.config.urlPrefix }}
+        - name: USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: USERID_PREFIX
+          value: {{ .Values.auth.userIdPrefix | quote }}
+        - name: APP_SECURE_COOKIES
+          value: {{ .Values.tensorboard.tensorboardsWebApp.config.secureCookies | quote }}
+
+        {{- with include "kubeflow.tensorboard.tensorboardsWebApp.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.tensorboard.tensorboardsWebApp.serviceAccountName" . }}
+
+      {{- with include "kubeflow.tensorboard.tensorboardsWebApp.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.tensorboardsWebApp.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.tensorboardsWebApp.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.tensorboardsWebApp.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

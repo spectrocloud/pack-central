@@ -1,0 +1,29 @@
+{{- if (include "kubeflow.istioIntegration.m2m.enabled" . | eq "true") -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.m2m.requestAuthenticationName" . }}
+  namespace: {{ .Values.istioIntegration.ingressGatewayNamespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml .Values.istioIntegration.gateway.selector | nindent 6 }}
+  jwtRules:
+    - issuer: {{ .Values.istioIntegration.m2m.issuer }}
+      forwardOriginalToken: true
+      outputClaimToHeaders:
+        - claim: {{ .Values.istioIntegration.m2m.userClaim }}
+          header: {{ .Values.auth.userHeaderName }}
+        - claim: {{ .Values.istioIntegration.m2m.groupsClaim }}
+          header: {{ .Values.auth.groupsHeaderName }}
+      fromHeaders:
+        - name: {{ .Values.auth.authHeader.name }}
+          prefix: {{ .Values.auth.authHeader.prefix }}
+{{- if .Values.istioIntegration.kubeflowJwksProxy.enabled }}
+      jwksUri: {{ include "kubeflow.istioIntegration.jwksUri" . }}
+{{- end }}
+
+{{- end }}

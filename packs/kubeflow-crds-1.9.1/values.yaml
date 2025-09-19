@@ -1,0 +1,52 @@
+pack:
+  content:
+    images: []
+charts:
+  kubeflow-crds:
+    # This namespace allows you to define where the services will be installed into
+    # if not set then they will use the namespace of the release
+    # This is helpful when installing Kubeflow as a chart dependency (sub chart).
+    namespace: ""
+
+    nameOverride: ""
+    fullnameOverride: ""
+
+    crds:
+      minimized: true
+
+    admissionWebhook:
+      enabled: true
+
+    notebooks:
+      enabled: true
+      controller:
+        certManager:
+          enabled: false
+        webhook:
+          enabled: false
+        enabled: true
+      pvcviewerController:
+        enabled: true
+
+    profilesController:
+      enabled: true
+
+    katib:
+      enabled: true
+      controller:
+        enabled: true
+
+    pipelines:
+      enabled: true
+      scheduledWorkflow:
+        enabled: true
+      viewerCrd:
+        enabled: true
+
+    tensorboard:
+      enabled: true
+      controller:
+        enabled: true
+
+    trainingOperator:
+      enabled: true

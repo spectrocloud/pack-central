@@ -1,0 +1,41 @@
+{{- if (include "kubeflow.knativeIntegration.createIstioIntegrationObjects" .) }}
+---
+{{ include "istio.authorizationPolicy" (dict
+  "name" "activator-service"
+  "namespace" .Values.knativeIntegration.knativeServing.namespace
+  "action" "ALLOW"
+  "labels" (dict "app" "activator"))
+}}
+
+---
+{{ include "istio.authorizationPolicy" (dict
+  "name" "autoscaler"
+  "namespace" .Values.knativeIntegration.knativeServing.namespace
+  "action" "ALLOW"
+  "labels" (dict "app" "autoscaler"))
+}}
+
+---
+{{ include "istio.authorizationPolicy" (dict
+  "name" "controller"
+  "namespace" .Values.knativeIntegration.knativeServing.namespace
+  "action" "ALLOW"
+  "labels" (dict "app" "controller"))
+}}
+
+---
+{{ include "istio.authorizationPolicy" (dict
+  "name" "istio-webhook"
+  "namespace" .Values.knativeIntegration.knativeServing.namespace
+  "action" "ALLOW"
+  "labels" (dict "app" "net-istio-webhook"))
+}}
+
+---
+{{ include "istio.authorizationPolicy" (dict
+  "name" "webhook"
+  "namespace" .Values.knativeIntegration.knativeServing.namespace
+  "action" "ALLOW"
+  "labels" (dict "role" "webhook"))
+}}
+{{- end }}

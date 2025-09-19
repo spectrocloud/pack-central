@@ -1,0 +1,17 @@
+{{- if (include "kubeflow.pipelines.cache.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.cache.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.cache.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.cache.selectorLabels" . | nindent 6 }}
+  rules:
+  - {}
+
+{{- end }}

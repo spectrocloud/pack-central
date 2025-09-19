@@ -1,0 +1,24 @@
+{{- if (include "kubeflow.kserveModelsWebApp.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.kserveModelsWebApp.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.kserveModelsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.kserveModelsWebApp.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    {{- include "kubeflow.kserveModelsWebApp.selectorLabels" . | nindent 4 }}
+  type: {{ .Values.kserveModelsWebApp.service.type }}
+
+{{- end }}

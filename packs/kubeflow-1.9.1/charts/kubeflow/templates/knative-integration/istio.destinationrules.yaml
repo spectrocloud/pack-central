@@ -1,0 +1,16 @@
+{{/*
+DestinationRule for mTLS 
+*/}}
+{{- if (include "kubeflow.knativeIntegration.createIstioIntegrationObjects" .) }}
+
+apiVersion: "networking.istio.io/v1alpha3"
+kind: DestinationRule
+metadata:
+  name: knative
+  namespace: {{ .Values.knativeIntegration.knativeServing.namespace }}
+spec:
+  host: "*.{{ .Values.knativeIntegration.knativeServing.namespace }}.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+{{- end }}

@@ -1,0 +1,12 @@
+Kubeflow Pipelines requires the Object Store K8s Secret name to be 'mlpipeline-minio-artifact'.
+This is because the K8s Secret Name and Secret Keys are hardcoded:
+* <=2.1.0:
+  https://github.com/kubeflow/pipelines/blob/2.1.0/backend/src/v2/objectstore/object_store.go#L292
+* >=2.2.0 (state as of 2nd May 2024)
+  https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L39
+
+If the Secret Name is not provided in any of the following fields, the Secret
+'mlpipeline-minio-artifact' will be created with the provided plaintext values:
+* .Values.pipelines.config.objectStore.existingSecretName
+* .Values.pipelines.config.objectStore.accessKey.secretKeyRef.name
+* .Values.pipelines.config.objectStore.secretAccessKey.secretKeyRef.name

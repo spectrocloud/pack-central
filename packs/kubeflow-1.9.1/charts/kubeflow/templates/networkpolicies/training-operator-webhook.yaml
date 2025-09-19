@@ -1,0 +1,26 @@
+{{- if (include "kubeflow.networkPolicies.enabled" .) -}}
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.networkPolicies.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.name" . }}-webhook
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  podSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/component
+      operator: In
+      values:
+      - {{ include "kubeflow.trainingOperator.name" . }}
+  # https://www.elastic.co/guide/en/cloud-on-k8s/1.1/k8s-webhook-network-policies.html
+  # The kubernetes api server must reach the webhook
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: {{ include "kubeflow.notebooks.pvcviewerController.webhook.port" . }}
+  policyTypes:
+  - Ingress
+
+{{- end }}

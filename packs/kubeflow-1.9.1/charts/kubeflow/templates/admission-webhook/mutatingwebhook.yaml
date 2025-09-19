@@ -1,0 +1,42 @@
+{{- if (include "kubeflow.admissionWebhook.enabled" .) -}}
+
+{{- $ca := printf "%s/%s"
+  (include "kubeflow.namespace" .)
+  (include "kubeflow.admissionWebhook.certName" .)
+-}}
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ $ca }}
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.webhookName" . }}
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  - v1
+  clientConfig:
+    caBundle: ""
+    service:
+      name: {{ include "kubeflow.admissionWebhook.svc.name" .}}
+      namespace: {{ include "kubeflow.namespace" . }}
+      path: /apply-poddefault
+  failurePolicy: Fail
+  name: {{ include "kubeflow.admissionWebhook.svc.addressWithSvc" . }}
+  namespaceSelector:
+    matchLabels:
+      {{- include "kubeflow.admissionWebhook.partOfLabel" . | nindent 6}}
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - pods
+  sideEffects: None
+
+{{- end }}

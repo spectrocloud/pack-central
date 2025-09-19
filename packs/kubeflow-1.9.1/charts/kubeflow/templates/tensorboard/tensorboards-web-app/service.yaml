@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.tensorboard.tensorboardsWebApp.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.tensorboard.tensorboardsWebApp.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.tensorboard.tensorboardsWebApp.service.targetPort }}
+  selector:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.tensorboard.tensorboardsWebApp.service.type }}
+
+{{- end }}

@@ -1,0 +1,36 @@
+{{- if (include "kubeflow.katib.controller.enabled" .) -}}
+
+{{- $ca := printf "%s/%s"
+  (include "kubeflow.namespace" .)
+  (include "kubeflow.katib.controller.certName" .)
+-}}
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ $ca }}
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.validatingWebhook.name" . }}
+webhooks:
+  - name: validator.experiment.katib.kubeflow.org
+    clientConfig:
+      service:
+        name: {{ include "kubeflow.katib.controller.svc.name" .}}
+        namespace: {{ include "kubeflow.namespace" . }}
+        path: /validate-experiment
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - apiGroups:
+          - kubeflow.org
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - experiments
+{{- end }}

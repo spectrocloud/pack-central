@@ -1,0 +1,41 @@
+{{- if (include "kubeflow.pipelines.metadataEnvoy.enabled" . | eq "true") -}}
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataEnvoy.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataEnvoy.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    name: md-envoy
+  selector:
+    {{- include "kubeflow.pipelines.metadataEnvoy.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.metadataEnvoy.service.type }}
+
+---
+
+# TODO: having this SVC is a workaround... metadata-envoy service might be hardcoded...
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataEnvoy.labels" . | nindent 4 }}
+  name: metadata-envoy-service
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    name: md-envoy
+  selector:
+    {{- include "kubeflow.pipelines.metadataEnvoy.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.metadataEnvoy.service.type }}
+
+{{- end }}

@@ -1,0 +1,17 @@
+{{- if (include "kubeflow.katib.enabled" .) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.configMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  katib-config.yaml: |
+    ---
+    apiVersion: config.kubeflow.org/v1beta1
+    kind: KatibConfig
+    {{- .Values.katib.config | toYaml | nindent 4 }}
+
+{{- end }}

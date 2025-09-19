@@ -1,0 +1,87 @@
+{{- if (include "kubeflow.pipelines.scheduledWorkflow.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.scheduledWorkflow.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.scheduledWorkflow.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.scheduledWorkflow.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.scheduledWorkflow.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.scheduledWorkflow.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.scheduledWorkflow.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-scheduledworkflow
+        image: {{ include "kubeflow.pipelines.scheduledWorkflow.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.scheduledWorkflow.imagePullPolicy" . }}
+
+        env:
+        - name: LOG_LEVEL
+          value: "info"
+        - name: CRON_SCHEDULE_TIMEZONE
+          value: {{ .Values.pipelines.scheduledWorkflow.config.cronScheduleTimezone | quote }}
+
+        - name: NAMESPACE
+          {{- if (include "kubeflow.deploymentMode.namespace" .) }}
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+          {{- else }}
+          value: ""
+          {{- end }}
+
+        {{- with .Values.pipelines.scheduledWorkflow.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.scheduledWorkflow.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: ml-pipeline-scheduledworkflow
+
+      {{- with include "kubeflow.pipelines.scheduledWorkflow.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.scheduledWorkflow.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.scheduledWorkflow.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.scheduledWorkflow.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

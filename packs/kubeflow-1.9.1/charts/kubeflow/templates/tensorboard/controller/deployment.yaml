@@ -1,0 +1,139 @@
+{{- if (include "kubeflow.tensorboard.controller.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.tensorboard.controller.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.tensorboard.controller.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.controller.labels" . | nindent 4 }}
+    control-plane: controller-manager
+  name: {{ include "kubeflow.tensorboard.controller.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.tensorboard.controller.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        {{- include "kubeflow.tensorboard.controller.selectorLabels" . | nindent 8 }}
+        control-plane: controller-manager
+
+    spec:
+      containers:
+      - name: manager
+        image: {{ include "kubeflow.tensorboard.controller.manager.image" . }}
+        imagePullPolicy: {{ include "kubeflow.tensorboard.controller.manager.imagePullPolicy" . }}
+
+        args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        command:
+        - /manager
+
+        env:
+        - name: ISTIO_GATEWAY
+          value: {{ include "kubeflow.namespace" . }}/{{ .Values.istioIntegration.gateway.name }}
+        - name: ISTIO_HOST
+          value: "*"
+        - name: RWO_PVC_SCHEDULING
+          value: {{ .Values.tensorboard.controller.manager.config.rwoPvcScheduling | quote }}
+        - name: TENSORBOARD_IMAGE
+          value: {{ include "kubeflow.tensorboard.controller.manager.tensorboardImage" . }}
+
+        {{- with .Values.tensorboard.controller.manager.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        {{- with include "kubeflow.tensorboard.controller.manager.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      - name: kube-rbac-proxy
+        image: {{ include "kubeflow.tensorboard.controller.kubeRbacProxy.image" . }}
+        imagePullPolicy: {{ include "kubeflow.tensorboard.controller.kubeRbacProxy.imagePullPolicy" . }}
+
+        args:
+        - --secure-listen-address=0.0.0.0:{{ .Values.tensorboard.controller.kubeRbacProxy.service.targetPort }}
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+
+        ports:
+        - containerPort: {{ .Values.tensorboard.controller.kubeRbacProxy.service.targetPort }}
+          name: https
+          protocol: TCP
+
+        {{- with .Values.tensorboard.controller.kubeRbacProxy.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.tensorboard.controller.kubeRbacProxy.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.tensorboard.controller.serviceAccountName" . }}
+
+      {{- with include "kubeflow.tensorboard.controller.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.controller.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.controller.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.controller.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.controller.terminationGracePeriodSeconds" . }}
+      terminationGracePeriodSeconds:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.tensorboard.controller.securityContext" . }}
+      securityContext:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.katib.enabled" . | eq "true") -}}
+{{- if (include "kubeflow.katib.ui.enabled" . | eq "true") -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.katib.ui.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.katib.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.ui.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: ui
+      targetPort: 8080
+  selector:
+    {{- include "kubeflow.katib.ui.selectorLabels" . | nindent 4 }}
+{{- end }}
+{{- end }}

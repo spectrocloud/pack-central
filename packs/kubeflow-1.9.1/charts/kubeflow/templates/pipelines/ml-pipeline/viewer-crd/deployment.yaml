@@ -1,0 +1,85 @@
+{{- if (include "kubeflow.pipelines.viewerCrd.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.viewerCrd.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.viewerCrd.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.viewerCrd.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.viewerCrd.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.viewerCrd.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.viewerCrd.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-viewer-crd
+        image: {{ include "kubeflow.pipelines.viewerCrd.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.viewerCrd.imagePullPolicy" . }}
+
+        env:
+        - name: MAX_NUM_VIEWERS
+          value: {{ .Values.pipelines.viewerCrd.config.maxNumViewers | quote }}
+        - name: NAMESPACE
+          {{- if (include "kubeflow.deploymentMode.namespace" .) }}
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+          {{- else }}
+          value: ""
+          {{- end }}
+
+        {{- with .Values.pipelines.viewerCrd.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.viewerCrd.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.viewerCrd.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.viewerCrd.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.viewerCrd.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.viewerCrd.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.viewerCrd.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end -}}

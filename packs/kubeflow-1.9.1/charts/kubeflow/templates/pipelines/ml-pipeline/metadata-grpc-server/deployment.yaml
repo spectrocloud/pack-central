@@ -1,0 +1,103 @@
+{{- if (include "kubeflow.pipelines.metadataGrpcServer.enabled" .) -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.metadataGrpcServer.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.metadataGrpcServer.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataGrpcServer.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.metadataGrpcServer.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.pipelines.metadataGrpcServer.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: metadata-grpc-server
+        image: {{ include "kubeflow.pipelines.metadataGrpcServer.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.metadataGrpcServer.imagePullPolicy" . }}
+
+        env:
+        {{- include "kubeflow.pipelines.metadataGrpcServer.config.db.user.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.metadataGrpcServer.config.db.password.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.metadataGrpcServer.config.db.host.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.metadataGrpcServer.config.db.port.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.metadataGrpcServer.config.db.mlmdDatabaseName.env.spec" . | nindent 8 }}
+
+        command: ["/bin/metadata_store_server"]
+        args:
+        - --grpc_port={{ .Values.pipelines.metadataGrpcServer.service.port }}
+        - --mysql_config_user=$({{ include "kubeflow.pipelines.metadataGrpcServer.config.db.user.env.name" . }})
+        - --mysql_config_password=$({{ include "kubeflow.pipelines.metadataGrpcServer.config.db.password.env.name" . }})
+        - --mysql_config_host=$({{ include "kubeflow.pipelines.metadataGrpcServer.config.db.host.env.name" . }})
+        - --mysql_config_port=$({{ include "kubeflow.pipelines.metadataGrpcServer.config.db.port.env.name" . }})
+        - --mysql_config_database=$({{ include "kubeflow.pipelines.metadataGrpcServer.config.db.mlmdDatabaseName.env.name" .}})
+        - --enable_database_upgrade=true
+
+        ports:
+        - name: grpc-api
+          containerPort: {{ .Values.pipelines.metadataGrpcServer.service.port }}
+
+        livenessProbe:
+          tcpSocket:
+            port: grpc-api
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+        readinessProbe:
+          tcpSocket:
+            port: grpc-api
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+
+        {{- with .Values.pipelines.metadataGrpcServer.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.metadataGrpcServer.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.metadataGrpcServer.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.metadataGrpcServer.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataGrpcServer.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataGrpcServer.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.metadataGrpcServer.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

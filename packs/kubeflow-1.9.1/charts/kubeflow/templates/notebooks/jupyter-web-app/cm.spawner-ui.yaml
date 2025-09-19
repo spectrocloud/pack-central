@@ -1,0 +1,15 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.enabled" . | eq "true" ) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.jupyterWebApp.spawnerUI.configMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  spawner_ui_config.yaml: |
+    spawnerFormDefaults:
+      {{- toYaml .Values.notebooks.jupyterWebApp.spawnerFormDefaults | nindent 6 }}
+
+{{- end }}

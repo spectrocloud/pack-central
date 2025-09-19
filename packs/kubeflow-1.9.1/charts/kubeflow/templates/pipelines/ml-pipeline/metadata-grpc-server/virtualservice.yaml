@@ -1,0 +1,28 @@
+{{- if (include "kubeflow.pipelines.metadataGrpcServer.createIstioIntegrationObjects" . ) -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataGrpcServer.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  # TODO: parameterize all VS Hosts.
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.pipelines.metadataGrpcServer.config.urlPrefix }}
+    rewrite:
+      uri: {{ .Values.pipelines.metadataGrpcServer.config.urlPrefix }}
+    route:
+    - destination:
+        host: {{ include "kubeflow.pipelines.metadataEnvoy.svc.fqdn" . }}
+        port:
+          number: 9090
+
+{{- end }}

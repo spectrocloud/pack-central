@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.notebooks.pvcviewerController.kubeRbacProxy.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.kubeRbacProxy.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    {{- include "kubeflow.notebooks.pvcviewerController.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.notebooks.pvcviewerController.kubeRbacProxy.service.type }}
+
+{{- end }}

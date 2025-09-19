@@ -1,0 +1,39 @@
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Add support for new container resize policy feature
+      links:
+        - name: Github PR
+          url: https://github.com/oauth2-proxy/manifests/pull/346
+apiVersion: v2
+appVersion: 7.12.0
+dependencies:
+- alias: redis
+  condition: redis.enabled
+  name: redis-ha
+  repository: https://dandydeveloper.github.io/charts
+  version: 4.33.8
+description: A reverse proxy that provides authentication with Google, Github or other
+  providers
+home: https://oauth2-proxy.github.io/oauth2-proxy/
+keywords:
+- kubernetes
+- oauth
+- oauth2
+- authentication
+- google
+- github
+- redis
+kubeVersion: '>=1.16.0-0'
+maintainers:
+- email: pierluigi.lenoci@gmail.com
+  name: pierluigilenoci
+- email: jan@larwig.com
+  name: tuunit
+- email: joel.speed@hotmail.co.uk
+  name: JoelSpeed
+name: oauth2-proxy
+sources:
+- https://github.com/oauth2-proxy/oauth2-proxy
+- https://github.com/oauth2-proxy/manifests
+version: 8.2.0

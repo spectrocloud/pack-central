@@ -1,0 +1,60 @@
+{{- if .Values.istioIntegration.enabled }}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.istioAdminRoleName" . }}
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      {{- include "kubeflow.istioIntegration.istioAdminRoleLabel" . | nindent 6 }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowEditRoleLabel" . | nindent 4 }}
+    {{- include "kubeflow.istioIntegration.istioAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.istioEditRoleName" . }}
+rules:
+- apiGroups: 
+  - istio.io
+  - networking.istio.io
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowViewRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.istioViewRoleName" . }}
+rules:
+- apiGroups:
+  - istio.io
+  - networking.istio.io
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+
+{{- end }}

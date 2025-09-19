@@ -1,0 +1,30 @@
+{{- if (include "kubeflow.pipelines.ui.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.ui.selectorLabels" . | nindent 6 }}
+  rules:
+  # Allow all requests from the ingress gateway
+  - from:
+    - source:
+        principals:
+        - {{ include "kubeflow.istioIntegration.istioIngressGateway.serviceAccountPrincipal" . }}
+  # Allow all requests with an `authorization` header but NOT a `kubeflow-userid` header.
+  # This is needed to allow Kubernetes JWTs to be passed to the KFP API.
+  - when:
+    - key: request.headers[authorization]
+      values:
+      - "*"
+    - key: request.headers[kubeflow-userid]
+      notValues:
+      - "*"
+
+{{- end }}

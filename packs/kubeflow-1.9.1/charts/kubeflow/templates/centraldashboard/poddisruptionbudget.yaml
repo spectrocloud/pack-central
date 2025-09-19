@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.centraldashboard.pdb.create" . | eq "true") -}}
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.centraldashboard.selectorLabels" . | nindent 6 }}
+  {{- with (include "kubeflow.centraldashboard.pdb.values" .) }}
+    {{- . | nindent 2 }}
+  {{- end }}
+
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.admissionWebhook.pdb.create" . | eq "true") -}}
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.admissionWebhook.selectorLabels" . | nindent 6 }}
+  {{- with (include "kubeflow.admissionWebhook.pdb.values" .) }}
+    {{- . | nindent 2 }}
+  {{- end }}
+
+{{- end }}

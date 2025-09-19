@@ -1,0 +1,20 @@
+{{- if (include "kubeflow.centraldashboard.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.centraldashboard.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        namespaces:
+        - {{ .Values.istioIntegration.ingressGatewayNamespace }}
+
+{{- end }}

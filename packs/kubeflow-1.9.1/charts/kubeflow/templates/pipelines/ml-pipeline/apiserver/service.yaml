@@ -1,0 +1,32 @@
+{{- if (include "kubeflow.pipelines.mlPipeline.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  {{- with .Values.pipelines.mlPipeline.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+    prometheus.io/port: "8888"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  labels:
+    {{- include "kubeflow.pipelines.mlPipeline.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.mlPipeline.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  - name: grpc
+    port: 8887
+    protocol: TCP
+    targetPort: 8887
+  selector:
+    {{- include "kubeflow.pipelines.mlPipeline.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.mlPipeline.service.type }}
+
+{{- end }}

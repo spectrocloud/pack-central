@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.pipelines.metadataGrpcServer.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataGrpcServer.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.metadataGrpcServer.selectorLabels" . | nindent 6 }}
+  rules:
+  - {}
+
+{{- end }}

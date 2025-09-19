@@ -1,0 +1,147 @@
+{{- if (include "kubeflow.pipelines.ui.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.ui.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.ui.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.ui.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.ui.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-ui
+        image: {{ include "kubeflow.pipelines.ui.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.ui.imagePullPolicy" . }}
+
+        env:
+        {{- include "kubeflow.pipelines.ui.config.objectStore.host.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.ui.config.objectStore.accessKey.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.ui.config.objectStore.secretAccessKey.env.spec" . | nindent 8 }}
+
+        - name: VIEWER_TENSORBOARD_POD_TEMPLATE_SPEC_PATH
+          value: /etc/config/viewer-pod-template.json
+        - name: MINIO_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ALLOW_CUSTOM_VISUALIZATIONS
+          value: {{ .Values.pipelines.ui.config.allowCustomVisualizations | quote }}
+
+        {{- if (include "kubeflow.deploymentMode.cluster" .) }}
+        - name: DEPLOYMENT
+          value: KUBEFLOW
+        - name: ARTIFACTS_SERVICE_PROXY_NAME
+          value: ml-pipeline-ui-artifact
+        - name: ARTIFACTS_SERVICE_PROXY_PORT
+          value: '80'
+        - name: ARTIFACTS_SERVICE_PROXY_ENABLED
+          value: 'true'
+        - name: ENABLE_AUTHZ
+          value: 'true'
+        - name: KUBEFLOW_USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: KUBEFLOW_USERID_PREFIX
+          value: {{ .Values.auth.userIdPrefix | quote }}
+        - name: DISABLE_GKE_METADATA # https://github.com/kubeflow/pipelines/issues/11247
+          value: 'true'
+        - name: FRONTEND_SERVER_NAMESPACE
+          valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        {{- end }}
+
+        ports:
+        - containerPort: 3000
+
+        readinessProbe:
+          exec:
+            command:
+              - wget
+              - -q # quiet
+              - -S # show server response
+              - -O
+              - "-" # Redirect output to stdout
+              - http://localhost:3000/apis/v1beta1/healthz
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+        livenessProbe:
+          exec:
+            command:
+              - wget
+              - -q # quiet
+              - -S # show server response
+              - -O
+              - "-" # Redirect output to stdout
+              - http://localhost:3000/apis/v1beta1/healthz
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+
+        {{- with .Values.pipelines.ui.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.ui.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "kubeflow.pipelines.ui.configMapName" . }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: ml-pipeline-ui
+
+      {{- with include "kubeflow.pipelines.ui.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.ui.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.ui.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.ui.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

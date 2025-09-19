@@ -1,0 +1,16 @@
+{{- if (include "kubeflow.pipelines.ui.createIstioIntegrationObjects" .) -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  host: {{ include "kubeflow.pipelines.ui.svc.fqdn" . }}
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+{{- end }}

@@ -1,0 +1,29 @@
+{{- if and
+  (include "kubeflow.tensorboard.tensorboardsWebApp.createIstioIntegrationObjects" . | eq "true")
+  (include "kubeflow.istioIntegration.authorizationMode.granular" . | eq "true")
+-}}
+
+# NOTE: this AuthorizationPolicy forces traffic through ext authz http extension
+# so we don't have to provide configuration to allow traffic only from
+# istio-ingressgateway. The .spec.rules.to.operations.notPaths is configured for
+# CloudFlare integration and allows only static, non-secret assets to be
+# accessible without the Istio Auth.
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.authorizationPolicyExtAuthName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  action: CUSTOM
+  provider:
+    name: {{ .Values.istioIntegration.envoyExtAuthzHttpExtensionProviderName }}
+  rules:
+    - {}
+  selector:
+    matchLabels:
+      {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 6 }}
+
+{{- end }}
