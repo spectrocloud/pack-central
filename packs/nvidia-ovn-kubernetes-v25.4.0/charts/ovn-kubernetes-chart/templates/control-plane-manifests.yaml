@@ -1,0 +1,348 @@
+{{- if .Values.controlPlaneManifests.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  - services
+  - endpoints
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: ["discovery.k8s.io"]
+  resources:
+  - endpointslices
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: ["k8s.cni.cncf.io"]
+  resources:
+  - ipamclaims
+  - network-attachment-definitions
+  - multi-networkpolicies
+  verbs: ["list", "get", "watch"]
+- apiGroups: [ "k8s.cni.cncf.io" ]
+  resources:
+  - ipamclaims/status
+  - network-attachment-definitions
+  verbs: [ "patch", "update" ]
+- apiGroups: [ "k8s.cni.cncf.io" ]
+  resources:
+  - network-attachment-definitions
+  verbs: [ "create", "delete" ]
+- apiGroups: ["k8s.ovn.org"]
+  resources:
+  - egressips
+  - egressservices
+  - adminpolicybasedexternalroutes
+  - egressfirewalls
+  - egressqoses
+  - userdefinednetworks
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: ["k8s.ovn.org"]
+  resources:
+  - egressips
+  - egressservices/status
+  - userdefinednetworks
+  - userdefinednetworks/status
+  verbs: [ "patch", "update" ]
+- apiGroups: [""]
+  resources:
+  - events
+  verbs: ["create", "patch", "update"]
+- apiGroups: [""]
+  resources:
+  - pods/status
+  - nodes/status
+  - services/status
+  verbs: [ "patch", "update" ]
+- apiGroups: ["k8s.ovn.org"]
+  resources:
+  - adminpolicybasedexternalroutes/status
+  - egressfirewalls/status
+  - egressqoses/status
+  verbs: [ "patch", "update" ]
+- apiGroups: ["policy.networking.k8s.io"]
+  resources:
+  - adminnetworkpolicies
+  - baselineadminnetworkpolicies
+  verbs: [ "list" ]
+- apiGroups: ["policy.networking.k8s.io"]
+  resources:
+  - adminnetworkpolicies/status
+  - baselineadminnetworkpolicies/status
+  verbs: [ "patch" ]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-configmaps
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-configmaps
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: ovnkube-cluster-manager
+  name: {{ include "ovn-kubernetes.fullname" . }}-cm-prometheus
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app.kubernetes.io/component: ovnkube-cluster-manager
+    {{- include "ovn-kubernetes.selectorLabels" . | nindent 4 }}
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+  - name: http-metrics
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/description: |
+      This Deployment launches the ovn-kubernetes cluster manager networking component.
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ovnkube-cluster-manager
+      {{- include "ovn-kubernetes.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ovnkube-cluster-manager
+        {{- include "ovn-kubernetes.selectorLabels" . | nindent 8 }}
+        kubernetes.io/os: "linux"
+        ovn.dpu.nvidia.com/skip-injection: ""
+    spec:
+      {{- if .Values.global.imagePullSecretName }}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecretName }}
+      {{- end }}
+      priorityClassName: "system-cluster-critical"
+      serviceAccountName: {{ include "ovn-kubernetes.fullname" . }}-cluster-manager
+      hostNetwork: true
+      dnsPolicy: Default
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - ovnkube-cluster-manager
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: ovnkube-cluster-manager
+        image: {{ .Values.controlPlaneManifests.image.repository }}:{{ .Values.controlPlaneManifests.image.tag }}
+        imagePullPolicy: {{ .Values.controlPlaneManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "ovn-cluster-manager"]
+        securityContext:
+          runAsUser: 0
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/log/ovn-kubernetes/
+          name: host-var-log-ovnkube
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVNKUBE_LOGLEVEL
+          value: "4"
+        - name: OVNKUBE_LOGFILE_MAXSIZE
+          value: "100"
+        - name: OVNKUBE_LOGFILE_MAXBACKUPS
+          value: "5"
+        - name: OVNKUBE_LOGFILE_MAXAGE
+          value: "5"
+        - name: OVNKUBE_CONFIG_DURATION_ENABLE
+          value: ""
+        - name: OVN_NET_CIDR
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: net_cidr
+        - name: OVN_SVC_CIDR
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: svc_cidr
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: K8S_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OVN_HYBRID_OVERLAY_ENABLE
+          value: ""
+        - name: OVN_ADMIN_NETWORK_POLICY_ENABLE
+          value: ""
+        - name: OVN_EGRESSIP_ENABLE
+          value: ""
+        - name: OVN_EGRESSSERVICE_ENABLE
+          value: ""
+        - name: OVN_EGRESSFIREWALL_ENABLE
+          value: ""
+        - name: OVN_EGRESSQOS_ENABLE
+          value: ""
+        - name: OVN_MULTI_NETWORK_ENABLE
+          value: "false"
+        - name: OVN_HYBRID_OVERLAY_NET_CIDR
+          value: ""
+        - name: OVN_DISABLE_SNAT_MULTIPLE_GWS
+          value: ""
+        - name: OVN_EMPTY_LB_EVENTS
+          value: ""
+        - name: OVN_V4_JOIN_SUBNET
+          value: "100.64.0.0/16"
+        - name: OVN_V6_JOIN_SUBNET
+          value: "fd98::/64"
+        - name: OVN_SSL_ENABLE
+          value: "false"
+        - name: OVN_GATEWAY_MODE
+          value: shared
+        - name: OVN_MULTICAST_ENABLE
+          value: ""
+        - name: OVN_ACL_LOGGING_RATE_LIMIT
+          value: "20"
+        - name: OVN_STATELESS_NETPOL_ENABLE
+          value: "true"
+        - name: OVN_HOST_NETWORK_NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: host_network_namespace
+        - name: OVN_ENABLE_INTERCONNECT
+          value: "true"
+        - name: OVN_ENABLE_MULTI_EXTERNAL_GATEWAY
+          value: "false"
+        - name: OVN_V4_TRANSIT_SWITCH_SUBNET
+          value: "100.88.0.0/16"
+        - name: OVN_V6_TRANSIT_SWITCH_SUBNET
+          value: "fd97::/64"
+        - name: OVN_ENABLE_PERSISTENT_IPS
+          value: "false"
+        - name: OVN_ENABLE_DNSNAMERESOLVER
+          value: "false"
+        - name: OVN_NOHOSTSUBNET_LABEL
+          value: "k8s.ovn.org/ovn-managed=false"
+      volumes:
+      - name: host-var-run-dbus
+        hostPath:
+          path: /var/run/dbus
+      - name: host-var-log-ovs
+        hostPath:
+          path: /var/log/openvswitch
+      - name: host-var-log-ovnkube
+        hostPath:
+          path: /var/log/ovn-kubernetes
+      - name: host-var-run-ovs
+        hostPath:
+          path: /var/run/openvswitch
+      - name: host-ovn-cert
+        hostPath:
+          path: /etc/ovn
+          type: DirectoryOrCreate
+      tolerations:
+      - operator: "Exists"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: ovnkube-cluster-manager
+  name: {{ include "ovn-kubernetes.fullname" . }}-cm-prometheus
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+    scheme: http
+    path: /metrics
+  jobLabel: k8s-app
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ovnkube-cluster-manager
+      {{- include "ovn-kubernetes.selectorLabels" . | nindent 6 }}
+{{- end }}

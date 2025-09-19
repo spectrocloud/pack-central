@@ -1,0 +1,21 @@
+annotations:
+  commit: ec2bf0e0f3d1139fd613c2f1b57cd4cb6bdeb029
+  created: "2025-08-29T09:56:01+00:00"
+  dpfVersion: v25.7.0
+apiVersion: v2
+appVersion: 1.0.0
+dependencies:
+- condition: ovn-kubernetes-resource-injector.enabled
+  name: ovn-kubernetes-resource-injector
+  repository: ""
+  version: 1.0.0
+description: Helm chart to deploy ovn-kubernetes in the NVIDIA DOCA Platform Framework
+  (DPF) context
+home: https://ovn-kubernetes.io/
+icon: https://www.ovn.org/images/ovn-logo.png
+name: ovn-kubernetes-chart
+sources:
+- https://github.com/ovn-org/ovn-kubernetes
+- https://github.com/ovn-org/ovn
+type: application
+version: v25.7.0

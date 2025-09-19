@@ -1,0 +1,110 @@
+nameOverride: ovn-kubernetes
+
+# -- Variables related to the OVN Kubernetes Resource Injector
+ovn-kubernetes-resource-injector:
+  enabled: false
+  resourceName: nvidia.com/bf3-p0-vfs
+  controllerManager:
+    webhook:
+      command:
+      - /ovnkubernetesresourceinjector
+      image:
+        repository: ${OVNKUBERNETES_IMAGE}
+        tag: ${TAG}
+
+# -- Variables related to manifests that are deployed for nodes with DPU
+nodeWithDPUManifests:
+  enabled: false
+  image:
+    repository: ${OVNKUBERNETES_IMAGE}
+    tag: ${TAG}
+    pullPolicy: IfNotPresent
+  nodeMgmtPortNetdev: ""
+  dpuServiceAccountName: ovn-dpu
+  dpuServiceAccountNamespace: ovn-kubernetes
+  cniBinDir: "/opt/cni/bin"
+  cniConfDir: "/etc/cni/net.d"
+
+# -- Variables related to manifests that are deployed for nodes without DPU
+nodeWithoutDPUManifests:
+  enabled: false
+  image:
+    repository: ${OVNKUBERNETES_IMAGE}
+    tag: ${TAG}
+    pullPolicy: IfNotPresent
+  cniBinDir: "/opt/cni/bin"
+  cniConfDir: "/etc/cni/net.d"
+
+# -- Variables related to manifests that are deployed on the DPU
+dpuManifests:
+  enabled: false
+  image:
+    repository: ${OVNKUBERNETES_IMAGE}
+    tag: ${TAG}
+    pullPolicy: IfNotPresent
+  kubernetesSecretName: null # user needs to populate based on DPUServiceCredentialRequest
+  vtepCIDR: null # user needs to populate based on DPUServiceIPAM
+  hostCIDR: null # user needs to populate based on the host cluster setup
+  ipamPool: null # user needs to populate based on DPUServiceIPAM
+  ipamPoolType: null # user needs to populate based on DPUServiceIPAM
+  ipamVTEPIPIndex: 0
+  ipamPFIPIndex: 1
+  externalDHCP: false
+  gatewayDiscoveryNetwork: "169.254.99.100/32" # This is a "dummy" subnet used to get the default gateway address from DHCP server (via option 121)
+  cniBinDir: "/opt/cni/bin"
+  cniConfDir: "/etc/cni/net.d"
+
+# -- Variables related to manifests that are needed to setup the OVN Control Plane
+controlPlaneManifests:
+  enabled: false
+  image:
+    repository: ${OVNKUBERNETES_IMAGE}
+    tag: ${TAG}
+    pullPolicy: IfNotPresent
+  cniBinDir: "/opt/cni/bin"
+  cniConfDir: "/etc/cni/net.d"
+
+# -- Endpoint of Kubernetes API server
+k8sAPIServer: https://172.25.0.2:6443
+# -- IP range for Kubernetes pods, /14 is the top level range, under which each /23 range will be assigned to a node
+podNetwork: 10.244.0.0/16/24
+# -- A comma-separated set of CIDR notation IP ranges from which k8s assigns service cluster IPs. This should be the same as the value provided for kube-apiserver "--service-cluster-ip-range" option
+serviceNetwork: 10.96.0.0/12
+# -- Options related to setting up the gateway. Applies to all relevant manifests.
+gatewayOpts: ""
+# -- MTU of network interface in a Kubernetes pod
+mtu: 1400
+
+global:
+  # -- The name of the secret used to pull images. Applies to all relevant manifests.
+  imagePullSecretName: ""
+
+# -- Variables related to common manifests used by components in both DPU and Host cluster
+commonManifests:
+  enabled: false
+
+# -- The name of the namespace where the leases are going to be stored. This value
+# should be the same for the host and DPU components. Defaults to Release.Namespace
+# if it's not set.
+leaseNamespace: ""
+
+# DPF Contract. These values are effective only for manifests related to hosts that
+# have a DPU and the DPU manifests themselves.
+serviceDaemonSet:
+  # selects nodes on which this service will run by label. Can be set in DPUService `.spec.serviceDaemonSet.nodeSelector`
+  # nodeSelector:
+  #   nodeSelectorTerms:
+  #   - matchExpressions:
+  #       - key: dpu
+  #         operator: In
+  #         values:
+  #           - dpu
+  # labels on the DaemonSet and pod template. Can be set in DPUService `.spec.serviceDaemonSet.labels`
+  labels: {}
+  # annotations on the DaemonSet and pod template. Can be set in DPUService `.spec.serviceDaemonSet.annotations`
+  annotations: {}
+  # updateStrategy on the DaemonSet. Can be set in DPUService `.spec.serviceDaemonSet.updateStrategy.`
+  updateStrategy: {}
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 1

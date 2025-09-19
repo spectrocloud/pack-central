@@ -1,0 +1,132 @@
+{{- if .Values.commonManifests.enabled }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  net_cidr:      {{ .Values.podNetwork }}
+  svc_cidr:      {{ .Values.serviceNetwork }}
+  k8s_apiserver: {{ .Values.k8sAPIServer }}
+  mtu:           {{ .Values.mtu | quote }}
+  host_network_namespace: "ovn-host-network"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node-status-reader
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes/status
+  verbs: [ "get" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - services
+  - endpoints
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: [""]
+  resources:
+  - nodes
+  verbs: [ "get", "list", "watch", "patch", "update" ]
+- apiGroups: ["coordination.k8s.io"]
+  resources:
+  - leases
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+- apiGroups: ["discovery.k8s.io"]
+  resources:
+  - endpointslices
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: ["k8s.cni.cncf.io"]
+  resources:
+  - network-attachment-definitions
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources:
+  - networkpolicies
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: ["k8s.cni.cncf.io"]
+  resources:
+  - ipamclaims
+  - multi-networkpolicies
+  verbs: ["list", "get", "watch"]
+- apiGroups: [ "k8s.cni.cncf.io" ]
+  resources:
+  - ipamclaims/status
+  verbs: [ "patch", "update" ]
+- apiGroups: ["k8s.ovn.org"]
+  resources:
+  - egressfirewalls/status
+  - adminpolicybasedexternalroutes/status
+  - egressqoses/status
+  verbs: [ "patch", "update" ]
+- apiGroups: ["policy.networking.k8s.io"]
+  resources:
+  - adminnetworkpolicies/status
+  - baselineadminnetworkpolicies/status
+  verbs: [ "patch", "update" ]
+- apiGroups: ["policy.networking.k8s.io"]
+  resources:
+  - adminnetworkpolicies
+  - baselineadminnetworkpolicies
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["k8s.ovn.org"]
+  resources:
+  - egressfirewalls
+  - egressips
+  - egressqoses
+  - egressservices
+  - adminpolicybasedexternalroutes
+  verbs: [ "get", "list", "watch" ]
+- apiGroups: [""]
+  resources:
+  - events
+  verbs: ["create", "patch", "update"]
+- apiGroups: [""]
+  resources:
+  - namespaces/status
+  - pods/status
+  - nodes/status
+  verbs: [ "patch", "update" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-configmaps
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "watch", "list"]
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-endpoints
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - create
+{{- end }}
