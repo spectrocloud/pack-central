@@ -26,7 +26,7 @@ charts:
         repository: ghcr.io/nvidia/ovn-kubernetes
         tag: v25.4.0
         pullPolicy: IfNotPresent
-      nodeMgmtPortNetdev: "ens1f0v0"
+      nodeMgmtPortNetdev: "ens1f0v1"
       dpuServiceAccountName: ovn-dpu
       dpuServiceAccountNamespace: dpf-operator-system
 
