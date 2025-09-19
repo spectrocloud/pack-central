@@ -8,8 +8,6 @@ This CNI should only be used in conjunction with Bluefield-3 DPUs for north-sout
 
 ## Parameters
 
-You can use a table to list parameters with a **Parameter** and a **Description** column. Additionally, include a **Type** column to specify the parameter's type and a **Default Value** column for the parameter's default values. Last, you can include a **Required** column to indicate that the user must provide a value for it.
-
 | **Parameter** | **Description** | **Type** | **Default Value** | **Required** |
 |---|---|---|---|---|
 | ovn-kubernetes-resource-injector.enabled | Controls if VFs from the DPU should be injected into any new pod created. Should only be enabled after the DPF control plane is fully deployed. | Boolean | false | Yes |
