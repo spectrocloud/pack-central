@@ -1,0 +1,41 @@
+{
+  "addonType":"logging",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Fluentbit",
+  "eol": "",
+  "group": "",
+  "charts": [
+    "charts/fluent-bit-0.53.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "fluentbit",
+  "version": "4.0.7",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/fluentbit",
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.27",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 128
+      }
+    ]
+  }
+}
