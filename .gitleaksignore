@@ -31,3 +31,5 @@ a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/hipster-2.0.0/manifests/hipster.y
 a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/hipster-3.0.0/manifests/hipster.yaml:kubernetes-secret-yaml:27
 9e9db671c183a6c890ed53a7f2a196e07b81fbcb:packs/wordpress-6.4.3/charts/wordpress/README.md:private-key:511
 a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/wordpress-5.4.1/charts/wordpress/README.md:private-key:368
+a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/kubewatch-1.0.7/charts/kubewatch/values.yaml:generic-api-key:16
+a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/kubewatch-1.0.7/values.yaml:generic-api-key:22
