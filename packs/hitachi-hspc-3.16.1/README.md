@@ -19,6 +19,7 @@ To deploy the Hitachi HSPC pack, you need to set, at minimum, the following para
 | `hspc.vsp.url` | The URL of your Hitachi VSP management endpoint. | String  | - | Yes |
 | `hspc.vsp.user` | The username of a Hitachi VSP account with appropriate permissions. | String  | - | Yes |
 | `hspc.vsp.password` | The password of a Hitachi VSP account with appropriate permissions. | String  | - | Yes |
+| `hspc.vsp.hostModeOptions` | Host Mode Options to set on the VSP. Commented by default. Do not set without Hitachi guidance | String  | - | Yes |
 | `hspc.storageClass.parameters.serialNumber` | The serial number of the VSP storage chassis. | String  | - | Yes |
 | `hspc.storageClass.parameters.poolID` | The HDP Pool ID (omit for VSP One SDS Block). | String  | - | Yes |
 | `hspc.storageClass.parameters.portID` | The port ID (omit for VSP One SDS Block). Use a comma separator for multipath. If an NVMe over FC is used, don't set this option. | String  | - | Yes |
