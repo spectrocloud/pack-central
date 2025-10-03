@@ -1,0 +1,55 @@
+apiVersion: operator.dpu.nvidia.com/v1alpha1
+kind: DPFOperatorConfig
+metadata:
+  name: dpfoperatorconfig
+  namespace: {{ .Release.Namespace }}
+spec:
+{{- if .Values.dpuDetector }}
+  dpuDetector: {{ .Values.dpuDetector | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.dpuServiceController }}
+  dpuServiceController: {{ .Values.dpuServiceController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.flannel }}
+  flannel: {{ .Values.flannel | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+  imagePullSecrets: {{ .Values.imagePullSecrets | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.kamajiClusterManager }}
+  kamajiClusterManager: {{ .Values.kamajiClusterManager | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.multus }}
+  multus: {{ .Values.multus | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.networking }}
+  networking: {{ .Values.networking | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.nvipam }}
+  nvipam: {{ .Values.nvipam | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.overrides }}
+  overrides: {{ omit .Values.overrides "kubernetesAPIServerVIP" | toYaml | nindent 4 }}
+    kubernetesAPIServerVIP: {{ include "k8sServiceHost" . }}
+{{- end }}
+{{- if .Values.ovsCNI }}
+  ovsCNI: {{ .Values.ovsCNI | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.ovsHelper }}
+  ovsHelper: {{ .Values.ovsHelper | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.provisioningController }}
+  provisioningController: {{ .Values.provisioningController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.serviceSetController }}
+  serviceSetController: {{ .Values.serviceSetController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.sfcController }}
+  sfcController: {{ .Values.sfcController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.staticClusterManager }}
+  staticClusterManager: {{ .Values.staticClusterManager | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.sriovDevicePlugin }}
+  sriovDevicePlugin: {{ .Values.sriovDevicePlugin | toYaml | nindent 4 }}
+{{- end }}

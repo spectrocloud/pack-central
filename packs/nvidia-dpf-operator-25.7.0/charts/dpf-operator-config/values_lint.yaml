@@ -1,0 +1,13 @@
+#imagePullSecrets:
+#  - dockerio-secret
+overrides:
+  kubernetesAPIServerVIP: "auto"
+  kubernetesAPIServerPort: 6443
+provisioningController:
+  bfbPVCName: "bfb-pvc"
+  dmsTimeout: 900
+kamajiClusterManager:
+  disable: false
+networking:
+  controlPlaneMTU: 9000
+  highSpeedMTU: 9000
