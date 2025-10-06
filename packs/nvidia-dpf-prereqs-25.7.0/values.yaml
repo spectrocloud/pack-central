@@ -51,6 +51,8 @@ charts:
     worker:
       enable: true
       hostNetwork: true
+      # Change dnsPolicy to "Default" when deploying on MAAS
+      dnsPolicy: ClusterFirstWithHostNet
       tolerations:
         - key: node.kubernetes.io/not-ready
           operator: Exists

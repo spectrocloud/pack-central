@@ -173,6 +173,7 @@ worker:
   extraArgs: []
   extraEnvs: []
   hostNetwork: false
+  dnsPolicy: ClusterFirstWithHostNet
   config: ### <NFD-WORKER-CONF-START-DO-NOT-REMOVE>
     #core:
     #  labelWhiteList:

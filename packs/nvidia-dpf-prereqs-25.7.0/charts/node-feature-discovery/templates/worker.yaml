@@ -28,7 +28,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      dnsPolicy: ClusterFirstWithHostNet
+    {{- with .Values.worker.dnsPolicy }}
+      dnsPolicy: {{ . | default "ClusterFirstWithHostNet" }}
+    {{- end }}
     {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
     {{- end }}
