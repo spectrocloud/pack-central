@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.notebooks.jupyterWebApp.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.jupyterWebApp.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    {{- include "kubeflow.notebooks.jupyterWebApp.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.notebooks.jupyterWebApp.service.type }}
+
+{{- end }}

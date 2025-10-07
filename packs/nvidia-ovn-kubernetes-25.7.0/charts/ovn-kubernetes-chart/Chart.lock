@@ -1,0 +1,6 @@
+dependencies:
+- name: ovn-kubernetes-resource-injector
+  repository: ""
+  version: 1.0.0
+digest: sha256:020b185c5fe23bc449611d35e926570f0dceea1e0d4afb5ecf4c972a400a6cfb
+generated: "2025-08-29T09:56:03.789283402Z"

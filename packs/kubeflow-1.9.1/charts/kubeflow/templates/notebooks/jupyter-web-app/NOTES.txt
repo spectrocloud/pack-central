@@ -1,0 +1,1 @@
+The Role and RoleBinding were not added because of https://github.com/kubeflow/manifests/issues/2601

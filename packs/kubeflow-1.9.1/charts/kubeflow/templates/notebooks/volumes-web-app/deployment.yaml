@@ -1,0 +1,94 @@
+{{- if (include "kubeflow.notebooks.volumesWebApp.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.notebooks.volumesWebApp.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.notebooks.volumesWebApp.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.volumesWebApp.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.notebooks.volumesWebApp.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.notebooks.volumesWebApp.baseName" . }}
+        image: {{ include "kubeflow.notebooks.volumesWebApp.image" . }}
+        imagePullPolicy: {{ include "kubeflow.notebooks.volumesWebApp.imagePullPolicy" . }}
+
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+
+        {{- with .Values.notebooks.volumesWebApp.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        - mountPath: /etc/config/viewer-spec.yaml
+          name: viewer-spec
+          subPath: viewer-spec.yaml
+
+        env:
+        - name: APP_PREFIX
+          value: {{ .Values.notebooks.volumesWebApp.config.urlPrefix }}
+        - name: USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: USERID_PREFIX
+          value: {{ .Values.auth.userIdPrefix | quote }}
+        - name: APP_SECURE_COOKIES
+          value: {{ .Values.notebooks.volumesWebApp.config.secureCookies | quote }}
+
+        {{- with include "kubeflow.notebooks.volumesWebApp.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.notebooks.volumesWebApp.serviceAccountName" . }}
+
+      volumes:
+      - name: viewer-spec
+        configMap:
+          name: {{ include "kubeflow.notebooks.volumesWebApp.configMapName" . }}
+
+      {{- with include "kubeflow.notebooks.volumesWebApp.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.volumesWebApp.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.volumesWebApp.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.notebooks.volumesWebApp.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -1,0 +1,134 @@
+{{- if (include "kubeflow.profilesController.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.profilesController.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.profilesController.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.profilesController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.profilesController.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.profilesController.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.profilesController.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: manager
+        image: {{ include "kubeflow.profilesController.manager.image" . }}
+        imagePullPolicy: {{ include "kubeflow.profilesController.manager.imagePullPolicy" . }}
+
+        command:
+        - /manager
+        - "-userid-header"
+        - {{ .Values.auth.userHeaderName | quote }}
+        - "-userid-prefix"
+        - {{ default "" .Values.auth.userIdPrefix | quote }}
+        - "-workload-identity"
+        - {{ default "" .Values.profilesController.config.workloadIdentity | quote }}
+
+        env:
+        - name: ADMIN
+          value: {{ default "" .Values.profilesController.config.admin | quote }}
+        - name: WORKLOAD_IDENTITY
+          value: {{ default "" .Values.profilesController.config.workloadIdentity | quote }}
+        - name: USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: USERID_PREFIX
+          value: {{ default "" .Values.auth.userIdPrefix | quote }}
+        - name: NOTEBOOK_CONTROLLER_PRINCIPAL
+          value: {{ include "kubeflow.notebooks.controller.serviceAccountPrincipal" . }}
+        - name: KFP_UI_PRINCIPAL
+          value: {{ include "kubeflow.pipelines.ui.serviceAccountPrincipal" . }}
+        {{- if (include "kubeflow.istioIntegration.enabled" . ) }}
+        - name: ISTIO_INGRESS_GATEWAY_PRINCIPAL
+          value: {{ include "kubeflow.istioIntegration.istioIngressGateway.serviceAccountPrincipal" . }}
+        {{- end }}
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9876
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9876
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        ports:
+        - containerPort: 9876
+
+        volumeMounts:
+        - mountPath: /etc/profile-controller
+          name: namespace-labels
+          readOnly: true
+
+      - name: kfam
+        image: {{ include "kubeflow.profilesController.kfam.image" . }}
+        imagePullPolicy: {{ include "kubeflow.profilesController.kfam.imagePullPolicy" . }}
+
+        command:
+        - /access-management
+        - "-cluster-admin"
+        - {{ default "" .Values.profilesController.config.admin | quote }}
+        - "-userid-header"
+        - {{ .Values.auth.userHeaderName | quote }}
+        - "-userid-prefix"
+        - {{ default "" .Values.auth.userIdPrefix | quote }}
+
+        env:
+        - name: ADMIN
+          value: {{ default "" .Values.profilesController.config.admin | quote }}
+        - name: WORKLOAD_IDENTITY
+          value: {{ default "" .Values.profilesController.config.workloadIdentity | quote }}
+        - name: USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: USERID_PREFIX
+          value: {{ default "" .Values.auth.userIdPrefix | quote }}
+        - name: NOTEBOOK_CONTROLLER_PRINCIPAL
+          value: {{ include "kubeflow.notebooks.controller.serviceAccountPrincipal" . }}
+        - name: KFP_UI_PRINCIPAL
+          value: {{ include "kubeflow.pipelines.ui.serviceAccountPrincipal" . }}
+        {{- if (include "kubeflow.istioIntegration.enabled" . ) }}
+        - name: ISTIO_INGRESS_GATEWAY_PRINCIPAL
+          value: {{ include "kubeflow.istioIntegration.istioIngressGateway.serviceAccountPrincipal" . }}
+        {{- end }}
+
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        ports:
+        - containerPort: 8081
+          name: kfam-http
+          protocol: TCP
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.profilesController.serviceAccountName" . }}
+
+      volumes:
+      - name: namespace-labels
+        configMap:
+          name: {{ include "kubeflow.profilesController.namespaceLabelsConfigMapName" . }}
+
+{{- end }}

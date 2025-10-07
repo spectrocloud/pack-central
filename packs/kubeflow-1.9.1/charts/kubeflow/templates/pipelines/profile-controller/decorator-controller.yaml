@@ -1,0 +1,50 @@
+{{- if (include "kubeflow.pipelines.profileController.enabled" . | eq "true") -}}
+
+# Change resyncPeriodSeconds to 1 hour from insane 20 seconds  
+# Only  sync namespaces with pipelines.kubeflow.org/enabled = "true"
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: DecoratorController
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.profileController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.profileController.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  resyncPeriodSeconds: 3600
+  resources:
+  - apiVersion: v1
+    resource: namespaces
+    labelSelector:
+      matchLabels:
+        pipelines.kubeflow.org/enabled: "true"
+  attachments:
+  - apiVersion: v1
+    resource: secrets
+    updateStrategy:
+      method: OnDelete
+  - apiVersion: v1
+    resource: configmaps
+    updateStrategy:
+      method: OnDelete
+  - apiVersion: apps/v1
+    resource: deployments
+    updateStrategy:
+      method: InPlace
+  - apiVersion: v1
+    resource: services
+    updateStrategy:
+      method: InPlace
+  - apiVersion: networking.istio.io/v1alpha3
+    resource: destinationrules
+    updateStrategy:
+      method: InPlace
+  - apiVersion: security.istio.io/v1beta1
+    resource: authorizationpolicies
+    updateStrategy:
+      method: InPlace
+  hooks:
+    sync:
+      webhook:
+        url: {{ printf "http://%s/sync" (include "kubeflow.pipelines.profileController.svc.fqdn" .) }}
+
+{{- end }}

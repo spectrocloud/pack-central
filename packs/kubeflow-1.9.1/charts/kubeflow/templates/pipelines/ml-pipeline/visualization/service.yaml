@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.pipelines.visualization.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.pipelines.visualization.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.visualization.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.visualization.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    {{- include "kubeflow.pipelines.visualization.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.visualization.service.type }}
+
+{{- end }}

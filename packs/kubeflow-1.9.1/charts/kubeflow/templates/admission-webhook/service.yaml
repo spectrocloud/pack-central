@@ -1,0 +1,24 @@
+{{- if (include "kubeflow.admissionWebhook.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.admissionWebhook.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+    - name: https-webhook
+      port: {{ .Values.admissionWebhook.service.port }}
+      targetPort: https-webhook
+  selector:
+    {{- include "kubeflow.admissionWebhook.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.admissionWebhook.service.type }}
+
+{{- end }}

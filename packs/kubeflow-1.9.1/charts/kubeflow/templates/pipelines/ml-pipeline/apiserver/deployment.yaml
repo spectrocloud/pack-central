@@ -1,0 +1,162 @@
+{{- if (include "kubeflow.pipelines.mlPipeline.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.mlPipeline.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.mlPipeline.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.mlPipeline.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.mlPipeline.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.mlPipeline.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.mlPipeline.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-api-server
+        image: {{ include "kubeflow.pipelines.mlPipeline.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.mlPipeline.imagePullPolicy" . }}
+
+        env:
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.user.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.password.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.host.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.port.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.pipelineDatabaseName.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.conMaxLifetime.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.db.driver.env.spec" . | nindent 8 }}
+
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.accessKey.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.secretAccessKey.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.host.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.port.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.region.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.bucketName.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.mlPipeline.config.objectStore.secure.env.spec" . | nindent 8 }}
+
+        # ---
+        # variables from pipeline-api-server-config-dc9hkg52h6
+        # TODO: parameterize DEFAULTPIPELINERUNNERSERVICEACCOUNT
+        - name: DEFAULTPIPELINERUNNERSERVICEACCOUNT
+          value: default-editor
+        - name: MULTIUSER
+          value: {{ (include "kubeflow.isMultiuser" .) | quote }}
+        - name: VISUALIZATIONSERVICE_NAME
+          value: ml-pipeline-visualizationserver
+        - name: VISUALIZATIONSERVICE_PORT
+          value: "8888"
+        - name: LOG_LEVEL
+          value: "info"
+        # ---
+
+        - name: KUBEFLOW_USERID_HEADER
+          value: {{ .Values.auth.userHeaderName | quote }}
+        - name: KUBEFLOW_USERID_PREFIX
+          value: {{ .Values.auth.userIdPrefix | quote }}
+        - name: AUTO_UPDATE_PIPELINE_DEFAULT_VERSION
+          value: {{ .Values.pipelines.mlPipeline.config.autoUpdatePipelineDefaultVersion | quote }}
+
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+        ports:
+        - name: http
+          containerPort: 8888
+        - name: grpc
+          containerPort: 8887
+
+        # readinessProbe:
+        #   exec:
+        #     command:
+        #       - wget
+        #       - -q # quiet
+        #       - -S # show server response
+        #       - -O
+        #       - "-" # Redirect output to stdout
+        #       - http://localhost:8888/apis/v1beta1/healthz
+        #   initialDelaySeconds: 3
+        #   periodSeconds: 5
+        #   timeoutSeconds: 2
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #       - wget
+        #       - -q # quiet
+        #       - -S # show server response
+        #       - -O
+        #       - "-" # Redirect output to stdout
+        #       - http://localhost:8888/apis/v1beta1/healthz
+        #   initialDelaySeconds: 3
+        #   periodSeconds: 5
+        #   timeoutSeconds: 2
+        # # This startup probe provides up to a 60 second grace window before the
+        # # liveness probe takes over to accomodate the occasional database
+        # # migration.
+        # startupProbe:
+        #   exec:
+        #     command:
+        #       - wget
+        #       - -q # quiet
+        #       - -S # show server response
+        #       - -O
+        #       - "-" # Redirect output to stdout
+        #       - http://localhost:8888/apis/v1beta1/healthz
+        #   failureThreshold: 12
+        #   periodSeconds: 5
+        #   timeoutSeconds: 2
+
+        {{- with .Values.pipelines.mlPipeline.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.mlPipeline.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.mlPipeline.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.mlPipeline.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.mlPipeline.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.mlPipeline.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.mlPipeline.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

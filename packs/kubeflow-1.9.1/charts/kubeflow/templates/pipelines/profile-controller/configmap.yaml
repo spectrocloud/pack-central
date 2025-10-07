@@ -1,0 +1,14 @@
+{{- if (include "kubeflow.pipelines.profileController.enabled" .) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.profileController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.profileController.configMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  sync.py: |
+    {{- .Files.Get "files/pipelines-profile-controller/sync.py" | nindent 4 }}
+
+{{- end }}

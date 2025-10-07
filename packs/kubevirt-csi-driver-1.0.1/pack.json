@@ -1,0 +1,22 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "docsURL": "",
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "edge-native"
+  ],
+  "displayName": "Kubevirt CSI Driver",
+  "charts": [
+    "charts/kubevirt-csi-driver-1.0.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubevirt-csi-driver",
+  "version": "1.0.1",
+  "constraints": {
+    "dependencies": []
+  } 
+}

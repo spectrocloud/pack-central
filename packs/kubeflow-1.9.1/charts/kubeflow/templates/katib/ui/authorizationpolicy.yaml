@@ -1,0 +1,22 @@
+{{- if (include "kubeflow.katib.ui.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.katib.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.ui.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.katib.ui.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        namespaces:
+        # in upstream this is directly the istio-ingressgateway service account
+        # apps/katib/upstream/installs/katib-with-kubeflow/istio-authorizationpolicy.yaml
+        - {{ .Values.istioIntegration.ingressGatewayNamespace }}
+
+{{- end }}

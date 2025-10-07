@@ -1,0 +1,83 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.mainClusterRoleName" . }}
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - virtualservices
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+
+{{- end }}
