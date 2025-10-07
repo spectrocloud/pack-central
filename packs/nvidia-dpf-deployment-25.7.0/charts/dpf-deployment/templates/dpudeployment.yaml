@@ -1,0 +1,12 @@
+{{- range $conf := .Values.dpuDeployments }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUDeployment
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  dpus: {{ $conf.dpus | toYaml | nindent 4 }}
+  services: {{ $conf.services | toYaml | nindent 4 }}
+  serviceChains: {{ $conf.serviceChains | toYaml | nindent 4 }}
+{{- end }}

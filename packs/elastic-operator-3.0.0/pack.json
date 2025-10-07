@@ -1,0 +1,39 @@
+{
+    "addonType": "logging",
+    "annotations": {
+      "commit_msg": "Elastic Cloud on Kubernetes (ECK) operator",
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "charts": [
+      "charts/eck-operator-3.0.0.tgz"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "ECK Operator",
+    "layer":"addon",
+    "name": "elastic-operator",
+    "version": "3.0.0",
+    "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.27",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 150
+      }
+    ]
+  }
+}
