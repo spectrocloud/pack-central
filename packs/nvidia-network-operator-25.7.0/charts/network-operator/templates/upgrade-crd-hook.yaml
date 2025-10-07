@@ -1,0 +1,100 @@
+{{- if .Values.upgradeCRDs }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "network-operator.fullname" . }}-hooks-sa
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+    helm.sh/hook-weight: "0"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "network-operator.fullname" . }}-hooks-role
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+    helm.sh/hook-weight: "0"
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - "*"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "network-operator.fullname" . }}-hooks-binding
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
+    helm.sh/hook-weight: "0"
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "network-operator.fullname" . }}-hooks-sa
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "network-operator.fullname" . }}-hooks-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: network-operator-upgrade-crd
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+  labels:
+    {{- include "network-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: "network-operator"
+spec:
+  template:
+    metadata:
+      name: network-operator-upgrade-crd
+      labels:
+        {{- include "network-operator.labels" . | nindent 8 }}
+        app.kubernetes.io/component: "network-operator"
+    spec:
+      {{- with .Values.operator.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.affinity}}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "network-operator.fullname" . }}-hooks-sa
+      imagePullSecrets: {{ include "network-operator.operator.imagePullSecrets" . }}
+      containers:
+        - name: upgrade-crd
+          image: "{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /apply-crds
+          args:
+              - --crds-dir=/crds/network-operator
+        {{- if .Values.sriovNetworkOperator.enabled }}
+              - --crds-dir=/crds/sriov-network-operator
+        {{- end }}
+        {{- if .Values.nfd.enabled }}
+              - --crds-dir=/crds/node-feature-discovery
+        {{- end }}
+        {{- if .Values.nicConfigurationOperator.enabled }}
+              - --crds-dir=/crds/nic-configuration-operator
+        {{- end }}
+        {{- if .Values.maintenanceOperator.enabled }}
+              - --crds-dir=/crds/maintenance-operator
+        {{- end }}
+      restartPolicy: OnFailure
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 25.7.0
+description: DPF Deployment creates the custom resources for a DPF Trusted Mode deployment
+name: dpf-deployment
+type: application
+version: 25.7.0

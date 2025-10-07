@@ -1,0 +1,16 @@
+{{- if (include "kubeflow.istioIntegration.enabled" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+  name: {{ .Values.istioIntegration.gateway.name }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    {{- toYaml .Values.istioIntegration.gateway.selector | nindent 4 }}
+  servers:
+    {{- toYaml .Values.istioIntegration.gateway.servers | nindent 4 }}
+
+{{- end }}

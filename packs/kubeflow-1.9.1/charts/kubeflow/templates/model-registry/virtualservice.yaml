@@ -1,0 +1,36 @@
+{{- if (include "kubeflow.modelRegistry.createIstioIntegrationObjects" .) -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.modelRegistry.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.modelRegistry.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.modelRegistry.config.rest.urlPrefix }}
+    route:
+    - destination:
+        host: {{ include "kubeflow.modelRegistry.svc.fqdn" . }}
+        port:
+          number: {{ .Values.modelRegistry.service.restPort }}
+  - match:
+    - port: {{ .Values.modelRegistry.service.grpcPort }}
+    - authority:
+        regex: {{ include "kubeflow.modelRegistry.svc.name" . }}(\..+)?(:{{ .Values.modelRegistry.service.grpcPort }})?
+    - uri:
+        prefix: {{ .Values.modelRegistry.config.grpc.urlPrefix }}
+    route:
+    - destination:
+        host: {{ include "kubeflow.modelRegistry.svc.fqdn" . }}
+        port:
+          number: {{ .Values.modelRegistry.service.grpcPort }}
+
+{{- end }}

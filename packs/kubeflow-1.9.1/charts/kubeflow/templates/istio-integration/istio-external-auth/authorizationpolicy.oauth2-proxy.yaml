@@ -1,0 +1,48 @@
+{{- if and
+  (include "kubeflow.istioIntegration.enabled" . | eq "true")
+  (include "kubeflow.istioIntegration.authorizationMode.ingressgateway" . | eq "true")
+-}}
+
+# NOTE: this AuthorizationPolicy forces traffic through ext authz http extension.
+# The .spec.rules.to.operations.notPaths is configured for
+# CloudFlare integration and allows only static, non-secret assets to be
+# accessible without the Istio Auth.
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.extAuth.authorizationPolicyName" . }}
+  namespace: {{ .Values.istioIntegration.ingressGatewayNamespace }}
+spec:
+  action: CUSTOM
+  provider:
+    name: {{ .Values.istioIntegration.envoyExtAuthzHttpExtensionProviderName }}
+  rules:
+    - when:
+      - key: request.headers[authorization]
+        notValues: ["*"]
+      to:
+      - operation:
+          notPaths:
+          # Exclude dex paths, otherwise users won't be able to log in.
+          - /dex/*
+          - /dex/**
+          - /oauth2/*
+          # Exclude paths which are safe to cache by Cloudflare.
+          - /favicon*
+          - /webcomponentsjs*
+          - /vendor.bundle.js
+          - /app.bundle.js
+          - /dashboard_lib.bundle.js
+          - /assets*
+          - /app.css
+          # Exclude paths used by Knative healthchecks
+          - /metrics
+          - /healthz
+  selector:
+    matchLabels:
+      {{- toYaml .Values.istioIntegration.gateway.selector | nindent 6 }}
+
+{{- end }}
