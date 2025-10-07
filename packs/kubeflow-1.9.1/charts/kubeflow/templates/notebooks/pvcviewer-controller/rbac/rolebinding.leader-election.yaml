@@ -1,0 +1,19 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.leaderElectionRoleBindingName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "kubeflow.notebooks.pvcviewerController.leaderElectionRoleName" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubeflow.notebooks.pvcviewerController.serviceAccountName" .}}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

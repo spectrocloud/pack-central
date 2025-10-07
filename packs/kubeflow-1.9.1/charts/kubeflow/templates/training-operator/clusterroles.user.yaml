@@ -1,0 +1,109 @@
+{{- if (include "kubeflow.trainingOperator.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.kfTrAdminClusterRoleName" . }}
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      {{- include "kubeflow.trainingOperator.kfTrAdminClusterRoleLabel" . | nindent 6 }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowEditRoleLabel" . | nindent 4 }}
+    {{- include "kubeflow.trainingOperator.kfTrAdminClusterRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.kfTrEditClusterRoleName" . }}
+rules:
+- apiGroups:
+    - kubeflow.org
+  resources:
+    - mpijobs
+    - tfjobs
+    - pytorchjobs
+    - mxjobs
+    - xgboostjobs
+    - paddlejobs
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - kubeflow.org
+  resources:
+    - mpijobs/status
+    - tfjobs/status
+    - pytorchjobs/status
+    - mxjobs/status
+    - xgboostjobs/status
+    - paddlejobs/status
+  verbs:
+    - get
+- apiGroups:
+    - ""
+  resources:
+    - persistentvolumeclaims
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - watch
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - get
+    - list
+    - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowViewRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.kfTrViewClusterRoleName" . }}
+rules:
+- apiGroups:
+    - kubeflow.org
+  resources:
+    - mpijobs
+    - tfjobs
+    - pytorchjobs
+    - mxjobs
+    - xgboostjobs
+    - paddlejobs
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+    - kubeflow.org
+  resources:
+    - mpijobs/status
+    - tfjobs/status
+    - pytorchjobs/status
+    - mxjobs/status
+    - xgboostjobs/status
+    - paddlejobs/status
+  verbs:
+    - get
+
+{{- end }}

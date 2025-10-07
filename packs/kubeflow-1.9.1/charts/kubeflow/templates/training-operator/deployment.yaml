@@ -1,0 +1,122 @@
+{{- if (include "kubeflow.trainingOperator.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.trainingOperator.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.trainingOperator.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.trainingOperator.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.trainingOperator.selectorLabels" . | nindent 8 }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.trainingOperator.baseName" . }}
+        image: {{ include "kubeflow.trainingOperator.image" . }}
+        imagePullPolicy: {{ include "kubeflow.trainingOperator.imagePullPolicy" . }}
+
+        command:
+        - /manager
+
+        ports:
+          - containerPort: {{ .Values.trainingOperator.service.monitoring.targetPort }}
+          - containerPort: {{ .Values.trainingOperator.service.webhookServer.targetPort }}
+            name: webhook-server
+            protocol: TCP
+
+        {{- with .Values.trainingOperator.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+          - mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 3
+
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+
+        {{- with include "kubeflow.trainingOperator.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.trainingOperator.serviceAccountName" . }}
+
+      {{- with include "kubeflow.trainingOperator.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.trainingOperator.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.trainingOperator.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.trainingOperator.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.trainingOperator.terminationGracePeriodSeconds" . }}
+      terminationGracePeriodSeconds:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: {{ include "kubeflow.trainingOperator.tlsCertSecretName" . }}
+
+{{- end }}

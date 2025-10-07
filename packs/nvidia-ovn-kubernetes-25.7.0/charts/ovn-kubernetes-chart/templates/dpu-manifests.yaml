@@ -1,0 +1,908 @@
+{{- if .Values.dpuManifests.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+  namespace: {{ .Release.Namespace }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner-token
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/service-account.name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node-status-reader
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node-status-reader
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-configmaps
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-configmaps
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-endpoints
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  name: {{ include "ovn-kubernetes.fullname" . }}-endpoints
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ include "ovn-kubernetes.fullname" . }}-node
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.serviceDaemonSet.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  annotations:
+    {{- with .Values.serviceDaemonSet.annotations }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+    kubernetes.io/description: |
+      This DaemonSet launches the ovn-kubernetes networking components for worker nodes.
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ovnkube-node
+      {{- include "ovn-kubernetes.selectorLabels" . | nindent 6 }}
+      {{- with .Values.serviceDaemonSet.labels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  {{- with .Values.serviceDaemonSet.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ovnkube-node
+        {{- include "ovn-kubernetes.selectorLabels" . | nindent 8 }}
+        kubernetes.io/os: "linux"
+        {{- with .Values.serviceDaemonSet.labels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- if or (not .Values.dpuManifests.externalDHCP) .Values.serviceDaemonSet.annotations }}
+      annotations:
+        {{- with .Values.serviceDaemonSet.annotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if not .Values.dpuManifests.externalDHCP }}
+        dpf.nvidia.com/ip-requests: |-
+          [
+            {
+              "name": "vtep",
+              "poolName": "{{ .Values.dpuManifests.ipamPool }}",
+              "poolType": "{{ .Values.dpuManifests.ipamPoolType}}",
+              "allocateIPWithIndex": {{ .Values.dpuManifests.ipamVTEPIPIndex }}
+            },
+            {
+              "name": "pf",
+              "poolName": "{{ .Values.dpuManifests.ipamPool }}",
+              "poolType": "{{ .Values.dpuManifests.ipamPoolType}}",
+              "allocateIPWithIndex": {{ .Values.dpuManifests.ipamPFIPIndex }}
+            }
+          ]
+        {{- end }}
+      {{- end }}
+    spec:
+      {{- with .Values.serviceDaemonSet.nodeSelector }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+              {{- toYaml . | nindent 12 }}
+      {{- end }}
+      {{- if .Values.global.imagePullSecretName }}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecretName }}
+      {{- end }}
+      priorityClassName: "system-cluster-critical"
+      serviceAccountName: {{ include "ovn-kubernetes.fullname" . }}-node
+      hostNetwork: true
+      dnsPolicy: Default
+      hostPID: true
+      automountServiceAccountToken: false
+      # DPU CNI provisioner
+      initContainers:
+      {{- if not .Values.dpuManifests.externalDHCP }}
+      - name: ipallocator
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command:
+        - /ipallocator
+        - allocator
+        # Needs to always run so that later it can receive a signal to do a CMD DEL
+        restartPolicy: Always
+        securityContext:
+          # Needs to run as root to ensure that it can access the NVIPAM socket
+          runAsUser: 0
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /var/run/readyz
+        # Startup probe is not really nessecary but it helps ensure that the file is written before the real app container
+        # starts.
+        startupProbe:
+          exec:
+            command:
+            - cat
+            - /var/run/readyz
+        # We use preStop to deallocate the IP when the pod is deleted. Quoting the official docs:
+        # PreStop is called immediately before a container is terminated due to an
+        # API request or management event such as liveness/startup probe failure,
+        # preemption, resource contention, etc. The handler is not called if the
+        # container crashes or exits.
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /ipallocator
+              - deallocator
+        env:
+        - name: IP_ALLOCATOR_REQUESTS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['dpf.nvidia.com/ip-requests']
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: K8S_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        volumeMounts:
+        - mountPath: /opt/cni/bin
+          name: cni-bin-dir
+          readOnly: true
+        - mountPath: /var/lib/cni/nv-ipam
+          name: nvipam-daemon-socket-dir
+          readOnly: true
+        - mountPath: /tmp/ips
+          name: ips
+        # Used for caching the result
+        - mountPath: /var/lib/cni
+          name: cni-cache
+      {{- end }}
+      - name: cniprovisioner
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/cniprovisioner"]
+        args:
+        {{- if .Values.dpuManifests.externalDHCP }}
+        - external-ipam
+        {{- else }}
+        - internal-ipam
+        {{- end }}
+        # Needs to always run because of DHCP server
+        restartPolicy: Always
+        # Ensures that DHCP server is up and running. This is for serving IP to the PF on the host.
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /var/run/readyz
+        # Needed to ensure that the configuration finishes before the rest of the containers start
+        startupProbe:
+          exec:
+            command:
+            - cat
+            - /var/run/readyz
+          initialDelaySeconds: 30
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        {{- if .Values.dpuManifests.externalDHCP }}
+        # Needed so that systemctl can run inside the container
+        - name: SYSTEMCTL_FORCE_BUS
+          value: "1"
+        # Needed so that systemctl called via netplan doesn't do noop actions
+        - name: SYSTEMD_OFFLINE
+          value: "0"
+        # Needed so that udevadm called via systemctl called via netplan doesn't do noop actions. Although deprecated,
+        # this is what it's in use. The new env variable SYSTEMD_IN_CHROOT doesn't work.
+        - name: SYSTEMD_IGNORE_CHROOT
+          value: "1"
+        - name: GATEWAY_DISCOVERY_NETWORK
+          value: {{ default "" .Values.dpuManifests.gatewayDiscoveryNetwork | quote }}
+        {{- else }}
+        - name: OVN_MTU
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: mtu
+        {{- end }}
+        - name: VTEP_CIDR
+          value: {{ default "" .Values.dpuManifests.vtepCIDR | quote }}
+        - name: HOST_CIDR
+          value: {{ default "" .Values.dpuManifests.hostCIDR | quote }}
+        volumeMounts:
+        {{- if .Values.dpuManifests.externalDHCP }}
+        # Needed so that we can write netplan config files
+        - mountPath: /etc/netplan
+          name: netplan
+        # Needed so that netplan apply writes systemd networkd config files to host path
+        - name: run-systemd
+          mountPath: /run/systemd
+        # Needed so that netplan apply can restart systemd services
+        - name: systemd-dbus
+          mountPath: /var/run/dbus/system_bus_socket
+        # Needed so that netplan apply can run udevadm reload
+        - mountPath: /run/udev
+          name: run-udev
+        # Needed so that netplan apply uses the MACAddressPolicy of the system instead of the image one
+        # which leads to a conflicting MAC addresses across nodes
+        - mountPath: /usr/lib/systemd/network
+          name: usr-lib-systemd-network
+        {{- else }}
+        - mountPath: /tmp/ips
+          name: ips
+        {{- end }}
+        - mountPath: /etc/init-output
+          name: init-output
+        - name: incluster
+          mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+          readOnly: true
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+      containers:
+      - name: nb-ovsdb
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "local-nb-ovsdb"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_ADMIN"]
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/openvswitch/
+          name: host-etc-ovs
+        - mountPath: /etc/ovn/
+          name: host-var-lib-ovs
+        - mountPath: /var/log/openvswitch/
+          name: host-var-log-ovs
+        - mountPath: /var/log/ovn/
+          name: host-var-log-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVN_LOGLEVEL_NB
+          value: "-vconsole:info -vfile:info"
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: K8S_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovnnb-db"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+          periodSeconds: 60
+      - name: sb-ovsdb
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "local-sb-ovsdb"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_ADMIN"]
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/openvswitch/
+          name: host-etc-ovs
+        - mountPath: /etc/ovn/
+          name: host-var-lib-ovs
+        - mountPath: /var/log/openvswitch/
+          name: host-var-log-ovs
+        - mountPath: /var/log/ovn/
+          name: host-var-log-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVN_LOGLEVEL_SB
+          value: "-vconsole:info -vfile:info"
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: K8S_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: OVN_SSL_ENABLE
+          value: "no"
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovnsb-db"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+          periodSeconds: 60
+      - name: ovn-northd
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "run-ovn-northd"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["SYS_NICE"]
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/log/openvswitch/
+          name: host-var-log-ovs
+        - mountPath: /var/log/ovn/
+          name: host-var-log-ovs
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVN_LOGLEVEL_NORTHD
+          value: "-vconsole:info -vfile:info"
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OVN_SSL_ENABLE
+          value: "no"
+        - name: OVN_NORTH
+          value: "local"
+        - name: OVN_SOUTH
+          value: "local"
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovn-northd"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+          periodSeconds: 60
+      - name: doca-ovnkube-controller
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "ovnkube-controller-with-node"]
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/init-output
+          name: init-output
+        - mountPath: /host
+          name: host-slash
+          readOnly: true
+        - mountPath: /var/lib/kubelet
+          name: host-kubelet
+          readOnly: true
+        - mountPath: /host-kubernetes
+          name: host-kubeconfig
+          readOnly: true
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/log/ovn-kubernetes/
+          name: host-var-log-ovnkube
+        - mountPath: /var/run/ovn-kubernetes
+          name: host-var-run-ovn-kubernetes
+        # CNI related mounts which we take over
+        - mountPath: /opt/cni/bin
+          name: host-opt-cni-bin
+        - mountPath: /etc/cni/net.d
+          name: host-etc-cni-netd
+        - mountPath: /var/run/netns
+          name: host-netns
+          mountPropagation: Bidirectional
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        - mountPath: /etc/openvswitch/
+          name: host-etc-ovs
+          readOnly: true
+        - mountPath: /etc/ovn/
+          name: host-var-lib-ovs
+          readOnly: true
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: tenant-cluster-access-secret
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_EGRESSSERVICE_ENABLE
+          value: ""
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVNKUBE_LOGLEVEL
+          value: "4"
+        - name: OVNKUBE_LOGFILE_MAXSIZE
+          value: "100"
+        - name: OVNKUBE_LOGFILE_MAXBACKUPS
+          value: "5"
+        - name: OVNKUBE_LOGFILE_MAXAGE
+          value: "5"
+        - name: OVNKUBE_LIBOVSDB_CLIENT_LOGFILE
+          value: ""
+        - name: OVNKUBE_CONFIG_DURATION_ENABLE
+          value: ""
+        - name: OVNKUBE_METRICS_SCALE_ENABLE
+          value: ""
+        - name: OVN_GATEWAY_ROUTER_SUBNET
+          value: ""
+        - name: OVN_NET_CIDR
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: net_cidr
+        - name: OVN_SVC_CIDR
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: svc_cidr
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: OVN_MTU
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: mtu
+        - name: OVN_ROUTABLE_MTU
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: routable_mtu
+              optional: true
+        - name: K8S_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OVN_GATEWAY_MODE
+          value: shared
+        - name: OVN_GATEWAY_OPTS
+          value: {{ default "" .Values.gatewayOpts | quote }}
+        - name: OVN_HYBRID_OVERLAY_ENABLE
+          value: ""
+        - name: OVN_ADMIN_NETWORK_POLICY_ENABLE
+          value: ""
+        - name: OVN_EGRESSIP_ENABLE
+          value: ""
+        - name: OVN_EGRESSIP_HEALTHCHECK_PORT
+          value: "9107"
+        - name: OVN_EGRESSFIREWALL_ENABLE
+          value: ""
+        - name: OVN_EGRESSQOS_ENABLE
+          value: ""
+        - name: OVN_HYBRID_OVERLAY_NET_CIDR
+          value: ""
+        - name: OVN_DISABLE_SNAT_MULTIPLE_GWS
+          value: ""
+        - name: OVN_DISABLE_FORWARDING
+          value: ""
+        - name: OVN_ENCAP_PORT
+          value: "6081"
+        - name: OVN_DISABLE_PKT_MTU_CHECK
+          value: ""
+        - name: OVN_NETFLOW_TARGETS
+          value: ""
+        - name: OVN_SFLOW_TARGETS
+          value: ""
+        - name: OVN_IPFIX_TARGETS
+          value: ""
+        - name: OVN_IPFIX_SAMPLING
+          value: ""
+        - name: OVN_IPFIX_CACHE_MAX_FLOWS
+          value: ""
+        - name: OVN_IPFIX_CACHE_ACTIVE_TIMEOUT
+          value: ""
+        - name: OVN_V4_JOIN_SUBNET
+          value: "100.64.0.0/16"
+        - name: OVN_V6_JOIN_SUBNET
+          value: "fd98::/64"
+        - name: OVN_V4_MASQUERADE_SUBNET
+          value: "169.254.0.0/17"
+        - name: OVN_V6_MASQUERADE_SUBNET
+          value: "fd69::/112"
+        - name: OVN_MULTICAST_ENABLE
+          value: ""
+        - name: OVN_UNPRIVILEGED_MODE
+          value: "no"
+        - name: OVN_EX_GW_NETWORK_INTERFACE
+          value: ""
+        - name: OVN_SSL_ENABLE
+          value: "no"
+        - name: OVN_DISABLE_OVN_IFACE_ID_VER
+          value: "false"
+        - name: OVN_REMOTE_PROBE_INTERVAL
+          value: "100000"
+        - name: OVN_MONITOR_ALL
+          value: ""
+        - name: OVN_OFCTRL_WAIT_BEFORE_CLEAR
+          value: ""
+        - name: OVN_ENABLE_LFLOW_CACHE
+          value: "false"
+        - name: OVN_LFLOW_CACHE_LIMIT
+          value: ""
+        - name: OVN_LFLOW_CACHE_LIMIT_KB
+          value: ""
+        - name: OVN_MULTI_NETWORK_ENABLE
+          value: "false"
+        - name: OVN_EMPTY_LB_EVENTS
+          value: ""
+        - name: OVN_ACL_LOGGING_RATE_LIMIT
+          value: "20"
+        - name: OVN_STATELESS_NETPOL_ENABLE
+          value: "true"
+        - name: OVN_HOST_NETWORK_NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: host_network_namespace
+        - name: OVN_NORTH
+          value: "local"
+        - name: OVN_SOUTH
+          value: "local"
+        - name: OVN_ENABLE_INTERCONNECT
+          value: "true"
+        - name: OVN_ENABLE_MULTI_EXTERNAL_GATEWAY
+          value: "false"
+        - name: OVN_ENABLE_OVNKUBE_IDENTITY
+          value: "false"
+        - name: OVN_ENABLE_SVC_TEMPLATE_SUPPORT
+          value: "false"
+        - name: OVN_ENABLE_DNSNAMERESOLVER
+          value: "false"
+        - name: OVN_NOHOSTSUBNET_LABEL
+          value: "k8s.ovn.org/ovn-managed=false"
+        - name: OVNKUBE_NODE_MODE
+          value: "dpu"
+        - name: OVNKUBE_NODE_LEASE_NAMESPACE
+          value: {{ default .Release.Namespace .Values.leaseNamespace }}
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovnkube-node"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+          periodSeconds: 60
+      - name: ovn-controller
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "ovn-controller"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["SYS_NICE"]
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/log/openvswitch/
+          name: host-var-log-ovs
+        - mountPath: /var/log/ovn/
+          name: host-var-log-ovs
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        - mountPath: /var/run/ovn/
+          name: host-var-run-ovs
+        - mountPath: /ovn-cert
+          name: host-ovn-cert
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: OVN_LOGLEVEL_CONTROLLER
+          value: "-vconsole:info"
+        - name: K8S_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "ovn-kubernetes.fullname" . }}-config
+              key: k8s_apiserver
+        - name: OVN_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OVN_SSL_ENABLE
+          value: ""
+        - name: OVN_NORTH
+          value: "local"
+        - name: OVN_SOUTH
+          value: "local"
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovn-controller"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+          periodSeconds: 60
+      - name: ovs-metrics-exporter
+        image: {{ .Values.dpuManifests.image.repository }}:{{ .Values.dpuManifests.image.tag }}
+        imagePullPolicy: {{ .Values.dpuManifests.image.pullPolicy }}
+        command: ["/root/ovnkube.sh", "ovs-metrics"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_ADMIN"]
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/log/openvswitch/
+          name: host-var-log-ovs
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+        resources:
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: OVN_DAEMONSET_VERSION
+          value: "1.0.0"
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+      volumes:
+      # CNI provisioner
+      {{- if .Values.dpuManifests.externalDHCP }}
+      - name: netplan
+        hostPath:
+          path: /etc/netplan
+          type: Directory
+      - name: run-systemd
+        hostPath:
+          path: /run/systemd
+      - name: systemd-dbus
+        hostPath:
+          path: /var/run/dbus/system_bus_socket
+      - name: run-udev
+        hostPath:
+          path: /run/udev
+      - name: usr-lib-systemd-network
+        hostPath:
+          path: /usr/lib/systemd/network
+      {{- else }}
+      - name: ips
+        emptyDir: {}
+      - name: cni-bin-dir
+        hostPath:
+          path: {{.Values.dpuManifests.cniBinDir }}
+          type: Directory
+      - name: nvipam-daemon-socket-dir
+        hostPath:
+          path: /var/lib/cni/nv-ipam
+          type: Directory
+      - name: cni-cache
+        emptyDir: {}
+      {{- end }}
+      - name: init-output
+        emptyDir: {}
+      # Common volumes
+      - name: host-var-run-dbus
+        hostPath:
+          path: /var/run/dbus
+      - name: host-kubeconfig
+        hostPath:
+          path: /etc/kubernetes/
+      - name: host-kubelet
+        hostPath:
+          path: /var/lib/kubelet
+      - name: host-var-log-ovnkube
+        hostPath:
+          path: /var/log/ovn-kubernetes
+      - name: host-var-run-ovn-kubernetes
+        hostPath:
+          path: /var/run/ovn-kubernetes
+      - name: host-opt-cni-bin
+        hostPath:
+          path: {{.Values.dpuManifests.cniBinDir }}
+      - name: host-etc-cni-netd
+        hostPath:
+          path: {{.Values.dpuManifests.cniConfDir }}
+      - name: host-slash
+        hostPath:
+          path: /
+      - name: host-netns
+        hostPath:
+          path: /var/run/netns
+      # non DPU related volumes
+      - name: host-var-log-ovs
+        hostPath:
+          path: /var/log/openvswitch
+      - name: host-run-ovs
+        hostPath:
+          path: /run/openvswitch
+      - name: host-var-run-ovs
+        hostPath:
+          path: /var/run/openvswitch
+      - name: host-ovn-cert
+        hostPath:
+          path: /etc/ovn
+          type: DirectoryOrCreate
+      - name: host-var-lib-ovs
+        hostPath:
+          path: /var/lib/openvswitch
+      - name: host-etc-ovs
+        hostPath:
+          path: /etc/openvswitch
+      - name: tenant-cluster-access-secret
+        secret:
+          defaultMode: 420
+          items:
+          - key: KUBERNETES_CA_DATA
+            path: ca.crt
+          - key: TOKEN_FILE
+            path: token
+          secretName: {{ default "" .Values.dpuManifests.kubernetesSecretName }}
+      - name: incluster
+        projected:
+          sources:
+          - secret:
+              name: {{ include "ovn-kubernetes.fullname" . }}-dpucniprovisioner-token
+              items:
+              - key: ca.crt
+                path: ca.crt
+              - key: token
+                path: token
+      tolerations:
+      - operator: "Exists"
+{{- end }}

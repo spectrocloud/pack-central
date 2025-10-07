@@ -1,0 +1,134 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.rbac.createRoles" . | eq "true" ) -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.mainClusterRoleName" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - tensorboard.kubeflow.org
+  resources:
+  - tensorboards
+  - tensorboards/finalizers
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - poddefaults
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.kfTenUiAdminClusterRoleName" . }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowEditRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.kfTenUiEditClusterRoleName" . }}
+rules:
+- apiGroups:
+  - tensorboard.kubeflow.org
+  resources:
+  - tensorboards
+  - tensorboards/finalizers
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - poddefaults
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowViewRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.kfTenUiViewClusterRoleName" . }}
+rules:
+- apiGroups:
+  - tensorboard.kubeflow.org
+  resources:
+  - tensorboards
+  - tensorboards/finalizers
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - poddefaults
+  verbs:
+  - get
+  - list
+  - watch
+
+{{- end }}

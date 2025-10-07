@@ -1,0 +1,22 @@
+{{- if (include "kubeflow.notebooks.controller.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.notebooks.controller.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.notebooks.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.controller.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: 443
+  selector:
+    {{- include "kubeflow.notebooks.controller.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.notebooks.controller.service.type }}
+
+{{- end }}

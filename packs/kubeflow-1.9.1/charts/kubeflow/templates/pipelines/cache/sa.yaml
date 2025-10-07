@@ -1,0 +1,15 @@
+{{- if (include "kubeflow.pipelines.cache.createServiceAccount" . | eq "true") -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  {{- with .Values.pipelines.cache.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.cache.labels" . | nindent 4 }}
+  name:  {{ include "kubeflow.pipelines.cache.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

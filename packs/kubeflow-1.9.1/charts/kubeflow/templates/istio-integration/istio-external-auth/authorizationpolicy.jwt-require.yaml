@@ -1,0 +1,41 @@
+{{- if and
+  (include "kubeflow.istioIntegration.enabled" . | eq "true")
+  (include "kubeflow.istioIntegration.authorizationMode.ingressgateway" . | eq "true")
+-}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.jwtRequire.authorizationPolicyName" . }}
+  namespace: {{ .Values.istioIntegration.ingressGatewayNamespace }}
+spec:
+  action: DENY
+  rules:
+    - from:
+      - source:
+          notRequestPrincipals: ["*"]
+      to:
+      - operation:
+          notPaths:
+          # Exclude dex paths, otherwise users won't be able to log in.
+          - /dex/*
+          - /dex/**
+          - /oauth2/*
+          # Exclude paths which are safe to cache by Cloudflare.
+          - /favicon*
+          - /webcomponentsjs*
+          - /vendor.bundle.js
+          - /app.bundle.js
+          - /dashboard_lib.bundle.js
+          - /assets*
+          - /app.css
+          # Exclude paths used by Knative healthchecks
+          - /metrics
+          - /healthz
+  selector:
+    matchLabels:
+      {{- toYaml .Values.istioIntegration.gateway.selector | nindent 6 }}
+
+{{- end }}

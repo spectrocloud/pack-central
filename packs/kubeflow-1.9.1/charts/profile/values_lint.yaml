@@ -1,0 +1,28 @@
+nameOverride: ""
+
+plugins:
+# - kind: AwsIamForServiceAccount
+#   spec:
+#     awsIamRole: arn:aws:iam::account-id:role/s3-reader
+
+owner:
+  # kind: User
+  # name: test-user@kubeflow.org
+
+resourceQuotaSpec:
+  
+istioIntegration:
+  enabled: true
+  createExtAuthHttpAuthorizationPolicy: true
+  envoyExtAuthzHttpExtensionProviderName: oauth2-proxy
+
+auth:
+  userHeaderName: kubeflow-userid
+
+# Currently not used
+# kubeflowClusterRoleNames:
+#   edit: kubeflow-edit
+#   view: kubeflow-view
+
+contributors:
+# - user@example.com
