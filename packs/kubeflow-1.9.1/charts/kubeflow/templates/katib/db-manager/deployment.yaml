@@ -1,0 +1,56 @@
+{{- if (include "kubeflow.katib.dbmanager.enabled" . | eq "true") -}}
+
+  {{- $autoscalingEnabled := include "kubeflow.katib.dbmanager.autoscaling.enabled" . -}}
+  {{- $replicas := include "kubeflow.katib.dbmanager.autoscaling.minReplicas" . -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.katib.dbmanager.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.dbmanager.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.katib.dbmanager.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.katib.dbmanager.selectorLabels" . | nindent 8 }}
+      {{- with .Values.katib.dbmanager.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: {{ include "kubeflow.katib.dbmanager.baseName" . }}
+          image: {{ include "kubeflow.katib.dbmanager.image" . }} # docker.io/kubeflowkatib/katib-db-manager
+          env:
+            {{- include "kubeflow.katib.dbmanager.config.db.driver.env.spec" . | nindent 12 }}
+            {{- include "kubeflow.katib.dbmanager.config.db.host.env.spec" . | nindent 12 }}
+            {{- include "kubeflow.katib.dbmanager.config.db.port.env.spec" . | nindent 12 }}
+            {{- include "kubeflow.katib.dbmanager.config.db.databaseName.env.spec" . | nindent 12 }}
+            {{- include "kubeflow.katib.dbmanager.config.db.user.env.spec" . | nindent 12 }}
+            {{- include "kubeflow.katib.dbmanager.config.db.password.env.spec" . | nindent 12 }}
+          command:
+            - "./katib-db-manager"
+          ports:
+            - name: api
+              containerPort: 6789
+          livenessProbe:
+            grpc:
+              port: 6789
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            failureThreshold: 5
+      {{- with .Values.katib.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

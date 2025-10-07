@@ -1,0 +1,22 @@
+{{- if (include "kubeflow.katib.controller.enabledWithCertManager" . )}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "kubeflow.katib.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.controller.certName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  isCA: true
+  commonName: {{ include "kubeflow.katib.controller.svc.addressWithSvc" . }}
+  dnsNames:
+    - {{ include "kubeflow.katib.controller.svc.name" . }}
+    - {{ include "kubeflow.katib.controller.svc.addressWithNs" . }}
+    - {{ include "kubeflow.katib.controller.svc.addressWithSvc" . }}
+    - {{ include "kubeflow.katib.controller.svc.fqdn" . }}
+  issuerRef:
+    kind: Issuer
+    name: {{ include "kubeflow.katib.controller.certIssuerName" . }}
+  secretName: {{ include "kubeflow.katib.controller.tlsCertSecretName" . }}
+{{- end }}

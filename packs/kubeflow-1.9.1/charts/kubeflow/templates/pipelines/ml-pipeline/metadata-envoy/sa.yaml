@@ -1,0 +1,15 @@
+{{- if (include "kubeflow.pipelines.metadataEnvoy.createServiceAccount" . | eq "true") -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  {{- with .Values.pipelines.metadataEnvoy.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.metadataEnvoy.labels" . | nindent 4 }}
+  name:  {{ include "kubeflow.pipelines.metadataEnvoy.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

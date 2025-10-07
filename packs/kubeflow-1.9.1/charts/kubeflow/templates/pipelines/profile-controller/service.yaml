@@ -1,0 +1,21 @@
+{{- if (include "kubeflow.pipelines.profileController.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.profileController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.profileController.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    {{- include "kubeflow.pipelines.profileController.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.profileController.service.type }}
+
+{{- end }}

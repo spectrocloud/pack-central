@@ -1,0 +1,42 @@
+{{- if (include "kubeflowCrds.katib.controller.enabled" . | eq "true") -}}
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: {{ include "kubeflowCrds.katib.controller.trialFullName" . }}
+  labels:
+    {{- include "kubeflowCrds.katib.controller.labels" . | nindent 4 }}
+spec:
+  group: {{ include "kubeflowCrds.katib.controller.group" . }}
+  scope: Namespaced
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .status.conditions[-1:].type
+        - name: Status
+          type: string
+          jsonPath: .status.conditions[-1:].status
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+  names:
+    kind: Trial
+    plural: {{ include "kubeflowCrds.katib.controller.trialPluralName" . }}
+    singular: {{ include "kubeflowCrds.katib.controller.trialSingularName" . }}
+    categories:
+      - all
+      - kubeflow
+      - katib
+
+{{- end }}

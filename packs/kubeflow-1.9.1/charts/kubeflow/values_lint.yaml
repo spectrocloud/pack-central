@@ -1,0 +1,2057 @@
+# NOTE: try disabling cache in the ml-pipeline
+# or, try using newer version
+
+# This namespace allows you to define where the services will be installed into
+# if not set then they will use the namespace of the release
+# This is helpful when installing Kubeflow as a chart dependency (sub chart).
+namespace: ""
+
+# one of ['cluster', 'namespace']
+# 'namespace' is not yet fully supported.
+# Maybe rename to 'deploymentScope'?
+deploymentMode: cluster
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+auth:
+  userHeaderName: kubeflow-userid
+  groupsHeaderName: kubeflow-groups
+  authHeader:
+    name: Authorization
+    prefix: "Bearer "
+  userIdPrefix: ""
+
+clusterDomain: cluster.local
+
+defaults:
+  image:
+    registry: docker.io
+    pullPolicy: IfNotPresent
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpreadConstraints:
+  terminationGracePeriodSeconds:
+  containerSecurityContext:
+
+admissionWebhook:
+  enabled: true
+  image:
+    repository: kubeflownotebookswg/poddefaults-webhook
+    tag: v1.9.2
+    registryOverwrite:
+    pullPolicyOverwrite:
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  service:
+    create: true
+    annotations:
+    type: ClusterIP
+    port: 443
+    targetPort: 4443
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+  podDisruptionBudget: {}
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  containerSecurityContext:
+
+centraldashboard:
+  enabled: true
+  image:
+    repository: kubeflownotebookswg/centraldashboard
+    tag: v1.9.2
+    registryOverwrite:
+    pullPolicyOverwrite:
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  service:
+    create: true
+    annotations:
+    type: ClusterIP
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+  podDisruptionBudget: {}
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  containerSecurityContext:
+  config:
+    # This enables the automatic profile creation.
+    enableRegistrationFlow: false
+    logoutURL: "/oauth2/sign_out"
+    forceIFrame: true
+    links:
+      externalLinks:
+      menuLinks:
+        - type: item
+          link: /jupyter/
+          text: Notebooks
+          icon: book
+
+        - type: item
+          link: /tensorboards/
+          text: Tensorboards
+          icon: assessment
+
+        - type: item
+          link: /volumes/
+          text: Volumes
+          icon: device:storage
+
+        - type: item
+          link: /katib/
+          text: Katib Experiments
+          icon: kubeflow:katib
+
+        - type: item
+          link: /kserve-endpoints/
+          text: KServe Endpoints
+          icon: kubeflow:models
+
+        - icon: kubeflow:pipeline-centered
+          items:
+            - type: item
+              text: Pipelines
+              link: /pipeline/#/pipelines
+
+            - type: item
+              text: Experiments
+              link: /pipeline/#/experiments
+
+            - type: item
+              text: Runs
+              link: /pipeline/#/runs
+
+            - type: item
+              text: Recurring Runs
+              link: /pipeline/#/recurringruns
+
+            - type: item
+              text: Artifacts
+              link: /pipeline/#/artifacts
+
+            - type: item
+              text: Executions
+              link: /pipeline/#/executions
+          text: Pipelines
+          type: section
+      quickLinks:
+        - text: Create a new Notebook
+          desc: Kubeflow Notebooks
+          link: /jupyter/new
+        - text: Upload a Pipeline
+          desc: Kubeflow Pipelines
+          link: /pipeline/#/pipelines
+        - text: View Pipeline Runs
+          desc: Notebook Servers
+          link: /pipeline/#/runs
+      documentationItems:
+        - text: Kubeflow Website
+          desc: The Kubeflow website
+          link: https://www.kubeflow.org/
+        - text: Kubeflow Pipelines Documentation
+          desc: Documentation for Kubeflow Pipelines
+          link: https://www.kubeflow.org/docs/components/pipelines/
+        - text: Kubeflow Notebooks Documentation
+          desc: Documentation for Kubeflow Notebooks
+          link: https://www.kubeflow.org/docs/components/notebooks/
+        - text: Kubeflow Training Operator Documentation
+          desc: Documentation for Kubeflow Training Operator
+          link: https://www.kubeflow.org/docs/components/training/"
+        - text: Katib Documentation
+          desc: Documentation for Katib
+          link: https://www.kubeflow.org/docs/components/katib/
+
+notebooks:
+  enabled: true
+  jupyterWebApp:
+    enabled: true
+    image:
+      repository: kubeflownotebookswg/jupyter-web-app
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    # TODO: embed into config
+    urlPrefix: /jupyter
+    uiFlavor: default
+    secureCookies: true
+    logos:
+      # if this is defined, the configmap with logos will not be created but
+      # the one provided with customConfigMap will be used.
+      customConfigMap:
+      # if below values are defined, those will be used for the icons
+      # instead of defaults
+      icons:
+        jupyterIconSvg:
+        jupyterLabLogoSvg:
+        groupOneIconSvg:
+        groupOneLogoSvg:
+        groupTwoIconSvg:
+        groupTwoLogoSvg:
+    spawnerFormDefaults:
+      # --------------------------------------------------------------
+      # Configuration file for the Kubeflow Notebooks UI.
+      #
+      # About the `readOnly` configs:
+      #  - when `readOnly` is set to "true", the respective option
+      #    will be disabled for users and only set by the admin
+      #  - when 'readOnly' is missing, it defaults to 'false'
+      # --------------------------------------------------------------
+
+      ################################################################
+      # Container Images
+      ################################################################
+      # if users can input custom images, or only select from dropdowns
+      allowCustomImage: true
+
+      # if the registry of the container image is hidden from display
+      hideRegistry: true
+
+      # if the tag of the container image is hidden from display
+      hideTag: false
+
+      # configs for the ImagePullPolicy
+      imagePullPolicy:
+        readOnly: false
+
+        # the default ImagePullPolicy
+        # (possible values: "Always", "IfNotPresent", "Never")
+        value: IfNotPresent
+
+      ################################################################
+      # Jupyter-like Container Images
+      #
+      # NOTES:
+      #  - the `image` section is used for "Jupyter-like" apps whose
+      #    HTTP path is configured by the "NB_PREFIX" environment variable
+      ################################################################
+      image:
+        # the default container image
+        value: kubeflownotebookswg/jupyter-scipy:v1.9.2
+
+        # the list of available container images in the dropdown
+        options:
+          - kubeflownotebookswg/jupyter-scipy:v1.9.2
+          - kubeflownotebookswg/jupyter-pytorch-full:v1.9.2
+          - kubeflownotebookswg/jupyter-pytorch-cuda-full:v1.9.2
+          - kubeflownotebookswg/jupyter-tensorflow-full:v1.9.2
+          - kubeflownotebookswg/jupyter-tensorflow-cuda-full:v1.9.2
+
+      ################################################################
+      # VSCode-like Container Images (Group 1)
+      #
+      # NOTES:
+      #  - the `imageGroupOne` section is used for "VSCode-like" apps that
+      #    expose themselves under the HTTP root path "/" and support path
+      #    rewriting without breaking
+      #  - the annotation `notebooks.kubeflow.org/http-rewrite-uri: "/"` is
+      #    set on Notebooks spawned by this group, to make Istio rewrite
+      #    the path of HTTP requests to the HTTP root
+      ################################################################
+      imageGroupOne:
+        # the default container image
+        value: kubeflownotebookswg/codeserver-python:v1.9.2
+
+        # the list of available container images in the dropdown
+        options:
+          - kubeflownotebookswg/codeserver-python:v1.9.2
+
+      ################################################################
+      # RStudio-like Container Images (Group 2)
+      #
+      # NOTES:
+      #  - the `imageGroupTwo` section is used for "RStudio-like" apps whose
+      #    HTTP path is configured by the "X-RStudio-Root-Path" header
+      #  - the annotation `notebooks.kubeflow.org/http-rewrite-uri: "/"` is
+      #    set on Notebooks spawned by this group, to make Istio rewrite
+      #    the path of HTTP requests to the HTTP root
+      #  - the annotation `notebooks.kubeflow.org/http-headers-request-set` is
+      #    set on Notebooks spawned by this group, such that Istio injects the
+      #    "X-RStudio-Root-Path" header to all request
+      ################################################################
+      imageGroupTwo:
+        # the default container image
+        value: kubeflownotebookswg/rstudio-tidyverse:v1.9.2
+
+        # the list of available container images in the dropdown
+        options:
+          - kubeflownotebookswg/rstudio-tidyverse:v1.9.2
+
+      ################################################################
+      # CPU Resources
+      ################################################################
+      cpu:
+        readOnly: false
+
+        # the default cpu request for the container
+        value: "0.5"
+
+        # a factor by which to multiply the CPU request calculate the cpu limit
+        # (to disable cpu limits, set as "none")
+        limitFactor: "1.2"
+
+      ################################################################
+      # Memory Resources
+      ################################################################
+      memory:
+        readOnly: false
+
+        # the default memory request for the container
+        value: "1.0Gi"
+
+        # a factor by which to multiply the memory request calculate the memory limit
+        # (to disable memory limits, set as "none")
+        limitFactor: "1.2"
+
+      ################################################################
+      # GPU/Device-Plugin Resources
+      ################################################################
+      gpus:
+        readOnly: false
+
+        # configs for gpu/device-plugin limits of the container
+        # https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/#using-device-plugins
+        value:
+          # the `limitKey` of the default vendor
+          # (to have no default, set as "")
+          vendor: ""
+
+          # the list of available vendors in the dropdown
+          #  `limitsKey` - what will be set as the actual limit
+          #  `uiName` - what will be displayed in the dropdown UI
+          vendors:
+            - limitsKey: "nvidia.com/gpu"
+              uiName: "NVIDIA"
+            - limitsKey: "amd.com/gpu"
+              uiName: "AMD"
+
+          # the default value of the limit
+          # (possible values: "none", "1", "2", "4", "8")
+          num: "none"
+
+      ################################################################
+      # Workspace Volumes
+      ################################################################
+      workspaceVolume:
+        readOnly: false
+
+        # the default workspace volume to be created and mounted
+        # (to have no default, set `value: null`)
+        value:
+          mount: /home/jovyan
+
+          # pvc configs for creating new workspace volumes
+          # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#persistentvolumeclaim-v1-core
+          newPvc:
+            metadata:
+              # "{notebook-name}" is replaced with the Notebook name
+              name: "{notebook-name}-workspace"
+            spec:
+              # storageClassName: my-storage-class
+              resources:
+                requests:
+                  storage: 5Gi
+              accessModes:
+                - ReadWriteOnce
+
+      ################################################################
+      # Data Volumes
+      ################################################################
+      dataVolumes:
+        readOnly: false
+
+        # a list of additional data volumes to be created and/or mounted
+        value: []
+        # value:
+        #  - mount: /home/jovyan/datavol-1
+        #    newPvc:
+        #      metadata:
+        #        name: "{notebook-name}-datavol-1"
+        #      spec:
+        #        resources:
+        #          requests:
+        #            storage: 5Gi
+        #        accessModes:
+        #          - ReadWriteOnce
+        #
+        #  - mount: /home/jovyan/datavol-1
+        #    existingSource:
+        #      persistentVolumeClaim:
+        #        claimName: "test-pvc"
+
+      ################################################################
+      # Affinity
+      ################################################################
+      affinityConfig:
+        readOnly: false
+
+        # the `configKey` of the default affinity config
+        # (to have no default, set as "")
+        # (if `readOnly`, the default `value` will be the only accessible option)
+        value: ""
+
+        # the list of available affinity configs in the dropdown
+        options: []
+        # options:
+        #  - configKey: "dedicated_node_per_notebook"
+        #    displayName: "Dedicated Node Per Notebook"
+        #    affinity:
+        #      # Require a Node with label `lifecycle=kubeflow-notebook`
+        #      nodeAffinity:
+        #        requiredDuringSchedulingIgnoredDuringExecution:
+        #          nodeSelectorTerms:
+        #            - matchExpressions:
+        #                - key: "lifecycle"
+        #                  operator: "In"
+        #                  values:
+        #                    - "kubeflow-notebook"
+        #
+        #      # Require a Node WITHOUT an existing Pod having `notebook-name` label
+        #      podAntiAffinity:
+        #        requiredDuringSchedulingIgnoredDuringExecution:
+        #          - labelSelector:
+        #              matchExpressions:
+        #                - key: "notebook-name"
+        #                  operator: "Exists"
+        #            topologyKey: "kubernetes.io/hostname"
+        #            # WARNING: `namespaceSelector` is Beta in 1.22 and Stable in 1.24,
+        #            #          setting to {} is required for affinity to work across Namespaces
+        #            namespaceSelector: {}
+
+      ################################################################
+      # Tolerations
+      ################################################################
+      tolerationGroup:
+        readOnly: false
+
+        # the `groupKey` of the default toleration group
+        # (to have no default, set as "")
+        # (if `readOnly`, the default `value` will be the only accessible option)
+        value: ""
+
+        # the list of available toleration groups in the dropdown
+        options: []
+        # options:
+        #  - groupKey: "group_1"
+        #    displayName: "4 CPU 8Gb Mem at ~$X.XXX USD per day"
+        #    tolerations:
+        #      - key: "dedicated"
+        #        operator: "Equal"
+        #        value: "kubeflow-c5.xlarge"
+        #        effect: "NoSchedule"
+        #
+        #  - groupKey: "group_2"
+        #    displayName: "8 CPU 16Gb Mem at ~$X.XXX USD per day"
+        #    tolerations:
+        #      - key: "dedicated"
+        #        operator: "Equal"
+        #        value: "kubeflow-c5.2xlarge"
+        #        effect: "NoSchedule"
+        #
+        #  - groupKey: "group_3"
+        #    displayName: "16 CPU 32Gb Mem at ~$X.XXX USD per day"
+        #    tolerations:
+        #      - key: "dedicated"
+        #        operator: "Equal"
+        #        value: "kubeflow-c5.4xlarge"
+        #        effect: "NoSchedule"
+        #
+        #  - groupKey: "group_4"
+        #    displayName: "32 CPU 256Gb Mem at ~$X.XXX USD per day"
+        #    tolerations:
+        #      - key: "dedicated"
+        #        operator: "Equal"
+        #        value: "kubeflow-r5.8xlarge"
+        #        effect: "NoSchedule"
+
+      ################################################################
+      # Shared Memory
+      ################################################################
+      shm:
+        readOnly: false
+
+        # the default state of the "Enable Shared Memory" toggle
+        value: true
+
+      ################################################################
+      # PodDefaults
+      ################################################################
+      configurations:
+        readOnly: false
+
+        # the list of PodDefault names that are selected by default
+        # (take care to ensure these PodDefaults exist in Profile Namespaces)
+        value: []
+        # value:
+        #  - my-pod-default
+
+      ################################################################
+      # Environment
+      #
+      # NOTE:
+      #  - these configs are only used by the ROK "flavor" of the UI
+      ################################################################
+      environment:
+        readOnly: false
+        value: {}
+  controller:
+    enabled: true
+    image:
+      repository: kubeflownotebookswg/notebook-controller
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      culling:
+        enabled: false
+        idleTimeMinutes: 1440
+        idleCheckPeriodMinutes: 1
+  volumesWebApp:
+    enabled: true
+    image:
+      repository: kubeflownotebookswg/volumes-web-app
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      urlPrefix: /volumes
+      secureCookies: true
+      viewer:
+        image:
+          repository: filebrowser/filebrowser
+          tag: v2.25.0
+          registryOverwrite: 
+          pullPolicyOverwrite: 
+        serviceAccountName: default-editor
+  pvcviewerController:
+    enabled: true
+    manager:
+      image:
+        repository: kubeflownotebookswg/pvcviewer-controller
+        tag: v1.9.2
+        registryOverwrite:
+        pullPolicyOverwrite:
+      service:
+        create: true
+        annotations:
+        type: ClusterIP
+      webhook:
+        port: 9443
+      resources:
+        {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 10m
+        #   memory: 64Mi
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+    kubeRbacProxy:
+      image:
+        repository: kubebuilder/kube-rbac-proxy
+        tag: v0.13.1
+        registryOverwrite: gcr.io
+        pullPolicyOverwrite:
+      service:
+        create: true
+        annotations:
+        type: ClusterIP
+      resources:
+        {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 5m
+        #   memory: 64Mi
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+                    - arm64
+                    - ppc64le
+                    - s390x
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+    topologySpreadConstraints:
+    terminationGracePeriodSeconds: 10
+    securityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+
+kserveModelsWebApp:
+  enabled: true
+  image:
+    repository: kserve/models-web-app
+    tag: v0.13.0
+    registryOverwrite:
+    pullPolicyOverwrite:
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  service:
+    create: true
+    annotations:
+    type: ClusterIP
+  rbac:
+    create: true
+  config:
+    urlPrefix: /kserve-endpoints
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+
+profilesController:
+  enabled: true
+  kfam:
+    image:
+      repository: kubeflownotebookswg/kfam
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    config:
+      urlPrefix: /kfam
+  manager:
+    image:
+      repository: kubeflownotebookswg/profile-controller
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+  podDisruptionBudget: {}
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  containerSecurityContext:
+  config:
+    admin:
+    workloadIdentity:
+    defaultNamespaceLabels:
+      # Below is a list of labels to be set by default.
+      #
+      # To add a namespace label, use `key: 'value'`, for example:
+      # istio.io/rev: 'asm-191-1'
+      #
+      # To remove a namespace label, use `key: ''`. For example:
+      # istio-injection: ''
+      #
+      # Profile controller will not replace a namespace label if its key already
+      # exists. If you want to override the value of a previously applied label, you
+      # need to:
+      # 1. Remove the label by using `key: ''` and deploy.
+      # 2. Add the label by using `key: 'value'` and deploy.
+      #
+      katib.kubeflow.org/metrics-collector-injection: "enabled"
+      serving.kubeflow.org/inferenceservice: "enabled"
+      pipelines.kubeflow.org/enabled: "true"
+      app.kubernetes.io/part-of: "kubeflow-profile"
+    extraNamespaceLabels:
+
+katib:
+  urlPrefix: /katib
+  enabled: true
+  controller:
+    enabled: true
+    name: katib-controller
+    image:
+      repository: kubeflowkatib/katib-controller
+      tag: v0.17.0
+      registryOverwrite:
+      pullPolicyOverwrite:
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    service:
+      create: true
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scheme: http
+        prometheus.io/scrape: "true"
+
+      webhook:
+        port: 443
+        targetPort: 8443
+      metrics:
+        port: 8080
+        targetPort: 8080
+      healthz:
+        port: 18080
+        targetPort: 18080
+
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+  dbmanager:
+    enabled: true
+    name: katib-db-manager
+    image:
+      repository: kubeflowkatib/katib-db-manager
+      tag: v0.17.0
+      registryOverwrite:
+      pullPolicyOverwrite:
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    annotations:
+      sidecar.istio.io/inject: "false"
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    config:
+      db:
+        existingSecretName:
+        driver:
+          value: mysql
+          secretKeyRef:
+            name:
+            key: driver
+        host:
+          value: mysql.kubeflow.svc.cluster.local
+          secretKeyRef:
+            name:
+            key: host
+        port:
+          value: 3306
+          secretKeyRef:
+            name:
+            key: port
+        databaseName:
+          value: katib
+          secretKeyRef:
+            name:
+            key: databaseName
+        user:
+          value: katib
+          secretKeyRef:
+            name:
+            key: username
+        password:
+          value: katib1234
+          secretKeyRef:
+            name:
+            key: password
+  ui:
+    enabled: true
+    name: katib-ui
+    urlPrefix: /katib
+    image:
+      repository: kubeflowkatib/katib-ui
+      tag: v0.17.0
+      registryOverwrite:
+      pullPolicyOverwrite:
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    service:
+      create: true
+      annotations:
+  istioIntegration:
+    create: true
+    enabled: true
+    authorizationMode: ingressgateway
+    gateway:
+      name: kubeflow-gateway
+  config:
+    init:
+        trialResources:
+          - Job.v1.batch
+          - TFJob.v1.kubeflow.org
+          - PyTorchJob.v1.kubeflow.org
+          - MPIJob.v1.kubeflow.org
+          - XGBoostJob.v1.kubeflow.org
+          - MXJob.v1.kubeflow.org
+    runtime:
+      metricsCollectors:
+        - kind: StdOut
+          image: docker.io/kubeflowkatib/file-metrics-collector:v0.17.0
+        - kind: File
+          image: docker.io/kubeflowkatib/file-metrics-collector:v0.17.0
+        - kind: TensorFlowEvent
+          image: docker.io/kubeflowkatib/tfevent-metrics-collector:v0.17.0
+          resources:
+            limits:
+              memory: 1Gi
+      suggestions:
+        - algorithmName: random
+          image: docker.io/kubeflowkatib/suggestion-hyperopt:v0.17.0
+        - algorithmName: tpe
+          image: docker.io/kubeflowkatib/suggestion-hyperopt:v0.17.0
+        - algorithmName: grid
+          image: docker.io/kubeflowkatib/suggestion-optuna:v0.17.0
+        - algorithmName: hyperband
+          image: docker.io/kubeflowkatib/suggestion-hyperband:v0.17.0
+        - algorithmName: bayesianoptimization
+          image: docker.io/kubeflowkatib/suggestion-skopt:v0.17.0
+        - algorithmName: cmaes
+          image: docker.io/kubeflowkatib/suggestion-goptuna:v0.17.0
+        - algorithmName: sobol
+          image: docker.io/kubeflowkatib/suggestion-goptuna:v0.17.0
+        - algorithmName: multivariate-tpe
+          image: docker.io/kubeflowkatib/suggestion-optuna:v0.17.0
+        - algorithmName: enas
+          image: docker.io/kubeflowkatib/suggestion-enas:v0.17.0
+          resources:
+            limits:
+              memory: 200Mi
+        - algorithmName: darts
+          image: docker.io/kubeflowkatib/suggestion-darts:v0.17.0
+        - algorithmName: pbt
+          image: docker.io/kubeflowkatib/suggestion-pbt:v0.17.0
+          persistentVolumeClaimSpec:
+            accessModes:
+              - ReadWriteMany
+            resources:
+              requests:
+                storage: 5Gi
+      earlyStoppings:
+        - algorithmName: medianstop
+          image: docker.io/kubeflowkatib/earlystopping-medianstop:v0.17.0
+
+# TODO: verify patches in apps/pipeline/upstream/base/installs/multi-user
+pipelines:
+  enabled: true
+  # NOTE: The Kubeflow Pipelines subcomponents contains special handling. It
+  # will first apply the global .Values.defaults.image, then look for
+  # .Values.pipelines.defaults.image and lastly for .Values.pipelines.<component>.image.
+  # This is primarily useful for setting global registry or Pipelines Container Tag.
+  defaults:
+    image:
+      registry: gcr.io
+      tag: 2.3.0
+      pullPolicy: IfNotPresent
+  config:
+    # If this is empty, the kfp backend will automatically configure that with:
+    # "minio://mlpipeline/v2/artifacts"
+    # Please see the following links for referece:
+    # * <=2.1.0: https://github.com/kubeflow/pipelines/blob/2.1.0/backend/src/v2/config/env.go#L33
+    # * >=2.2.0: https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L36
+    #
+    # If we want to use s3, we should configure this with something similar to:
+    #   s3://mlpipeline/v2/artifacts
+    #
+    # In 2.2.0 it's also possible to define bucket 'providers', which can be minio, s3 or gcs:
+    # * https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L45
+    # * https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L151
+    # * https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/s3.go#L24
+    defaultPipelineRoot: ""
+
+    objectStore:
+      # The Secret Name 'mlpipeline-minio-artifact' is currently hardcoded:
+      # * <=2.1.0:
+      #   https://github.com/kubeflow/pipelines/blob/2.1.0/backend/src/v2/objectstore/object_store.go#L292
+      # * >=2.2.0 (state as of 2nd May 2024)
+      #   https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L39
+      #
+      # It's only possible to use either nil or 'mlpipeline-minio-artifact' for
+      # * .Values.pipelines.config.objectStore.existingSecretName
+      # * .Values.pipelines.config.objectStore.accessKey.secretKeyRef.name
+      # * .Values.pipelines.config.objectStore.secretAccessKey.secretKeyRef.name
+      #
+      # If the Secret Name is not provided in neither of the following, it will
+      # be created with plaintext values for compatibility:
+      # * .Values.pipelines.config.objectStore.existingSecretName
+      # * .Values.pipelines.config.objectStore.accessKey.secretKeyRef.name
+      # * .Values.pipelines.config.objectStore.secretAccessKey.secretKeyRef.name
+      existingSecretName:
+      accessKey:
+        value: minio
+        secretKeyRef:
+          name:
+          # The Secret Key 'accesskey' is currently hardcoded:
+          # https://github.com/kubeflow/pipelines/blob/2.1.0/backend/src/v2/objectstore/object_store.go#L324
+          # https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L42
+          key: accesskey
+      secretAccessKey:
+        value: minio123
+        secretKeyRef:
+          name:
+          # The Secret Key 'secretkey' is currently hardcoded:
+          # https://github.com/kubeflow/pipelines/blob/2.1.0/backend/src/v2/objectstore/object_store.go#L325
+          # https://github.com/kubeflow/pipelines/blob/2.2.0/backend/src/v2/config/env.go#L41
+          key: secretkey
+      host:
+        value: minio
+        secretKeyRef:
+          name:
+          key: host
+      port:
+        value: 9000
+        secretKeyRef:
+          name:
+          key: port
+      region:
+        value:
+        secretKeyRef:
+          name:
+          key: region
+      secure:
+        value: false
+        secretKeyRef:
+          name:
+          key: secure
+      bucketName:
+        value: mlpipeline
+        secretKeyRef:
+          name:
+          key: bucketName
+
+    db:
+      existingSecretName:
+      user:
+        value: root
+        secretKeyRef:
+          name:
+          key: username
+      password:
+        value: mysql1234
+        secretKeyRef:
+          name:
+          key: password
+      host:
+        value: mysql
+        secretKeyRef:
+          name:
+          key: host
+      port:
+        value: 3306
+        secretKeyRef:
+          name:
+          key: port
+      mlmdDatabaseName:
+        value: metadb
+        secretKeyRef:
+          name:
+          key: mlmdDatabaseName
+      pipelineDatabaseName:
+        value: mlpipeline
+        secretKeyRef:
+          name:
+          key: pipelineDatabaseName
+      cacheDatabaseName:
+        value: cachedb
+        secretKeyRef:
+          name:
+          key: cacheDatabaseName
+      driver:
+        value: mysql
+        secretKeyRef:
+          name:
+          key: driver
+      conMaxLifetime:
+        value: 120s
+        secretKeyRef:
+          name:
+          key: conMaxLifetime
+
+  cache:
+    enabled: true
+    image:
+      repository: ml-pipeline/cache-server
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+      port: 443
+      targetPort: 8443
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      ## defaultCacheStaleness and maximumCacheStaleness configures caching according to
+      ## https://www.kubeflow.org/docs/components/pipelines/overview/caching/ and
+      ## https://www.kubeflow.org/docs/components/pipelines/overview/caching-v2/.
+      ## This value is used if the user did not set a value in the pipeline.
+      ## defaultCacheStaleness: "P7D"
+      ## maximumCacheStaleness: "P30D"
+      defaultCacheStaleness: ""
+      maximumCacheStaleness: ""
+      ## ConMaxLifeTime will set the connection max lifetime for MySQL
+      ## this is very important to setup when using external databases.
+      ## See this issue for more details: https://github.com/kubeflow/pipelines/issues/5329
+      ## Note: this value should be a string that can be parsed by `time.ParseDuration`.
+      ## If this value doesn't include a unit abbreviation, the units will be assumed
+      ## to be nanoseconds.
+      conMaxLifeTime: "120s"
+      ## cacheImage is the image that the mutating webhook will use to patch
+      ## cached steps with. Will be used to echo a message announcing that
+      ## the cached step result will be used. If not set it will default to
+      ## 'gcr.io/google-containers/busybox'
+      cacheImage: gcr.io/google-containers/busybox
+      ## cacheNodeRestrictions the dummy container running if output is cached
+      ## will run with the same affinity and node selector as the default pipeline
+      ## step. This is defaulted to 'false' to allow the pod to be scheduled on
+      ## any node and avoid defaulting to specific nodes. Allowed values are:
+      ## 'false' and 'true'.
+      cacheNodeRestrictions: "false"
+
+  # ---
+
+  mlPipeline:
+     # aka api-server
+    enabled: true
+    image:
+      repository: ml-pipeline/api-server
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 500Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1024Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      # always use KF Pipeline latest version?
+      autoUpdatePipelineDefaultVersion: true
+
+  persistenceAgent:
+    enabled: true
+    image:
+      repository: ml-pipeline/persistenceagent
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      requests:
+        cpu: 120m
+        memory: 500Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1024Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      ttlSecondsAfterWorkflowFinish: 86400
+      numWorkers: 2
+
+  scheduledWorkflow:
+    enabled: true
+    image:
+      repository: ml-pipeline/scheduledworkflow
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu: 250m
+      #   memory: 500Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1024Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      cronScheduleTimezone: "UTC"
+
+  ui:
+    enabled: true
+    image:
+      repository: ml-pipeline/frontend
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 70Mi
+      # limits:
+      #   cpu: 500m
+      #   memory: 1024Mi
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      # Note from apps/pipeline/upstream/base/installs/multi-user/pipelines-ui/configmap-patch.yaml
+      # Temporary workarounds:
+      # 1. Using default-editor because default-viewer isn't bound to workload identity
+      viewerPodServiceAccountName: default-editor
+      allowCustomVisualizations: true
+      urlPrefix: /pipeline
+
+  viewerCrd:
+    enabled: true
+    image:
+      repository: ml-pipeline/viewer-crd-controller
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      maxNumViewers: 50
+
+  metadataWriter:
+    enabled: true
+    image:
+      repository: ml-pipeline/metadata-writer
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+
+  # NOTE: defines istio sidecar injection but it doesn't work
+  # because it's in an annotation, not pod label.
+  metadataEnvoy:
+    enabled: true
+    image:
+      repository: ml-pipeline/metadata-envoy
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    serviceAccount:
+      create: false
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+
+  metadataGrpcServer:
+    enabled: true
+    image:
+      repository: tfx-oss-public/ml_metadata_store_server
+      registryOverwrite:
+      tagOverwrite: 1.14.0
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+      # TODO: investigate if exposing port config to all services makes sense.
+      port: 8080
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      urlPrefix: /ml_metadata
+
+  visualization:
+    enabled: true
+    image:
+      repository: ml-pipeline/visualization-server
+      registryOverwrite:
+      tagOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      requests:
+        cpu: 30m
+        memory: 500Mi
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+
+  # This is metacontroller based implementation that creates instances of
+  # * Secret/mlpipeline-minio-artifact
+  # * Deployment/ml-pipeline-ui-artifact
+  # * Service/ml-pipeline-ui-artifact
+  # * Deployment/ml-pipeline-visualizationserver
+  # * Service/ml-pipeline-visualizationserver
+  # * ConfigMap/kfp-launcher
+  # * ConfigMap/metadata-grpc-configmap
+  # * AuthorizationPolicy/ml-pipeline-visualizationserver
+  # * DestinationRule/ml-pipeline-visualizationserver
+  profileController:
+    enabled: true
+    image:
+      repository: python
+      registryOverwrite: docker.io
+      tagOverwrite: "3.7"
+      pullPolicyOverwrite:
+    resources:
+      # requests:
+      #   cpu:
+      #   memory:
+      # limits:
+      #   cpu:
+      #   memory:
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: false
+    serviceAccount:
+      create: false
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      disableIstioSidecar: false
+
+
+tensorboard:
+  enabled: true
+  controller:
+    enabled: true
+    manager:
+      image:
+        repository: kubeflownotebookswg/tensorboard-controller
+        tag: v1.9.2
+        registryOverwrite:
+        pullPolicyOverwrite:
+      resources:
+        {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 10m
+        #   memory: 64Mi
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+      config:
+        rwoPvcScheduling: "True"
+        tensorboard:
+          image:
+            repository: tensorflow/tensorflow
+            registryOverwrite:
+            tag: "2.5.1"
+    kubeRbacProxy:
+      image:
+        repository: kubebuilder/kube-rbac-proxy
+        tag: v0.8.0
+        registryOverwrite: gcr.io
+        pullPolicyOverwrite:
+      service:
+        create: true
+        annotations:
+        type: ClusterIP
+        port: 8443
+        targetPort: 8443
+      resources:
+        {}
+        # limits:
+        #   cpu: 500m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 5m
+        #   memory: 64Mi
+      containerSecurityContext:
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    terminationGracePeriodSeconds: 10
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+  tensorboardsWebApp:
+    enabled: true
+    image:
+      repository: kubeflownotebookswg/tensorboards-web-app
+      tag: v1.9.2
+      registryOverwrite:
+      pullPolicyOverwrite:
+    resources:
+      {}
+    service:
+      create: true
+      annotations:
+      type: ClusterIP
+      port: 80
+      targetPort: 5000
+    autoscaling:
+      # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+      enabled:
+      minReplicas:
+      maxReplicas:
+      targetCPUUtilizationPercentage:
+      targetMemoryUtilizationPercentage:
+    podDisruptionBudget: {}
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+      name:
+      annotations:
+    nodeSelector:
+    tolerations:
+    affinity:
+    topologySpreadConstraints:
+    containerSecurityContext:
+    config:
+      urlPrefix: /tensorboards
+      secureCookies: true
+
+trainingOperator:
+  enabled: true
+  image:
+    repository: kubeflow/training-operator
+    tag: v1-04f9f13
+    registryOverwrite:
+    pullPolicyOverwrite:
+  resources:
+    {}
+  service:
+    create: true
+    annotations:
+    type: ClusterIP
+    webhookServer:
+      port: 443
+      targetPort: 9443
+    monitoring:
+      port: 8080
+      targetPort: 8080
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+  podDisruptionBudget: {}
+  rbac:
+    create: true
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  terminationGracePeriodSeconds: 10
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+
+modelRegistry:
+  enabled: true
+  rest:
+    image:
+      repository: kubeflow/model-registry
+      tag: v0.2.9
+      pullPolicy: IfNotPresent
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    containerSecurityContext:
+  grpc:
+    image:
+      registry: gcr.io
+      repository: tfx-oss-public/ml_metadata_store_server
+      tag: 1.14.0
+      pullPolicy: IfNotPresent
+    resources:
+      {}
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+    containerSecurityContext:
+  service:
+    annotations:
+    type: ClusterIP
+    restPort: 8080
+    grpcPort: 9090
+  autoscaling:
+    # If autoscaling is disabled, replica count for a component is equal to minReplicas.
+    enabled:
+    minReplicas:
+    maxReplicas:
+    targetCPUUtilizationPercentage:
+    targetMemoryUtilizationPercentage:
+  podDisruptionBudget: {}
+  podAnnotations:
+    # If Database in use is MySQL running incluster and MySQL has Istio Sidecar
+    # Disabled, the connection to MySQL Server must also run without sidecar.
+    # Related resources:
+    # https://istio.io/latest/about/faq/#mysql-with-mtls
+    # https://github.com/istio/istio/issues/10062
+    traffic.sidecar.istio.io/excludeOutboundPorts: "3306"
+  serviceAccount:
+    create: true
+    name:
+    annotations:
+  nodeSelector:
+  tolerations:
+  affinity:
+  topologySpreadConstraints:
+  config:
+    rest:
+      urlPrefix: /api/model_registry/
+    grpc:
+      urlPrefix: /ml_metadata.MetadataStoreService/
+    db:
+      existingSecretName:
+      user:
+        value: root
+        secretKeyRef:
+          name:
+          key: username
+      password:
+        value: mysql1234
+        secretKeyRef:
+          name:
+          key: password
+      host:
+        value: mysql
+        secretKeyRef:
+          name:
+          key: host
+      port:
+        value: 3306
+        secretKeyRef:
+          name:
+          key: port
+      dbName:
+        value: metadb_model_registry
+        secretKeyRef:
+          name:
+          key: dbName
+
+networkPolicies:
+  enabled: true
+
+# if cert manager is not enabled, we have to use cache-deployer.
+# We currently don't support deployments without cert-manager.
+certManagerIntegration:
+  enabled: true
+
+istioIntegration:
+  enabled: true
+  envoyExtAuthzHttpExtensionProviderName: oauth2-proxy
+  rootNamespace: istio-system
+  ingressGatewayNamespace: istio-ingress
+  # Required for KF Profiles Controller to configure
+  # correct AuthorizationPolicy principal.
+  ingressGatewayServiceAccountName: istio-ingressgateway
+  # one of ['ingressgateway', 'granular']
+  # * 'ingressgateway' will deploy one AuthorizationPolicy in the namespace where
+  #    istio ingress gateway Pod is being deployed.
+  # * 'granular' will deploy multiple AuthorizationPolicies with CUSTOM action using auth provider,
+  #   each for component that requires user id. This is an alternative way of setting authentication
+  #   with istio. 'granular' is more secure but more complex.
+  #   NOTE: this is ultimately not supported and should be cleaned up.
+  authorizationMode: ingressgateway
+  m2m:
+    enabled: true
+    userClaim: sub
+    groupsClaim: groups
+    issuer: https://kubernetes.default.svc.cluster.local
+  userAuth:
+    userClaim: email
+    issuer: http://dex.dex.svc.cluster.local:5556/dex
+  gateway:
+    name: kubeflow-gateway
+    selector:
+      istio: ingressgateway
+    # TODO: check if this is used
+    servers:
+      - hosts:
+          - "*"
+        port:
+          number: 80
+          name: http
+          protocol: HTTP
+  kubeflowJwksProxy:
+    enabled: true
+
+# Both .Values.dexIntegration.enabled and .Values.istioIntegration.enabled has
+# to be set to a boolean 'true' in order to create required dex integration
+# resources.
+
+# Automatically creates Istio VirtualService or Ingress objects.
+dexIntegration:
+  enabled: true
+  svc:
+    name: dex
+    port: 5556
+    namespace: dex
+
+  # one of: 'internal', 'external'
+  # * internal - the in-kubernetes svc address will be used as the dex IdP
+  #              Issuer address.
+  #   example: dex.dex.svc.cluster.local
+  # * external - the .Values.dexIntegration.host will be used as the dex IdP
+  #              Issuer address.
+  #   example: dex.example.com
+  # Currently only 'internal' is supported.
+  integrationType: internal
+
+  # One of: 'istio', 'ingress'.
+  # Currently only 'istio' is supported.
+  integrationMode: istio
+
+  # 'host' must be set if .Values.dexIntegration.integrationType: external
+  host:
+
+  # If .Values.dexIntegration.integrationType: internal, dex IdP will be
+  # available under this relative URL Prefix.
+  urlPrefix: /dex
+
+  integrationModeConfig:
+    istio:
+    ingress:
+      class:
+      annotations:
+
+# Automatically creates Istio VirtualService.
+oauth2ProxyIntegration:
+  enabled: true
+  urlPrefix: /oauth2
+  host: "*"
+  svc:
+    name: oauth2-proxy
+    port: 80
+    namespace: oauth2-proxy
+
+knativeIntegration:
+  enabled: true
+  knativeServing:
+    enabled: true
+    name: knative-serving
+    namespace: knative-serving
+    # Whatever is under .knativeIntegration.knativeServing.operatorSpec will be
+    # put directly to the KnativeServing CRD under .spec.
+    operatorSpec:
+      version: 1.12.4
+      ingress:
+        istio:
+          enabled: true
+          knative-ingress-gateway:
+            selector:
+              istio: ingressgateway
+            servers:
+              - port:
+                  number: 80
+                  name: http
+                  protocol: HTTP
+                hosts:
+                - "*"
+          knative-local-gateway:
+            selector:
+              istio: cluster-local-gateway
+            servers:
+              - port:
+                  number: 80
+                  name: http
+                  protocol: HTTP
+                hosts:
+                - "*"
+      config:
+        # Note: The configuration options may be copied out of
+        # the example blocks, found in each of the supported KNative ConfigMaps.
+        # For more information, visit official knative operator documentation:
+        # https://knative.dev/docs/install/operator/configuring-with-operator/
+        istio:
+          gateway.knative-serving.knative-ingress-gateway: "istio-ingressgateway.istio-ingress.svc.cluster.local"
+          local-gateway.knative-serving.knative-local-gateway: "cluster-local-gateway.istio-ingress.svc.cluster.local"
+          external-gateways: |
+            - name: knative-ingress-gateway
+              namespace: knative-serving
+              service: istio-ingressgateway.istio-ingress.svc.cluster.local
+
+          local-gateways: |
+            - name: knative-local-gateway
+              namespace: knative-serving
+              service: cluster-local-gateway.istio-ingress.svc.cluster.local
+        domain: {}
+          # example.com: ""
+
+  # Eventing config
+  knativeEventing:
+    enabled: false
+    name: knative-eventing
+    namespace: knative-eventing
+    # Whatever is under .knativeIntegration.knativeEventing.operatorSpec will be
+    # put directly to the KnativeEventing CRD under .spec.
+    operatorSpec:
+      version: 1.10.2

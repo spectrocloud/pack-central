@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.kserveModelsWebApp.enabled" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "kubeflow.kserveModelsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ include "kubeflow.namespace" . }}/{{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.kserveModelsWebApp.config.urlPrefix }}/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: {{ include "kubeflow.kserveModelsWebApp.svc.name" . }}.{{ include "kubeflow.namespace" . }}.svc.cluster.local
+        port:
+          number: 80
+
+{{- end }}

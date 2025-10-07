@@ -1,0 +1,21 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.certName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  dnsNames:
+  - {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.name" . }}
+  - {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.addressWithNs" . }}
+  - {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.addressWithSvc" . }}
+  - {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.fqdn" . }}
+  issuerRef:
+    kind: Issuer
+    name: {{ include "kubeflow.notebooks.pvcviewerController.certIssuerName" . }}
+  secretName: {{ include "kubeflow.notebooks.pvcviewerController.tlsCertSecretName" . }}
+
+{{- end }}

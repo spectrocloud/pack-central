@@ -1,0 +1,13 @@
+{{- if (include "kubeflow.pipelines.cache.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.cache.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.cache.certIssuerName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selfSigned: {}
+
+{{- end }}
