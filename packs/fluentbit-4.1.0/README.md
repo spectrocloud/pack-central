@@ -2,20 +2,10 @@
 
 Fluent Bit is a lightweight and high-performance log processor and forwarder. It allows you to collect data or logs from different sources, unify them, and send them to multiple destinations including Elasticsearch, OpenSearch, Kafka, Datadog, and more.
 
-### How it works
-
-Fluent Bit runs as a DaemonSet in the Kubernetes cluster and collects logs from each node. The logs are parsed, filtered, and enriched with Kubernetes metadata before being shipped to the specified backend. This configuration is fully customizable via Fluent Bit configuration blocks defined in the Helm `values.yaml`.
-
-The default configuration in this package collects logs from containers in `/var/log/containers/*.log` and system logs via `systemd`, filters them using Kubernetes metadata, and forwards them to an Elasticsearch endpoint.
-
 ## Prerequisites
 
-Kubernetes 1.27 and higher are supported.
-
-The following cloud types are supported:
-* all clouds
-
-
+- Kubernetes **1.27** and higher are supported.  
+- Supported cloud types: **All clouds**.
 
 ## Parameters
 
@@ -40,6 +30,31 @@ The following cloud types are supported:
 | charts.fluent-bit.hotReload.enabled | Enable configmap hot reload with sidecar | bool | false | No |
 | charts.fluent-bit.autoscaling.enabled | Enable horizontal pod autoscaler (only for Deployment) | bool | false | No |
 
+## Upgrade
+
+- Ensure compatibility with the Kubernetes version (1.27 or higher) before upgrading.  
+- Review any changes in the Fluent Bit Helm chart configuration that could impact existing parameters.  
+- If upgrading from a previous major version, verify that configuration blocks (inputs, filters, outputs) maintain their structure and names.
+
+> [!CAUTION]
+> Upgrades from a manifest-based pack to a Helm chart-based pack might not be compatible.
+
+## Usage
+
+Fluent Bit runs as a **DaemonSet** in a Kubernetes cluster and collects logs from each node.  
+The logs are parsed, filtered, and enriched with Kubernetes metadata before being shipped to the specified backend.
+
+- The default configuration collects:
+  - Container logs from `/var/log/containers/*.log`
+  - System logs via `systemd`
+- Logs are filtered using Kubernetes metadata.
+- Output is sent to the defined destination, such as **Elasticsearch**.
+
+You can customize this configuration through `values.yaml`, adjusting sections such as `inputs`, `filters`, and `outputs`.
+
+> [!NOTE]
+> Fluent Bit’s configuration allows flexible integrations with other monitoring tools like **Datadog**, **OpenSearch**, or **Kafka**.
+
 ## References
 
 - [Fluent Bit Official Docs](https://docs.fluentbit.io/manual)
@@ -48,11 +63,8 @@ The following cloud types are supported:
 
 ---
 
-This package is maintained by **Spectro Cloud** and is provided as a community-supported integration.
-
-**Version:** 4.1.0
-
-**Source:** community
-
-**Contributor:** Spectro Cloud
+**Maintainer:** Spectro Cloud  
+**Version:** 4.0.3  
+**Source:** Community  
+**Contributor:** Spectro Cloud  
 

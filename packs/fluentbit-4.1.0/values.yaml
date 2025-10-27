@@ -545,3 +545,4 @@ charts:
       capabilities:
         drop:
           - ALL
+          
