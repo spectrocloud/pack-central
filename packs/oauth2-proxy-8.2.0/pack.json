@@ -1,0 +1,17 @@
+{
+  "addonType": "authentication",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },    
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "OAauth2 Proxy",
+  "charts": [
+    "charts/oauth2-proxy-8.2.0.tgz"
+  ],
+  "layer":"addon",
+  "name": "oauth2-proxy",
+  "version": "8.2.0"
+}

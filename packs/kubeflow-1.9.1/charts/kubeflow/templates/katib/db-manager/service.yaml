@@ -1,0 +1,24 @@
+{{- if (include "kubeflow.katib.enabled" . | eq "true") -}}
+{{- if (include "kubeflow.katib.dbmanager.enabled" . | eq "true") -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.katib.dbmanager.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.katib.dbmanager.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.katib.dbmanager.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  type: {{ .Values.katib.dbmanager.service.type }}
+  ports:
+    - port: 6789
+      protocol: TCP
+      name: api
+  selector:
+    {{- include "kubeflow.katib.dbmanager.selectorLabels" . | nindent 4 }}
+{{- end }}
+{{- end }}

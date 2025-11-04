@@ -1,0 +1,20 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        namespaces:
+        - {{ .Values.istioIntegration.ingressGatewayNamespace }}
+
+{{- end }}

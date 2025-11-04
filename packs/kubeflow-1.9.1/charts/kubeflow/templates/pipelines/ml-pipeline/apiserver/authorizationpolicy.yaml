@@ -1,0 +1,41 @@
+{{- if (include "kubeflow.pipelines.mlPipeline.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.mlPipeline.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.mlPipeline.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.mlPipeline.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        principals:
+        - {{ include "kubeflow.pipelines.mlPipeline.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.ui.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.persistenceAgent.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.scheduledWorkflow.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.viewerCrd.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.cache.serviceAccountPrincipal" . }}
+
+  # NOTE(kromanow94): with m2m tokens through istio/oauth2-proxy and
+  # ml-pipeline-ui, the following is probably not needed anymore.
+  # NOTE(kromanow94) UPDATE!!!: It's needed, otherwise the KF Pipeline Steps
+  # cannot reach ml-pipeline and appareantly it's needed to process the step...
+  # For user workloads, which cannot use http headers for authentication
+  # Allow all requests that dont have a `kubeflow-userid` header.
+  - when:
+    - key: request.headers[{{ .Values.auth.userHeaderName }}]
+      notValues: ['*']
+
+  # allow access by any trusted principal
+  # Please see the following for reference:
+  # https://github.com/kubeflow/manifests/issues/2747
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+{{- end }}

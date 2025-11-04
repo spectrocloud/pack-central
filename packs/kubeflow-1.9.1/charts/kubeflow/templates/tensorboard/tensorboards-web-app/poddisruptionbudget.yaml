@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.pdb.create" . | eq "true") -}}
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.tensorboard.tensorboardsWebApp.selectorLabels" . | nindent 6 }}
+  {{- with (include "kubeflow.tensorboard.tensorboardsWebApp.pdb.values" .) }}
+    {{- . | nindent 2 }}
+  {{- end }}
+
+{{- end }}

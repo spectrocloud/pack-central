@@ -1,0 +1,20 @@
+{{- if (include "kubeflow.notebooks.jupyterWebApp.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.jupyterWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.jupyterWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.jupyterWebApp.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        namespaces:
+        - {{ .Values.istioIntegration.ingressGatewayNamespace }}
+
+{{- end }}

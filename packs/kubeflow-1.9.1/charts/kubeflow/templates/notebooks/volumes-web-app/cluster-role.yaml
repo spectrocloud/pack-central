@@ -1,0 +1,143 @@
+{{- if (include "kubeflow.notebooks.volumesWebApp.rbac.createRoles" . | eq "true" ) -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.mainClusterRoleName" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - list
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - notebooks
+  verbs:
+  - list
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowAdminRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.kfVolUiAdminClusterRoleName" . }}
+rules: []
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowEditRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.kfVolUiEditClusterRoleName" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.volumesWebApp.labels" . | nindent 4 }}
+    {{- include "kubeflow.kubeflowRoles.kubeflowViewRoleLabel" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.volumesWebApp.kfVolUiViewClusterRoleName" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubeflow.org
+  resources:
+  - pvcviewers
+  verbs:
+  - get
+  - list
+
+{{- end }}

@@ -1,0 +1,17 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Nvidia DPF Deployment (Trusted-Mode)",
+    "charts": [
+      "charts/dpf-deployment-25.7.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "dpf-deployment",
+    "version": "25.7.0"
+  }
