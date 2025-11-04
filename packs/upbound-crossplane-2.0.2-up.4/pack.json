@@ -9,10 +9,10 @@
     ],
     "displayName": "Upbound Crossplane",
     "charts": [
-      "charts/crossplane-2.0.1-up.1.tgz"
+      "charts/crossplane-2.0.2-up.4.tgz"
     ],
     "layer":"addon",
     "name": "upbound-crossplane",
-    "version": "2.0.1-up.1"
+      "version": "2.0.2-up.4"
   }
   
