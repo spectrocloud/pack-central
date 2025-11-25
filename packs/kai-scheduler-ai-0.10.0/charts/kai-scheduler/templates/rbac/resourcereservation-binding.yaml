@@ -1,0 +1,16 @@
+# Copyright 2025 NVIDIA CORPORATION
+  # SPDX-License-Identifier: Apache-2.0
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kai-resource-reservation
+  namespace: {{ .Values.global.resourceReservation.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.global.resourceReservation.serviceAccount }}
+    namespace: {{ .Values.global.resourceReservation.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: kai-resource-reservation
+  apiGroup: rbac.authorization.k8s.io
