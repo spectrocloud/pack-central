@@ -2,14 +2,14 @@
     "addonType": "system app",
     "annotations": {
       "source": "community",
-      "contributor" : "spectrocloud"
+      "contributor" : "netapp"
     },    
     "cloudTypes": [
       "all"
     ],
     "displayName": "trident-operator-addon-25.10.0",
     "charts": [
-      "charts/trident-operator-25.10.0-100.2510.0.tgz"
+      "charts/trident-operator-100.2510.0.tgz"
     ],
     "layer":"addon",
     "name": "trident-operator-addon-25.10.0",

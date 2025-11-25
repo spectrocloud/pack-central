@@ -1,14 +1,14 @@
 pack:
   spectrocloud.com/display-name: trident-operator-25.10.0
   releaseNameOverride:
-      trident-operator-25.10.0: trident-operator
+      trident-operator: trident-operator
   namespace: trident
   content:
     images:
       - image: docker.io/netapp/trident-operator:25.10.0
 
 charts:
-  trident-operator-25.10.0:
+  trident-operator:
     # Default values for standalone.
     # This is a YAML-formatted file.
     

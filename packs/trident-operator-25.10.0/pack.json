@@ -1,14 +1,14 @@
 {
     "annotations": {
       "source": "community",
-      "contributor" : "spectrocloud"
+      "contributor" : "netapp"
     },    
     "cloudTypes": [
       "all"
     ],
     "displayName": "trident-operator-25.10.0",
     "charts": [
-      "charts/trident-operator-25.10.0-100.2510.0.tgz"
+      "charts/trident-operator-100.2510.0.tgz"
     ],
     "layer":"csi",
     "name": "trident-operator-25.10.0",
