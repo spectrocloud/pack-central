@@ -7,11 +7,11 @@
     "cloudTypes": [
       "all"
     ],
-    "displayName": "trident-operator-addon-25.10.0",
+    "displayName": "trident-operator",
     "charts": [
       "charts/trident-operator-100.2510.0.tgz"
     ],
     "layer":"addon",
-    "name": "trident-operator-addon-25.10.0",
+    "name": "trident-operator",
     "version": "100.2510.0"
   }

@@ -1,5 +1,5 @@
 pack:
-  spectrocloud.com/display-name: trident-operator-25.10.0
+  spectrocloud.com/display-name: trident-operator
   releaseNameOverride:
       trident-operator: trident-operator
   namespace: trident
