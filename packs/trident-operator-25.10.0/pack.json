@@ -1,0 +1,17 @@
+{
+    "addonType": "storage",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "trident-operator-25.10.0",
+    "charts": [
+      "charts/trident-operator-25.10.0-100.2510.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "trident-operator-25.10.0",
+    "version": "100.2510.0"
+  }
