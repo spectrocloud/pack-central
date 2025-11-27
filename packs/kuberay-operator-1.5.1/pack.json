@@ -1,7 +1,8 @@
 {
   "addonType": "ai",
   "annotations": {
-    "source": "spectrocloud",
+    "source": "community",
+    "contributor": "spectrocloud"
     "architecture": "amd64",
     "airgap": "false",
     "revision": "20251125"
