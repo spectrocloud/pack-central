@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.trainingOperator.pdb.create" . | eq "true") -}}
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.trainingOperator.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.trainingOperator.selectorLabels" . | nindent 6 }}
+  {{- with (include "kubeflow.trainingOperator.pdb.values" .) }}
+    {{- . | nindent 2 }}
+  {{- end }}
+
+{{- end }}

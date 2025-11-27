@@ -1,0 +1,5 @@
+CRDs:
+from cluster-scoped-resources all copied to helm charts crds directory
+requiring argo wf as subchart
+
+investigate if it makes sense to add crd/applications.app.k8s.io

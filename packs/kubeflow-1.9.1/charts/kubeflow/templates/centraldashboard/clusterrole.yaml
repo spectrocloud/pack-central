@@ -1,0 +1,21 @@
+{{- if (include "kubeflow.centraldashboard.rbac.createRoles" . | eq "true") -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.clusterRoleName" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  - namespaces
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+
+{{- end }}

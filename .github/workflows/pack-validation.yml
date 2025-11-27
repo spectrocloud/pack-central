@@ -31,7 +31,7 @@
      
      - name: Get changed files
        id: changed-files
-       uses: tj-actions/changed-files@v41
+       uses: tj-actions/changed-files@v46.0.1
     
 #     # Run Validations
      - name: Check Packs

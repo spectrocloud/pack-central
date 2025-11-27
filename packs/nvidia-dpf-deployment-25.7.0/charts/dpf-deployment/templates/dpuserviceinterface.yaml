@@ -1,0 +1,12 @@
+{{- range $conf := .Values.dpuServiceInterfaces }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUServiceInterface
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  template:
+    spec:
+      template: {{ $conf.template | toYaml | nindent 8 }}
+{{- end }}

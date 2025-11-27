@@ -1,0 +1,11 @@
+presets:
+  - name: "palette-provider"
+    displayName: "Enable Spectro Cloud Palette Provider"
+    group: "Provider"
+    remove: []
+    add: |
+      charts:
+        crossplane:
+          provider:
+            packages: 
+              - "xpkg.upbound.io/crossplane-contrib/provider-palette:v0.23.5"

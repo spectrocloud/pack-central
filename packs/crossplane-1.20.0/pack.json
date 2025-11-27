@@ -1,0 +1,41 @@
+  {
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Crossplane",
+    "charts": [
+      "charts/crossplane-1.20.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "crossplane",
+    "version": "1.20.0",
+    "constraints": {
+      "dependencies": [
+        {
+          "packName": "kubernetes",
+          "layer": "k8s",
+          "minVersion": "1.27",
+          "maxVersion": "",
+          "type": "optional"
+        }
+      ],
+      "resources": [
+        {
+          "type": "cpu",
+          "minLimit": 100
+        },
+        {
+          "type": "memory",
+          "minLimit": 256
+        }
+     ]
+   } 
+  }
+  
+
+

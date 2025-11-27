@@ -1,0 +1,71 @@
+{{- if (include "kubeflow.notebooks.controller.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.notebooks.controller.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.notebooks.controller.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.notebooks.controller.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.controller.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.notebooks.controller.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.notebooks.controller.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: {{ include "kubeflow.notebooks.controller.baseName" . }}
+        image: {{ include "kubeflow.notebooks.controller.image" . }}
+        imagePullPolicy: {{ include "kubeflow.notebooks.controller.imagePullPolicy" . }}
+
+        command:
+          - /manager
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        env:
+          - name: USE_ISTIO
+            value: {{ .Values.istioIntegration.enabled | quote }}
+          - name: ISTIO_GATEWAY
+            value: {{ include "kubeflow.namespace" . }}/{{ .Values.istioIntegration.gateway.name }}
+          - name: ISTIO_HOST
+            value: "*"
+          - name: CLUSTER_DOMAIN
+            value: {{ .Values.clusterDomain }}
+          - name: ENABLE_CULLING
+            value: {{ .Values.notebooks.controller.config.culling.enabled | quote }}
+          - name: CULL_IDLE_TIME
+            value: {{ .Values.notebooks.controller.config.culling.idleTimeMinutes | quote }}
+          - name: IDLENESS_CHECK_PERIOD
+            value: {{ .Values.notebooks.controller.config.culling.idleCheckPeriodMinutes | quote }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubeflow.notebooks.controller.serviceAccountName" . }}
+
+{{- end }}

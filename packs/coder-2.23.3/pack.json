@@ -1,0 +1,18 @@
+{
+  "addonType":"system app",
+  "annotations": {
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor" : "Coder Technologies, Inc."
+  },
+  "charts": [
+    "charts/coder-2.23.3.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Coder",
+  "layer":"addon",
+  "name": "coder-chart",
+  "version": "2.23.3"
+}

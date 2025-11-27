@@ -1,0 +1,74 @@
+goldenImagesNamespace: vmo-golden-images
+vmEnabledNamespaces:
+  - default
+  - virtual-machines
+  - customer-vm-1
+  - customer-vm-2
+  - customer-vm-3
+
+quotas:
+  - namespace: customer-vm-1
+    clusters:
+      - demo-cluster1
+      - demo-cluster2
+    limits:
+      cpu: 9
+    requests:
+      memory: 33Gi
+      storage: 120Gi
+  - namespace:  customer-vm-2
+    clusters:
+      - demo-cluster1
+    limits:
+      cpu: 40
+    requests:
+      memory: 150Gi
+      storage: 1024Gi
+  - namespace:  customer-vm-3
+    limits:
+      cpu: 100
+    requests:
+      memory: 250Gi
+      storage: 2Ti
+
+rbac:
+  - namespace: default
+    viewers:
+      groups:
+        - Viewers Group 1
+        - Viewers Group 2
+  - namespace: customer-vm-1
+    clusters:
+      - demo-cluster1
+      - demo-cluster2
+    admins:
+      users:
+        - test.user1@company.com
+        - test.user2@company.com
+      groups:
+        - Test Group 1
+        - Test Group 2
+    powerusers:
+      users: []
+      groups: []
+    users:
+      users: []
+      groups: []
+    viewers:
+      users: []
+      groups: []
+    custom:
+      - role: admin
+        groups:
+          - Custom Group 1
+          - Custom Group 2
+        users:
+          - custom.user1@company.com
+          - custom.user2@company.com
+      - role: cluster-admin
+        groups:
+          - Custom Group 3
+          - Custom Group 4
+        users:
+          - custom.user3@company.com
+          - custom.user4@company.com

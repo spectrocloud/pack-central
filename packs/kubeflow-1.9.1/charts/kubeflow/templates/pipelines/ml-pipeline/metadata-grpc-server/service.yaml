@@ -1,0 +1,55 @@
+{{- if (include "kubeflow.pipelines.metadataGrpcServer.enabled" . | eq "true") -}}
+
+kind: Service
+apiVersion: v1
+metadata:
+  {{- with .Values.pipelines.metadataGrpcServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.metadataGrpcServer.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: {{ .Values.pipelines.metadataGrpcServer.service.port }}
+    protocol: TCP
+    name: grpc-api
+  selector:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.metadataGrpcServer.service.type }}
+
+---
+
+# TODO: having this SVC is a workaround... metadata-grpc service might be hardcoded...
+# Consider adding following snipper:
+#        env:
+#        - name: METADATA_GRPC_SERVICE_SERVICE_HOST
+#          value: {{ include "kubeflow.pipelines.metadataGrpcServer.svc.name" . }}
+#        - name: METADATA_GRPC_SERVICE_SERVICE_PORT
+#          value: "8080"
+
+kind: Service
+apiVersion: v1
+metadata:
+  {{- with .Values.pipelines.metadataGrpcServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.labels" . | nindent 4 }}
+  name: metadata-grpc-service
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: {{ .Values.pipelines.metadataGrpcServer.service.port }}
+    protocol: TCP
+    name: grpc-api
+  selector:
+    {{- include "kubeflow.pipelines.metadataGrpcServer.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.pipelines.metadataGrpcServer.service.type }}
+
+{{- end }}

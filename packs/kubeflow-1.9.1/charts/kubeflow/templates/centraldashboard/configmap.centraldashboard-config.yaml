@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.centraldashboard.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.config.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  settings: |-
+    {
+      "DASHBOARD_FORCE_IFRAME": {{ .Values.centraldashboard.config.forceIFrame }}
+    }
+  links: |-
+    {{- .Values.centraldashboard.config.links | toJson | nindent 4 }}
+
+{{- end }}

@@ -1,0 +1,25 @@
+{{- if (include "kubeflow.pipelines.visualization.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.visualization.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.visualization.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.visualization.selectorLabels" . | nindent 6 }}
+  rules:
+  - from:
+    - source:
+        principals:
+        - {{ include "kubeflow.pipelines.mlPipeline.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.ui.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.persistenceAgent.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.scheduledWorkflow.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.viewerCrd.serviceAccountPrincipal" . }}
+        - {{ include "kubeflow.pipelines.cache.serviceAccountPrincipal" . }}
+
+{{- end }}
