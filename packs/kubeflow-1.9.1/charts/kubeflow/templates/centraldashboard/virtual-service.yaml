@@ -1,0 +1,27 @@
+{{- if (include "kubeflow.centraldashboard.createIstioIntegrationObjects" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.centraldashboard.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.centraldashboard.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: /
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: {{ include "kubeflow.centraldashboard.svc.fqdn" . }}
+        port:
+          number: 80
+
+{{- end }}

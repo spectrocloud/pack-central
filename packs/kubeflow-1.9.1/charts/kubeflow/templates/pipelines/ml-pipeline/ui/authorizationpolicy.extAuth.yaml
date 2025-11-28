@@ -1,0 +1,27 @@
+{{- if and
+  (include "kubeflow.pipelines.ui.createIstioIntegrationObjects" . | eq "true")
+  (include "kubeflow.istioIntegration.authorizationMode.granular" . | eq "true")
+-}}
+
+# NOTE: this AuthorizationPolicy forces traffic through ext authz http extension
+# so we don't have to provide configuration to allow traffic only from
+# istio-ingressgateway.
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.ui.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.ui.authorizationPolicyExtAuthName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  action: CUSTOM
+  provider:
+    name: {{ .Values.istioIntegration.envoyExtAuthzHttpExtensionProviderName }}
+  rules:
+    - {}
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.ui.selectorLabels" . | nindent 6 }}
+
+{{- end }}

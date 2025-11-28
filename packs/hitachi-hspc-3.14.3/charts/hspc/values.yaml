@@ -1,0 +1,24 @@
+operator:
+  namespace: hspc-operator-system
+
+hspc:
+  namespace: hspc-system
+  name: hspc
+  spec: {}
+
+vsp:
+  url: ""
+  user: ""
+  password: ""
+
+storageClass:
+  name: spectro-storage-class
+  isDefaultStorageClass: true
+  # annotations:
+  #   If you need additional annotations, specify them here
+  allowVolumeExpansion: true
+  # Delete or Retain
+  reclaimPolicy: Delete
+  # WaitForFirstConsumer or Immediate
+  volumeBindingMode: WaitForFirstConsumer
+  parameters: {}

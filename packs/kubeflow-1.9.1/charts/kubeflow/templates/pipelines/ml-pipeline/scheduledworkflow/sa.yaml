@@ -1,0 +1,15 @@
+{{- if (include "kubeflow.pipelines.scheduledWorkflow.createServiceAccount" . | eq "true") -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  {{- with .Values.pipelines.scheduledWorkflow.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.pipelines.scheduledWorkflow.labels" . | nindent 4 }}
+  name:  {{ include "kubeflow.pipelines.scheduledWorkflow.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

@@ -1,0 +1,252 @@
+bfb:
+  url: "https://content.mellanox.com/BlueField/BFBs/Ubuntu22.04/bf-bundle-3.1.0-76_25.07_ubuntu-22.04_prod.bfb"
+
+dpuServiceConfigurations:
+  - name: blueman
+  - name: dts
+  - name: ovn
+    serviceConfiguration:
+      helmChart:
+        values:
+          k8sAPIServer: "auto"
+          podNetwork: "10.233.64.0/18/24"
+          serviceNetwork: "10.233.0.0/18"
+          mtu: 8940
+          dpuManifests:
+            kubernetesSecretName: "ovn-dpu"
+            vtepCIDR:  "10.0.120.0/22"
+            hostCIDR: "10.0.110.0/24"
+            ipamPool: "pool1"
+            ipamPoolType: "cidrpool"
+            ipamVTEPIPIndex: 0
+            ipamPFIPIndex: 1
+  - name: hbn
+    interfaces:
+        ## NOTE: Interfaces inside the HBN pod must have the `_if` suffix due to a naming convention in HBN.
+      - name: p0_if
+        network: mybrhbn
+      - name: p1_if
+        network: mybrhbn
+      - name: pf2dpu2_if
+        network: mybrhbn
+    serviceConfiguration:
+      serviceDaemonSet:
+        annotations:
+          k8s.v1.cni.cncf.io/networks: |-
+            [
+            {"name": "iprequest", "interface": "ip_lo", "cni-args": {"poolNames": ["loopback"], "poolType": "cidrpool"}},
+            {"name": "iprequest", "interface": "ip_pf2dpu2", "cni-args": {"poolNames": ["pool1"], "poolType": "cidrpool", "allocateDefaultGateway": true}},
+            {"name": "iprequest", "interface": "ip_asn", "cni-args": {"poolNames": ["asn"], "poolType": "ippool"}}
+            ]
+      helmChart:
+        values:
+          configuration:
+            perDPUValuesYAML: |
+              - hostnamePattern: "*"
+                values:
+                  bgp_peer_group: hbn
+                  starting_asn: 65101
+            startupYAMLJ2: |
+              - header:
+                  model: BLUEFIELD
+                  nvue-api-version: nvue_v1
+                  rev-id: 1.0
+                  version: HBN 2.4.0
+              - set:
+                  interface:
+                    lo:
+                      ip:
+                        address:
+                          {{ ipaddresses.ip_lo.ip.split(".")[0] }}.{{ ipaddresses.ip_lo.ip.split(".")[1] }}.{{ ipaddresses.ip_lo.ip.split(".")[2] }}.{{ (ipaddresses.ip_lo.ip.split(".")[3] | int) + 1 }}/32: {}
+                      type: loopback
+                    p0_if,p1_if:
+                      type: swp
+                      link:
+                        mtu: 9000
+                    pf2dpu2_if:
+                      ip:
+                        address:
+                          {{ ipaddresses.ip_pf2dpu2.cidr }}: {}
+                      type: swp
+                      link:
+                        mtu: 9000
+                  router:
+                    bgp:
+                      autonomous-system: {{ ( ipaddresses.ip_asn.ip.split(".")[2] | int ) * 256 + ( ipaddresses.ip_asn.ip.split(".")[3] | int ) + ( config.starting_asn | int ) - 1 }}
+                      enable: on
+                      graceful-restart:
+                        mode: full
+                      router-id: {{ ipaddresses.ip_lo.ip }}
+                  vrf:
+                    default:
+                      router:
+                        bgp:
+                          address-family:
+                            ipv4-unicast:
+                              enable: on
+                              redistribute:
+                                connected:
+                                  enable: on
+                            ipv6-unicast:
+                              enable: on
+                              redistribute:
+                                connected:
+                                  enable: on
+                          enable: on
+                          neighbor:
+                            p0_if:
+                              peer-group: {{ config.bgp_peer_group }}
+                              type: unnumbered
+                            p1_if:
+                              peer-group: {{ config.bgp_peer_group }}
+                              type: unnumbered
+                          path-selection:
+                            multipath:
+                              aspath-ignore: on
+                          peer-group:
+                            {{ config.bgp_peer_group }}:
+                              remote-as: external
+
+dpuDeployments:
+  - name: ovn-hbn
+    dpus:
+      bfb: bf-bundle
+      flavor: dpf-provisioning-hbn-ovn-performance
+      dpuSets:
+      - nameSuffix: "dpuset1"
+        nodeSelector:
+          matchLabels:
+            feature.node.kubernetes.io/dpu-enabled: "true"
+    services:
+      ovn:
+        serviceTemplate: ovn
+        serviceConfiguration: ovn
+      hbn:
+        serviceTemplate: hbn
+        serviceConfiguration: hbn
+      dts:
+        serviceTemplate: dts
+        serviceConfiguration: dts
+      blueman:
+        serviceTemplate: blueman
+        serviceConfiguration: blueman
+    serviceChains:
+      switches:
+        - ports:
+          - serviceInterface:
+              matchLabels:
+                uplink: p0
+          - service:
+              name: hbn
+              interface: p0_if
+        - ports:
+          - serviceInterface:
+              matchLabels:
+                uplink: p1
+          - service:
+              name: hbn
+              interface: p1_if
+        - ports:
+          - serviceInterface:
+              matchLabels:
+                port: ovn
+          - service:
+              name: hbn
+              interface: pf2dpu2_if
+
+dpuServiceTemplates:
+  - name: ovn
+    helmChart:
+      source:
+        repoURL: oci://ghcr.io/nvidia
+        chart: ovn-kubernetes-chart
+        version: v25.7.0
+      values:
+        commonManifests:
+          enabled: true
+        dpuManifests:
+          enabled: true
+        leaseNamespace: "ovn-kubernetes"
+        gatewayOpts: "--gateway-interface=br-ovn"
+  - name: hbn
+    helmChart:
+      source:
+        repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+        version: 1.0.3
+        chart: doca-hbn
+      values:
+        image:
+          repository: nvcr.io/nvidia/doca/doca_hbn
+          tag: 3.1.0-doca3.1.0
+        resources:
+          memory: 6Gi
+          nvidia.com/bf_sf: 3
+  - name: dts
+    helmChart:
+      source:
+        repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+        version: 1.0.8
+        chart: doca-telemetry
+  - name: blueman
+    helmChart:
+      source:
+        repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+        version: 1.0.8
+        chart: doca-blueman
+
+dpuServiceInterfaces:
+  - name: p0
+    template:
+      metadata:
+        labels:
+          uplink: "p0"
+      spec:
+        interfaceType: physical
+        physical:
+          interfaceName: p0
+  - name: p1
+    template:
+      metadata:
+        labels:
+          uplink: "p1"
+      spec:
+        interfaceType: physical
+        physical:
+          interfaceName: p1
+  - name: ovn
+    template:
+      metadata:
+        labels:
+          port: ovn
+      spec:
+        interfaceType: ovn
+
+dpuServiceCredentialRequests:
+  - name: ovn-dpu
+    duration: 24h
+    metadata:
+      labels:
+        dpu.nvidia.com/image-pull-secret: ""
+    secret:
+      name: ovn-dpu
+      namespace: dpf-operator-system
+    serviceAccount:
+      name: ovn-dpu
+      namespace: dpf-operator-system
+    type: tokenFile
+
+dpuServiceIPAMs:
+  - name: asn
+    ipv4Subnet:
+      subnet: 0.0.0.0/16
+      perNodeIPCount: 1
+      gateway: 0.0.255.255
+  - name: loopback
+    ipv4Network:
+      network: "11.0.0.0/24"
+      prefixSize: 32
+  - name: pool1
+    ipv4Network:
+      network: "10.0.120.0/22"
+      gatewayIndex: 3
+      prefixSize: 29

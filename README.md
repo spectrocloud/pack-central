@@ -22,13 +22,14 @@ Use them from the Spectro Cloud public registry on our [SaaS offering](https://w
 ## Contributing
 We welcome contributions of new packs and updates to existing packs. This repository uses a fork and pull model. Here are the steps for becoming a contributor:
 
-  * Clone this repository and create a new branch.
+  * Fork this repository and create a new branch.
   * In the packs/ directory, add your changes.
   *  If you are adding a new pack, then create a directory having the format <name of the pack>-x.y.z, where x is the major version, y is the minor version and z is the patch version. If your name of the pack has multiple words, use ‘-’ as the separator while naming the top level directory of the pack.
   * Push your pack changes to your private registry and test it in your Palette environment.
   * Push your changes to your fork, then open a pull request against this repository.
   * While opening a pull request, mention the purpose of the pack and the scenarios that have been validated.
   * If you are making changes that address an existing issue, please make a comment in the issue so we can assign it to you. This helps to prevent accidentally doubling up on work.
+  * If you already have a pack and working on a new version for it, retain the name and display name of the pack across versions. Else, it will show up as a new pack.
 
 ## Rules for contributors
 Your contribution must be your own original work. You may not submit copyrighted content you do not own. Please do not plagiarize.

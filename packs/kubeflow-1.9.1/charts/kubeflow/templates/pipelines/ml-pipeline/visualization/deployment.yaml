@@ -1,0 +1,101 @@
+{{- if (include "kubeflow.pipelines.visualization.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.visualization.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.visualization.autoscaling.minReplicas" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.visualization.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.visualization.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.visualization.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+      labels:
+        {{- include "kubeflow.pipelines.visualization.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: ml-pipeline-visualizationserver
+        image: {{ include "kubeflow.pipelines.visualization.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.visualization.imagePullPolicy" . }}
+
+        ports:
+        - name: http
+          containerPort: 8888
+
+        readinessProbe:
+          exec:
+            command:
+              - wget
+              - -q # quiet
+              - -S # show server response
+              - -O
+              - "-" # Redirect output to stdout
+              - http://localhost:8888/
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+        livenessProbe:
+          exec:
+            command:
+              - wget
+              - -q # quiet
+              - -S # show server response
+              - -O
+              - "-" # Redirect output to stdout
+              - http://localhost:8888/
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+
+        {{- with .Values.pipelines.visualization.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.visualization.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.visualization.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.visualization.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.visualization.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.visualization.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.visualization.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

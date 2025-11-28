@@ -1,0 +1,18 @@
+{{- if (include "kubeflow.modelRegistry.createIstioIntegrationObjects" .) -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  labels:
+    {{- include "kubeflow.modelRegistry.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.modelRegistry.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      {{- include "kubeflow.modelRegistry.selectorLabels" . | nindent 6 }}
+  rules:
+  - {}
+
+{{- end }}

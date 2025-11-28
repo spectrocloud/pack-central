@@ -1,0 +1,20 @@
+{{- if (include "kubeflow.profilesController.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "kubeflow.profilesController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.profilesController.namespaceLabelsConfigMapName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+data:
+  namespace-labels.yaml: |
+    {{- with .Values.profilesController.config.defaultNamespaceLabels }}
+        {{- toYaml . | nindent 4 }}
+    {{- end }}
+  
+    {{- with .Values.profilesController.config.extraNamespaceLabels }}
+        {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+{{- end }}

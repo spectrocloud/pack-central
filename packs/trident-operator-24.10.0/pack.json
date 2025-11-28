@@ -1,0 +1,20 @@
+{
+  "cloudTypes": [
+    "vsphere",
+    "maas",
+    "edge-native"
+  ],
+  "annotations": {
+    "docsURL": "https://github.com/NetApp/trident",
+    "description": "NetApp Trident",
+    "source": "community",
+    "contributor": "NetApp"
+  },
+  "displayName": "Trident",
+  "charts": [
+      "charts/trident-operator-100.2410.0.tgz"
+  ],
+  "layer": "csi",
+  "name": "csi-trident",
+  "version": "24.10.0"
+}

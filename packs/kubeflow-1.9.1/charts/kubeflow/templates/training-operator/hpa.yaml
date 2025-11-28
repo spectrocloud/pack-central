@@ -1,0 +1,36 @@
+{{- if (include "kubeflow.trainingOperator.autoscaling.enabled" . | eq "true") -}}
+
+{{- $componentName := include "kubeflow.trainingOperator.name" . -}}
+{{- $minReplicas := include "kubeflow.trainingOperator.autoscaling.minReplicas" . -}}
+{{- $maxReplicas := include "kubeflow.trainingOperator.autoscaling.maxReplicas" . -}}
+{{- $targetCPUUtilizationPercentage := include "kubeflow.trainingOperator.autoscaling.targetCPUUtilizationPercentage" . -}}
+{{- $targetMemoryUtilizationPercentage := include "kubeflow.trainingOperator.autoscaling.targetMemoryUtilizationPercentage" . -}}
+
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    {{- include "kubeflow.trainingOperator.labels" . | nindent 4 }}
+  name: {{ $componentName }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $componentName }}
+  minReplicas: {{ $minReplicas }}
+  maxReplicas: {{ $maxReplicas }}
+  metrics:
+    {{- if $targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ $targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ $targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,13 @@
+{{- if (include "kubeflow.admissionWebhook.enabledWithCertManager" . )}}
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "kubeflow.admissionWebhook.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.admissionWebhook.certIssuerName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  selfSigned: {}
+
+{{- end }}

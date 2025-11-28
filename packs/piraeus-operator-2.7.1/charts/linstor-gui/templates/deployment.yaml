@@ -1,0 +1,28 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linstor-gui
+  namespace: piraeus-system
+  labels:
+    app: linstor-gui
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: linstor-gui
+  template:
+    metadata:
+      labels:
+        app: linstor-gui
+    spec:
+      containers:
+        - name: linstor-gui
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LB_LINSTOR_API_HOST
+              value: {{ .Values.apiHost }}
+{{- end }}

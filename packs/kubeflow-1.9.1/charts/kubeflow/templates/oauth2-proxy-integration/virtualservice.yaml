@@ -1,0 +1,23 @@
+{{- if (include "kubeflow.oauth2ProxyIntegration.istio.enabled" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ .Values.oauth2ProxyIntegration.svc.name }}
+  namespace: {{ .Values.oauth2ProxyIntegration.svc.namespace }}
+spec:
+  gateways:
+  - {{ include "kubeflow.namespace" . }}/{{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - "{{ default "*" .Values.oauth2ProxyIntegration.host }}"
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.oauth2ProxyIntegration.urlPrefix }}/
+    route:
+    - destination:
+        host: {{ .Values.oauth2ProxyIntegration.svc.name }}.{{ .Values.oauth2ProxyIntegration.svc.namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.oauth2ProxyIntegration.svc.port }}
+
+{{- end }}
