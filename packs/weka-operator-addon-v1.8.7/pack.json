@@ -1,0 +1,17 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "WEKA Operator",
+    "charts": [
+      "charts/weka-operator-v1.8.7.tgz"
+    ],
+    "layer":"addon",
+    "name": "weka-operator-addon",
+    "version": "v1.8.7"
+  }

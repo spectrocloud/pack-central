@@ -1,0 +1,127 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: "{{ .Values.prefix }}-node-agent"
+  labels:
+    app.kubernetes.io/component: weka-node-agent
+    app.kubernetes.io/created-by: weka-operator
+    app.kubernetes.io/instance: weka-node-agent
+    app.kubernetes.io/name: weka-node-agent
+    app.kubernetes.io/part-of: weka-operator
+    control-plane: node-agent
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      control-plane: weka-node-agent
+      app.kubernetes.io/component: weka-node-agent
+  template:
+    metadata:
+      annotations:
+        "prometheus.io/scrape": "true"
+        "prometheus.io/port": "8090"
+        "prometheus.io/path": "/metrics"
+        "kubectl.kubernetes.io/default-container": node-agent
+      labels:
+        control-plane: weka-node-agent
+        app.kubernetes.io/created-by: weka-operator
+        app.kubernetes.io/component: weka-node-agent
+        app: weka-node-agent
+    spec:
+      securityContext:
+        runAsNonRoot: false
+      imagePullSecrets:
+        - name: "{{ .Values.imagePullSecret }}"
+      {{ if .Values.nodeAgent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeAgent.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeAgent.affinity }}
+      affinity:
+        {{- toYaml .Values.nodeAgent.affinity | nindent 8 }}
+      {{- else }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      {{- end }}
+      tolerations:
+      {{- if .Values.nodeAgent.tolerations }}
+        {{- toYaml .Values.nodeAgent.tolerations | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ .k8sNetwork | default "" }}
+      {{- end }}
+      priorityClassName: {{ .Values.priorityClasses.targeted }}
+      volumes:
+        - name: tmpdir
+          emptyDir: { }
+        - name: token
+          secret:
+              secretName: "weka-node-agent-secret"
+        - name: weka-persistence
+          hostPath:
+            path: {{ .Values.nodeAgent.persistencePaths }}/shared
+
+      containers:
+        - command:
+            - /weka-operator
+          ports:
+            - containerPort: 8090
+              name: http
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OTEL_DEPLOYMENT_IDENTIFIER
+              value: "{{ .Values.deploymentIdentifier }}"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.otelExporterOtlpEndpoint }}"
+            - name: VERSION
+              value: "{{ .Chart.Version }}"
+            - name: OPERATOR_MODE
+              value: node-agent
+            - name: NODE_AGENT_BIND_ADDRESS
+              value: ":8090"
+
+          image: "{{ .Values.image.repository }}:{{if not (empty .Values.image.tag)}}{{ .Values.image.tag }}{{else}}{{ .Chart.Version }}{{end}}"
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmpdir
+            - mountPath: /host-binds/shared
+              name: weka-persistence
+            - mountPath: /var/run/secrets/kubernetes.io/token
+              name: token
+              readOnly: true
+          name: node-agent
+          securityContext:
+            privileged: true
+          resources:
+            {{- toYaml .Values.nodeAgent.resources | nindent 12 }}
+      serviceAccountName: "{{ .Values.prefix }}-maintenance"
+      terminationGracePeriodSeconds: 10
