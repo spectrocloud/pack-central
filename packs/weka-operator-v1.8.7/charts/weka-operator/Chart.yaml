@@ -1,0 +1,9 @@
+apiVersion: v2
+description: Weka operator for Kubernetes clusters
+maintainers:
+- email: support@weka.io
+  name: weka
+  url: https://weka.io
+name: weka-operator
+type: application
+version: v1.8.7

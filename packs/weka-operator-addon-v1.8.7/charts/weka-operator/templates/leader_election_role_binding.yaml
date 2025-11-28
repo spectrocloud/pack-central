@@ -1,0 +1,19 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: weka-operator
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: weka-operator
+  name: "{{ .Values.prefix }}-leader-election-rolebinding"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ .Values.prefix }}-leader-election-role"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Values.prefix }}-controller-manager"
+    namespace: "{{ .Release.Namespace }}"

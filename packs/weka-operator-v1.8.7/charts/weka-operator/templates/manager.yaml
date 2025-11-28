@@ -1,0 +1,368 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.prefix }}-controller-manager"
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: weka-operator
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: weka-operator
+    control-plane: controller-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  replicas: {{ if eq .Values.deployController true }} 1 {{else}} 0 {{end}}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+      labels:
+        control-plane: controller-manager
+        app.kubernetes.io/component: weka-operator
+        app.kubernetes.io/created-by: weka-operator
+        app: weka-operator
+        {{- if .Values.manager.labels }}
+        {{- toYaml .Values.manager.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        runAsNonRoot: false
+      imagePullSecrets:
+        - name: "{{ .Values.imagePullSecret }}"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      tolerations:
+      {{- if .Values.manager.tolerations }}
+        {{- toYaml .Values.manager.tolerations | nindent 8 }}
+      {{- else if .Values.tolerations }}
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.manager.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.manager.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ .k8sNetwork | default "" }}
+      {{- end }}
+      volumes:
+        - name: tmpdir
+          emptyDir: { }
+      containers:
+        - args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=0
+          image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+          name: kube-rbac-proxy
+          ports:
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        - command:
+            - /weka-operator
+          ports:
+              - containerPort: 8080
+                name: metrics
+                protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_DEPLOYMENT_NAME
+              value: "{{ .Values.prefix }}-controller-manager"
+            - name: OTEL_DEPLOYMENT_IDENTIFIER
+              value: "{{ .Values.deploymentIdentifier }}"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.otelExporterOtlpEndpoint }}"
+            - name: VERSION
+              value: "{{ .Chart.Version }}"
+            - name: WEKA_OPERATOR_WEKA_HOME_ENDPOINT
+              value: "{{ .Values.wekahome.endpoint }}"
+            - name: WEKA_OPERATOR_WEKA_HOME_CACERT_SECRET
+              value: "{{ .Values.wekahome.cacertSecret }}"
+            - name: WEKA_OPERATOR_WEKA_HOME_INSECURE
+              value: "{{ .Values.wekahome.allowInsecureTLS }}"
+            - name: WEKA_OPERATOR_WEKA_HOME_ENABLE_STATS
+              value: "{{ .Values.wekahome.enableStats }}"
+            - name: WEKA_OPERATOR_DEBUG_SLEEP
+              value: "{{ .Values.debugSleep }}"
+            - name: WEKA_OPERATOR_MAINTENANCE_SA_NAME
+              value: "{{ .Values.prefix }}-maintenance"
+            - name: WEKA_MAINTENANCE_IMAGE
+              value: "{{ .Values.maintenanceImage | default "quay.io/weka.io/busybox" }}"
+            - name: WEKA_MAINTENANCE_IMAGE_PULL_SECRET
+              value: "{{ .Values.maintenanceImagePullSecret | default "" }}"
+            - name: WEKA_OCP_PULL_SECRET
+              value: "{{ .Values.ocpCompatibility.driverToolkitSecretName }}"
+            - name: WEKA_OCP_TOOLKIT_IMAGE_BASE_URL
+              value: "{{ .Values.ocpCompatibility.driverToolkitImageBaseUrl }}"
+            - name: WEKA_COS_ALLOW_DISABLE_DRIVER_SIGNING
+              value: "{{ .Values.gkeCompatibility.disableDriverSigning }}"
+            - name: WEKA_COS_ALLOW_HUGEPAGE_CONFIG
+              value: "{{ .Values.gkeCompatibility.hugepageConfiguration.enabled}}"
+            - name: WEKA_COS_GLOBAL_HUGEPAGE_SIZE
+              value: "{{ .Values.gkeCompatibility.hugepageConfiguration.hugepageSize }}"
+            - name: WEKA_COS_GLOBAL_HUGEPAGE_COUNT
+              value: "{{ .Values.gkeCompatibility.hugepageConfiguration.hugepageCount }}"
+            - name: WEKA_COS_SERVICE_ACCOUNT_SECRET
+              value: "{{ .Values.gkeCompatibility.gkeServiceAccountSecret }}"
+            - name: OKE_ENABLE_NICS_ALLOCATION
+              value: "{{ .Values.okeCompatibility.enableNicsAllocation }}"
+            - name: SKIP_UNHEALTHY_TOLERATION
+              value: "{{ .Values.skipUnhealthyToleration }}"
+            - name: CLEANUP_REMOVED_NODES
+              value: "{{ .Values.cleanupRemovedNodes }}"
+            - name: CLEANUP_BACKENDS_ON_NODE_SELECTOR_MISMATCH
+              value: "{{ .Values.cleanupOnNodeSelectorMismatch }}"
+            - name: CLEANUP_CLIENTS_ON_NODE_SELECTOR_MISMATCH
+              value: "{{ .Values.cleanupClientsOnNodeSelectorMismatch }}"
+            - name: CLEANUP_CONTAINERS_ON_TOLERATIONS_MISMATCH
+              value: "{{ .Values.cleanupContainersOnTolerationsMismatch }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.logging.level }}"
+            - name: LOG_TIME_ONLY
+              value: "{{ .Values.logging.timeOnly }}"
+            - name: HEALTH_PROBE_BIND_ADDRESS
+              value: "{{ .Values.healthProbeBindAddress }}"
+            - name: OPERATOR_METRICS_BIND_ADDRESS
+              value: "{{ .Values.operatorMetricsBindAddress }}"
+            - name: ENABLE_LEADER_ELECTION
+              value: "{{ .Values.enableLeaderElection }}"
+            - name: ENABLE_CLUSTER_API
+              value: "{{ .Values.enableClusterApi }}"
+            - name: RECONCILE_TIMEOUT
+              value: "{{ .Values.reconcileTimeout }}"
+            - name: KUBE_EXEC_TIMEOUT
+              value: "{{ .Values.kubeExecTimeout }}"
+            - name: WEKA_ALLOC_ZOMBIE_DELETE_AFTER
+              value: "{{ .Values.wekaAllocZombieDeleteAfter }}"
+            - name: MAX_WORKERS_WEKACLUSTER
+              value: "{{ .Values.maxWorkers.wekaCluster }}"
+            - name: MAX_WORKERS_WEKACONTAINER
+              value: "{{ .Values.maxWorkers.wekaContainer }}"
+            - name: MAX_WORKERS_WEKACLIENT
+              value: "{{ .Values.maxWorkers.wekaClient }}"
+            - name: MAX_WORKERS_WEKAMANUALOPERATION
+              value: "{{ .Values.maxWorkers.wekaManualOperation }}"
+            - name: MAX_WORKERS_WEKAPOLICY
+              value: "{{ .Values.maxWorkers.wekaPolicy }}"
+            - name: METRICS_CLUSTERS_ENABLED
+              value: "{{ .Values.metrics.clusters.enabled }}"
+            - name: METRICS_CLUSTERS_POLLING_RATE
+              value: "{{ .Values.metrics.clusters.pollingRate }}"
+            - name: METRICS_CONTAINERS_ENABLED
+              value: "{{ .Values.metrics.containers.enabled }}"
+            - name: METRICS_CONTAINERS_POLLING_RATE
+              value: "{{ .Values.metrics.containers.pollingRate }}"
+            - name: METRICS_CONTAINERS_REQUEST_TIMEOUT_REGISTER
+              value: "{{ .Values.metrics.containers.requestsTimeouts.register }}"
+            - name: METRICS_CONTAINERS_REQUEST_TIMEOUT_GET_CONTAINER_INFO
+              value: "{{ .Values.metrics.containers.requestsTimeouts.getContainerInfo }}"
+            - name: LOCAL_DATA_PVC
+              value: "{{ .Values.localDataPvc }}"
+            - name: DNS_POLICY_K8S_NETWORK
+              value: "{{ .Values.dnsPolicy.k8sNetwork }}"
+            - name: DNS_POLICY_HOST_NETWORK
+              value: "{{ .Values.dnsPolicy.hostNetwork }}"
+            - name: SIGN_DRIVES_IMAGE
+              value: "{{ .Values.signDrivesImage }}"
+            - name: UPGRADE_COMPUTE_THRESHOLD_PERCENT
+              value: "{{ .Values.upgrade.computeThresholdPercent }}"
+            - name: UPGRADE_DRIVE_THRESHOLD_PERCENT
+              value: "{{ .Values.upgrade.driveThresholdPercent }}"
+            - name: UPGRADE_MAX_DEACTIVATING_CONTAINERS_PERCENT
+              value: "{{ .Values.upgrade.maxDeactivatingContainersPercent }}"
+            - name: SKIP_CLIENT_NO_SCHEDULE_TOLERATION
+              value: "{{ .Values.skipClientNoScheduleToleration }}"
+            - name: SKIP_AUX_NO_SCHEDULE_TOLERATION
+              value: "{{ .Values.skipAuxNoScheduleToleration }}"
+            - name: EVICT_CONTAINER_ON_DELETION
+              value: "{{ .Values.evictContainerOnDeletion }}"
+            - name: REMOVAL_THROTTLING_ENABLED
+              value: "{{ .Values.removalThrottlingEnabled }}"
+            - name: SKIP_CLIENTS_TOLERATION_VALIDATION
+              value: "{{ .Values.skipClientsTolerationValidation }}"
+            - name: TOLERATIONS_MISMATCH_SETTINGS_ENABLE_IGNORED_TAINTS
+              value: "{{ .Values.tolerationsMismatchSettings.enableIgnoredTaints }}"
+            - name: TOLERATIONS_MISMATCH_SETTINGS_IGNORED_TAINTS
+              value: "{{ join "," .Values.tolerationsMismatchSettings.ignoredTaints }}"
+            - name: DELETE_ENVOY_WITHOUT_S3_NEIGHBOR_TIMEOUT
+              value: "{{ .Values.defaultIntervals.deleteEnvoyWithoutS3NeighborTimeout }}"
+            - name: DELETE_UNSCHEDULABLE_PODS_AFTER
+              value: "{{ .Values.defaultIntervals.deleteUnschedulablePodsAfter }}"
+            - name: CSI_INSTALLATION_ENABLED
+              value: "{{ .Values.csi.installationEnabled }}"
+            - name: CSI_STORAGE_CLASS_CREATION_DISABLED
+              value: "{{ .Values.csi.storageClassCreationDisabled }}"
+            - name: CSI_IMAGE
+              value: "{{ .Values.csi.image }}"
+            - name: CSI_PROVISIONER_IMAGE
+              value: "{{ .Values.csi.provisionerImage }}"
+            - name: CSI_ATTACHER_IMAGE
+              value: "{{ .Values.csi.attacherImage }}"
+            - name: CSI_LIVENESSPROBE_IMAGE
+              value: "{{ .Values.csi.livenessProbeImage }}"
+            - name: CSI_RESIZER_IMAGE
+              value: "{{ .Values.csi.resizerImage }}"
+            - name: CSI_SNAPSHOTTER_IMAGE
+              value: "{{ .Values.csi.snapshotterImage }}"
+            - name: CSI_REGISTRAR_IMAGE
+              value: "{{ .Values.csi.registrarImage }}"
+            - name: CSI_PREVENT_NEW_WORKLOAD_ON_CLIENT_CONTAINER_NOT_RUNNING
+              value: "{{ .Values.csi.preventNewWorkloadOnClientContainerNotRunning }}"
+            - name: CSI_LOG_LEVEL
+              value: "{{ .Values.csi.logLevel }}"
+            - name: CSI_CONTROLLER_WEKAFS_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.wekafs.limits.cpu }}"
+            - name: CSI_CONTROLLER_WEKAFS_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.wekafs.limits.memory }}"
+            - name: CSI_CONTROLLER_WEKAFS_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.wekafs.requests.cpu }}"
+            - name: CSI_CONTROLLER_WEKAFS_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.wekafs.requests.memory }}"
+            - name: CSI_CONTROLLER_ATTACHER_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.csiAttacher.limits.cpu }}"
+            - name: CSI_CONTROLLER_ATTACHER_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiAttacher.limits.memory }}"
+            - name: CSI_CONTROLLER_ATTACHER_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.csiAttacher.requests.cpu }}"
+            - name: CSI_CONTROLLER_ATTACHER_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiAttacher.requests.memory }}"
+            - name: CSI_CONTROLLER_PROVISIONER_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.csiProvisioner.limits.cpu }}"
+            - name: CSI_CONTROLLER_PROVISIONER_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiProvisioner.limits.memory }}"
+            - name: CSI_CONTROLLER_PROVISIONER_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.csiProvisioner.requests.cpu }}"
+            - name: CSI_CONTROLLER_PROVISIONER_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiProvisioner.requests.memory }}"
+            - name: CSI_CONTROLLER_RESIZER_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.csiResizer.limits.cpu }}"
+            - name: CSI_CONTROLLER_RESIZER_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiResizer.limits.memory }}"
+            - name: CSI_CONTROLLER_RESIZER_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.csiResizer.requests.cpu }}"
+            - name: CSI_CONTROLLER_RESIZER_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiResizer.requests.memory }}"
+            - name: CSI_CONTROLLER_SNAPSHOTTER_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.csiSnapshotter.limits.cpu }}"
+            - name: CSI_CONTROLLER_SNAPSHOTTER_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiSnapshotter.limits.memory }}"
+            - name: CSI_CONTROLLER_SNAPSHOTTER_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.csiSnapshotter.requests.cpu }}"
+            - name: CSI_CONTROLLER_SNAPSHOTTER_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.csiSnapshotter.requests.memory }}"
+            - name: CSI_CONTROLLER_LIVENESS_PROBE_LIMITS_CPU
+              value: "{{ .Values.csi.controller.resources.livenessProbe.limits.cpu }}"
+            - name: CSI_CONTROLLER_LIVENESS_PROBE_LIMITS_MEMORY
+              value: "{{ .Values.csi.controller.resources.livenessProbe.limits.memory }}"
+            - name: CSI_CONTROLLER_LIVENESS_PROBE_REQUESTS_CPU
+              value: "{{ .Values.csi.controller.resources.livenessProbe.requests.cpu }}"
+            - name: CSI_CONTROLLER_LIVENESS_PROBE_REQUESTS_MEMORY
+              value: "{{ .Values.csi.controller.resources.livenessProbe.requests.memory }}"
+            - name: CSI_NODE_WEKAFS_LIMITS_CPU
+              value: "{{ .Values.csi.node.resources.wekafs.limits.cpu }}"
+            - name: CSI_NODE_WEKAFS_LIMITS_MEMORY
+              value: "{{ .Values.csi.node.resources.wekafs.limits.memory }}"
+            - name: CSI_NODE_WEKAFS_REQUESTS_CPU
+              value: "{{ .Values.csi.node.resources.wekafs.requests.cpu }}"
+            - name: CSI_NODE_WEKAFS_REQUESTS_MEMORY
+              value: "{{ .Values.csi.node.resources.wekafs.requests.memory }}"
+            - name: CSI_NODE_LIVENESS_PROBE_LIMITS_CPU
+              value: "{{ .Values.csi.node.resources.livenessProbe.limits.cpu }}"
+            - name: CSI_NODE_LIVENESS_PROBE_LIMITS_MEMORY
+              value: "{{ .Values.csi.node.resources.livenessProbe.limits.memory }}"
+            - name: CSI_NODE_LIVENESS_PROBE_REQUESTS_CPU
+              value: "{{ .Values.csi.node.resources.livenessProbe.requests.cpu }}"
+            - name: CSI_NODE_LIVENESS_PROBE_REQUESTS_MEMORY
+              value: "{{ .Values.csi.node.resources.livenessProbe.requests.memory }}"
+            - name: CSI_NODE_REGISTRAR_LIMITS_CPU
+              value: "{{ .Values.csi.node.resources.csiRegistrar.limits.cpu }}"
+            - name: CSI_NODE_REGISTRAR_LIMITS_MEMORY
+              value: "{{ .Values.csi.node.resources.csiRegistrar.limits.memory }}"
+            - name: CSI_NODE_REGISTRAR_REQUESTS_CPU
+              value: "{{ .Values.csi.node.resources.csiRegistrar.requests.cpu }}"
+            - name: CSI_NODE_REGISTRAR_REQUESTS_MEMORY
+              value: "{{ .Values.csi.node.resources.csiRegistrar.requests.memory }}"
+            - name: SYSLOG_PACKAGE
+              value: "{{ .Values.syslogPackage }}"
+            - name: PROXY
+              value: "{{ .Values.proxy }}"
+            - name: PRIORITY_CLASS_INITIAL
+              value: "{{ .Values.priorityClasses.initial }}"
+            - name: PRIORITY_CLASS_TARGETED
+              value: "{{ .Values.priorityClasses.targeted }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.manager.loggerSettings.level }}"
+            - name: LOG_FORMAT
+              value: "{{ .Values.manager.loggerSettings.format }}"
+            - name: LOG_CALLER_DIR_LVL
+              value: "{{ .Values.manager.loggerSettings.callerDirLvl }}"
+
+          image: "{{ .Values.image.repository }}:{{if not (empty .Values.image.tag)}}{{ .Values.image.tag }}{{else}}{{ .Chart.Version }}{{end}}"
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmpdir
+          name: manager
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # TODO(user): Configure the resources accordingly based on the project requirements.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          resources:
+            {{- toYaml .Values.manager.resources | nindent 12 }}
+      serviceAccountName: "{{ .Values.prefix }}-controller-manager"
+      terminationGracePeriodSeconds: 10
