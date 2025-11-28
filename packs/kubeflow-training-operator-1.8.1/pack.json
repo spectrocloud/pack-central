@@ -1,0 +1,17 @@
+{
+    "addonType": "ai",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "kubeflow-training-operator",
+    "charts": [
+      "charts/training-operator-1.8.1.tgz"
+    ],
+    "layer":"addon",
+    "name": "kubeflow-training-operator",
+    "version": "1.8.1"
+  }
