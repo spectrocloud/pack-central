@@ -1,0 +1,18 @@
+{
+    "addonType": "monitoring",
+    "annotations": {
+      "ingressSupported": "false",
+      "docsURL": ""
+    },
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Spectro Cluster Metrics",
+    "charts": [
+      "charts/spectro-cluster-metrics-1.0.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "spectro-cluster-metrics",
+    "version": "1.0.0"
+  }
+  
