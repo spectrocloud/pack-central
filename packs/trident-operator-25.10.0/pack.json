@@ -12,5 +12,5 @@
     ],
     "layer":"csi",
     "name": "trident-operator",
-    "version": "100.2510.0"
+    "version": "25.10.0"
   }
