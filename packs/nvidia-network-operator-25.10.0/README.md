@@ -33,7 +33,6 @@ RDMA workloads in a kubernetes cluster including:
 | nfd.deployNodeFeatureRules | bool | `true` | | Deploy Node Feature Rules to label the nodes with the discovered features |
 | upgradeCRDs | bool | `true` | Enable CRDs upgrade with helm pre-install and pre-upgrade hooks |
 | sriovNetworkOperator.enabled | bool | `false` | Deploy SR-IOV Network Operator |
-| nicConfigurationOperator.enabled | bool | `false` | Deploy NIC Configuration Operator (deprecated) |
 | maintenanceOperator.enabled | bool | `false` | Deploy Maintenance Operator |
 | node-feature-discovery.enableNodeFeatureApi | bool | `true` | The Node Feature API enable communication between nfd master and worker through NodeFeature CRs. Otherwise communication is through gRPC |
 | node-feature-discovery.featureGates.NodeFeatureAPI | bool | `true` |  |
@@ -79,12 +78,6 @@ RDMA workloads in a kubernetes cluster including:
 | sriov-network-operator.imagePullSecrets | list | `[]` | imagePullSecrets for sriov-network-operator related images |
 | sriov-network-operator.sriovOperatorConfig.deploy | bool | `true` | Deploy ``SriovOperatorConfig`` custom resource |
 | sriov-network-operator.sriovOperatorConfig.configDaemonNodeSelector | map | `beta.kubernetes.io/os: "linux"` and `network.nvidia.com/operator.mofed.wait: "false"` | Selects the nodes to be configured |
-| nic-configuration-operator-chart.operator.image.repository | string | `"nvcr.io/nvidia/mellanox"` | |
-| nic-configuration-operator-chart.operator.image.name | string | `"nic-configuration-operator"` | |
-| nic-configuration-operator-chart.operator.image.tag | string | `"network-operator-v25.7.0"` | |
-| nic-configuration-operator-chart.configDaemon.image.repository | string | `"nvcr.io/nvidia/mellanox"` | |
-| nic-configuration-operator-chart.configDaemon.image.name | string | `"nic-configuration-operator-daemon"` | |
-| nic-configuration-operator-chart.configDaemon.image.tag | string | `"network-operator-v25.7.0"` | |
 | maintenance-operator-chart.operatorConfig.deploy | bool | `false` | Deploy MaintenanceOperatorConfig. Maintenance Operator might be already deployed on the cluster, in that case no need to deploy MaintenanceOperatorConfig |
 | maintenance-operator.imagePullSecrets | list | `[]` | imagePullSecrets for maintenance-operator related images |
 | maintenance-operator-chart.operator.image.repository | string | `"nvcr.io/nvidia/mellanox"` | |

@@ -235,6 +235,8 @@ rules:
   - nodemaintenances/status
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - mellanox.com
   resources:
@@ -323,16 +325,11 @@ rules:
   verbs:
   - use
 - apiGroups:
-  - whereabouts.cni.cncf.io
+  - sriovnetwork.openshift.io
   resources:
-  - ippools
-  - nodeslicepools
-  - overlappingrangeipreservations
+  - sriovnetworknodestates
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
-  - update
   - watch

@@ -94,7 +94,7 @@ spec:
               value: "{{ .repository }}/{{ .image }}:{{ .version }}"
               {{- end }}
             {{- end }}
-            {{- if .Values.maintenanceOperator.enabled }}
+            {{- if .Values.operator.maintenanceOperator.useRequestor }}
             - name: MAINTENANCE_OPERATOR_ENABLED
               value: "{{ .Values.operator.maintenanceOperator.useRequestor }}"
             - name: MAINTENANCE_OPERATOR_REQUESTOR_ID
@@ -104,8 +104,24 @@ spec:
             - name: MAINTENANCE_OPERATOR_REQUESTOR_NAMESPACE
               value: {{ .Values.operator.maintenanceOperator.nodeMaintenanceNamespace }}
             {{- end }}
+            {{- if .Values.operator.maintenanceOperator.useDrainControllerRequestor }}
+            - name: DRAIN_CONTROLLER_ENABLED
+              value: "{{ .Values.operator.maintenanceOperator.useDrainControllerRequestor }}"
+            - name: DRAIN_CONTROLLER_REQUESTOR_ID
+              value: {{ .Values.operator.maintenanceOperator.drainControllerRequestorID }}
+            - name: DRAIN_CONTROLLER_REQUESTOR_NAMESPACE
+              value: {{ .Values.operator.maintenanceOperator.nodeMaintenanceNamespace }}
+            - name: DRAIN_CONTROLLER_SRIOV_NODE_STATE_NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- end }}
           securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
           livenessProbe:
             httpGet:
               path: /healthz

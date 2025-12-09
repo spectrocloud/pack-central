@@ -80,6 +80,14 @@ spec:
         - name: upgrade-crd
           image: "{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.tag | default .Chart.AppVersion }}"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
           command:
             - /apply-crds
           args:
@@ -89,9 +97,6 @@ spec:
         {{- end }}
         {{- if .Values.nfd.enabled }}
               - --crds-dir=/crds/node-feature-discovery
-        {{- end }}
-        {{- if .Values.nicConfigurationOperator.enabled }}
-              - --crds-dir=/crds/nic-configuration-operator
         {{- end }}
         {{- if .Values.maintenanceOperator.enabled }}
               - --crds-dir=/crds/maintenance-operator
