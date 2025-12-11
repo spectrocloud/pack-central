@@ -28,7 +28,7 @@ pack:
       - image: nvcr.io/nvidia/mellanox/ipoib-cni:network-operator-v25.10.0
       - image: nvcr.io/nvidia/mellanox/plugins:network-operator-v25.10.0
       - image: nvcr.io/nvidia/mellanox/multus-cni:network-operator-v25.10.0
-      - image: nvcr.io/nvidia/mellanox/doca-driver:doca3.2.0-25.10-1.2.8.0-2
+      - image: nvcr.io/nvidia/mellanox/doca-driver:doca3.2.0-25.10-1.2.8.0-2-ubuntu22.04-amd64
 
 charts:
   network-operator:
