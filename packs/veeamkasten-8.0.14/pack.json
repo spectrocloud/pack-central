@@ -11,6 +11,6 @@
   "kubeManifests": [],
   "charts": ["charts/k10-8.0.14.tgz"],
   "layer": "addon",
-  "name": "kasten",
+  "name": "veeamkasten",
   "version": "8.0.14"
 }
