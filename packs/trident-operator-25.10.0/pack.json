@@ -1,16 +1,16 @@
 {
-    "annotations": {
-      "source": "community",
-      "contributor" : "netapp"
-    },    
-    "cloudTypes": [
-      "all"
-    ],
-    "displayName": "trident-operator",
-    "charts": [
-      "charts/trident-operator-100.2510.0.tgz"
-    ],
-    "layer":"csi",
-    "name": "trident-operator",
-    "version": "25.10.0"
-  }
+  "annotations": {
+    "source": "community",
+    "contributor" : "netapp"
+  },    
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Trident",
+  "charts": [
+    "charts/trident-operator-100.2510.0.tgz"
+  ],
+  "layer":"csi",
+  "name": "csi-trident",
+  "version": "25.10.0"
+}
