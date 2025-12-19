@@ -1,0 +1,62 @@
+pack:
+  content:
+    images:
+      - image: registry.hitachivantara.com/hitachicsi-oci-oss/hspc-operator:v1.17.3
+      - image: registry.hitachivantara.com/hitachicsi-oci-oss/hspc-csi-driver:v3.17.3
+      - image: registry.k8s.io/sig-storage/csi-provisioner@sha256:bb057f866177d5f4139a1527e594499cbe0feeb67b63aaca8679dfdf0a6016f9
+      - image: registry.k8s.io/sig-storage/csi-attacher@sha256:5aaefc24f315b182233c8b6146077f8c32e274d864cb03c632206e78bd0302da
+      - image: registry.k8s.io/sig-storage/csi-resizer@sha256:5e7cbb63fd497fa913caa21fee1a69f727c220c6fa83c5f8bb0995e2ad73a474
+      - image: registry.k8s.io/sig-storage/csi-snapshotter@sha256:7b3d53cfefcb1c8836d5ac45f64dfdbf3fe6c813251b0b2ec79af7812cc53bfa
+      - image: registry.k8s.io/sig-storage/livenessprobe@sha256:57dba2ee519e49afacf899af7e265d977b02ec4c1f60c9b636ab0e575612dbfd
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar@sha256:5244abbe87e01b35adeb8bb13882a74785df0c0619f8325c9e950395c3f72a97
+charts:
+  hspc:
+    operator:
+      namespace: hspc-operator-system
+      image: registry.hitachivantara.com/hitachicsi-oci-oss/hspc-operator:v1.17.3
+
+    hspc:
+      namespace: hspc-system
+      name: hspc
+      spec: {}
+
+    vsp:
+      url: http://172.16.1.1
+      user: "User01"
+      password: ""
+      # Uncomment this optional field if you need to specify host mode options.
+      #hostModeOptions: "" # Refer to Hitachi HSPC documentation for valid options
+
+    storageClass:
+      name: spectro-storage-class
+      isDefaultStorageClass: true
+      # annotations:
+      #   If you need additional annotations, specify them here
+      allowVolumeExpansion: true
+      # Delete or Retain
+      reclaimPolicy: Delete
+      # WaitForFirstConsumer or Immediate
+      volumeBindingMode: Immediate
+      parameters:
+        # Storage serial number
+        serialNumber: "54321"
+        # HDP Pool ID (omit for VSP One SDS Block)
+        poolID: "1"
+        # Port ID. (omit for VSP One SDS Block)
+        # Use a comma separator for multipath. If an NVMe over FC connection is used, this specification is unnecessary.
+        portID : CL1-A,CL2-A
+        # For VSP One SDS Block, set the "storagetype" parameter below
+        # storageType: vsp-one-sds-block
+        # Connection type between storage and nodes. fc, iscsi, and nvme-fc are supported. If the connectionType field is not specified, fc is set.
+        connectionType: fc
+        # Activation of adaptive data reduction. "Compression", "CompressionDeduplication", and "Disabled" are supported.
+        # The default is "Disabled", and If "Disabled" is specified, adaptive data reduction is disabled. For a storage system where
+        # the compression accelerator module is installed, if you specify "Compression" or "CompressionDeduplication" for storageEfficiency,
+        # the compression function using the compression accelerator module is automatically activated.
+        storageEfficiency: "Disabled"
+        # Execution mode of adaptive data reduction. You can specify this parameter when storageEfficiency is "Compression" or "CompressionDeduplication",
+        # and "Inline" and "PostProcess" are supported for the parameter. If the storageEfficiencyMode field is not specified,
+        # adaptive data reduction runs in the default execution mode, which depends on the storage system model.
+        #storageEfficiencyMode: "PostProcess"
+        # Filesystem type. ext4 and xfs are supported. If the csi.storage.k8s.io/fstype field is not specified, ext4 is set.
+        csi.storage.k8s.io/fstype: ext4
