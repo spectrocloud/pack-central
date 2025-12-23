@@ -1,0 +1,16 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "veeamkasten"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Veeam Kasten",
+  "eol": " ",
+  "group": " ",
+  "kubeManifests": [],
+  "charts": ["charts/k10-8.0.14.tgz"],
+  "layer": "addon",
+  "name": "veeamkasten",
+  "version": "8.0.14"
+}
