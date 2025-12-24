@@ -1,0 +1,27 @@
+{{- range .Values.storageClasses }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .name | quote }}
+  annotations:
+  {{- if .annotations }}
+{{ toYaml .annotations | indent 4 }}
+  {{- end }}
+  {{- if .isDefaultStorageClass }}
+    storageclass.kubernetes.io/is-default-class: {{ .isDefaultStorageClass | quote }}
+  {{- end }}
+provisioner: csi.kubevirt.io
+parameters:
+  {{- range $key, $value := .parameters }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end}}
+{{- if .allowVolumeExpansion }}
+allowVolumeExpansion: {{ .allowVolumeExpansion }}
+{{- end}}
+{{- if .reclaimPolicy }}
+reclaimPolicy: {{ .reclaimPolicy }}
+{{- end}}
+{{- if .volumeBindingMode }}
+volumeBindingMode: {{ .volumeBindingMode }}
+{{- end}}
+{{- end}}
