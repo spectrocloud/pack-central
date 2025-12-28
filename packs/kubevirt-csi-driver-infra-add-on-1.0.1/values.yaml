@@ -4,7 +4,7 @@ pack:
       - image: quay.io/kubevirt/kubevirt-csi-driver:latest
       - image: registry.k8s.io/sig-storage/csi-attacher:v4.10.0
       - image: registry.k8s.io/sig-storage/csi-provisioner:v6.1.0
-      - image: registry.k8s.io/sig-storage/livenessprobe:v2.15.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0
       - image: registry.k8s.io/sig-storage/livenessprobe:v2.14.0
 charts:
   kubevirt-csi-driver-infra:
