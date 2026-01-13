@@ -1,4 +1,12 @@
 pack:
+  content:
+    images:
+      - image: cr.fluentbit.io/fluent/fluent-bit:4.1.0
+
+    charts:
+      - repo: https://fluentbit.io/
+        name: fluent-bit
+        version: 4.1.0
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
   namespace: "fluent-bit"
@@ -20,7 +28,7 @@ charts:
       repository: cr.fluentbit.io/fluent/fluent-bit
       # Overrides the image tag whose default is {{ .Chart.AppVersion }}
       # Set to "-" to not use the default value
-      tag:
+      tag: "4.1.0" 
       digest:
       pullPolicy: IfNotPresent
 
