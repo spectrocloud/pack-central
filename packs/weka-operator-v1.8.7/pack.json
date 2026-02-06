@@ -1,0 +1,16 @@
+{
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "WEKA Operator",
+    "charts": [
+      "charts/weka-operator-v1.8.7.tgz"
+    ],
+    "layer":"csi",
+    "name": "weka-operator",
+    "version": "v1.8.7"
+  }

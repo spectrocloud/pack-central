@@ -1,0 +1,21 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "architecture": "amd64",
+    "airgap": "false",
+    "revision": "20251125"
+  },
+  "charts": [
+    "charts/kuberay-operator-1.5.1.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KubeRay Operator",
+  "commit_msg": "KubeRay Operator pack v1.5.1",
+  "layer": "addon",
+  "name": "kuberay-operator",
+  "version": "1.5.1"
+}

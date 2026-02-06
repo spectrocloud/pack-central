@@ -1,0 +1,318 @@
+pack:
+  releaseNameOverride:
+      weka-operator: weka-operator
+  namespace: weka-operator-system
+  namespaceLabels:
+    "weka-operator-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: quay.io/weka.io/weka-operator:v1.8.7
+      - image: quay.io/weka.io/busybox:latest
+      - image: quay.io/weka.io/weka-sign-tool:v0.1.1-pciutils
+      - image: quay.io/weka.io/csi-wekafs:v2.7.7
+      - image: registry.k8s.io/sig-storage/csi-provisioner:v5.3.0
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.9.0
+      - image: registry.k8s.io/sig-storage/livenessprobe:v2.16.0
+      - image: registry.k8s.io/sig-storage/csi-resizer:v1.14.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.3.0
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.14.0
+
+charts:
+  weka-operator:
+    # Default values for weka-operator.
+    # This is a YAML-formatted file.
+    # Declare variables to be passed into your templates.
+
+    # Prefix for all resources created by the operator
+    prefix: "weka-operator"
+
+    image:
+      repository: quay.io/weka.io/weka-operator
+      # Override only, default equals to the chart version
+      tag: ""
+
+    imagePullSecret: quay-io-robot-secret
+    deployController: true
+    # -- experimental: enables custtom HTTP API endpoint as alternative to K8s API
+    enableClusterApi: false
+    # -- enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
+    enableLeaderElection: true
+    # -- custom endpoint to send OTLP traces to (insecure, GRPC).
+    # If left empty, traces are sent to stdout in json format.
+    otelExporterOtlpEndpoint: ""
+    # logging settings
+    logging:
+      level: 0
+      timeOnly: true
+    # -- can be overridden with any other basic linux image
+    maintenanceImage: quay.io/weka.io/busybox
+    # -- if required, you can specify a pull secret for that image
+    # maintenanceImagePullSecret: ""
+    # -- used by various operations that are not in context of wekacluster/wekacontainer, for example: GC of persistent storage/removal of tobmstones
+    wekahome:
+      endpoint: https://api.home.weka.io
+      # -- allow insecure TLS connection to the wekahome endpoint (no server certificate validation)
+      allowInsecureTLS: false
+      # -- name of the secret specifying CA certificate chain. It is assumed that every target namespace will have such secret
+      cacertSecret: ""
+      enableStats: true
+
+    reconcileTimeout: 30m
+    kubeExecTimeout: 5m
+
+    # -- maximum number of workers for each reconciler (for each resource type)
+    maxWorkers:
+      wekaCluster: 5
+      wekaContainer: 50
+      wekaClient: 5
+      wekaManualOperation: 5
+      wekaPolicy: 5
+
+    wekaAllocZombieDeleteAfter: 5m
+
+    operatorMetricsBindAddress: "127.0.0.1:8080"
+    nodeAgentMetricsBindAddress: ":8090"
+    healthProbeBindAddress: ":8081"
+
+    ocpCompatibility:
+      driverToolkitSecretName:
+      driverToolkitImageBaseUrl: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+      # -- automatically create Tuned profile for the cluster nodes to apply hugepages configuration.
+      # -- WARNING: do not enable this feature if you are already using custom Tuned profiles for setting hugepages
+      hugepageConfiguration:
+        # -- if enabled, the operator will configure hugepages for the OCP nodes
+        enabled: false
+        # -- on which nodes to configure hugepages
+        machineConfigNodeLabel: "worker"
+        # -- hugepage size
+        hugepageSize: "2M"
+        # -- hugepage count
+        hugepagesCount: 4000
+        nodeSelector:
+          matchLabels:
+            - node-role.kubernetes.io/worker: ""
+      # -- If true, the machine configurations will not be removed when uninstalling the operator.
+      #    This is useful for OpenShift Container Platform clusters, to not cause machine config pool update on operator reinstall
+      retainMachineConfig: true
+      csi:
+        # -- Optional setting for OCP platform only, which machineconfig pools to apply the Weka SELinux policy on
+        #    NOTE: by default, the policy will be installed both on workers and control plane nodes
+        machineConfigLabels:
+          - "worker"
+          - "master"
+
+    gkeCompatibility:
+      gkeServiceAccountSecret: ""
+      # -- automatically configure hugepages for the GKE nodes
+      hugepageConfiguration:
+        # -- if enabled, the operator will configure hugepages for the GKE nodes (WARNING: will reboot nodes forcefully!)
+        enabled: false
+        # -- hugepage size
+        hugepageSize: "2M"
+        # -- hugepage count
+        hugepageCount: 4000
+      # -- if enabled, the operator will disable driver signing enforcement on the GKE nodes (WARNING: will reboot nodes forcefully!)
+      disableDriverSigning: false
+
+    okeCompatibility:
+      # -- if enabled, the operator will allocate NICs for OKE nodes
+      enableNicsAllocation: false
+
+    manager:
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 4096Mi
+        requests:
+          cpu: 250m
+          memory: 64Mi
+      nodeSelector: {}
+      tolerations: []
+      labels: {}
+      loggerSettings:
+        level: 0
+        format: raw
+        callerDirLvl: 1
+
+    debugSleep: 3
+
+    tolerations: []
+    # -- if true, pods will not tolerate unhealthy nodes (unschedulable and not-ready)
+    skipUnhealthyToleration: false
+    # -- if true, client pods will not tolerate NoSchedule taints
+    skipClientNoScheduleToleration: false
+    # -- if true, auxiliary pods (discovery, sign-drives, etc.) will not tolerate NoSchedule taints
+    skipAuxNoScheduleToleration: false
+    deploymentIdentifier: ""
+
+    # -- if true, the operator will consider nodes that are gone as totally gone (not in the cluster anymore)
+    # the operator will delete backend wekacontainers from the nodes that are not part of the k8s cluster anymore
+    cleanupRemovedNodes: false
+    # -- if true, the operator will delete backend wekacontainers from the nodes that do not match node selectors
+    cleanupOnNodeSelectorMismatch: false
+    # -- if true, the operator will delete client wekacontainers from the nodes that do not match node selectors
+    cleanupClientsOnNodeSelectorMismatch: false
+    # -- if true, the operator will delete any wekacontainers from the nodes that do not tolerate taints
+    cleanupContainersOnTolerationsMismatch: false
+    # -- if true, the operator will enforce deactivation on pod removal
+    evictContainerOnDeletion: false
+    # -- if true, container removal from weka will be throttled
+    removalThrottlingEnabled: true
+    # -- this validation is only relevant for new client containers creation
+    skipClientsTolerationValidation: true
+
+    tolerationsMismatchSettings:
+      enableIgnoredTaints: true
+      ignoredTaints:
+        - "node.kubernetes.io/unschedulable"
+        - "node.kubernetes.io/not-ready"
+        - "node.kubernetes.io/unreachable"
+
+    signDrivesImage: quay.io/weka.io/weka-sign-tool:v0.1.1-pciutils
+
+    nodeAgent:
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1024Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
+      tolerations:
+        - operator: Exists
+      nodeSelector: {}
+      affinity: {}
+      # default set for generic OSes, can be overridden /root/k8s-weka for openshift, /mnt/stateful_partition/k8s-weka for google container OS
+      persistencePaths: /opt/k8s-weka
+
+    metrics:
+      clusters:
+        enabled: true
+        pollingRate: 60s
+      containers:
+        enabled: true
+        pollingRate: 60s
+        requestsTimeouts:
+          register: 3s
+          getContainerInfo: 10s
+
+    localDataStorageClass: ""
+    localDataPvc: ""
+    upgrade:
+      computeThresholdPercent: 90
+      driveThresholdPercent: 90
+      maxDeactivatingContainersPercent: 10
+    podMonitor:
+      enabled: true
+
+    # DNS policy configuration
+    dnsPolicy:
+      # dns policy for the pods without hostNetwork: true
+      k8sNetwork: ""
+      # dns policy for the pods with hostNetwork: true
+      hostNetwork: ""
+
+    defaultIntervals:
+      deleteEnvoyWithoutS3NeighborTimeout: 5m
+      deleteUnschedulablePodsAfter: 1m
+
+    # Syslog package choice
+    # Supported values: "auto", "go-syslog", "syslog-ng"
+    # - "auto": automatically choose go-syslog if available, otherwise use syslog-ng (default behavior)
+    # - "go-syslog": explicitly use go-syslog
+    # - "syslog-ng": explicitly use syslog-ng
+    syslogPackage: "auto"
+
+    # Proxy configuration for drivers loader pod and weka home
+    proxy: ""
+
+    # Priority classes configuration
+    priorityClasses:
+      # The operator always creates default priority classes: weka-initial-no-evict and weka-targeted-no-evict
+      # Users can override the names below to use their own existing priority classes instead
+      initial: "weka-initial-no-evict"        # Priority class name for initial weka containers
+      targeted: "weka-targeted-no-evict"      # Priority class name for re-scheduled weka containers, node agents, CSI controller and CSI node server
+      # Values for the default priority classes that are always created
+      defaultValues:
+        initial: 900000000
+        targeted: 1000000000
+
+    csi:
+      installationEnabled: false
+      storageClassCreationDisabled: false
+      image: "quay.io/weka.io/csi-wekafs:v2.7.7"
+      provisionerImage: "registry.k8s.io/sig-storage/csi-provisioner:v5.3.0"
+      attacherImage: "registry.k8s.io/sig-storage/csi-attacher:v4.9.0"
+      livenessProbeImage: "registry.k8s.io/sig-storage/livenessprobe:v2.16.0"
+      resizerImage: "registry.k8s.io/sig-storage/csi-resizer:v1.14.0"
+      snapshotterImage: "registry.k8s.io/sig-storage/csi-snapshotter:v8.3.0"
+      registrarImage: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.14.0"
+      preventNewWorkloadOnClientContainerNotRunning: true
+      logLevel: 5
+      controller:
+        resources:
+          wekafs:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 128m
+              memory: 128Mi
+          csiAttacher:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 4m
+              memory: 48Mi
+          csiProvisioner:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 128m
+              memory: 128Mi
+          csiResizer:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 4m
+              memory: 48Mi
+          csiSnapshotter:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 4m
+              memory: 48Mi
+          livenessProbe:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 12m
+              memory: 48Mi
+      node:
+        resources:
+          wekafs:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 128m
+              memory: 128Mi
+          livenessProbe:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 12m
+              memory: 44Mi
+          csiRegistrar:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 8m
+              memory: 52Mi
