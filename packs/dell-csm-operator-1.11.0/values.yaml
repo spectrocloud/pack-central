@@ -7,7 +7,7 @@ pack:
       - image: quay.io/dell/container-storage-modules/csipowermax-reverseproxy:v2.15.0 
       - image: quay.io/dell/container-storage-modules/csi-powerstore:v2.16.0 
       - image: quay.io/dell/container-storage-modules/csi-unity:v2.16.0 
-      - image: uay.io/dell/container-storage-modules/csi-vxflexos:v2.16.0 
+      - image: quay.io/dell/container-storage-modules/csi-vxflexos:v2.16.0 
       - iamge: quay.io/dell/container-storage-modules/cosi:v1.0.0 
       - image: quay.io/dell/storage/powerflex/sdc:5.0 
       - image: quay.io/dell/container-storage-modules/csm-authorization-sidecar:v2.4.0 
