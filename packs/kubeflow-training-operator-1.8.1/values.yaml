@@ -1,0 +1,10 @@
+pack:
+  releaseNameOverride:
+      training-operator: training-operator
+  namespace: kubeflow
+  content:
+    images:
+      - image: kubeflow/training-operator:v1-04f9f13
+
+charts:
+  training-operator: {}

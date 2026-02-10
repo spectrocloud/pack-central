@@ -1,0 +1,15 @@
+apiVersion: v2
+appVersion: 8.0.14
+dependencies:
+- condition: prometheus.server.enabled
+  name: prometheus
+  repository: ""
+  version: 27.16.0
+description: Kasten’s K10 Data Management Platform
+home: https://kasten.io/
+icon: https://docs.kasten.io/img/kasten.png
+maintainers:
+- email: contact@kasten.io
+  name: kastenIO
+name: k10
+version: 8.0.14

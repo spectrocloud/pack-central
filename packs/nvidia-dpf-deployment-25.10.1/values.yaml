@@ -1,0 +1,10 @@
+pack:
+  releaseNameOverride:
+      dpf-deployment: dpf-deployment
+  namespace: dpf-operator-system
+  content:
+    images: []
+
+charts:
+  dpf-deployment: {}
+  # Please select a preset to populate a starting configuration
