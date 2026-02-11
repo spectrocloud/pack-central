@@ -5,8 +5,6 @@ pack:
   content:
     images:
     - image: xpkg.upbound.io/crossplane/crossplane:v2.1.3
-
-    
 charts:
   crossplane:
     # helm-docs renders these comments into markdown. Use markdown formatting where
