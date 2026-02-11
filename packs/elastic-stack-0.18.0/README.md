@@ -44,12 +44,29 @@ The following Elastic Stack resources are currently supported.
 
 Additional resources will be supported in future releases of this Helm Chart.
 
+## Upgrade
+
+To upgrade the stack to a newer version, follow these general steps:
+
+1. Check Compatibility: Ensure your Kubernetes cluster remains within the supported version range (1.25-1.29 for general ECK features).
+2. Review CRDs: Verify if the new version of the ECK Operator requires updated Custom Resource Definitions.
+3. Helm Upgrade: Run the standard upgrade command: helm upgrade <release-name> elastic/eck-stack
+
+## Usage
+
+The chart currently supports the deployment of the following resources:
+
+- Elasticsearch & Kibana: Enabled by default for immediate cluster setup.
+- Agents & Servers: Optional deployment of Elastic Agent, Fleet Server, Beats, Logstash, and APM Server.
+- Security: Features include automated TLS Certificates management and secure settings via keystore updates.
+- Persistence: Utilizes Persistent Volumes for data storage across cluster changes.
+
 ## Prerequisites
 
 - Kubernetes 1.27+
 - Elastic ECK Operator
 
-## Configuration
+## Parameters
 
 The following table lists the configurable parameters of the eck-stack chart and their default values.
 
@@ -61,3 +78,10 @@ The following table lists the configurable parameters of the eck-stack chart and
 | `eck-fleet-server.enabled` | If `true`, create a Fleet Server resource (using the eck-fleet-server Chart) | `false` |
 | `eck-logstash.enabled` | If `true`, create a Logstash resource (using the eck-logstash Chart) | `false` |
 | `eck-apm-server.enabled` | If `true`, create a standalone Elastic APM Server resource (using the eck-apm-server Chart) | `false` |
+
+## References
+
+Quickstart Guide: https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-quickstart.html
+Official Documentation: https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html
+Community Support: https://discuss.elastic.co/c/eck
+
