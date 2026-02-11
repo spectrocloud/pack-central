@@ -11,7 +11,7 @@ Current features:
 *  Custom node configuration and attributes
 *  Secure settings keystore updates
 
-Supported versions:
+## Parameters
 
 *  Kubernetes 1.25-1.29
 *  Elasticsearch, Kibana, APM Server: 6.8+, 7.1+, 8+, 9+
@@ -29,6 +29,13 @@ For general questions, please see the Elastic [forums](https://discuss.elastic.c
 
 A Helm chart to install the ECK Operator: the official Kubernetes operator from Elastic to orchestrate Elasticsearch, Kibana, APM Server, Enterprise Search, and Beats on Kubernetes.
 
+## Upgrade
+
+To upgrade your ECK implementation:
+1. Review the specific upgrade path for your current version in the official documentation. https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html
+2. Ensure compatibility with your Kubernetes cluster version (1.25-1.29).
+3. For Helm-based installations, refer to the Helm install guide for specific update commands.
+
 ## Prerequisites
 
 - Supported Kubernetes versions are listed in the documentation: https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s_supported_versions.html
@@ -39,6 +46,6 @@ Refer to the documentation at https://www.elastic.co/guide/en/cloud-on-k8s/curre
 
 ## References
 
-For more information about the ECK Operator, see:
-- [Documentation](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html)
-- [GitHub repo](https://github.com/elastic/cloud-on-k8s)
+Documentation: https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html
+GitHub Repository: https://github.com/elastic/cloud-on-k8s
+Community Support: https://discuss.elastic.co/c/eck
