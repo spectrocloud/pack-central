@@ -1,0 +1,20 @@
+#imagePullSecrets:
+#  - dockerio-secret
+dpuDetector:
+  disable: true
+overrides:
+  kubernetesAPIServerVIP: "auto"
+  kubernetesAPIServerPort: 6443
+provisioningController:
+  bfbPVCName: "bfb-pvc"
+  dmsTimeout: 900
+  installInterface:
+    installViaRedfish:
+      # Use "auto" for CAPI and "{{ .spectro.system.cluster.kubevip }}:8080" for agent/appliance mode.
+      bfbRegistryAddress: "auto"
+      skipDPUNodeDiscovery: false
+kamajiClusterManager:
+  disable: false
+networking:
+  controlPlaneMTU: 9000
+  highSpeedMTU: 9000

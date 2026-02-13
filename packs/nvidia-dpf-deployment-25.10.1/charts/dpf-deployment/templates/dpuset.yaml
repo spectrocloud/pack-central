@@ -1,0 +1,21 @@
+{{- range $conf := .Values.dpuSets }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUSet
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.dpuNodeSelector }}
+  dpuNodeSelector: {{ $conf.dpuNodeSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuSelector }}
+  dpuSelector: {{ $conf.dpuSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuTemplate }}
+  dpuTemplate: {{ $conf.dpuTemplate | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.strategy }}
+  strategy: {{ $conf.strategy | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}
