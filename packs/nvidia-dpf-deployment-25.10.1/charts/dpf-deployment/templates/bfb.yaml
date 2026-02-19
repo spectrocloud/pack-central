@@ -1,0 +1,6 @@
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: BFB
+metadata:
+  name: bf-bundle-v25.10.1
+  namespace: dpf-operator-system
+spec: {{ .Values.bfb | toYaml | nindent 2 }}
