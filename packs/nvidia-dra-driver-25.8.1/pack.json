@@ -10,7 +10,7 @@
         "packName": "kubernetes",
         "layer": "k8s",
         "minVersion": "1.34",
-        "maxVersion": "",
+        "maxVersion": ""
       },
       {
         "packName": "nvidia-gpu-operator",
