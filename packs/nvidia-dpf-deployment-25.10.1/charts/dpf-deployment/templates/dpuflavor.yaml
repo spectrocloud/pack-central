@@ -1,0 +1,42 @@
+{{- range $conf := .Values.dpuFlavors }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUFlavor
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.bfcfgParameters }}
+  bfcfgParameters: {{ $conf.bfcfgParameters | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.configFiles }}
+  configFiles: {{ $conf.configFiles | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.containerdConfig }}
+  containerdConfig: {{ $conf.containerdConfig | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuMode }}
+  dpuMode: {{ $conf.dpuMode | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuResources }}
+  dpuResources: {{ $conf.dpuResources | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.grub }}
+  grub: {{ $conf.grub | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.hostNetworkInterfaceConfigs }}
+  hostNetworkInterfaceConfigs: {{ $conf.hostNetworkInterfaceConfigs | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.nvconfig }}
+  nvconfig: {{ $conf.nvconfig | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.ovs }}
+  ovs: {{ $conf.ovs | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.sysctl }}
+  sysctl: {{ $conf.sysctl | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.systemReservedResources }}
+  systemReservedResources: {{ $conf.systemReservedResources | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

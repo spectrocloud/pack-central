@@ -1,0 +1,24 @@
+{{ range $index, $cluster := (lookup "cluster.spectrocloud.com/v1alpha1" "SpectroCluster" "" "").items }}
+  {{- range $quota := $.Values.quotas }}
+    {{- if or (has $cluster.metadata.name $quota.clusters) (not (hasKey $quota "clusters")) }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: vmo-quota
+  namespace:  {{ $quota.namespace }}
+spec:
+  hard:
+  {{- if $quota.limits -}}
+    {{- range $key, $value := $quota.limits }}
+    limits.{{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if $quota.requests -}}
+    {{- range $key, $value := $quota.requests }}
+    requests.{{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+---
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,26 @@
+{{- if (include "kubeflow.istioIntegration.enabled" . | eq "true") -}}
+
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  labels:
+    {{- include "kubeflow.istioIntegration.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.istioIntegration.userAuth.requestAuthenticationName" . }}
+  namespace: {{ .Values.istioIntegration.ingressGatewayNamespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml .Values.istioIntegration.gateway.selector | nindent 6 }}
+  jwtRules:
+    - issuer: {{ .Values.istioIntegration.userAuth.issuer }}
+      forwardOriginalToken: true
+      outputClaimToHeaders:
+        - claim: {{ .Values.istioIntegration.userAuth.userClaim }}
+          header: {{ .Values.auth.userHeaderName }}
+        - claim: {{ .Values.istioIntegration.m2m.groupsClaim }}
+          header: {{ .Values.auth.groupsHeaderName }}
+      fromHeaders:
+        - name: {{ .Values.auth.authHeader.name }}
+          prefix: {{ .Values.auth.authHeader.prefix }}
+
+{{- end }}

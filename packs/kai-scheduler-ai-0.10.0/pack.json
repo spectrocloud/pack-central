@@ -1,0 +1,21 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud",
+    "architecture": "amd64",
+    "airgap": "false",
+    "revision": "20251120"
+  },
+  "charts": [
+    "charts/kai-scheduler-v0.10.0.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KAI Scheduler",
+  "commit_msg": "KAI Scheduler pack v0.10.0",
+  "layer": "addon",
+  "name": "kai-scheduler-ai",
+  "version": "0.10.0"
+}

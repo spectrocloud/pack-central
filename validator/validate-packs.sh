@@ -93,6 +93,21 @@ get_pack_directory() {
  return $return_code
 }
 
+validate_json_syntax(){
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+  log_info "Checking JSON syntax for $pack_json_file..."
+  local jq_output
+  jq_output=$(jq empty "$pack_json_file" 2>&1)
+  local rc=$?
+  if [ $rc -ne 0 ]; then
+   log_error "Invalid JSON syntax in $pack_json_file: $jq_output"
+  else
+   log_success "JSON syntax is valid for $pack_json_file"
+  fi
+  return $rc
+}
+
 validate_pack_schema(){
   local pack_dir=$1
   local pack_json_file="$pack_dir/pack.json"
@@ -159,7 +174,15 @@ validate_content(){
 
     if [ "$img" != "" ]; 
     then
-      log_info "Valid entry $img found for image in $values_yaml_file" 
+      log_info "Valid entry $img found for image in $values_yaml_file"
+      crane pull $img image.tar
+      if [ $? -eq 0 ]; then
+        log_info "Image pull succeeded for $img"
+        rm -f image.tar     
+      else
+        log_error "Image pull failed. $img may not be a valid image"
+        fail=1
+      fi 
     else
       log_error "Invalid entry $img found for images. images should have a -image entry in $values_yaml_file"
       fail =1
@@ -196,6 +219,14 @@ run_validations() {
    log_info "$pack_dir does not exists. Seems to be deleted file. Skip validation for $pack_dir"
    continue
   fi
+  validate_json_syntax "$pack_dir"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+   log_error "Skipping remaining validations for $pack_dir due to invalid JSON"
+   continue
+  fi
+
   validate_pack_schema $pack_dir
   rc=$?
   if [ $rc -ne 0 ]; then

@@ -1,0 +1,19 @@
+{{- if (include "kubeflow.pipelines.mlPipeline.rbac.createRoles" .) -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ include "kubeflow.deploymentMode.scopedRoleBindingKind" . }}
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.mlPipeline.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.mlPipeline.roleBindingName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ include "kubeflow.deploymentMode.scopedRoleKind" . }}
+  name: {{ include "kubeflow.pipelines.mlPipeline.roleName" . }}
+subjects:
+- kind: ServiceAccount
+  name:  {{ include "kubeflow.pipelines.mlPipeline.serviceAccountName" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+
+{{- end }}

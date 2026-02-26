@@ -1,0 +1,15 @@
+{{- range $conf := .Values.dpuServiceIPAMs }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUServiceIPAM
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.ipv4Network }}
+  ipv4Network: {{ $conf.ipv4Network | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.ipv4Subnet }}
+  ipv4Subnet: {{ $conf.ipv4Subnet | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

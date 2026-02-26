@@ -1,0 +1,26 @@
+apiVersion: v2
+name: network-operator
+version: 25.10.0
+kubeVersion: '>= 1.21.0'
+appVersion: v25.10.0
+description: Nvidia network operator
+type: application
+keywords:
+  - gpu-direct
+  - rdma
+home: https://mellanox.github.io/network-operator
+sources:
+  - https://github.com/Mellanox/network-operator
+dependencies:
+  - condition: nfd.enabled
+    name: node-feature-discovery
+    repository: ''
+    version: 0.2.1
+  - condition: sriovNetworkOperator.enabled
+    name: sriov-network-operator
+    repository: ''
+    version: 0.1.0
+  - condition: maintenanceOperator.enabled
+    name: maintenance-operator-chart
+    repository: ''
+    version: 0.0.1

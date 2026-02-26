@@ -1,0 +1,18 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "commit_msg": "LocalAI - The free, Open Source OpenAI alternative",
+      "source": "community",
+      "contributor" : "pedro@spectrocloud"
+    },
+    "charts": [
+      "charts/local-ai-3.3.0.tgz"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "LocalAI",
+    "layer":"addon",
+    "name": "local-ai",
+    "version": "2.18.1"
+}

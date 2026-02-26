@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.0.0
+description: DPF Operator Config defines key aspects of the DPF Operator
+name: dpf-operator-config
+type: application
+version: 1.0.0

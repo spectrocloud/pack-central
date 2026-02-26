@@ -1,0 +1,104 @@
+global:
+  clusterId: "clusterID-test"
+  clusterName: "clusterName"
+  helmChartVersion: "1.21.0"
+
+image:
+  registry: appdynamics
+  repository: apache
+  tag: latest
+  pullPolicy: Always
+
+namespace: appdynamics
+
+clusterRole:
+  - apiGroup: [ "" ]
+    resources:  [
+      configmaps,
+      secrets,
+      pods,
+      pods/logs,
+      pods/status,
+      namespaces,
+      serviceaccounts,
+      services,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+  - apiGroup: [ rbac.authorization.k8s.io ]
+    resources:  [
+      rolebindings,
+      roles,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+  - apiGroup: [ rbac.authorization.k8s.io ]
+    resources:  [
+      roles,
+    ]
+    verbs: [
+      bind,
+    ]
+    resourceNames: [
+      admin,
+      edit,
+      view,
+    ]
+  - apiGroup: [ 
+      apps,
+      extensions,
+    ]
+    resources:  [
+      daemonsets,
+      daemonsets/status,
+      deployments,
+      deployments/status,
+      replicasets,
+      statefulsets,
+      statefulsets/status,
+    ]
+    verbs: [
+      get,
+      list,
+      watch,
+      update,
+      create,
+      delete,
+      patch,
+    ]
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "fso-agent"
+
+solution:
+  endpoint: "solutionURL"
+
+oauth:
+  clientId: "oauthId"
+  clientSecret: "oauthSecret"
+  tokenUrl: "oauthURL"
+  tenantId: "tenantID"
+  scopes: "a,b,c"
+
+tls:
+  insecure: true
+
+agent:
+  name: "smartagent"
+  namespace: "agent"

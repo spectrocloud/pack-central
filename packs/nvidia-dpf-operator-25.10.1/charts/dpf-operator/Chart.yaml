@@ -1,0 +1,8 @@
+annotations:
+  dpfVersion: v25.10.1
+apiVersion: v2
+appVersion: v25.10.1
+description: DPF Operator manages the lifecycle of a DOCA Platform Framework system.
+name: dpf-operator
+type: application
+version: v25.10.1

@@ -1,0 +1,14 @@
+apiVersion: storage.dell.com/v1
+kind: ContainerStorageModule
+metadata:
+{{- if eq .Values.csm.type "powerflex" }}
+  name: vxflexos
+{{- else if eq .Values.csm.type "powermax" }}
+  name: powermax
+{{- else if eq .Values.csm.type "powerstore" }}
+  name: powerstore
+{{- end }}
+  namespace: {{ .Values.csm.namespace }}
+spec:
+  driver: {{ .Values.csm.config.driver | toYaml | nindent 4 }}
+  modules: {{ .Values.csm.config.modules | toYaml | nindent 4 }}

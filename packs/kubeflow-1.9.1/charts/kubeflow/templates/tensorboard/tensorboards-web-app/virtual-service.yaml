@@ -1,0 +1,31 @@
+{{- if (include "kubeflow.tensorboard.tensorboardsWebApp.createIstioIntegrationObjects" . | eq "true") -}}
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  labels:
+    {{- include "kubeflow.tensorboard.tensorboardsWebApp.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.tensorboard.tensorboardsWebApp.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  gateways:
+  - {{ .Values.istioIntegration.gateway.name }}
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: {{ .Values.tensorboard.tensorboardsWebApp.config.urlPrefix }}/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: {{ include "kubeflow.tensorboard.tensorboardsWebApp.svc.fqdn" . }}
+        port:
+          number: {{ .Values.tensorboard.tensorboardsWebApp.service.port }}
+    headers:
+      request:
+        add:
+          x-forwarded-prefix: {{ .Values.tensorboard.tensorboardsWebApp.config.urlPrefix }}
+
+{{- end }}

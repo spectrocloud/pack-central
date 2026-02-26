@@ -1,0 +1,119 @@
+{{- if (include "kubeflow.pipelines.profileController.enabled" . | eq "true") -}}
+
+{{- $autoscalingEnabled := include "kubeflow.pipelines.profileController.autoscaling.enabled" . -}}
+{{- $replicas := include "kubeflow.pipelines.profileController.autoscaling.minReplicas" . -}}
+
+{{- $visualizationImageSplit := include "kubeflow.pipelines.visualization.image" . | split ":" -}}
+{{- $visualizationImageName := $visualizationImageSplit._0 }}
+{{- $visualizationImageTag := $visualizationImageSplit._1 }}
+
+{{- $frontendImageSplit := include "kubeflow.pipelines.ui.image" . | split ":" -}}
+{{- $frontendImageName := $frontendImageSplit._0 }}
+{{- $frontendImageTag := $frontendImageSplit._1 }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "kubeflow.pipelines.profileController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.pipelines.profileController.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  {{- if (eq $autoscalingEnabled "false") }}
+  replicas: {{ $replicas }}
+  {{- end }}
+
+  selector:
+    matchLabels:
+      {{- include "kubeflow.pipelines.profileController.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "kubeflow.pipelines.profileController.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+      - name: profile-controller
+        image: {{ include "kubeflow.pipelines.profileController.image" . }}
+        imagePullPolicy: {{ include "kubeflow.pipelines.profileController.imagePullPolicy" . }}
+
+        command: ["python", "/hooks/sync.py"]
+
+        env:
+        {{- include "kubeflow.pipelines.profileController.config.objectStore.host.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.profileController.config.objectStore.accessKey.env.spec" . | nindent 8 }}
+        {{- include "kubeflow.pipelines.profileController.config.objectStore.secretAccessKey.env.spec" . | nindent 8 }}
+
+        - name: DISABLE_ISTIO_SIDECAR
+          value: {{ .Values.pipelines.profileController.config.disableIstioSidecar | quote }}
+        - name: KFP_VERSION
+          value: {{ .Values.pipelines.defaults.image.tag | quote }}
+        - name: KFP_DEFAULT_PIPELINE_ROOT
+          value: {{ .Values.pipelines.config.defaultPipelineRoot | quote }}
+        - name: CONTROLLER_PORT
+          value: "8080"
+        - name: VISUALIZATION_SERVER_IMAGE
+          value: {{ $visualizationImageName }}
+        - name: VISUALIZATION_SERVER_TAG
+          value: {{ $visualizationImageTag | quote }}
+        - name: FRONTEND_IMAGE
+          value: {{ $frontendImageName }}
+        - name: FRONTEND_TAG
+          value: {{ $frontendImageTag | quote }}
+        - name: METADATA_GRPC_SERVICE_HOST
+          value: {{ include "kubeflow.pipelines.metadataGrpcServer.svc.addressWithNs" . }}
+        - name: METADATA_GRPC_SERVICE_PORT
+          value: {{ .Values.pipelines.metadataGrpcServer.service.port | quote }}
+        - name: ML_PIPELINE_SA_PRINCIPAL
+          value: {{ include "kubeflow.pipelines.mlPipeline.serviceAccountPrincipal" . }}
+
+        {{- with .Values.pipelines.profileController.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with include "kubeflow.pipelines.profileController.containerSecurityContext" . }}
+        securityContext:
+          {{- . | nindent 10 }}
+        {{- end }}
+
+        volumeMounts:
+        - name: hooks
+          mountPath: /hooks
+        ports:
+        - containerPort: 8080
+
+      volumes:
+      - name: hooks
+        configMap:
+          name: {{ include "kubeflow.pipelines.profileController.configMapName" . }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "kubeflow.pipelines.profileController.serviceAccountName" . }}
+
+      {{- with include "kubeflow.pipelines.profileController.nodeSelector" . }}
+      nodeSelector:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.profileController.tolerations" . }}
+      tolerations:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.profileController.affinity" . }}
+      affinity:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+      {{- with include "kubeflow.pipelines.profileController.topologySpreadConstraints" . }}
+      topologySpreadConstraints:
+        {{- . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

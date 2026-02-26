@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: v0.10.0
+description: KAI Scheduler by NVIDIA
+name: kai-scheduler
+type: application
+version: v0.10.0

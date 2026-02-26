@@ -1,0 +1,24 @@
+{{- if (include "kubeflow.notebooks.pvcviewerController.enabled" . | eq "true") -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.notebooks.pvcviewerController.manager.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kubeflow.notebooks.pvcviewerController.labels" . | nindent 4 }}
+  name: {{ include "kubeflow.notebooks.pvcviewerController.manager.svc.name" . }}
+  namespace: {{ include "kubeflow.namespace" . }}
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: {{ include "kubeflow.notebooks.pvcviewerController.webhook.port" . }}
+  selector:
+    {{- include "kubeflow.notebooks.pvcviewerController.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{ .Values.notebooks.pvcviewerController.manager.service.type }}
+
+{{- end }}
