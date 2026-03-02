@@ -1,0 +1,28 @@
+{
+    "addonType":"security",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "charts": [
+      "charts/trivy-0.21.1.tgz"
+    ],
+    "displayName": "Trivy",    
+    "layer":"addon",
+    "name": "trivy",
+    "version": "0.21.1",
+    "constraints": {
+      "dependencies": [        
+        {
+          "packName": "kubernetes",
+          "layer": "k8s",
+          "minVersion": "1.27",
+          "maxVersion": "",
+          "type": "optional"
+        }
+      ]
+    }
+  }
