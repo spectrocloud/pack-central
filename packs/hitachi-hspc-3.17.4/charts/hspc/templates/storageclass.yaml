@@ -1,0 +1,36 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ .Values.storageClass.name | default "spectro-storage-class" | quote }}
+  annotations:
+    kubernetes.io/description: Hitachi Storage Plug-in for Containers
+  {{- if .Values.storageClass.annotations }}
+{{ toYaml .Values.storageClass.annotations | indent 4 }}
+  {{- end }}
+  {{- if .Values.storageClass.isDefaultStorageClass }}
+    storageclass.kubernetes.io/is-default-class: {{ .Values.storageClass.isDefaultStorageClass | quote }}
+  {{- end }}
+provisioner: hspc.csi.hitachi.com
+parameters:
+  csi.storage.k8s.io/node-publish-secret-name: hspc-secret
+  csi.storage.k8s.io/node-publish-secret-namespace: {{ .Values.hspc.namespace }}
+  csi.storage.k8s.io/provisioner-secret-name: hspc-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: {{ .Values.hspc.namespace }}
+  csi.storage.k8s.io/controller-publish-secret-name: hspc-secret
+  csi.storage.k8s.io/controller-publish-secret-namespace: {{ .Values.hspc.namespace }}
+  csi.storage.k8s.io/node-stage-secret-name: hspc-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: {{ .Values.hspc.namespace }}
+  csi.storage.k8s.io/controller-expand-secret-name: hspc-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: {{ .Values.hspc.namespace }}
+  {{- range $key, $value := .Values.storageClass.parameters }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end}}
+{{- if .Values.storageClass.allowVolumeExpansion }}
+allowVolumeExpansion: {{ .Values.storageClass.allowVolumeExpansion }}
+{{- end}}
+{{- if .Values.storageClass.reclaimPolicy }}
+reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+{{- end}}
+{{- if .Values.storageClass.volumeBindingMode }}
+volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
+{{- end}}
