@@ -1,0 +1,28 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KubeWatch",
+  "charts": [
+    "charts/kubewatch-3.5.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubewatch",
+  "version": "3.5.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.27",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
