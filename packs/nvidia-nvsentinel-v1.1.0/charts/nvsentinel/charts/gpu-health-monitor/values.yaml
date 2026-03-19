@@ -1,0 +1,62 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/gpu-health-monitor
+  pullPolicy: IfNotPresent
+  tag: ""
+
+# DCGM (Data Center GPU Manager) integration configuration
+dcgm:
+  # Enable DCGM Kubernetes service for GPU metrics collection
+  dcgmK8sServiceEnabled: true
+  service:
+    # DCGM service endpoint in the cluster
+    endpoint: "nvidia-dcgm.gpu-operator.svc"
+    # DCGM service port
+    port: 5555
+
+# Use host networking for GPU health monitor pods
+# Required for accessing host-level GPU metrics
+useHostNetworking: false
+
+# Additional volume mounts for GPU health monitor (optional)
+additionalVolumeMounts: []
+
+# Additional host volumes for GPU health monitor (optional)
+additionalHostVolumes: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Scheduling configuration
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+podAnnotations: {}
+
+verbose: "False"
+
+# Processing strategy for health events
+# valid values: EXECUTE_REMEDIATION, STORE_ONLY
+# default: EXECUTE_REMEDIATION
+# EXECUTE_REMEDIATION: normal behavior; downstream modules may update cluster state.
+# STORE_ONLY: observability-only behavior; event should be persisted/exported but should not modify cluster resources (i.e., no node conditions, no quarantine, no drain, no remediation).
+processingStrategy: EXECUTE_REMEDIATION

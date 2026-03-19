@@ -1,0 +1,71 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nvsentinel.fullname" . }}
+  labels:
+    {{- include "nvsentinel.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "enableK8sPlatformConnector": "{{ .Values.platformConnector.k8sConnector.enabled }}",
+      "K8sConnectorQps": {{ printf "%.2f" .Values.platformConnector.k8sConnector.qps }},
+      "K8sConnectorBurst": {{ .Values.platformConnector.k8sConnector.burst }},
+      "MaxNodeConditionMessageLength": {{ .Values.platformConnector.k8sConnector.maxNodeConditionMessageLength }},
+      "CompactedHealthEventMsgLen": {{ .Values.platformConnector.k8sConnector.compactedHealthEventMsgLen }},
+      "StoreConnectorMaxRetries": {{ .Values.platformConnector.mongodbStore.maxRetries }},
+      "enableMongoDBStorePlatformConnector": "{{ .Values.global.mongodbStore.enabled }}",
+      "enablePostgresDBStorePlatformConnector": {{ if and .Values.global.datastore .Values.global.datastore.provider }}{{ eq .Values.global.datastore.provider "postgresql" | quote }}{{ else }}"false"{{ end }}
+      {{- with .Values.platformConnector.pipeline }}
+      ,"pipeline": {{ . | toJson }}
+      {{- end }}
+    }
+  {{- if .Values.platformConnector.transformers.MetadataAugmentor }}
+  metadata.toml: |
+    cacheSize = {{ .Values.platformConnector.transformers.MetadataAugmentor.cacheSize }}
+    cacheTTL = "{{ .Values.platformConnector.transformers.MetadataAugmentor.cacheTTLSeconds }}s"
+    {{- with .Values.platformConnector.transformers.MetadataAugmentor.allowedLabels }}
+    allowedLabels = {{ . | toJson }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.platformConnector.transformers.OverrideTransformer }}
+  overrides.toml: |
+    {{- $overrideEnabled := false }}
+    {{- range .Values.platformConnector.pipeline }}
+      {{- if eq .name "OverrideTransformer" }}
+        {{- $overrideEnabled = .enabled }}
+      {{- end }}
+    {{- end }}
+    enabled = {{ $overrideEnabled }}
+    {{- range .Values.platformConnector.transformers.OverrideTransformer.rules }}
+
+    [[rules]]
+    name = {{ .name | quote }}
+    when = {{ .when | quote }}
+    override = { {{- $pairs := list -}}
+      {{- if hasKey .override "isFatal" -}}
+        {{- $pairs = append $pairs (printf "isFatal = %v" .override.isFatal) -}}
+      {{- end -}}
+      {{- if hasKey .override "isHealthy" -}}
+        {{- $pairs = append $pairs (printf "isHealthy = %v" .override.isHealthy) -}}
+      {{- end -}}
+      {{- if .override.recommendedAction -}}
+        {{- $pairs = append $pairs (printf "recommendedAction = %q" .override.recommendedAction) -}}
+      {{- end -}}
+      {{- $pairs | join ", " -}}
+    }
+    {{- end }}
+  {{- end }}
