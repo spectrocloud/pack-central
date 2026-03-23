@@ -1,0 +1,17 @@
+{
+    "addonType": "ai",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Nvidia NVSentinel",
+    "charts": [
+      "charts/nvsentinel-v1.1.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "nvidia-nvsentinel",
+    "version": "v1.1.0"
+  }

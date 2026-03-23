@@ -1,0 +1,116 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "janitor.fullname" . }}-webhook-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "janitor.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "janitor.fullname" . }}-webhook-cert
+  duration: 8760h   # 1 year
+  renewBefore: 360h # 15 days before expiration
+  commonName: {{ include "janitor.fullname" . }}.{{ .Release.Namespace }}.svc
+  dnsNames:
+    - {{ include "janitor.fullname" . }}
+    - {{ include "janitor.fullname" . }}.{{ .Release.Namespace }}
+    - {{ include "janitor.fullname" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "janitor.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: {{ .Values.webhook.certIssuer | default "selfsigned-issuer" }}
+    kind: Issuer
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "janitor.fullname" . }}-validating-webhook
+  labels:
+    {{- include "janitor.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "janitor.fullname" . }}-webhook-cert
+webhooks:
+  - name: vrebootnode-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: {{ include "janitor.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-janitor-dgxc-nvidia-com-v1alpha1-rebootnode
+        port: {{ .Values.webhook.port }}
+    rules:
+      - apiGroups:
+          - janitor.dgxc.nvidia.com
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - rebootnodes
+        scope: "*"
+    admissionReviewVersions:
+      - v1
+    sideEffects: None
+    failurePolicy: Fail
+    timeoutSeconds: 10
+  - name: vterminatenode-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: {{ include "janitor.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-janitor-dgxc-nvidia-com-v1alpha1-terminatenode
+        port: {{ .Values.webhook.port }}
+    rules:
+      - apiGroups:
+          - janitor.dgxc.nvidia.com
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - terminatenodes
+        scope: "*"
+    admissionReviewVersions:
+      - v1
+    sideEffects: None
+    failurePolicy: Fail
+    timeoutSeconds: 10
+  - name: vgpureset-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: {{ include "janitor.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-janitor-dgxc-nvidia-com-v1alpha1-gpureset
+        port: {{ .Values.webhook.port }}
+    rules:
+      - apiGroups:
+          - janitor.dgxc.nvidia.com
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - gpuresets
+        scope: "*"
+    admissionReviewVersions:
+    - v1
+    sideEffects: None
+    failurePolicy: Fail
+    timeoutSeconds: 10
