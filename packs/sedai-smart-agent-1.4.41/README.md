@@ -1,123 +1,52 @@
-# Sedai Smart Agent
+# Sedai
 
-Sedai Smart Agent is an autonomous Kubernetes optimization platform that continuously monitors, analyzes, and right-sizes your workloads to reduce cloud costs and improve reliability — without requiring manual intervention.
+Sedai is the world's first self-driving cloud platform that autonomously optimizes Kubernetes workloads to reduce costs, boost performance, and improve availability — all without breaking production.
 
-The agent connects your Kubernetes clusters to the Sedai platform, collecting metrics through a built-in or externally managed monitoring stack (Prometheus, Victoria Metrics, Datadog, New Relic, and more), and applies intelligent recommendations automatically.
+Unlike tools that only recommend changes, Sedai makes safe, continuous optimizations based on real workload behavior. Its patented ML engine learns how each service responds to traffic, validates every action against live signals, and rolls back automatically if performance drifts. Customers using Sedai typically achieve 30–50% cloud cost savings alongside measurable improvements in performance and reliability.
 
-## Prerequisites
+Sedai integrates seamlessly with your existing Kubernetes environment through standard APIs, requiring no deployment changes. The Spectro Cloud integration makes it easy to bring autonomous Kubernetes optimization into your cluster profiles with minimal setup.
 
-- Kubernetes cluster running version 1.19 or later.
-- A [Sedai](https://app.sedai.io) account with a valid API token.
-- Outbound internet access from the cluster to the Sedai platform URL (or proxy configured via `proxySettings`).
+## Key Features
 
-## Parameters
+- **Autonomous Workload Rightsizing:** Continuously tunes pod CPU and memory based on real workload behavior. No static requests, limits, or thresholds.
 
-The following table describes the most commonly configured parameters. For the full list, refer to the `values.yaml` file bundled with this pack.
+- **AI-Tuned Autoscalers:** Tunes HPA, VPA, KEDA, and Cluster Autoscaler policies from real behavior and SLOs — not static thresholds or manual guesswork.
 
-| **Parameter** | **Description** | **Type** | **Default Value** | **Required** |
-|---|---|---|---|---|
-| `sedaiIntegrationSettings.sedaiBaseUrl` | Base URL of the Sedai platform | String | `""` | Yes |
-| `sedaiIntegrationSettings.sedaiApiToken` | API token for authenticating with Sedai | String | `""` | Yes |
-| `sedaiIntegrationSettings.clusterProvider` | Cloud provider for the cluster (`AWS`, `AZURE`, `GCP`, `SELF_MANAGED`) | String | `""` | Yes |
-| `sedaiIntegrationSettings.clusterName` | Display name of the cluster in the Sedai UI | String | Palette cluster name | No |
-| `sedaiIntegrationSettings.nickName` | Optional nickname for the cluster in the Sedai UI | String | `""` | No |
-| `sedaiIntegrationSettings.rbacReadOnly` | Set to `true` to enable read-only (Datapilot) mode | Boolean | `false` | No |
-| `sedaiVictoriaMetrics.enabled` | Enable Sedai-managed Victoria Metrics for metric storage | Boolean | `true` | No |
-| `sedaiPrometheus.enabled` | Enable Sedai-managed Prometheus for metric collection | Boolean | `false` | No |
-| `sedaiKSM.enabled` | Enable Kube State Metrics deployment | Boolean | `true` | No |
-| `sedaiNodeExporter.enabled` | Enable Node Exporter for node-level metrics | Boolean | `true` | No |
-| `sedaiBeyla.enabled` | Enable Beyla (eBPF-based APM instrumentation) | Boolean | `false` | No |
-| `sedaiSync.enabled` | Enable Sedai Sync controller for workload auto-optimization | Boolean | `false` | No |
-| `sedaiDcgmExporter.enabled` | Enable DCGM Exporter for GPU metrics (requires NVIDIA GPUs) | Boolean | `false` | No |
-| `sedaiGrafanaAlloy.enabled` | Enable Grafana Alloy for metrics collection | Boolean | `false` | No |
-| `proxySettings.enabled` | Enable HTTP proxy for outbound internet access | Boolean | `false` | No |
-| `proxySettings.proxyHost` | Proxy server hostname | String | `""` | No |
-| `proxySettings.proxyPort` | Proxy server port | String | `""` | No |
-| `monitoringProvider.datadog.enabled` | Enable Datadog as the monitoring provider | Boolean | `false` | No |
-| `monitoringProvider.newrelic.enabled` | Enable New Relic as the monitoring provider | Boolean | `false` | No |
-| `monitoringProvider.amp.enabled` | Enable Amazon Managed Prometheus (AMP) as the monitoring provider | Boolean | `false` | No |
-| `monitoringProvider.gcpMonitoring.enabled` | Enable Google Cloud Monitoring as the monitoring provider | Boolean | `false` | No |
-| `monitoringProvider.dynatrace.enabled` | Enable Dynatrace as the monitoring provider | Boolean | `false` | No |
-| `globalRegistry` | Default container image registry prefix for all images | String | `public.ecr.aws` | No |
+- **Cluster-Level Optimization:** Evaluates your cluster beyond the pod or node level to deliver actual node reductions and real infrastructure savings.
 
-## Usage
+- **Waste Detection at Every Layer:** Identifies idle and over-provisioned capacity across pods, nodes, and clusters, and removes it autonomously.
 
-Add the Sedai Smart Agent pack to a cluster profile as an add-on layer. At minimum, provide the following values before deploying:
+## Key Benefits
 
-```yaml
-charts:
-  sedai-smart-agent:
-    sedaiIntegrationSettings:
-      sedaiBaseUrl: "https://tenant.sedai.app"
-      sedaiApiToken: "<your-sedai-api-token>"
-      clusterProvider: "AWS"   # AWS, AZURE, GCP, or SELF_MANAGED
-```
+- **Safe Optimization in Production:** Every change is applied incrementally and protected by continuous validation and guardrails. Sedai rolls back automatically on any performance drift, so production stays stable.
 
-The `clusterName` field is automatically populated from the Palette cluster name using `{{ .spectro.system.cluster.name }}`.
+- **Cost & Capacity Intelligence:** See exactly where Kubernetes spend lives and how optimizations reduce cost over time. Base capacity and purchasing decisions on real workload behavior, not fixed estimates.
 
-**Monitoring provider**
+- **Flexible Autonomy Modes:** Choose how much Sedai does for you — Datapilot (recommendations only), Copilot (review and approve), or Autopilot (fully autonomous, validated optimizations).
 
-By default, the agent deploys Sedai-managed Victoria Metrics and Kube State Metrics for metric collection. To use an external monitoring provider such as Datadog, New Relic, Amazon Managed Prometheus, Google Cloud Monitoring, or Dynatrace, enable the relevant section under `monitoringProvider` and disable the Sedai-managed components:
+- **No Monitoring Changes Required:** Sedai works with the metrics and signals already exposed by your Kubernetes cluster and services, and requires no changes to your existing monitoring setup.
 
-```yaml
-charts:
-  sedai-smart-agent:
-    sedaiVictoriaMetrics:
-      enabled: false
-```
+# Prerequisites
 
-**Auto-optimization (Sedai Sync)**
+- A running Kubernetes cluster (EKS, AKS, GKE, OpenShift, Rancher, VMware Tanzu, IBM Cloud Kubernetes Service, Oracle OKE, Platform9, DigitalOcean, Alibaba CS, or similar).
+- A Sedai account. You can [book a demo](https://sedai.io) to get started.
 
-To enable automatic workload right-sizing, set `sedaiSync.enabled` to `true`:
+# Parameters
 
-```yaml
-charts:
-  sedai-smart-agent:
-    sedaiSync:
-      enabled: true
-```
+The Sedai pack supports all parameters exposed by the Sedai Helm Chart. Refer to the [Sedai documentation](https://docs.sedai.io) for the full list of configuration options.
 
-**GPU monitoring**
+# Usage
 
-For clusters with NVIDIA GPUs, enable the DCGM Exporter to collect GPU metrics:
+The Sedai pack works out-of-the-box and can be optionally configured via the pack's `values.yaml`. Add the Sedai pack to a cluster profile to get started. You can create a new cluster profile with Sedai as an add-on pack or [update an existing cluster profile](/cluster-profiles/task-update-profile) by adding the Sedai pack.
 
-```yaml
-charts:
-  sedai-smart-agent:
-    sedaiDcgmExporter:
-      enabled: true
-```
+Once installed, Sedai connects to your cluster through the Sedai Smart Agent using standard Kubernetes APIs. Sedai typically needs 2–4 weeks to learn your workloads and traffic patterns before autonomous optimizations reach full effectiveness. You can monitor recommendations and savings directly from the Sedai dashboard.
 
-**Proxy configuration**
+Learn more about getting started at [Sedai Documentation](https://docs.sedai.io).
 
-If your cluster requires an HTTP proxy for outbound internet access:
+# References
 
-```yaml
-charts:
-  sedai-smart-agent:
-    proxySettings:
-      enabled: true
-      proxyHost: "proxy.example.com"
-      proxyPort: "3128"
-```
-
-**Private registry**
-
-To pull images from a private or proxy registry, update `globalRegistry` and optionally provide an image pull secret:
-
-```yaml
-charts:
-  sedai-smart-agent:
-    globalRegistry: "my-proxy-registry.example.com"
-    imagePullSecret:
-      enabled: true
-      secretName: "my-registry-secret"
-```
-
-## References
+- [Sedai Platform Overview](https://sedai.io/platform/kubernetes)
 
 - [Sedai Documentation](https://docs.sedai.io)
 
-- [Sedai Smart Agent Helm Chart](https://sedaiengineering.github.io/helm-charts/)
-
-- [Contact Sedai](https://www.sedai.io/contact)
+- [Contact Sedai](https://sedai.io/company/contact)
