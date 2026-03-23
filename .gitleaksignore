@@ -43,3 +43,4 @@ a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/kubewatch-1.0.7/values.yaml:gener
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel-v1.1.0.tgz:generic-api-key:24
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel-v1.1.0.tgz:generic-api-key:38
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel/charts/mongodb-store/values.yaml:generic-api-key:38
+285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel/values-full.yaml:gcp-service-account:1107
