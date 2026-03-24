@@ -1,0 +1,95 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/csp-health-monitor
+  pullPolicy: IfNotPresent
+  tag: ""
+
+resources:
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+
+# Configuration for the Quarantine Trigger Engine sidecar
+quarantineTriggerEngine:
+  image:
+    repository: ghcr.io/nvidia/nvsentinel/maintenance-notifier
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  # Log verbosity for the sidecar, defaults to main container's logLevel if not set
+  logLevel: info
+
+# Scheduling configuration
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+podAnnotations: {}
+
+# Processing strategy for health events
+# valid values: EXECUTE_REMEDIATION, STORE_ONLY
+# default: EXECUTE_REMEDIATION
+# EXECUTE_REMEDIATION: normal behavior; downstream modules may update cluster state.
+# STORE_ONLY: observability-only behavior; event should be persisted/exported but should not modify cluster resources (i.e., no node conditions, no quarantine, no drain, no remediation).
+processingStrategy: EXECUTE_REMEDIATION
+
+# Log verbosity level for the main CSP health monitor container (e.g. "debug", "info", "warn", "error")
+logLevel: info
+
+# Client certificate mount path for database connections.
+# Set to an empty string to disable MongoDB TLS client certificate mounts.
+clientCertMountPath: /etc/ssl/client-certs
+
+# cspName specifies the active cloud service provider. Can be "gcp" or "aws".
+cspName: ""
+
+# config.toml content will be generated from the fields below using the configmap template.
+# Both main container and sidecar will mount and use this.
+configToml:
+  # Global settings
+  maintenanceEventPollIntervalSeconds: 60 # Used by Quarantine Trigger Engine sidecar
+  triggerQuarantineWorkflowTimeLimitMinutes: 30 # Used by Quarantine Trigger Engine sidecar
+  postMaintenanceHealthyDelayMinutes: 15 # Used by Quarantine Trigger Engine sidecar
+  nodeReadinessTimeoutMinutes: 60 # Used to monitor node readiness after maintenance
+  clusterName: "" # Used by main monitor and potentially sidecar if needed
+  kubeconfigPath: ""  # Optional, only set if running out-of-cluster against a tenant. Set to non-empty string to enable.
+
+  gcp:
+    targetProjectId: "" # Used by main monitor
+    apiPollingIntervalSeconds: 60 # Used by main monitor (GCP poller)
+    gcpServiceAccountName: "" # GCP service account name for workload identity
+    logFilter: "" # example: 'logName="projects/{PROJECT_ID}/logs/csp-health-monitor-test-log" AND operation.producer="compute.instances.upcomingMaintenance"'
+
+  aws:
+    accountId: "" # Used by main monitor
+    # How often to poll the AWS Health API for events in seconds
+    pollingIntervalSeconds: 60 # Used by main monitor (AWS poller)
+    # AWS region of the tenant cluster.
+    region: "" # Used by main monitor
+    # Custom IAM role name for IRSA (IAM Roles for Service Accounts).
+    # If empty, defaults to "<clusterName>-nvsentinel-health-monitor-assume-role-policy".
+    # Set this if your cluster name exceeds 19 characters (AWS IAM role names max 64 chars).
+    iamRoleName: ""

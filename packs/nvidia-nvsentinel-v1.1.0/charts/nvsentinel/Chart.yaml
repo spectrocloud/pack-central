@@ -1,0 +1,83 @@
+apiVersion: v2
+appVersion: v1.1.0
+dependencies:
+- condition: global.gpuHealthMonitor.enabled
+  name: gpu-health-monitor
+  repository: ""
+  version: 0.1.0
+- condition: global.mongodbStore.enabled
+  name: mongodb-store
+  repository: ""
+  version: 0.1.0
+- condition: postgresql.enabled
+  name: postgresql
+  repository: ""
+  version: 15.5.38
+- condition: global.faultQuarantine.enabled
+  name: fault-quarantine
+  repository: ""
+  version: 0.1.0
+- condition: global.nodeDrainer.enabled
+  name: node-drainer
+  repository: ""
+  version: 0.1.0
+- condition: global.faultRemediation.enabled
+  name: fault-remediation
+  repository: ""
+  version: 0.1.0
+- condition: global.healthEventsAnalyzer.enabled
+  name: health-events-analyzer
+  repository: ""
+  version: 0.1.0
+- condition: global.cspHealthMonitor.enabled
+  name: csp-health-monitor
+  repository: ""
+  version: 0.1.0
+- condition: global.syslogHealthMonitor.enabled
+  name: syslog-health-monitor
+  repository: ""
+  version: 0.1.0
+- condition: global.inclusterFileServer.enabled
+  name: incluster-file-server
+  repository: ""
+  version: 0.1.0
+- condition: global.labeler.enabled
+  name: labeler
+  repository: ""
+  version: 0.1.0
+- condition: global.janitor.enabled
+  name: janitor
+  repository: ""
+  version: 0.1.0
+- condition: global.janitorProvider.enabled
+  name: janitor-provider
+  repository: ""
+  version: 0.1.0
+- condition: global.metadataCollector.enabled
+  name: metadata-collector
+  repository: ""
+  version: 0.1.0
+- condition: global.kubernetesObjectMonitor.enabled
+  name: kubernetes-object-monitor
+  repository: ""
+  version: 0.1.0
+- condition: global.eventExporter.enabled
+  name: event-exporter
+  repository: ""
+  version: 0.1.0
+- condition: global.preflight.enabled
+  name: preflight
+  repository: ""
+  version: 0.1.0
+- condition: global.k8sdatastoreCrds.enabled
+  name: k8sdatastore-crds
+  repository: ""
+  version: 0.1.0
+- condition: global.slurmDrainMonitor.enabled
+  name: slurm-drain-monitor
+  repository: ""
+  version: 0.1.0
+description: Helm chart for NVSentinel
+name: nvsentinel
+type: application
+version: v1.1.0
