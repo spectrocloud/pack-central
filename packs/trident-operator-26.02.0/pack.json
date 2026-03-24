@@ -12,5 +12,5 @@
   ],
   "layer": "csi",
   "name": "csi-trident",
-  "version": "26.0.2"
+  "version": "26.02.0"
 }

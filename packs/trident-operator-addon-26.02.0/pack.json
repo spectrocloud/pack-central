@@ -13,5 +13,5 @@
   ],
   "layer": "addon",
   "name": "csi-trident-addon",
-  "version": "26.0.2"
+  "version": "26.02.0"
 }
