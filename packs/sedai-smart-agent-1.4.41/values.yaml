@@ -9,17 +9,17 @@ pack:
         version: 1.4.41
     images:
       - image: public.ecr.aws/sedai_io/sedai-smart-agent:v1.25.20
-      - image: public.ecr.aws/sedai_io/sedai-smart-agent-enroll:v3.1.11
-      - image: public.ecr.aws/sedai_io/prometheus/kube-state-metrics:v2.17.0
-      - image: public.ecr.aws/sedai_io/prometheus/prometheus-config-reloader:v0.87.0
-      - image: public.ecr.aws/sedai_io/prometheus/prometheus:v3.8.0
+      - image: public.ecr.aws/sedai_io/sedai-smart-agent-enroll:v3.1.12
+      - image: public.ecr.aws/sedai_io/prometheus/kube-state-metrics:v2.18.0
+      - image: public.ecr.aws/sedai_io/prometheus/prometheus-config-reloader:v0.90.0
+      - image: public.ecr.aws/sedai_io/prometheus/prometheus:v3.10.0
       - image: public.ecr.aws/sedai_io/sedai-kube-spec-controller:0.0.4
       - image: public.ecr.aws/sedai_io/busybox:1.37
       - image: public.ecr.aws/sedai_io/prometheus/node-exporter:v1.10.2
-      - image: public.ecr.aws/sedai_io/grafana/beyla:2.2.4
-      - image: public.ecr.aws/sedai_io/nvidia/dcgm-exporter:4.4.2-4.7.0-distroless
+      - image: public.ecr.aws/sedai_io/grafana/beyla:3.6.0
+      - image: public.ecr.aws/sedai_io/nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
       - image: public.ecr.aws/sedai_io/grafana/alloy:v1.10.0
-      - image: public.ecr.aws/sedai_io/victoriametrics/victoria-metrics:v1.122.0
+      - image: public.ecr.aws/sedai_io/victoriametrics/victoria-metrics:v1.138.0
 
 charts:
   sedai-smart-agent:           # must match the chart name in Chart.yaml
@@ -187,22 +187,22 @@ charts:
       smartagentEnroll:  
         name: sedai-enroll
         repository: sedai_io/sedai-smart-agent-enroll
-        imageTag: v3.1.11
+        imageTag: v3.1.12
         imagePullPolicy: Always
 
       ksm:
         repository: sedai_io/prometheus/kube-state-metrics
-        imageTag: v2.17.0
+        imageTag: v2.18.0
         imagePullPolicy: IfNotPresent
 
       reload:
         repository: sedai_io/prometheus/prometheus-config-reloader
-        imageTag: v0.87.0
+        imageTag: v0.90.0
         imagePullPolicy: IfNotPresent
 
       prometheus:
         repository: sedai_io/prometheus/prometheus
-        imageTag: v3.8.0
+        imageTag: v3.10.0
         imagePullPolicy: IfNotPresent
 
       sedaiSync:
@@ -222,12 +222,12 @@ charts:
       
       beyla:
         repository: sedai_io/grafana/beyla
-        imageTag: 2.2.4
+        imageTag: 3.6.0
         imagePullPolicy: IfNotPresent
       
       dcgmExporter:
         repository: sedai_io/nvidia/dcgm-exporter
-        imageTag: 4.4.2-4.7.0-distroless
+        imageTag: 4.5.2-4.8.1-distroless
         imagePullPolicy: IfNotPresent
 
       grafanaAlloy:
@@ -237,7 +237,7 @@ charts:
 
       victoriaMetrics:
         repository: sedai_io/victoriametrics/victoria-metrics
-        imageTag: v1.122.0
+        imageTag: v1.138.0
         imagePullPolicy: IfNotPresent
 
     # -------------------------------------------------------------------
