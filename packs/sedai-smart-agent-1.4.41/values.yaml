@@ -18,8 +18,8 @@ pack:
       - image: public.ecr.aws/sedai_io/prometheus/node-exporter:v1.10.2
       - image: public.ecr.aws/sedai_io/grafana/beyla:3.6.0
       - image: public.ecr.aws/sedai_io/nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
-      - image: public.ecr.aws/sedai_io/grafana/alloy:v1.10.0
-      - image: public.ecr.aws/sedai_io/victoriametrics/victoria-metrics:v1.138.0
+      - image: public.ecr.aws/sedai_io/grafana/alloy:v1.14.1
+      - image: public.ecr.aws/sedai_io/victoriametrics/victoria-metrics:v1.138.0-scratch
 
 charts:
   sedai-smart-agent:           # must match the chart name in Chart.yaml
@@ -232,12 +232,12 @@ charts:
 
       grafanaAlloy:
         repository: sedai_io/grafana/alloy
-        imageTag: v1.10.0
+        imageTag: v1.14.1
         imagePullPolicy: IfNotPresent
 
       victoriaMetrics:
         repository: sedai_io/victoriametrics/victoria-metrics
-        imageTag: v1.138.0
+        imageTag: v1.138.0-scratch
         imagePullPolicy: IfNotPresent
 
     # -------------------------------------------------------------------
