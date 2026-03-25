@@ -6,6 +6,8 @@ pack:
   content:
     images:
       - image: docker.io/netapp/trident-operator:26.02.0
+      - image: docker.io/netapp/trident-autosupport:26.02.0
+      - image: docker.io/netapp/trident:26.02.0
 
 charts:
   trident-operator:
