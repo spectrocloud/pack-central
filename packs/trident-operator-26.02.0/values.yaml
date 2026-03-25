@@ -4,12 +4,7 @@ pack:
     images:
       - image: docker.io/netapp/trident-operator:26.02.0
       - image: docker.io/netapp/trident-autosupport:26.02.0
-      - image: docker.io/netapp/trident:26.02.0
-
-    charts:
-      - repo: https://github.com/NetApp/trident/releases/download/v26.02.0/trident-installer-26.02.0.tar.gz
-        name: trident-operator
-        version: 26.02.0
+      - image: docker.io/netapp/trident:26.02.0    
 
   # Add Pod Security Standard label to trident namespace.
   namespaceLabels:
