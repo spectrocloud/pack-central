@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 0.1.0
+description: CRDs for k8sdatastore (HealthEventResource, etc)
+name: k8sdatastore-crds
+type: application
+version: 0.1.0
