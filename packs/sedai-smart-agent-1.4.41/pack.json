@@ -1,12 +1,12 @@
 {
-  "addonType": "monitoring",
+  "addonType": "system app",
   "annotations": {},
   "cloudTypes": ["all"],
   "displayName": "sedai-smart-agent",
   "eol": "",
   "group": "",
   "kubeManifests": [],
-  "charts": ["charts/sedai-smart-agent-1.4.41.tgz"],
+  "charts": ["charts/sedai-smart-agent-1.4.42.tgz"],
   "layer": "addon",
   "name": "sedai-smart-agent",
   "version": "1.4.41"

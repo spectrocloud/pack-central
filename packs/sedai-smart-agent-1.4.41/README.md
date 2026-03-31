@@ -29,19 +29,96 @@ Sedai integrates seamlessly with your existing Kubernetes environment through st
 # Prerequisites
 
 - A running Kubernetes cluster (EKS, AKS, GKE, OpenShift, Rancher, VMware Tanzu, IBM Cloud Kubernetes Service, Oracle OKE, Platform9, DigitalOcean, Alibaba CS, or similar).
-- A Sedai account. You can [book a demo](https://sedai.io) to get started.
+- Kubernetes version 1.19 or later.
+- A Sedai account with a valid API token. You can [book a demo](https://sedai.io) to get started.
+- Outbound internet access from the cluster to the Sedai platform URL (or a proxy configured via `proxySettings`).
 
 # Parameters
 
 The Sedai pack supports all parameters exposed by the Sedai Helm Chart. Refer to the [Sedai documentation](https://docs.sedai.io) for the full list of configuration options.
 
+| **Parameter** | **Description** | **Type** | **Default** | **Required** |
+|---|---|---|---|---|
+| `sedaiIntegrationSettings.sedaiBaseUrl` | Base URL of the Sedai platform | String | `""` | Yes |
+| `sedaiIntegrationSettings.sedaiApiToken` | API token for authenticating with Sedai | String | `""` | Yes |
+| `sedaiIntegrationSettings.clusterProvider` | Cloud provider (`AWS`, `AZURE`, `GCP`, `SELF_MANAGED`) | String | `""` | Yes |
+| `sedaiIntegrationSettings.clusterName` | Display name of the cluster in the Sedai UI | String | Palette cluster name | No |
+| `sedaiIntegrationSettings.rbacReadOnly` | Enable read-only (Datapilot) mode | Boolean | `false` | No |
+| `sedaiVictoriaMetrics.enabled` | Enable Sedai-managed Victoria Metrics (enabled by default) | Boolean | `true` | No |
+| `sedaiKSM.enabled` | Enable Kube State Metrics (enabled by default) | Boolean | `true` | No |
+| `sedaiNodeExporter.enabled` | Enable Node Exporter (enabled by default) | Boolean | `true` | No |
+| `sedaiSync.enabled` | Enable auto-optimization (Sedai Sync) | Boolean | `false` | No |
+| `sedaiBeyla.enabled` | Enable Beyla (eBPF-based APM) | Boolean | `false` | No |
+| `sedaiDcgmExporter.enabled` | Enable DCGM Exporter for GPU metrics | Boolean | `false` | No |
+| `sedaiGrafanaAlloy.enabled` | Enable Grafana Alloy for metrics collection | Boolean | `false` | No |
+| `monitoringProvider.datadog.enabled` | Enable Datadog as the monitoring provider | Boolean | `false` | No |
+| `monitoringProvider.newrelic.enabled` | Enable New Relic as the monitoring provider | Boolean | `false` | No |
+| `monitoringProvider.amp.enabled` | Enable Amazon Managed Prometheus (AMP) | Boolean | `false` | No |
+| `monitoringProvider.gcpMonitoring.enabled` | Enable Google Cloud Monitoring | Boolean | `false` | No |
+| `monitoringProvider.dynatrace.enabled` | Enable Dynatrace as the monitoring provider | Boolean | `false` | No |
+| `proxySettings.enabled` | Enable HTTP proxy for outbound access | Boolean | `false` | No |
+| `globalRegistry` | Default container image registry prefix | String | `public.ecr.aws` | No |
+
 # Usage
 
-The Sedai pack works out-of-the-box and can be optionally configured via the pack's `values.yaml`. Add the Sedai pack to a cluster profile to get started. You can create a new cluster profile with Sedai as an add-on pack or [update an existing cluster profile](/cluster-profiles/task-update-profile) by adding the Sedai pack.
+## Step 1 — Add the pack to a cluster profile
 
-Once installed, Sedai connects to your cluster through the Sedai Smart Agent using standard Kubernetes APIs. Sedai typically needs 2–4 weeks to learn your workloads and traffic patterns before autonomous optimizations reach full effectiveness. You can monitor recommendations and savings directly from the Sedai dashboard.
+Add the Sedai Smart Agent pack to a cluster profile as an add-on layer. You can create a new cluster profile or update an existing one.
 
-Learn more about getting started at [Sedai Documentation](https://docs.sedai.io).
+## Step 2 — Configure required values
+
+At minimum, set the following in the pack's `values.yaml` before deploying:
+
+```yaml
+charts:
+  sedai-smart-agent:
+    sedaiIntegrationSettings:
+      sedaiBaseUrl: "https://<your-tenant>.sedai.app"
+      sedaiApiToken: "<your-sedai-api-token>"
+      clusterProvider: "AWS"   # AWS, AZURE, GCP, or SELF_MANAGED
+```
+
+The `clusterName` is automatically populated from the Palette cluster name.
+
+By default, the pack deploys Victoria Metrics, Kube State Metrics, and Node Exporter for metric collection. No additional monitoring configuration is required for a standard deployment.
+
+## Step 3 — Deploy the cluster
+
+Deploy or update your cluster. The Sedai Smart Agent enrollment job runs automatically on first install and registers your cluster with the Sedai platform.
+
+## Step 4 — Verify in the Sedai dashboard
+
+Log in to your Sedai tenant and confirm the cluster appears as connected. Sedai typically needs 2–4 weeks to learn your workload patterns before autonomous optimizations reach full effectiveness.
+
+## Optional — Use an external monitoring provider
+
+To use Datadog, New Relic, AMP, Google Cloud Monitoring, or Dynatrace instead of the default Sedai-managed Victoria Metrics, enable the relevant provider under `monitoringProvider` and disable the Sedai-managed stack:
+
+```yaml
+charts:
+  sedai-smart-agent:
+    sedaiVictoriaMetrics:
+      enabled: false
+    monitoringProvider:
+      datadog:
+        enabled: true
+        datadogEndpoint: "https://api.datadoghq.com"
+        datadogApiKey: "<your-api-key>"
+        datadogApplicationKey: "<your-app-key>"
+```
+
+## Optional — Configure a proxy
+
+If your cluster requires an HTTP proxy for outbound internet access:
+
+```yaml
+charts:
+  sedai-smart-agent:
+    proxySettings:
+      enabled: true
+      proxyHost: "proxy.example.com"
+      proxyPort: "3128"
+```
 
 # References
 
