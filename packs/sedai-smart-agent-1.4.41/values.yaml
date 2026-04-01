@@ -212,7 +212,7 @@ charts:
 
       busyBox:
         repository: sedai_io/busybox
-        imageTag: 1.37
+        imageTag: 1.37.0
         imagePullPolicy: IfNotPresent
       
       nodeExporter:
