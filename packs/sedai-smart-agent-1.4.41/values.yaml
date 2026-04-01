@@ -14,7 +14,7 @@ pack:
       - image: public.ecr.aws/sedai_io/prometheus/prometheus-config-reloader:v0.90.0
       - image: public.ecr.aws/sedai_io/prometheus/prometheus:v3.10.0
       - image: public.ecr.aws/sedai_io/sedai-kube-spec-controller:0.0.4
-      - image: public.ecr.aws/sedai_io/busybox:1.37
+      - image: public.ecr.aws/sedai_io/busybox:1.37.0
       - image: public.ecr.aws/sedai_io/prometheus/node-exporter:v1.10.2
       - image: public.ecr.aws/sedai_io/grafana/beyla:3.6.0
       - image: public.ecr.aws/sedai_io/nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
@@ -212,7 +212,7 @@ charts:
 
       busyBox:
         repository: sedai_io/busybox
-        imageTag: 1.37
+        imageTag: 1.37.0
         imagePullPolicy: IfNotPresent
       
       nodeExporter:
