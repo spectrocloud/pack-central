@@ -1,0 +1,243 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+global:
+  dryRun: false
+  image:
+    tag: "v1.1.0"
+  initContainerImage:
+    repository: docker.io/bitnamilegacy/os-shell
+    tag: "12-debian-12-r30"
+    pullPolicy: IfNotPresent
+  metricsPort: 2112
+
+  # Datastore configuration
+  # By default, datastore is not configured (use mongodb-config ConfigMap directly)
+  # To use the centralized datastore configuration, uncomment and configure below
+  # datastore:
+  #   provider: "mongodb"  # or "postgresql"
+  #   connection:
+  #     host: "mongodb"
+  #     port: 27017
+  #     database: "nvsentinel"
+  #   certificates:
+  #     secretName: "mongo-app-client-cert-secret"  # Secret containing client certificates
+  #     certKey: "tls.crt"      # Key for client certificate (default: tls.crt)
+  #     keyKey: "tls.key"       # Key for client private key (default: tls.key)
+  #     caKey: "ca.crt"         # Key for CA certificate (default: ca.crt)
+
+  # Certificate rotation (MongoDB only)
+  # When enabled, client certificates can be rotated without restarting pods.
+  # Uses controller-runtime's certwatcher to detect file changes and automatically
+  # provide updated certificates to new MongoDB connections.
+  certificateRotationEnabled: false
+
+  # Shared metadata path used by metadata-collector and syslog-health-monitor
+  metadataPath: /var/lib/nvsentinel/gpu_metadata.json
+
+  # DCGM (Data Center GPU Manager) configuration
+  # Shared by gpu-health-monitor and preflight dcgm-diag
+  dcgm:
+    # Enable DCGM Kubernetes service integration
+    enabled: true
+    service:
+      # DCGM hostengine service endpoint
+      endpoint: "nvidia-dcgm.gpu-operator.svc"
+      # DCGM hostengine service port
+      port: 5555
+
+  # Audit logging configuration
+  auditLogging:
+    enabled: false  # Enable/disable audit logging for all components
+    logRequestBody: false  # Log request body in audit logs (may contain sensitive data)
+    maxSizeMB: 100  # Maximum size of each audit log file in MB
+    maxBackups: 7  # Maximum number of rotated log files to keep
+    maxAgeDays: 30  # Maximum age of rotated log files in days
+    compress: true  # Compress rotated log files
+
+  nodeSelector: {}
+  tolerations:
+    - operator: Exists
+  affinity: {}
+  systemNodeSelector: {}
+  systemNodeTolerations: []
+  imagePullSecrets: []
+
+  gpuHealthMonitor:
+    enabled: true
+  healthEventsAnalyzer:
+    enabled: false
+  faultQuarantine:
+    enabled: false
+  nodeDrainer:
+    enabled: false
+  faultRemediation:
+    enabled: false
+  janitor:
+    enabled: false
+  janitorProvider:
+    enabled: false
+  cspHealthMonitor:
+    enabled: false
+  syslogHealthMonitor:
+    enabled: true
+  labeler:
+    enabled: true
+  metadataCollector:
+    enabled: true
+  inclusterFileServer:
+    enabled: false
+    metricsPort: 9001
+    cleanupMetricsPort: 9002
+  mongodbStore:
+    enabled: false
+  kubernetesObjectMonitor:
+    enabled: false
+  eventExporter:
+    enabled: false
+  preflight:
+    enabled: false
+  k8sdatastoreCrds:
+    enabled: false
+  slurmDrainMonitor:
+    enabled: false
+    
+# Network policy configuration
+# The metrics-access network policy restricts ingress to metrics ports only.
+# This can block other services (e.g., cert-manager webhook) when deployed
+# in the same namespace. Set enabled=false to disable the network policy.
+networkPolicy:
+  enabled: true
+
+platformConnector:
+  image:
+    repository: ghcr.io/nvidia/nvsentinel/platform-connectors
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+  podAnnotations: {}
+
+  tolerations: []
+
+  logLevel: info
+
+  mongodbStore:
+    enabled: false
+    clientCertMountPath: "/etc/ssl/mongo-client"
+    maxRetries: 3
+
+  postgresqlStore:
+    clientCertMountPath: "/etc/ssl/client-certs"
+
+  k8sConnector:
+    enabled: true
+    maxNodeConditionMessageLength: 1024
+    # Max length of the compacted message prefix (before Recommended Action) per health event
+    compactedHealthEventMsgLen: 72
+    qps: 5.0
+    burst: 10
+
+  # Node metadata enrichment configuration
+  # Health event transformers pipeline
+  pipeline:
+    # List of transformers to execute (in order)
+    - name: MetadataAugmentor
+      enabled: false
+      config: /etc/config/metadata.toml
+    
+    - name: OverrideTransformer
+      enabled: false
+      config: /etc/config/overrides.toml
+  
+  # Transformer-specific configurations
+  transformers:
+    # Metadata augmentor - enriches events with node labels and provider info
+    MetadataAugmentor:
+      cacheSize: 50
+      cacheTTLSeconds: 3600
+      allowedLabels:
+        - "topology.kubernetes.io/zone"
+        - "topology.kubernetes.io/region"
+        - "node.kubernetes.io/instance-type"
+        - "nvidia.com/cuda.driver-version.major"
+        - "nvidia.com/cuda.driver-version.minor"
+        - "nvidia.com/cuda.driver-version.revision"
+        - "nvidia.com/cuda.driver-version.full"
+        - "nvidia.com/cuda.runtime-version.major"
+        - "nvidia.com/cuda.runtime-version.minor"
+        - "nvidia.com/cuda.runtime-version.full"
+        - "topology.k8s.aws/capacity-block-id"
+        - "topology.k8s.aws/network-node-layer-1"
+        - "topology.k8s.aws/network-node-layer-2"
+        - "topology.k8s.aws/network-node-layer-3"
+        - "oci.oraclecloud.com/host.id"
+        - "oci.oraclecloud.com/host.network_block_id"
+        - "oci.oraclecloud.com/host.rack_id"
+        - "oci.oraclecloud.com/host.serial_number"
+        - "cloud.google.com/gce-topology-block"
+        - "cloud.google.com/gce-topology-host"
+        - "cloud.google.com/gce-topology-subblock"
+    
+    # Property overrides - uses CEL expressions to override event properties
+    OverrideTransformer:
+      rules: []
+      # Example:
+      # - name: "suppress-xid-109"
+      #   when: 'event.agent == "syslog-health-monitor" && "109" in event.errorCode'
+      #   override:
+      #     isFatal: false
+      #     recommendedAction: "NONE"
+
+socketPath: "/var/run/nvsentinel.sock"
+
+# Node condition cleanup hook configuration
+nodeConditionCleanup:
+  enabled: false
+  deprecatedConditions: []
+  # - "OldConditionType1"
+  # - "OldConditionType2"
+  image:
+    repository: docker.io/bitnamilegacy/kubectl
+    tag: "1.30.6"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# PostgreSQL subchart configuration
+# Only enabled when using PostgreSQL as the datastore
+# See values-postgresql.yaml for a complete PostgreSQL configuration example
+postgresql:
+  enabled: false
+
+# PodMonitor configuration for Prometheus Operator
+# Disable this if using standard Prometheus with annotations instead
+podMonitor:
+  enabled: true
+  interval: 30s  # Scrape interval (defaults to 30s to maintain backward compatibility)
+  # scrapeTimeout: ""  # Scrape timeout (defaults to Prometheus default if not specified)
+  # metricsPath: "/metrics"  # Metrics path (defaults to /metrics)
+  # labels: {}  # Additional labels for the PodMonitor resource

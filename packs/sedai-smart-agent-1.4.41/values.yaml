@@ -1,0 +1,407 @@
+pack:
+  # The namespace (on the target cluster) in which the pack will be deployed.
+  # When the namespace is not found, a new namespace will be created with the name specified.
+  namespace: "sedai-smart-agent"
+  content:
+    charts:
+      - repo: https://sedaiengineering.github.io/helm-charts/
+        name: sedai-smart-agent
+        version: 1.4.41
+    images:
+      - image: public.ecr.aws/sedai_io/sedai-smart-agent:v1.25.20
+      - image: public.ecr.aws/sedai_io/sedai-smart-agent-enroll:v3.1.12
+      - image: public.ecr.aws/sedai_io/prometheus/kube-state-metrics:v2.18.0
+      - image: public.ecr.aws/sedai_io/prometheus/prometheus-config-reloader:v0.90.0
+      - image: public.ecr.aws/sedai_io/prometheus/prometheus:v3.10.0
+      - image: public.ecr.aws/sedai_io/sedai-kube-spec-controller:0.0.4
+      - image: public.ecr.aws/sedai_io/busybox:1.37
+      - image: public.ecr.aws/sedai_io/prometheus/node-exporter:v1.10.2
+      - image: public.ecr.aws/sedai_io/grafana/beyla:3.6.0
+      - image: public.ecr.aws/sedai_io/nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
+      - image: public.ecr.aws/sedai_io/grafana/alloy:v1.14.1
+      - image: public.ecr.aws/sedai_io/victoriametrics/victoria-metrics:v1.138.0-scratch
+
+charts:
+  sedai-smart-agent:           # must match the chart name in Chart.yaml
+    # Paste your chart's values.yaml content here
+    # -------------------------------------------------------------------
+    # Sedai Smart Agent Helm Chart Default Configuration
+    # -------------------------------------------------------------------
+
+    # -------------------------------------------------------------------
+    # Global / Common Settings  : Applied to all resources created by this chart
+    # -------------------------------------------------------------------
+
+    # globalRegistry allows you to specify a default registry prefix for all container images
+    # This is useful when using a proxy registry or corporate registry
+    # Set to empty string to use full repository URIs as specified in image.*.repository
+    # Examples:
+    #   globalRegistry: "public.ecr.aws"           -> public.ecr.aws/sedai_io/grafana/beyla:2.2.4
+    #   globalRegistry: "my-proxy.com"             -> my-proxy.com/sedai_io/grafana/beyla:2.2.4
+    #   globalRegistry: ""                         -> sedai_io/grafana/beyla:2.2.4 (if repository doesn't contain registry)
+    # Note: If image.*.repository already contains a full URI (e.g., "some-other.uri/grafana/beyla"), 
+    #       the globalRegistry will be ignored for that image to maintain backward compatibility
+    globalRegistry: "public.ecr.aws"
+
+    # globalLabels allows you to specify labels that will be added to all resources created by this chart
+    # globalLabels:
+    #   environment: sedai-smart-agent
+
+    # globalAnnotations allows you to specify annotations that will be added to all resources created by this chart
+    # globalAnnotations:
+    #   company.io/owner: platform-team
+    #   company.io/project: sedai-smart-agent
+
+    # globalTolerations allows you to specify tolerations that will be added to all pod templates created by this chart
+    # globalTolerations:
+    #   - key: "node-role.kubernetes.io/master"
+    #     operator: "Exists"
+    #     effect: "NoSchedule"
+
+    # -------------------------------------------------------------------
+    # Sedai Component Toggles
+    # -------------------------------------------------------------------
+    smartAgentEnroll:
+      enabled: true                     # Enables the Smart Agent enrollment job (one-time job per cluster)
+      nodeSelector: {}                  # Node selector for Smart Agent enrollment job
+      tolerations: []                   # Tolerations for Smart Agent enrollment job
+      priorityClassName: ""             # Priority class name for Smart Agent enrollment job
+      jobAnnotations: {}                # Additional annotations for the enrollment job resource
+      podAnnotations: {}                # Additional annotations for the enrollment job pod template
+      cleanupJobAnnotations: {}         # Additional annotations for the cleanup job resource (pre-delete hook)
+      cleanupPodAnnotations: {}         # Additional annotations for the cleanup job pod template
+      postUpgradeJobAnnotations: {}     # Additional annotations for the post-upgrade job resource (monitoring provider completion)
+      postUpgradePodAnnotations: {}     # Additional annotations for the post-upgrade job pod template
+      deregisterJobAnnotations: {}      # Additional annotations for the deregister job resource (pre-delete hook)
+      deregisterPodAnnotations: {}      # Additional annotations for the deregister job pod template
+
+    sedaiPrometheus:
+      enabled: false                    # Enables Sedai-managed Prometheus for metric collection
+      server:
+        retention: '4h'                 # Retention period for Prometheus metrics (e.g., '6h', '1d', '7d')
+        gogc: 75                        # Go GC target percentage (default 100). Lower = more frequent GC, lower peak memory.
+        autoMemLimitRatio: "0.85"       # automemlimit ratio: GOMEMLIMIT = ratio × cgroup memory limit. Default is 0.9; 0.85 gives more headroom before hard OOM.
+      nodeSelector: {}                  # Node selector for Prometheus deployment
+      tolerations: []                   # Tolerations for Prometheus deployment
+      priorityClassName: ""             # Priority class name for Prometheus deployment
+
+    sedaiKSM:
+      enabled: true                     # Enables deployment of Kube State Metrics (KSM) for cluster object metrics - required for Sedai-managed Prometheus, Alloy
+      nodeSelector: {}                  # Node selector for KSM deployment
+      tolerations: []                   # Tolerations for KSM deployment
+      priorityClassName: ""             # Priority class name for KSM deployment
+
+    sedaiSync:
+      enabled: false                    # Enables Sedai sync controller for workload auto-optimization
+      tlsPath: "/tls"                   # Mount path for TLS certificates (if needed)
+      sqlitePath: "/data"               # SQLite DB path (for local storage)
+      logLevel: "INFO"                 # Logging level: trace, debug, info, warn, error
+      nodeSelector: {}                  # Node selector for both Sedai Sync and DB deployments
+      tolerations: []                   # Tolerations for both Sedai Sync and DB deployments
+      priorityClassName: ""             # Priority class name for Sedai Sync deployment
+      encodeLogsAsJson: "true"        # Whether to encode logs as JSON (true/false)
+
+    sedaiNodeExporter:
+      enabled: true
+      port: 9100                        # Port for node-exporter metrics endpoint
+      nodeSelector: {}                  # Node selector for Node Exporter daemonset
+      tolerations: []                   # Tolerations for Node Exporter daemonset
+      priorityClassName: ""             # Priority class name for Node Exporter daemonset
+
+    sedaiBeyla:
+      enabled: false
+      port: 8999                        # Port for Beyla metrics endpoint
+      nodeSelector: {}                  # Node selector for Beyla daemonset
+      tolerations: []                   # Tolerations for Beyla daemonset
+      priorityClassName: ""             # Priority class name for Beyla daemonset
+
+    sedaiGrafanaAlloy:
+      enabled: false
+      nodeSelector: {}                  # Node selector for Grafana Alloy daemonset
+      tolerations: []                   # Tolerations for Grafana Alloy daemonset
+      priorityClassName: ""             # Priority class name for Grafana Alloy daemonset
+
+    sedaiDcgmExporter:
+      enabled: false
+      port: 9400                        # Port for DCGM exporter metrics endpoint
+      nodeSelector: {}                  # Node selector for DCGM exporter daemonset
+      tolerations:                      # Tolerations for DCGM exporter daemonset
+        - key: "nvidia.com/gpu"
+          operator: "Equal"
+          value: "present"
+          effect: "NoSchedule"
+      priorityClassName: ""             # Priority class name for DCGM exporter daemonset
+
+    sedaiVictoriaMetrics:
+      retentionPeriod: "1d"                # Retention period for Victoria Metrics (e.g., '1', '7d', '1y')
+      nodeSelector: {}                  # Node selector for Victoria Metrics StatefulSet
+      tolerations: []                   # Tolerations for Victoria Metrics StatefulSet
+      priorityClassName: ""             # Priority class name for Victoria Metrics StatefulSet
+      enabled: true                     # Use Sedai-managed Victoria Metrics
+
+    # -------------------------------------------------------------------
+    # Workload Metadata and Replicas
+    # -------------------------------------------------------------------
+    workload:
+      smartAgentEnroll:
+        name: sedai-smart-agent-enroll-job      # Name of the enrollment job resource
+      smartAgent:
+        name: sedai-smart-agent                 # Name of the Smart Agent deployment
+        replicaCount: 1                         # Number of replicas
+        revisionHistoryLimit: 1                 # Number of old ReplicaSets to retain
+        secret: sedai-smart-agent               # Kubernetes Secret used by the agent
+        nodeSelector: {}                        # Node selector for Smart Agent deployment
+        tolerations: []                         # Tolerations for Smart Agent deployment
+        priorityClassName: ""                   # Priority class name for Smart Agent deployment
+      prometheus:
+        name: sedai-prometheus-server
+        replicaCount: 1
+        revisionHistoryLimit: 1
+      ksm:
+        name: sedai-kube-state-metrics
+        replicaCount: 1
+        revisionHistoryLimit: 1
+      dcgmExporter:
+        name: sedai-dcgm-exporter
+      beyla:
+        name: sedai-beyla
+
+    # -------------------------------------------------------------------
+    # Debug Logging
+    # -------------------------------------------------------------------
+    enableAgentDebugLogs:
+      enabled: false                                # Enables DEBUG logging on the agent
+      agentLogLevel: "DEBUG"                        # Logging level (only used if enabled is true)
+      loggingConfig: "classpath:log4j2-onprem.xml"  # Log4j2 config location (typically internal path)
+
+    # -------------------------------------------------------------------
+    # Container Image Configuration
+    # -------------------------------------------------------------------
+    image:
+      smartAgent:
+        name: sedai-agent
+        repository: sedai_io/sedai-smart-agent
+        imageTag: v1.25.20
+        imagePullPolicy: IfNotPresent
+
+      smartagentEnroll:  
+        name: sedai-enroll
+        repository: sedai_io/sedai-smart-agent-enroll
+        imageTag: v3.1.12
+        imagePullPolicy: Always
+
+      ksm:
+        repository: sedai_io/prometheus/kube-state-metrics
+        imageTag: v2.18.0
+        imagePullPolicy: IfNotPresent
+
+      reload:
+        repository: sedai_io/prometheus/prometheus-config-reloader
+        imageTag: v0.90.0
+        imagePullPolicy: IfNotPresent
+
+      prometheus:
+        repository: sedai_io/prometheus/prometheus
+        imageTag: v3.10.0
+        imagePullPolicy: IfNotPresent
+
+      sedaiSync:
+        repository: sedai_io/sedai-kube-spec-controller
+        imageTag: 0.0.4
+        imagePullPolicy: IfNotPresent
+
+      busyBox:
+        repository: sedai_io/busybox
+        imageTag: 1.37
+        imagePullPolicy: IfNotPresent
+      
+      nodeExporter:
+        repository: sedai_io/prometheus/node-exporter
+        imageTag: v1.10.2
+        imagePullPolicy: IfNotPresent
+      
+      beyla:
+        repository: sedai_io/grafana/beyla
+        imageTag: 3.6.0
+        imagePullPolicy: IfNotPresent
+      
+      dcgmExporter:
+        repository: sedai_io/nvidia/dcgm-exporter
+        imageTag: 4.5.2-4.8.1-distroless
+        imagePullPolicy: IfNotPresent
+
+      grafanaAlloy:
+        repository: sedai_io/grafana/alloy
+        imageTag: v1.14.1
+        imagePullPolicy: IfNotPresent
+
+      victoriaMetrics:
+        repository: sedai_io/victoriametrics/victoria-metrics
+        imageTag: v1.138.0-scratch
+        imagePullPolicy: IfNotPresent
+
+    # -------------------------------------------------------------------
+    # Docker Image Pull Secret
+    # -------------------------------------------------------------------
+    imagePullSecret:
+      enabled: false
+      secretName : ""
+
+    # -------------------------------------------------------------------
+    # Resource Requests and Limits (per container)
+    # -------------------------------------------------------------------
+    resources:
+      smartAgent:
+        cpu:
+          requests: "500m"
+          limits: "500m"
+        memory:
+          requests: "1024Mi"
+          limits: "1024Mi"
+
+      prometheus:
+        cpu:
+          requests: "1500m"
+          limits: "1500m"
+        memory:
+          requests: "4096Mi"
+          limits: "4096Mi"
+        storage: "60Gi"                        # Persistent volume storage for Prometheus
+
+      ksm:
+        cpu:
+          requests: "500m"
+          limits: "500m"
+        memory:
+          requests: "1024Mi"
+          limits: "1024Mi"
+
+      sedaiSync:
+        cpu:
+          requests: "500m"
+          limits: "500m"
+        memory:
+          requests: "1024Mi"
+          limits: "1024Mi"
+        storage: "2Gi"                      # Persistent volume storage for SQLite database
+      
+      sedaiBeyla:
+        cpu:
+          requests: "500m"
+          limits: "500m"
+        memory:
+          requests: "1024Mi"
+          limits: "1024Mi"
+
+      grafanaAlloy:
+        cpu:
+          requests: "200m"
+          limits: "200m"
+        memory:
+          requests: "2048Mi"
+          limits: "2048Mi"
+
+      victoriaMetrics:
+        cpu:
+          requests: "1000m"
+          limits: "1000m"
+        memory:
+          requests: "4096Mi"
+          limits: "4096Mi"
+        storage: "30Gi"                    # Persistent volume storage for Victoria Metrics
+
+    # -------------------------------------------------------------------
+    # Smart Agent Configurations
+    # -------------------------------------------------------------------
+    kubernetes_master: "https://kubernetes.default.svc.cluster.local"
+
+    # -------------------------------------------------------------------
+    # Proxy Configuration (for egress access)
+    # -------------------------------------------------------------------
+    proxySettings:
+      enabled: false                    # Set to true if your cluster requires a proxy for outbound internet access
+      proxyHost:                        # Proxy server hostname (e.g., proxy.example.com)
+      proxyPort:                        # Proxy server port (e.g., 3128)
+      proxyUsername:                    # Optional proxy username
+      proxyPassword:                    # Optional proxy password
+
+    # -------------------------------------------------------------------
+    # Sedai Integration Settings
+    # -------------------------------------------------------------------
+    sedaiIntegrationSettings:
+      nickName: ""                    # Nickname for the cluster (used in Sedai UI)
+      clusterName: "{{ .spectro.system.cluster.name }}" # Auto-populated from Palette cluster name
+      clusterProvider: "{{ .spectro.var.clusterProvider }}"  # Cloud provider: AWS, AZURE, GCP, SELF_MANAGED
+      sedaiBaseUrl: "{{ .spectro.var.sedaiBaseUrl }}"   # Base URL of the Sedai platform (e.g., https://app.sedai.io)
+      rbacReadOnly: false             # Set true for enabling Datapilot Mode only.
+      sedaiApiToken: "{{ .spectro.var.sedaiApiToken }}" # API token (use this OR provide a Kubernetes Secret)
+      sedaiApiTokenSecret: ""         # Name of the Kubernetes Secret that stores the token
+      sedaiApiTokenSecretKey: ""      # Key within the Secret that stores the token
+      forceCreate: false              # Force creation of Sedai config even if API token is invalid
+      enableDeRegisterJob: false      # Enable Sedai de-registration helm pre-delete hook
+
+
+    # -------------------------------------------------------------------
+    # External Monitoring Provider Configuration
+    # -------------------------------------------------------------------
+    monitoringProvider:
+      sedaiManagedPrometheus:
+        enabled: false                    # Use Sedai-managed Prometheus (preferred default)
+
+      prometheus:
+        enabled: false                    # Use self-hosted Prometheus instead
+        serverUrl: "http://prometheus-server.prometheus.svc.cluster.local"  # URL of your Prometheus server
+        credentialsProvider: "FEDERATEDPROMETHEUS_NO_AUTH" # Authentication type (BASIC_AUTH, FEDERATEDPROMETHEUS_JWT, or NO_AUTH)
+        prometheusUsername:               # Username if using BASIC_AUTH
+        prometheusPassword:               # Password if using BASIC_AUTH
+        prometheusjwtToken:               # JWT token if using FEDERATEDPROMETHEUS_JWT
+
+      mimir:
+        enabled: false                    # Use self-hosted Prometheus instead
+        serverUrl: "http://mimir-nginx.mimir.svc.cluster.local/prometheus/"  # URL of your Mimir server
+        credentialsProvider: "FEDERATEDPROMETHEUS_NO_AUTH" # Authentication type (BASIC_AUTH, FEDERATEDPROMETHEUS_JWT, or NO_AUTH)
+        mimirUsername:                    # Username if using BASIC_AUTH
+        mimirPassword:                    # Password if using BASIC_AUTH
+        mimirjwtToken:                    # JWT token if using FEDERATEDPROMETHEUS_JWT
+
+      victoriaMetrics:
+        enabled: false                    # Use self-hosted Victoria Metrics instead
+        serverUrl: "http://victoria-metrics-server.victoria-metrics.svc.cluster.local:8428"  # URL of your Victoria Metrics server
+        credentialsProvider: "FEDERATEDPROMETHEUS_NO_AUTH" # Authentication type (BASIC_AUTH, FEDERATEDPROMETHEUS_JWT, or NO_AUTH)
+        victoriaMetricsUsername:          # Username if using BASIC_AUTH
+        victoriaMetricsPassword:          # Password if using BASIC_AUTH
+        victoriaMetricsjwtToken:          # JWT token if using FEDERATEDPROMETHEUS_JWT
+      datadog:
+        enabled: false                    # Enable if using Datadog 
+        datadogEndpoint:                  # Datadog API endpoint
+        datadogEnvDimensions:             # Datadog environment dimensions (e.g., "env:production")
+        datadogApiKey:                    # Datadog API key
+        datadogApplicationKey:            # Datadog App key
+        datadogSecret:                    # Name of the Kubernetes Secret that stores the Datadog secret
+        datadogApplicationKeySecretKey:   # Key for the Datadog App key in the secret
+        datadogApiKeySecretKey:           # Key for the Datadog API key in the secret
+
+      newrelic:
+        enabled: false                    # Enable if using NewRelic
+        newrelicApiKey:                   # NewRelic API Key
+        newrelicAccountId:                # NewRelic Account ID
+        newrelicApiServer:                # NewRelic API Server URL
+
+      gcpMonitoring:
+        enabled: false                    # Enable if using Google Cloud Monitoring, Require additional Settings in GCP Console
+        projectID:                        # GCP project ID where metrics will be sent
+        serviceAccountKeyJson:            # Service account key JSON (not recommended for production). Do not use this if gcpSecret and gcpServiceAccountKeySecretKey are provided.
+        gcpSecret:                        # Name of the Kubernetes Secret that stores the GCP service account key
+        gcpServiceAccountKeySecretKey:    # Key for the service account key JSON in the secret (default: "key.json")
+
+      amp:
+        enabled: false                    # Enable this if you're using Amazon Managed Prometheus (AMP)
+        amp_query_endpoint:               # AMP query endpoint
+        amp_iam_role:                     # IAM role to access AMP
+        amp_iam_role_external_id:         # (Optional) External ID for the IAM role; leave blank if not used
+      
+      dynatrace:
+        enabled: false                    # Enable if using Dynatrace
+        dynatraceEnvironmentID:           # Dynatrace Environment ID
+        dynatraceApiToken:                # Dynatrace API Token
+        dynatracePlatformToken:           # Dynatrace Platform Token
