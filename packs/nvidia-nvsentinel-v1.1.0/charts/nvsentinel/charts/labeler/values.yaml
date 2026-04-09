@@ -1,0 +1,51 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Default values for labeler.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+logLevel: info
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/labeler
+  pullPolicy: IfNotPresent
+  tag: ""
+
+podAnnotations: {}
+
+# Kata Containers detection configuration
+# Additional node label to check when detecting Kata Containers support. If specified, the labeler
+# will check BOTH this custom label AND the default 'katacontainers.io/kata-runtime' label as
+# input sources for detection. The labeler will then set the output label 
+# 'nvsentinel.dgxc.nvidia.com/kata.enabled' to "true" or "false" based on the detection result.
+# Example: 'custom.kata.label' or 'io.katacontainers.config.runtime.oci_runtime'
+# Note: The input label value must be truthy (case-insensitive): "true", "enabled", "1", or "yes"
+kataLabelOverride: ""
+
+# Pre-installed driver configuration
+# When enabled, the labeler unconditionally sets nvsentinel.dgxc.nvidia.com/driver.installed=true
+# on all GPU nodes, skipping driver pod detection. Use this for clusters where NVIDIA drivers
+# are installed directly on the host rather than via GPU Operator driver containers.
+assumeDriverInstalled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

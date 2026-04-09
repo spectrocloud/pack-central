@@ -1,0 +1,122 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+replicaCount: 1
+
+logLevel: info
+
+# Client certificate mount path for database connections
+clientCertMountPath: /etc/ssl/client-certs
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/node-drainer
+  pullPolicy: IfNotPresent
+  tag: ""
+
+podAnnotations: {}
+
+resources:
+  limits:
+    cpu: "200m"
+    memory: "300Mi"
+  requests:
+    cpu: "200m"
+    memory: "300Mi"
+
+# Eviction timeout in seconds for pod eviction operations
+# Maximum time to wait for a pod to gracefully terminate before force deletion
+# Must be a positive integer, converted to time.Duration in the code
+evictionTimeoutInSeconds: "60"
+
+# Regular expression pattern matching system namespaces
+# Pods in these namespaces are skipped during the drain process
+systemNamespaces: "^(nvsentinel|kube-system|gpu-operator|gmp-system|network-operator|skyhook)$"
+
+# Time in minutes after which pods in DeleteAfterTimeout mode will be force deleted
+# This timeout is calculated from the health event's createdAt timestamp
+# When the timeout is reached, remaining pods are force deleted regardless of their state
+# Default: 60 minutes if not specified (validated in config.go)
+deleteAfterTimeoutMinutes: 60
+
+# Time in minutes after which a pod in NotReady state is considered stuck
+# Used to detect pods that are unhealthy and unlikely to complete gracefully
+# Stuck pods may be force deleted to unblock the node drain process
+# Default: 5 minutes if not specified (validated in config.go)
+notReadyTimeoutMinutes: 5
+
+# User namespace configuration with eviction modes
+# Defines how pods in different namespaces should be evicted during node drain
+# Each entry specifies a namespace pattern and its corresponding eviction mode
+userNamespaces:
+  # Namespace name or pattern (* matches all user namespaces)
+  - name: "*"
+    # Eviction mode determines how pods are evicted:
+    # - "Immediate": Pod is evicted immediately without waiting for graceful termination
+    # - "AllowCompletion": Wait for pod to complete gracefully (respects terminationGracePeriodSeconds)
+    # - "DeleteAfterTimeout": Wait for deleteAfterTimeoutMinutes, then force delete if still running
+    mode: "AllowCompletion"
+
+# If enabled, the node-drainer will only drain pods which are leveraging the GPU_UUID impacted entity in
+# COMPONENT_RESET HealthEvents. If disabled, the node-drainer will drain all eligible pods
+# on the impacted node for the configured namespaces regardless of the remediation action.
+# HealthEvents with the COMPONENT_RESET remediation action must include an impacted entity for the
+# unhealthy GPU_UUID or else the drain will fail. IMPORTANT: If this setting is enabled, the COMPONENT_RESET
+# action in fault-remediation must map to a custom resource which takes action only against the GPU_UUID.
+# If partial drain was enabled in node-drainer but fault-remediation mapped COMPONENT_RESET to a reboot
+# action, pods which weren't drained would be restarted as part of the reboot.
+partialDrainEnabled: false
+
+# Custom drain configuration for extensible drain handling
+# When enabled, node-drainer creates a customer-defined CR from a template instead of evicting pods directly
+# The customer controller is responsible for draining pods and updating the CR status
+# Mutually exclusive with userNamespaces (only one can be enabled)
+customDrain:
+  # Enable custom drain mechanism
+  enabled: false
+
+  # Name of the ConfigMap containing the drain template
+  # Customer must create this ConfigMap with the drain template file
+  templateConfigMapName: "drain-template"
+
+  # Path where the drain template ConfigMap is mounted
+  templateMountPath: "/etc/drain-template"
+
+  # Name of the template file to use for rendering custom drain CRs
+  templateFileName: "drain-template.yaml"
+
+  # Namespace where custom drain CRs will be created
+  namespace: "nvsentinel"
+
+  # API group of the custom drain CRD (e.g., "drain.example.com")
+  apiGroup: ""
+
+  # API version of the custom drain CRD (e.g., "v1alpha1")
+  version: ""
+
+  # Kind of the custom drain CRD (e.g., "DrainRequest")
+  kind: ""
+
+  # Plural resource name for the custom drain CRD (e.g., "drainrequests")
+  # Must match the CRD's spec.names.plural field exactly
+  resource: ""
+
+  # Condition type to check in CR status.conditions for completion (e.g., "Complete")
+  statusConditionType: ""
+
+  # Expected condition status value indicating completion (e.g., "True")
+  statusConditionStatus: ""
+
+  # Timeout duration for waiting for CR completion (e.g., "30m")
+  # After this timeout, the drain is considered failed
+  timeout: "30m"

@@ -1,0 +1,64 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fault-quarantine.fullname" . }}
+  labels:
+    {{- include "fault-quarantine.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  config.toml: |
+    label-prefix = {{ .Values.labelPrefix | quote }}
+    
+    [circuitBreaker]
+    percentage = {{ .Values.circuitBreaker.percentage }}
+    duration = {{ .Values.circuitBreaker.duration | quote }}
+    
+    {{- range .Values.ruleSets }}
+    [[rule-sets]]
+      version = {{ .version | quote }}
+      name = {{ .name | quote }}
+      {{- if .match.all }}
+      {{- range .match.all }}
+    
+      [[rule-sets.match.all]]
+        kind = {{ .kind | quote }}
+        expression = {{ if contains "\n" .expression }}'''
+            {{ .expression | trim }}
+        '''{{ else }}{{ .expression | quote }}{{ end }}
+      {{- end }}
+      {{- end }}
+      {{- if .match.any }}
+      {{- range .match.any }}
+    
+      [[rule-sets.match.any]]
+        kind = {{ .kind | quote }}
+        expression = {{ if contains "\n" .expression }}'''
+            {{ .expression | trim }}
+        '''{{ else }}{{ .expression | quote }}{{ end }}
+      {{- end }}
+      {{- end }}
+    
+      {{- if .taint }}
+      [rule-sets.taint]
+        key = {{ .taint.key | quote }}
+        value = {{ .taint.value | quote }}
+        effect = {{ .taint.effect | quote }}
+      {{- end }}
+    
+      [rule-sets.cordon]
+        shouldCordon = {{ .cordon.shouldCordon }}
+    {{- end }}
