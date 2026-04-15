@@ -1,0 +1,202 @@
+image:
+  # -- Image repository.
+  repository: ghcr.io/spegel-org/spegel
+  # -- Image Pull Policy.
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  # -- Image digest.
+  digest: "sha256:82f5dd969ed74e3a9cfd6284045099a161778a0d85f9e01a234a62f15eb9d696"
+# -- Image Pull Secrets
+imagePullSecrets: []
+# -- Overrides the name of the chart.
+nameOverride: ""
+# -- Overrides the full name of the chart.
+fullnameOverride: ""
+# -- Overrides the namespace where spegel resources are installed.
+namespaceOverride: ""
+serviceAccount:
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+# -- Annotations to add to the DaemonSet.
+daemonsetAnnotations: {}
+# -- Annotations to add to the pod.
+podAnnotations: {}
+# -- Security context for the pod.
+podSecurityContext: {}
+# fsGroup: 2000
+
+# -- The number of old history to retain to allow rollback.
+revisionHistoryLimit: 10
+# -- Security context for the Spegel container.
+securityContext:
+  readOnlyRootFilesystem: true
+service:
+  registry:
+    # -- Override the NODE_ID environment variable. It defaults to the field status.hostIP
+    nodeIp: ""
+    # -- Port to expose the registry via the service.
+    port: 5000
+    # -- Node port to expose the registry via the service.
+    nodePort: 30021
+    # -- Local host port to expose the registry.
+    hostPort: 30020
+    # -- If true adds topology aware hints annotation to node port service.
+    topologyAwareHintsEnabled: true
+    # -- Annotations to add to the registry service
+    annotations: {}
+    # -- Use PreferSameNode traffic distribution on the node port service
+    # instead of using an additional mirror registry on a container host port.
+    usePreferSameNodeTrafficDistribution: false
+  router:
+    # -- Port to expose the router via the service.
+    port: 5001
+  metrics:
+    # -- Port to expose the metrics via the service.
+    port: 9090
+    # -- Annotations to add to the metrics service
+    annotations: {}
+  bootstrap:
+    # -- Annotations to add to the bootstrap service
+    annotations: {}
+  cleanup:
+    # -- Port to expose cleanup probe on.
+    port: 8080
+    # -- Annotations to add to the cleanup service (used in post-delete hook)
+    annotations: {}
+# -- Resource requests and limits for the Spegel container.
+resources:
+  requests:
+    memory: 128Mi
+  limits:
+    memory: 128Mi
+# -- Node selector for pod assignment.
+nodeSelector:
+  kubernetes.io/os: linux
+# -- An update strategy to replace existing pods with new pods.
+updateStrategy: {}
+# type: RollingUpdate
+# rollingUpdate:
+#   maxSurge: 0
+#   maxUnavailable: 1
+
+# -- Tolerations for pod assignment.
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+  - effect: NoSchedule
+    operator: Exists
+# -- Affinity settings for pod assignment.
+affinity: {}
+# -- Common labels to apply to all rendered resources.
+commonLabels: {}
+# -- Domain configured for service domain names.
+clusterDomain: cluster.local.
+serviceMonitor:
+  # -- If true creates a Prometheus Service Monitor.
+  enabled: false
+  # -- Prometheus scrape interval.
+  interval: 60s
+  # -- Prometheus scrape interval timeout.
+  scrapeTimeout: 30s
+  # -- Service monitor specific labels for prometheus to discover servicemonitor.
+  labels: {}
+  # -- List of relabeling rules to apply the target’s metadata labels.
+  relabelings: []
+  # -- List of relabeling rules to apply to the samples before ingestion.
+  metricRelabelings: []
+grafanaDashboard:
+  # -- If true creates a Grafana dashboard.
+  enabled: false
+  # -- Mode for Grafana dashboard creation. Valid values are `Sidecar` and `GrafanaOperator`.
+  mode: Sidecar
+  # -- Labels to add to the Sidecar configMap or GrafanaDashboard.
+  labels: {}
+  # grafana_dashboard: "1"
+  # -- Annotations to add to the Sidecar configMap or GrafanaDashboard.
+  annotations: {}
+  # grafana_folder: "Spegel"
+  grafanaOperator:
+    # -- If true allows for a Grafana in any namespace to access this GrafanaDashboard.
+    allowCrossNamespaceImport: true
+    # -- Folder to create the dashboard in.
+    folder: ""
+    # -- Resync period for the Grafana operator to check for updates to the dashboard.
+    resyncPeriod: "10m"
+    # -- Selected labels for Grafana instance.
+    matchLabels: {}
+    # dashboards: grafana
+# -- Priority class name to use for the pod.
+priorityClassName: system-node-critical
+# -- Name of secret containing basic authentication credentials for registry.
+basicAuthSecretName: ""
+spegel:
+  # -- Minimum log level to output. Value should be DEBUG, INFO, WARN, or ERROR.
+  logLevel: "INFO"
+  # -- Registries for which mirror configuration will be created. Empty means all registires will be mirrored.
+  mirroredRegistries: []
+  # - https://docker.io
+  # - https://ghcr.io
+  # -- Additional target mirror registries other than Spegel.
+  additionalMirrorTargets: []
+  # -- Max amount of mirrors to attempt.
+  mirrorResolveRetries: 3
+  # -- Max duration spent finding a mirror.
+  mirrorResolveTimeout: "20ms"
+  # -- Path to Containerd socket.
+  containerdSock: "/run/containerd/containerd.sock"
+  # -- Containerd namespace where images are stored.
+  containerdNamespace: "k8s.io"
+  # -- Path to Containerd mirror configuration.
+  containerdRegistryConfigPath: "/etc/containerd/certs.d"
+  # -- Path to Containerd content store..
+  containerdContentPath: "/var/lib/containerd/io.containerd.content.v1.content"
+  # -- If true Spegel will add mirror configuration to the node.
+  containerdMirrorAdd: true
+  # -- When true Spegel will resolve tags to digests.
+  resolveTags: true
+  # -- Regular expressions to filter out tags/registries. If empty, all registries/tags are resolved.
+  registryFilters: []
+  # - ".*:latest$"
+  # - "^docker\\.io/"
+  # - "^ghcr\\.io/"
+  # -- When true existing mirror configuration will be kept and Spegel will prepend it's configuration.
+  prependExisting: false
+  # -- When true enables debug web page.
+  debugWebEnabled: true
+verticalPodAutoscaler:
+  # -- If true creates a Vertical Pod Autoscaler.
+  enabled: false
+  # -- Recommender responsible for generating recommendation for the object.
+  # List should be empty (then the default recommender will generate the recommendation)
+  # or contain exactly one recommender.
+  recommenders: []
+  # - name: custom-recommender-performance
+
+  # -- List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+  controlledResources: []
+  # -- Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+  controlledValues: RequestsAndLimits
+  # -- Define the max allowed resources for the pod
+  maxAllowed: {}
+  # cpu: 100m
+  # memory: 128Mi
+  # -- Define the min allowed resources for the pod
+  minAllowed: {}
+  # cpu: 100m
+  # memory: 128Mi
+
+  updatePolicy:
+    # -- Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
+    minReplicas: 2
+    # -- Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+    # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
+    updateMode: Auto
+livenessProbe:
+  # -- When enabled a liveness probe will be added to the registry.
+  enabled: false

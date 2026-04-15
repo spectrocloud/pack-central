@@ -1,0 +1,11 @@
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: MIT
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+apiVersion: v2
+appVersion: v0.6.0
+description: Stateless cluster local OCI registry mirror.
+name: spegel
+type: application
+version: 0.6.0
