@@ -53,6 +53,7 @@ charts:
         # -- Node port to expose the registry via the service.
         nodePort: 30021
         # -- Local host port to expose the registry.
+        # When using Cilium, set to a port above 32767, or enable usePreferSameNodeTrafficDistribution if on Kubernetes 1.34+
         hostPort: 30020
         # -- If true adds topology aware hints annotation to node port service.
         topologyAwareHintsEnabled: true
