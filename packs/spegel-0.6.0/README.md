@@ -22,6 +22,7 @@ version = 3
   config_path = "/etc/containerd/certs.d"
 [plugins."io.containerd.cri.v1.images"]
   discard_unpacked_layers = false
+  use_local_image_pull = true
 ```
 
 # Cloud types supported:
