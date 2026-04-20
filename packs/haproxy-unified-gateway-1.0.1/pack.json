@@ -1,0 +1,18 @@
+{
+  "addonType": "load balancer",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "HAProxy Unified Gateway",
+  "charts": [
+    "charts/gateway-api-crds-1.4.0.tgz",
+    "charts/haproxy-unified-gateway-1.0.1.tgz"
+  ],
+  "layer":"addon",
+  "name": "haproxy-unified-gateway",
+  "version": "1.0.1"
+}

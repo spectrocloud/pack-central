@@ -1,0 +1,24 @@
+annotations:
+  artifacthub.io/changes: '- Use HAProxy Unified Gateway 1.0.1 version for base image'
+  artifacthub.io/license: Apache-2.0
+apiVersion: v2
+appVersion: 1.0.1
+description: A Helm chart for HAProxy Unified Gateway - Kubernetes Gateway API Controller
+home: https://github.com/haproxytech/helm-charts/tree/main/haproxy-unified-gateway
+icon: https://raw.githubusercontent.com/haproxytech/helm-charts/main/kubernetes-ingress/chart-icon.png
+keywords:
+- haproxy
+- gateway-api
+- gateway
+- load-balancer
+kubeVersion: '>=1.26.0-0'
+maintainers:
+- email: zbratkovic@haproxy.com
+  name: Zlatko Bratkovic
+- email: dkorunic@haproxy.com
+  name: Dinko Korunic
+name: haproxy-unified-gateway
+sources:
+- https://github.com/haproxytech/haproxy-unified-gateway
+type: application
+version: 1.0.1
