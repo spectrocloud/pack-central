@@ -1,7 +1,7 @@
 pack:
   content:
     images:
-      - image: ghcr.io/spegel-org/spegel:v0.6.0
+      - image: ghcr.io/spegel-org/spegel@sha256:1109b33fabac86809b06f831eef7359b12232f5708554aef39efd036dce40748
   namespace: spegel-system
   namespaceLabels:
     "spegel-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
