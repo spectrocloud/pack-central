@@ -1,0 +1,19 @@
+# spectrocloud.com/enabled-presets: MPI:mpi-v1
+pack:
+  releaseNameOverride:
+      training-operator: training-operator
+  namespace: kubeflow
+  content:
+    images:
+      - image: kubeflow/training-operator:v1-d6eb98e
+
+charts:
+  training-operator:
+    mpi:
+      # These options are mutually exclusive, only enable either v1 or v2
+      v1:
+        enabled: true
+      v2:
+        enabled: false
+    mpiv2:
+      namespace: mpi-operator

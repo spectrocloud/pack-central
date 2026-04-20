@@ -1,0 +1,29 @@
+presets:
+  - name: "mpi-v1"
+    displayName: "MPI Operator v1"
+    group: "MPI"
+    remove: ["charts.training-operator.mpiv2"]
+    add: |
+      charts:
+        training-operator:
+          mpi:
+            # These options are mutually exclusive, only enable either v1 or v2
+            v1:
+              enabled: true
+            v2:
+              enabled: false
+  - name: "mpi-v2"
+    displayName: "MPI Operator v2"
+    group: "MPI"
+    remove: []
+    add: |
+      charts:
+        training-operator:
+          mpi:
+            # These options are mutually exclusive, only enable either v1 or v2
+            v1:
+              enabled: false
+            v2:
+              enabled: true
+          mpiv2:
+            namespace: mpi-operator
