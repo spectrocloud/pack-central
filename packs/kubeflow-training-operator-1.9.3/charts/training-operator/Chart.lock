@@ -1,0 +1,9 @@
+dependencies:
+- name: mpiv1
+  repository: ""
+  version: 1.9.3
+- name: mpiv2
+  repository: ""
+  version: 0.8.0
+digest: sha256:01f342d0acce2ba203662bef31b66b9af7617ce2a07db8f3b637643ef9b51c51
+generated: "2026-03-17T13:40:36.927071-07:00"
