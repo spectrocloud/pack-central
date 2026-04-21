@@ -1,0 +1,12 @@
+dependencies:
+- name: node-feature-discovery
+  repository: ""
+  version: 0.2.1
+- name: sriov-network-operator
+  repository: ""
+  version: 0.1.0
+- name: maintenance-operator-chart
+  repository: ""
+  version: 0.0.1
+digest: sha256:fa77154f0cb7fe8e90d371651e4642df3c4b1ec696aa9dcc555aebf5e0a0b10d
+generated: "2026-02-22T04:36:25.489571475-05:00"

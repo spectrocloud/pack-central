@@ -1,0 +1,26 @@
+apiVersion: v2
+appVersion: v26.1.0
+dependencies:
+- condition: nfd.enabled
+  name: node-feature-discovery
+  repository: ""
+  version: 0.2.1
+- condition: sriovNetworkOperator.enabled
+  name: sriov-network-operator
+  repository: ""
+  version: 0.1.0
+- condition: maintenanceOperator.enabled
+  name: maintenance-operator-chart
+  repository: ""
+  version: 0.0.1
+description: Nvidia network operator
+home: https://mellanox.github.io/network-operator
+keywords:
+- gpu-direct
+- rdma
+kubeVersion: '>= 1.21.0-0'
+name: network-operator
+sources:
+- https://github.com/Mellanox/network-operator
+type: application
+version: 26.1.0
