@@ -89,6 +89,7 @@ rules:
   resources:
   - resourceclaims
   - resourceclaims/status
+  - resourceclaims/binding
   verbs:
   - get
   - list
