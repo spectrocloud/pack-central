@@ -1,0 +1,16 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageclass.name }}
+  annotations:
+{{ toYaml .Values.storageclass.annotations | indent 4 }}
+provisioner: {{ .Values.storageclass.provisioner }}
+reclaimPolicy: {{ .Values.storageclass.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageclass.allowVolumeExpansion }}
+volumeBindingMode: {{ .Values.storageclass.volumeBindingMode }}
+parameters:
+{{ toYaml .Values.storageclass.parameters | indent 2 }}
+{{- if .Values.storageclass.allowedTopologies }}
+allowedTopologies:
+{{ toYaml .Values.storageclass.allowedTopologies | indent 2 }}
+{{- end }}

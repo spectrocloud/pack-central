@@ -20,5 +20,15 @@
         "type": "optional"
       }
     ]
-  }
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA DRA driver",
+  "charts": [
+    "charts/nvidia-dra-driver-gpu-25.8.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "nvidia-dra-driver",
+  "version": "25.8.1"
 }
