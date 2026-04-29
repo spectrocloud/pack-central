@@ -1,0 +1,125 @@
+{{/*
+Copyright 2026 HAProxy Technologies LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- if .Values.hugconf.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+  namespace: {{ include "haproxy-unified-gateway.namespace" . }}
+  labels:
+    {{- include "haproxy-unified-gateway.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+  labels:
+    {{- include "haproxy-unified-gateway.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups:
+      - "gate.v3.haproxy.org"
+    resources:
+      - hugconfs
+    verbs:
+      - get
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+  labels:
+    {{- include "haproxy-unified-gateway.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+    namespace: {{ include "haproxy-unified-gateway.namespace" . }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+  namespace: {{ include "haproxy-unified-gateway.namespace" . }}
+  labels:
+    {{- include "haproxy-unified-gateway.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        {{- include "haproxy-unified-gateway.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "haproxy-unified-gateway.hugconfCleanup.fullname" . }}
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.controller.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: hugconf-cleanup
+          image: {{ include "haproxy-unified-gateway.image" . }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - /bin/sh
+            - -c
+            - |
+              APISERVER="https://kubernetes.default.svc"
+              TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+              CACERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              wget --header="Authorization: Bearer ${TOKEN}" \
+                --ca-certificate="${CACERT}" \
+                --method=DELETE \
+                -q -O /dev/null \
+                "${APISERVER}/apis/gate.v3.haproxy.org/v3/namespaces/{{ include "haproxy-unified-gateway.namespace" . }}/hugconfs/{{ .Values.hugconf.name }}" 2>/dev/null || true
+  backoffLimit: 1
+{{- end }}

@@ -1,0 +1,17 @@
+{
+  "addonType": "ingress",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "HAProxy Ingress Controller",
+  "charts": [
+    "charts/kubernetes-ingress-1.49.0.tgz"
+  ],
+  "layer":"addon",
+  "name": "haproxy-ingress",
+  "version": "1.49.0"
+}
