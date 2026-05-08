@@ -1,0 +1,7 @@
+logLevel: 4
+logFileMaxSize: 100
+logFileMaxBackups: 5
+logFileMaxAge: 5
+ovnControllerLogLevel: "-vconsole:info"
+# When true, add a sidecar that migrates systemd-resolved DNS to the OVS bridge. Set by parent when hostIntegration.migrateResolvedDns is true.
+migrateResolvedDns: false

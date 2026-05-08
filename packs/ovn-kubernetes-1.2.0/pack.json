@@ -1,0 +1,16 @@
+{
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "ovn-kubernetes",
+    "charts": [
+      "charts/ovn-kubernetes-1.2.0.tgz"
+    ],
+    "layer":"cni",
+    "name": "ovn-kubernetes",
+    "version": "1.2.0"
+  }
