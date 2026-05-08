@@ -1,0 +1,4 @@
+# OVS node subchart values.
+# Image and imagePullSecrets are inherited from parent chart global.*.
+# Non-empty file ensures valid YAML and prevents parse/EOF when the platform merges values.
+{}

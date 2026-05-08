@@ -1,0 +1,16 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NFS CSI Driver",
+  "charts": [
+    "charts/csi-driver-nfs-4.13.2.tgz"
+  ],
+  "layer":"csi",
+  "name": "csi-driver-nfs",
+  "version": "4.13.2"
+}
