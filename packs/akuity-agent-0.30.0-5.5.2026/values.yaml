@@ -3,50 +3,52 @@ pack:
   # When not found, a new namespace will be created.
   namespace: "akuity"
 
-# -- Name of the cluster to register with Akuity (required)
-clusterName: ""
+charts:
+  akuity-agent:
+    # -- Name of the cluster to register with Akuity (required)
+    clusterName: ""
 
-# -- Name of the Argo CD instance in Akuity (required)
-instanceName: ""
+    # -- Name of the Argo CD instance in Akuity (required)
+    instanceName: ""
 
-# -- Name of the Akuity organization (required)
-organizationName: ""
+    # -- Name of the Akuity organization (required)
+    organizationName: ""
 
-# -- Akuity API key ID (required)
-akuityApiKeyId: ""
+    # -- Akuity API key ID (required)
+    akuityApiKeyId: ""
 
-# -- Akuity API key secret (required)
-akuityApiKeySecret: ""
+    # -- Akuity API key secret (required)
+    akuityApiKeySecret: ""
 
-# -- Akuity server URL
-akuityServerUrl: "https://akuity.cloud"
+    # -- Akuity server URL
+    akuityServerUrl: "https://akuity.cloud"
 
-# -- Agent version (optional)
-version: ""
+    # -- Agent version (optional)
+    version: ""
 
-# -- Agent size (optional)
-agentSize: ""
+    # -- Agent size (optional)
+    agentSize: ""
 
-# -- Project to associate the cluster with (optional)
-project: ""
+    # -- Project to associate the cluster with (optional)
+    project: ""
 
-# -- Labels to apply to the cluster, e.g. ["env=prod", "team=platform"] (optional)
-labels: []
+    # -- Labels to apply to the cluster, e.g. ["env=prod", "team=platform"] (optional)
+    labels: []
 
-# -- Annotations to apply to the cluster, e.g. ["note=foo"] (optional)
-annotations: []
+    # -- Annotations to apply to the cluster, e.g. ["note=foo"] (optional)
+    annotations: []
 
-# -- Disable automatic agent updates
-disableAutoUpdate: false
+    # -- Disable automatic agent updates
+    disableAutoUpdate: false
 
-# -- Disable automatic agent upgrades
-disableAutoUpgrade: false
+    # -- Disable automatic agent upgrades
+    disableAutoUpgrade: false
 
-# -- Enable state replication
-stateReplication: false
+    # -- Enable state replication
+    stateReplication: false
 
-# -- Enable Redis tunneling
-redisTunneling: false
+    # -- Enable Redis tunneling
+    redisTunneling: false
 
-# -- Install agent in namespace-scoped mode
-namespaceScoped: false
+    # -- Install agent in namespace-scoped mode
+    namespaceScoped: false
