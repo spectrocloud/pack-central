@@ -1,0 +1,33 @@
+{{- if and .Values.podMonitor.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: weka-node-monitor
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: weka-node-agent
+  podMetricsEndpoints:
+    - targetPort: 8090
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: weka-cluster-monitor
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: weka-cluster-monitoring
+  podMetricsEndpoints:
+    - targetPort: 80
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 30s
+{{- end }}
