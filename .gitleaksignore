@@ -44,3 +44,12 @@ a1b4bf1043a7f3681fdd294579be16aa76a03549:packs/kubewatch-1.0.7/values.yaml:gener
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel-v1.1.0.tgz:generic-api-key:38
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel/charts/mongodb-store/values.yaml:generic-api-key:38
 285ff65156d65cc6d9e5905129b39feeb4fa8a4a:packs/nvidia-nvsentinel-v1.1.0/charts/nvsentinel/values-full.yaml:gcp-service-account:1107
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/charts/sriov-network-operator/values.yaml:private-key:81
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/values.yaml:private-key:175
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/values.yaml:private-key:191
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/charts/maintenance-operator-chart/values.yaml:private-key:75
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/charts/sriov-network-operator/values.yaml:private-key:97
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/values.yaml:private-key:137
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/values.yaml:private-key:153
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/charts/network-operator/values.yaml:private-key:309
+347f6558dc0525c69aa07fe70ebb0ce106d7b121:packs/nvidia-network-operator-26.1.0/values.yaml:private-key:347
