@@ -6,5 +6,16 @@ pack:
     images: []
 
 charts:
-  dpf-deployment: {}
+  dpf-deployment:
+    bfb: {}
+    dpuFlavors: []
+    dpuSets: []
+    dpuServices: []
+    dpuServiceChains: []
+    dpuServiceConfigurations: []
+    dpuDeployments: []
+    dpuServiceTemplates: []
+    dpuServiceInterfaces: []
+    dpuServiceCredentialRequests: []
+    dpuServiceIPAMs: []
   # Please select a preset to populate a starting configuration

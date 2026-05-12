@@ -105,6 +105,8 @@ presets:
                 raw: ""
                 permissions: "0644"
 
+          dpuServices: []
+
           dpuServiceConfigurations:
             - name: blueman
             - name: dts
@@ -460,6 +462,8 @@ presets:
                     name: bf-bundle-v25.10.1
                   nodeEffect:
                     noEffect: true
+
+          dpuServices: []
 
           dpuServiceConfigurations: []
 

@@ -1,0 +1,367 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Feature flags to switch between Bitnami MongoDB and Percona MongoDB Operator
+# Due to Helm limitations, both flags must be explicitly set when switching modes
+# 
+# Default (Bitnami MongoDB - backward compatible):
+#   global.mongodbStore.enabled: true
+#   mongodb-store.useBitnami: true           # Default
+#   mongodb-store.usePerconaOperator: false  # Default
+# 
+# Percona MongoDB Operator:
+#   global.mongodbStore.enabled: true
+#   mongodb-store.useBitnami: false          # Must explicitly disable
+#   mongodb-store.usePerconaOperator: true   # Must explicitly enable
+#
+# IMPORTANT: These flags control which chart dependencies are loaded.
+# Both must be set correctly to avoid loading unnecessary charts.
+
+useBitnami: true
+usePerconaOperator: false
+
+# SCRAM application user (created when mongodb.tls.enabled is false).
+# Instead of X.509 cert-based users, the Job creates a SCRAM-SHA-256 user
+# with readWrite access to the NVSentinel database.
+# NOTE: This only provisions the user in MongoDB. To use it, configure
+# MONGODB_URI with the SCRAM credentials (e.g. mongodb://nvsentinel:pass@host/db).
+scramAppUser:
+  username: nvsentinel
+  # Secret and key containing the application user password.
+  # Defaults to the MongoDB root password for out-of-the-box functionality.
+  # For production, set a dedicated secret with a separate password.
+  existingSecret: ""
+  passwordKey: "mongodb-root-password"
+
+# Common Job configuration (applies to both Bitnami and Percona)
+# If not set, falls back to mongodb.jobTolerations and mongodb.nodeSelector for backward compatibility
+job:
+  nodeSelector: {}
+  tolerations: []
+
+# =============================================================================
+# Bitnami MongoDB Configuration (used when usePerconaOperator=false)
+# =============================================================================
+mongodb:
+  # Helper images for MongoDB operations
+  helperImages:
+    # kubectl image for Kubernetes operations in init containers
+    kubectl:
+      repository: docker.io/bitnamilegacy/kubectl
+      tag: "1.30.6"
+      pullPolicy: IfNotPresent
+    # mongosh image for MongoDB shell operations
+    mongosh:
+      repository: ghcr.io/rtsp/docker-mongosh
+      tag: "2.5.2"
+      pullPolicy: IfNotPresent
+
+  global:
+    imagePullSecrets: []
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/mongodb
+    tag: 8.0.3-debian-12-r0
+    pullPolicy: IfNotPresent
+  
+  commonAnnotations:
+    dgxc.nvidia.com/resource-category: management
+
+  architecture: replicaset
+  replicaCount: 3
+
+  readinessProbe:
+    timeoutSeconds: 10
+    initialDelaySeconds: 60
+
+  replicaSetName: rs0
+
+  resources:
+    requests:
+      cpu: 1
+      memory: 1.5Gi
+    limits:
+      cpu: 1.5
+      memory: 2Gi
+
+  serviceAccount: 
+    name: "mongodb-sa"
+
+  networkPolicy:
+    enabled: false
+
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenDeleted: Retain
+    whenScaled: Retain
+  
+  persistence:
+    resourcePolicy: "keep"
+  
+  automountServiceAccountToken: true
+  
+  pdb:
+    minAvailable: 2  # At least 2 replicas must be available (ensures quorum)
+
+  initContainers:
+    - name: create-mongodb-credentials
+      image: "{{ .Values.helperImages.kubectl.repository }}:{{ .Values.helperImages.kubectl.tag }}"
+      imagePullPolicy: "{{ .Values.helperImages.kubectl.pullPolicy }}"
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          
+          # Check if MongoDB credentials secret exists
+          secret=$(kubectl get secret mongodb -n {{ .Release.Namespace }} --ignore-not-found)
+          if [ -z "$secret" ]; then
+            echo "Secret mongodb does not exist, creating it with random values..."
+            
+            # Generate random passwords (32 chars, alphanumeric)
+            ROOT_PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -d '+/=' | cut -c1-32)
+            REPLICA_SET_KEY=$(head -c 24 /dev/urandom | base64 | tr -d '+/=' | cut -c1-32)
+            
+            # Create the secret with annotation in a single command
+            kubectl create secret generic mongodb \
+              -n {{ .Release.Namespace }} \
+              --from-literal=mongodb-root-password="$ROOT_PASSWORD" \
+              --from-literal=mongodb-replica-set-key="$REPLICA_SET_KEY" \
+              --from-literal=mongodb-passwords="" \
+              --from-literal=mongodb-metrics-password="" \
+              --dry-run=client -o yaml | \
+              sed '/^metadata:/a\  annotations:\n    helm.sh/resource-policy: keep' | \
+              kubectl apply -f -
+            
+            echo "Secret mongodb created with random credentials."
+            echo "NOTE: These credentials will be preserved for data retention."
+          else
+            echo "Secret mongodb already exists, will reuse existing credentials..."
+            echo "This ensures data retention across reinstalls."
+          fi
+          
+          echo "MongoDB credentials initialization completed."
+          echo "=============================="
+
+    - name: create-certmanager-resources
+      image: "{{ .Values.helperImages.kubectl.repository }}:{{ .Values.helperImages.kubectl.tag }}"
+      imagePullPolicy: "{{ .Values.helperImages.kubectl.pullPolicy }}"
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          {{- if not .Values.tls.enabled }}
+          echo "TLS is disabled, skipping cert-manager resource creation."
+          exit 0
+          {{- end }}
+          secret=$(kubectl get secret mongo-ca-secret -n {{ .Release.Namespace }} --ignore-not-found)
+          if [ -z "$secret" ]; then
+            echo "Secret mongo-ca-secret does not exist, creating it..."
+            SKIP_SECRET_CREATION=false
+          else
+            echo "Secret mongo-ca-secret already exists, skipping creation..."
+            SKIP_SECRET_CREATION=true
+          fi
+
+          if [ "$SKIP_SECRET_CREATION" = "false" ]; then
+            echo "Waiting for CA certificate to be ready..."
+            kubectl wait --for=condition=Ready certificate/mongo-root-ca -n {{ .Release.Namespace }} --timeout=300s
+
+            echo "Extracting CA certificate and key..."
+            kubectl get secret mongo-root-ca-secret -n {{ .Release.Namespace }} \
+              -o jsonpath="{.data.tls\.crt}" | base64 -d > /tmp/mongodb-ca-cert
+            kubectl get secret mongo-root-ca-secret -n {{ .Release.Namespace }} \
+              -o jsonpath="{.data.tls\.key}" | base64 -d > /tmp/mongodb-ca-key
+
+            echo "Creating mongo-ca-secret..."
+            kubectl create secret generic mongo-ca-secret -n {{ .Release.Namespace }} \
+              --from-file=mongodb-ca-cert=/tmp/mongodb-ca-cert \
+              --from-file=mongodb-ca-key=/tmp/mongodb-ca-key \
+              --dry-run=client -o yaml | kubectl apply -f -
+            echo "Secret mongo-ca-secret created."
+          fi
+          
+          echo "Waiting for mongo client cert to be ready..."
+          kubectl wait --for=condition=Ready certificate/mongo-app-client-cert -n {{ .Release.Namespace }} --timeout=300s
+
+          echo "=============================="
+          echo "cert-manager resources creation completed."
+          echo "=============================="
+
+  auth:
+    enabled: true
+    rootUser: root
+    # The initContainer will create this secret if it doesn't exist with
+    # random credentials, or reuse it if it exists (for data retention)
+    existingSecret: "mongodb"
+
+  tls:
+    enabled: true
+    mTLS:
+      enabled: true
+    mode: requireTLS
+    autoGenerated: false
+    existingSecret: "mongo-ca-secret"
+    replicaset:
+      existingSecrets:
+        - "mongo-server-cert-0"
+        - "mongo-server-cert-1"
+        - "mongo-server-cert-2"
+    
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/nginx
+      tag: 1.27.2-debian-12-r2
+      pullPolicy: IfNotPresent
+
+  replicaSetHostnames: true
+
+  extraFlags:
+    - "--setParameter"
+    - "authenticationMechanisms=MONGODB-X509,SCRAM-SHA-256"
+
+  tolerations: []
+  
+  nodeSelector: {}
+      
+  jobTolerations: []
+
+  arbiter:
+    enabled: false
+
+  metrics:
+    enabled: true
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/mongodb-exporter
+      tag: 0.41.2-debian-12-r1
+      pullSecrets: []
+    command:
+      - /bin/bash
+      - -ec
+    args:
+      - |
+        export HOSTNAME=$(hostname)
+        {{- if .Values.tls.enabled }}
+        /bin/mongodb_exporter --collector.diagnosticdata --collector.replicasetstatus --compatible-mode --mongodb.direct-connect --mongodb.global-conn-pool --web.listen-address ":9216" --mongodb.uri "mongodb://$MONGODB_ROOT_USER:$(echo $MONGODB_ROOT_PASSWORD | sed -r "s/@/%40/g;s/:/%3A/g")@${HOSTNAME}.mongodb-headless.nvsentinel.svc.cluster.local:27017/admin?tls=true&tlsCertificateKeyFile=/certs/mongodb.pem&tlsCAFile=/certs/mongodb-ca-cert&authMechanism=SCRAM-SHA-256&connectTimeoutMS=30000&serverSelectionTimeoutMS=30000"
+        {{- else }}
+        /bin/mongodb_exporter --collector.diagnosticdata --collector.replicasetstatus --compatible-mode --mongodb.direct-connect --mongodb.global-conn-pool --web.listen-address ":9216" --mongodb.uri "mongodb://$MONGODB_ROOT_USER:$(echo $MONGODB_ROOT_PASSWORD | sed -r "s/@/%40/g;s/:/%3A/g")@${HOSTNAME}.mongodb-headless.nvsentinel.svc.cluster.local:27017/admin?authMechanism=SCRAM-SHA-256&connectTimeoutMS=30000&serverSelectionTimeoutMS=30000"
+        {{- end }}
+
+# =============================================================================
+# Percona MongoDB Operator Configuration (used when usePerconaOperator=true)
+# =============================================================================
+psmdb-operator:
+  nodeSelector: {}
+  tolerations: []
+
+psmdb-db:
+  nameOverride: mongodb
+  fullnameOverride: mongodb
+  replsets:
+    rs0:
+      name: rs0
+      size: 3
+      configuration: |
+        setParameter:
+          authenticationMechanisms: "MONGODB-X509,SCRAM-SHA-256,SCRAM-SHA-1"
+      replsetOverrides:
+        mongodb-rs0-0:
+          priority: 3  # Preferred primary
+        mongodb-rs0-1:
+          priority: 1
+        mongodb-rs0-2:
+          priority: 1
+      resources:
+        requests:
+          cpu: "1"
+          memory: "1.5Gi"
+        limits:
+          cpu: "1.5"
+          memory: "2Gi"
+      volumeSpec:
+        pvc:
+          resources:
+            requests:
+              storage: "8Gi"
+      nodeSelector: {}
+      tolerations: []
+      podDisruptionBudget:
+        maxUnavailable: 1
+      sidecars:
+        - name: mongodb-exporter
+          image: percona/mongodb_exporter:0.40.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --discovering-mode
+            - --compatible-mode
+            - --collect-all
+            - --web.listen-address=:9216
+            - --mongodb.direct-connect
+            - --collector.replicasetstatus
+            - --collector.dbstats
+            - --collector.dbstatsfreestorage
+            - --collector.collstats
+            - --collector.topmetrics
+            - --collector.indexstats
+          env:
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: internal-mongodb-users
+                  key: MONGODB_CLUSTER_MONITOR_USER
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: internal-mongodb-users
+                  key: MONGODB_CLUSTER_MONITOR_PASSWORD
+            - name: MONGODB_URI
+              value: "mongodb://localhost:27017/admin?directConnection=true&tls=true&tlsInsecure=true&authMechanism=SCRAM-SHA-256"
+          ports:
+            - name: metrics
+              containerPort: 9216
+              protocol: TCP
+  
+  sharding:
+    enabled: false
+    
+  logcollector:
+    enabled: false
+  
+  tls:
+    mode: requireTLS
+
+  secrets:
+    keyFile: mongodb-keyfile
+    encryptionKey: mongodb-encryption-key
+  
+  backup:
+    enabled: false
+    storages: {}
+    tasks: []
+    volumeMounts: []
+  
+  finalizers: []
+
+psmdb:
+  helperImages:
+    kubectl:
+      repository: docker.io/lachlanevenson/k8s-kubectl
+      tag: "v1.25.4"
+      pullPolicy: IfNotPresent
+    mongosh:
+      repository: ghcr.io/rtsp/docker-mongosh
+      tag: "2.5.2"
+      pullPolicy: IfNotPresent

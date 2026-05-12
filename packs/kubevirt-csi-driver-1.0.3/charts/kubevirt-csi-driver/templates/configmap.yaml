@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: driver-config
+  namespace: kubevirt-csi-driver
+data:
+  {{- range $key, $value := .Values.deployment.driver }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end}}

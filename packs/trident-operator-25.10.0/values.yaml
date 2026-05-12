@@ -1,11 +1,19 @@
 pack:
-  spectrocloud.com/display-name: trident-operator
-  releaseNameOverride:
-      trident-operator: trident-operator
   namespace: trident
   content:
     images:
       - image: docker.io/netapp/trident-operator:25.10.0
+      - image: docker.io/netapp/trident-autosupport:25.10.0
+      - image: docker.io/netapp/trident:25.10.0
+
+    charts:
+      - repo: https://github.com/NetApp/trident/releases/download/v25.10.0/trident-installer-25.10.0.tar.gz
+        name: trident-operator
+        version: 25.10.0
+
+  # Add Pod Security Standard label to trident namespace.
+  namespaceLabels:
+    "trident": "pod-security.kubernetes.io/enforce=privileged"
 
 charts:
   trident-operator:

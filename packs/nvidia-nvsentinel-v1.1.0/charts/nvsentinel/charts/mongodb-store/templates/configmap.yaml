@@ -1,0 +1,51 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-config
+data:
+  # Datastore provider configuration for new abstraction layer
+  DATASTORE_PROVIDER: "mongodb"
+  # Legacy MongoDB configuration (maintained for backward compatibility)
+  # When TLS is disabled and SCRAM auth is needed, override MONGODB_URI in your
+  # Helm values to include credentials: mongodb://user:pass@host:port/?replicaSet=rs0
+  # ConfigMaps cannot reference Secret values, so credentials must be provided
+  # via values override or a separate Secret-backed env var.
+{{- if .Values.usePerconaOperator }}
+  {{- if .Values.mongodb.tls.enabled }}
+  MONGODB_URI: {{ printf "mongodb://mongodb-rs0.%s.svc.cluster.local:27017/?replicaSet=rs0&tls=true" .Release.Namespace }}
+  {{- else }}
+  MONGODB_URI: {{ printf "mongodb://mongodb-rs0.%s.svc.cluster.local:27017/?replicaSet=rs0" .Release.Namespace }}
+  {{- end }}
+{{- else }}
+  {{- if .Values.mongodb.tls.enabled }}
+  MONGODB_URI: {{ printf "mongodb://mongodb-headless.%s.svc.cluster.local:27017/?replicaSet=rs0&tls=true" .Release.Namespace }}
+  {{- else }}
+  MONGODB_URI: {{ printf "mongodb://mongodb-headless.%s.svc.cluster.local:27017/?replicaSet=rs0" .Release.Namespace }}
+  {{- end }}
+{{- end }}
+  MONGODB_DATABASE_NAME: "HealthEventsDatabase"
+  MONGODB_COLLECTION_NAME: "HealthEvents"
+  MONGODB_MAINTENANCE_EVENT_COLLECTION_NAME: "MaintenanceEvents"
+  MONGODB_TOKEN_COLLECTION_NAME: "ResumeTokens"
+  MONGODB_PING_TIMEOUT_TOTAL_SECONDS: "30"
+  MONGODB_PING_INTERVAL_SECONDS: "5"
+  CA_CERT_MOUNT_TIMEOUT_TOTAL_SECONDS: "360"
+  CA_CERT_READ_INTERVAL_SECONDS: "5"
+  MONGODB_CHANGE_STREAM_RETRY_DEADLINE_SECONDS: "300"
+  MONGODB_CHANGE_STREAM_RETRY_INTERVAL_SECONDS: "5"
+  UNPROCESSED_EVENTS_METRIC_UPDATE_INTERVAL_SECONDS: "25"
+  MONGODB_COLLECTION_EXPIRY_SECONDS: "2592000"

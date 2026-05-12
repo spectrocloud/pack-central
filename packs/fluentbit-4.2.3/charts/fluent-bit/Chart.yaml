@@ -1,0 +1,27 @@
+annotations:
+  artifacthub.io/changes: |-
+    - kind: added
+      description: "VPA recommender may be specified with .autoscaling.vpa."
+apiVersion: v1
+appVersion: 4.2.3
+description: Fast and lightweight log processor and forwarder for Linux, OSX and BSD
+  family operating systems.
+home: https://fluentbit.io/
+icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/fluentd/fluentbit/icon/fluentbit-icon-color.svg
+keywords:
+- logging
+- fluent-bit
+- fluentd
+maintainers:
+- email: eduardo@calyptia.com
+  name: edsiper
+- email: naseem@transit.app
+  name: naseemkullah
+- email: towmeykaw@gmail.com
+  name: Towmeykaw
+- email: steve.hipwell@gmail.com
+  name: stevehipwell
+name: fluent-bit
+sources:
+- https://github.com/fluent/fluent-bit/
+version: 0.56.0

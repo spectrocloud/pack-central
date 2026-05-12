@@ -1,0 +1,55 @@
+pack:
+  content:
+    images:
+      - image: quay.io/kubevirt/kubevirt-csi-driver:latest
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.10.0
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.15.0
+      - image: registry.k8s.io/sig-storage/csi-provisioner:v6.1.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.4.0
+      - image: registry.k8s.io/sig-storage/livenessprobe:v2.15.0
+      - image: registry.k8s.io/sig-storage/csi-resizer:v1.13.1
+      - image: registry.k8s.io/kubectl:v1.33.0
+charts:
+  kubevirt-csi-driver:
+    deployment:
+      driver:
+        # Label used to distinguish between guest clusters, if multiple clusters in same VMO namespace
+        infraClusterLabels: csi-driver/cluster={{ .spectro.system.cluster.uid }}
+        # Namespace in the host VMO cluster where the VMs for this guest cluster are running
+        infraClusterNamespace: virtual-machines
+        infraStorageClassEnforcement: |
+          allowAll: true
+          allowDefault: true
+        # allowList: [storage_class_a, storage_class_b]
+        # storageSnapshotMapping:
+        # - StorageClasses:
+        #   - storage_class_a
+        #   VolumeSnapshotClasses:
+        #   - volumesnapshot_class_a
+        # - StorageClasses:
+        #   - storage_class_b
+        #   VolumeSnapshotClasses:
+        #   - volumesnapshot_class_b
+
+      # Deployment model, currently only "tenant" is supported
+      model: tenant
+
+      # Provide a valid kubeconfig for the host VMO cluster below, that is abe to manage DataVolumes in the host VMO cluster.
+      infraClusterKubeconfig:
+        # Kubernetes API endpoint of the host VMO cluster
+        k8sAPIendpoint: "https://vmo-cluster.company.local:6443"
+        # Base64-encoded token from the kubevirt-csi-secret secret in the namespace where the VMs are running in the host VMO cluster.
+        # Retrieve this with a command like this: kubectl get secret kubevirt-csi-secret -n <namespace> -o json | jq .data.token
+        token: ""
+
+    storageClasses:
+      - name: kubevirt
+        isDefaultStorageClass: true
+        # annotations:
+        #   If you need additional annotations, specify them here
+        allowVolumeExpansion: false 
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate #Note: WaitForFirstConsumer not currently supported
+        parameters:
+          infraStorageClassName: spectro-storage-class #set to match a storageclass in the host VMO cluster
+          bus: scsi

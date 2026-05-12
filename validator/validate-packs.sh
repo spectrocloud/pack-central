@@ -93,6 +93,21 @@ get_pack_directory() {
  return $return_code
 }
 
+validate_json_syntax(){
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+  log_info "Checking JSON syntax for $pack_json_file..."
+  local jq_output
+  jq_output=$(jq empty "$pack_json_file" 2>&1)
+  local rc=$?
+  if [ $rc -ne 0 ]; then
+   log_error "Invalid JSON syntax in $pack_json_file: $jq_output"
+  else
+   log_success "JSON syntax is valid for $pack_json_file"
+  fi
+  return $rc
+}
+
 validate_pack_schema(){
   local pack_dir=$1
   local pack_json_file="$pack_dir/pack.json"
@@ -204,6 +219,14 @@ run_validations() {
    log_info "$pack_dir does not exists. Seems to be deleted file. Skip validation for $pack_dir"
    continue
   fi
+  validate_json_syntax "$pack_dir"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+   log_error "Skipping remaining validations for $pack_dir due to invalid JSON"
+   continue
+  fi
+
   validate_pack_schema $pack_dir
   rc=$?
   if [ $rc -ne 0 ]; then

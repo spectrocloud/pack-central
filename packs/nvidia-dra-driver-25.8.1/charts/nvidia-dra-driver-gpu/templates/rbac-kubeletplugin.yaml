@@ -1,0 +1,92 @@
+{{- if .Values.serviceAccount.create -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.name" . }}-clusterrole-kubeletplugin
+rules:
+- apiGroups: ["resource.nvidia.com"]
+  resources: ["computedomains"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["resource.k8s.io"]
+  resources: ["resourceclaims"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["resource.k8s.io"]
+  resources: ["resourceslices"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.serviceAccountName" $ }}-kubeletplugin
+  namespace: {{ include "nvidia-dra-driver-gpu.namespace" . }}
+  labels:
+    {{- include "nvidia-dra-driver-gpu.labels" $ | nindent 4 }}
+  {{- with $.Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-clusterrole-binding-kubeletplugin
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "nvidia-dra-driver-gpu.serviceAccountName" $ }}-kubeletplugin
+    namespace: {{ include "nvidia-dra-driver-gpu.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-clusterrole-kubeletplugin
+  apiGroup: rbac.authorization.k8s.io
+
+{{- range $namespace := splitList "," (include "nvidia-dra-driver-gpu.namespaces" .) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-role-kubeletplugin
+  namespace: {{ $namespace }}
+rules:
+{{- if (and $.Values.resources.gpus.enabled $.Values.featureGates.MPSSupport) }}
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-role-binding-kubeletplugin
+  namespace: {{ $namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "nvidia-dra-driver-gpu.serviceAccountName" $ }}-kubeletplugin
+    namespace: {{ include "nvidia-dra-driver-gpu.namespace" $ }}
+roleRef:
+  kind: Role
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-role-kubeletplugin
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- if .Capabilities.APIVersions.Has "security.openshift.io/v1/SecurityContextConstraints" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "nvidia-dra-driver-gpu.name" $ }}-openshift-privileged-role-binding-kubeletplugin
+subjects:
+- kind: ServiceAccount
+  name: {{ include "nvidia-dra-driver-gpu.serviceAccountName" $ }}-kubeletplugin
+  namespace: {{ include "nvidia-dra-driver-gpu.namespace" $ }}
+roleRef:
+  kind: ClusterRole
+  name: system:openshift:scc:privileged
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}

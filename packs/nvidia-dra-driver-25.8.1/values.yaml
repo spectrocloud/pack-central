@@ -1,0 +1,86 @@
+# NVIDIA DRA Driver for GPUs - Palette Pack Configuration
+# Enables Dynamic Resource Allocation for NVIDIA GPUs in Kubernetes 1.32+
+
+pack:
+  namespace: "nvidia-dra-driver-gpu"
+  namespaceLabels:
+    "nvidia-dra-driver-gpu": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: nvcr.io/nvidia/k8s-dra-driver-gpu:v25.8.1
+  spectrocloud.com/install-priority: "25"
+
+charts:
+  nvidia-dra-driver-gpu:
+    # Driver root path - use /run/nvidia/driver when GPU Operator manages drivers
+    # Use "/" when drivers are installed directly on the host
+    nvidiaDriverRoot: /run/nvidia/driver
+    gpuResourcesEnabledOverride: true
+    
+    # Enable GPU allocation via DRA
+    resources:
+      gpus:
+        enabled: true
+      # ComputeDomains for Multi-Node NVLink (MNNVL) - disable if not using GB200/similar
+      computeDomains:
+        enabled: false
+
+    # Image configuration
+    image:
+      repository: nvcr.io/nvidia/k8s-dra-driver-gpu
+      pullPolicy: IfNotPresent
+      tag: "v25.8.1"
+
+    # Service account
+    serviceAccount:
+      create: true
+      annotations: {}
+      name: ""
+
+    # Log verbosity (0-7, higher = more verbose)
+    logVerbosity: "4"
+
+    # Webhook disabled by default - enable for advanced validation
+    webhook:
+      enabled: false
+
+    # Controller configuration (runs on control plane nodes)
+    controller:
+      priorityClassName: "system-node-critical"
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: "Exists"
+
+    # Kubelet plugin configuration (runs on GPU nodes)
+    kubeletPlugin:
+      priorityClassName: "system-node-critical"
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: "100%"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-10de.present
+                    operator: In
+                    values:
+                      - "true"
+              - matchExpressions:
+                  - key: "nvidia.com/gpu.present"
+                    operator: In
+                    values:
+                      - "true"

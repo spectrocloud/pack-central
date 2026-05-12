@@ -109,6 +109,32 @@ dpuSets:
         nodeEffect:
           noEffect: true
 
+dpuServices:
+  - name: doca-hna-service
+    helmChart:
+      source:
+        repoURL: "https://myrepo.company.com/charts"
+        chart: "hna-chart"
+        version: "0.1.0"
+      values:
+        image:
+          repository: download.6wind.com/vsr/aarch64-generic-ce/3.999
+          tag: 3.999.0.2026.02.09
+        resources:
+          limits:
+            cpu: "4"
+          requests:
+            cpu: "4"
+    serviceDaemonSet:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+      labels:
+        dpuservice.dpu.nvidia.com/name: doca-hna-service
+      annotations:
+        dpuservice.dpu.nvidia.com/name: doca-hna-service
+
 dpuServiceChains:
   - name: passthrough
     template:
