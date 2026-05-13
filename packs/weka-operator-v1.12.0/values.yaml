@@ -12,8 +12,8 @@ pack:
       - image: quay.io/weka.io/csi-wekafs:v2.8.1
       - image: quay.io/weka.io/busybox:1.37.0
       - image: quay.io/brancz/kube-rbac-proxy:v0.21.0
-      - image: quay.io/weka.io/weka-drivers-build-images:builder-ubuntu22-v1
-      - image: quay.io/weka.io/weka-drivers-build-images:builder-ubuntu24-v1
+      #- image: quay.io/weka.io/weka-drivers-build-images:builder-ubuntu22-v1
+      #- image: quay.io/weka.io/weka-drivers-build-images:builder-ubuntu24-v1
       - image: quay.io/weka.io/weka-sign-tool:85b61597c215bad4ff380f43cf01a1ba7547214f-multiarch
       - image: quay.io/weka.io/taskmon:5dfdbcb1c220ae204ccfb9386805a61e5b125867_x86_64
       - image: registry.k8s.io/sig-storage/csi-provisioner:v5.3.0
