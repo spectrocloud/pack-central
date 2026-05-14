@@ -1,0 +1,8 @@
+Chart: {{ .Chart.Name }}
+Release: {{ .Release.Name }}
+```
+{{- if .Values.gkeCompatibility.hugepageConfiguration.enabled}}
+WARNING: Automatic setup of hugepages on GKE nodes is enabled. This will
+         cause a forceful reboot of all nodes in the cluster upon first installation of any Weka client!
+         Please ensure that this is acceptable before proceeding.
+{{- end}}
