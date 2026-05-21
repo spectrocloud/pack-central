@@ -1,0 +1,2 @@
+charts.akuity-agent.akuityApiKeySecret:
+  schema: '{{ format "${password}" }}'

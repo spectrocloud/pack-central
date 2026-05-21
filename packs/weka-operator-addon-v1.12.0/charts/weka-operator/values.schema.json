@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "driveSharing": {
+      "type": "object",
+      "properties": {
+        "driveTypesRatio": {
+          "type": "object",
+          "description": "Ratio of drive types (TLC vs QLC). TLC must be > 0 - QLC-only configurations are not supported.",
+          "properties": {
+            "tlc": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "TLC ratio must be at least 1. TLC-only and mixed TLC/QLC configurations are supported, but QLC-only is not allowed."
+            },
+            "qlc": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "QLC ratio (0 or greater)"
+            }
+          },
+          "required": ["tlc", "qlc"]
+        }
+      }
+    },
+    "computeMaxHugepagesMiB": {
+      "type": "integer",
+      "minimum": 0,
+      "multipleOf": 2,
+      "description": "Maximum hugepages (MiB) for compute containers. Must be even. 0 = no cap."
+    }
+  }
+}
