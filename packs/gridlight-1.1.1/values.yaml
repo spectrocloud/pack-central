@@ -1,0 +1,485 @@
+# GRIDLIGHT Helm Chart — Default Values
+# All values can be overridden at install time via --set or --values.
+# Required fields (no default): auth.postgresPassword, auth.neo4jPassword.
+
+# ---------------------------------------------------------------------------
+# Pack metadata — consumed by Spectrocloud Palette, not by the Helm chart itself.
+# Images here must be publicly pullable (pack-central crane pull CI check).
+# Points to AWS Public ECR; production deployments use global.imageRegistry below.
+# ---------------------------------------------------------------------------
+pack:
+  namespace: "gridlight"
+  content:
+    images:
+      - image: "public.ecr.aws/q1c5c5i2/gridlight/gateway:1.1.1"
+      - image: "public.ecr.aws/q1c5c5i2/gridlight/agent:1.1.1"
+      - image: "public.ecr.aws/q1c5c5i2/gridlight/agent-stt:1.1.1"
+      - image: "public.ecr.aws/q1c5c5i2/gridlight/agent-image:1.1.1"
+      - image: "public.ecr.aws/q1c5c5i2/gridlight/agent-voice:1.1.1"
+
+# ---------------------------------------------------------------------------
+# Global
+# ---------------------------------------------------------------------------
+global:
+  imageRegistry: "975949451883.dkr.ecr.us-east-2.amazonaws.com/gridlight"
+  # registryHost is the bare hostname used as the auth key in imagePullSecrets.
+  # Must be the registry hostname only (no path) for containerd credential matching.
+  registryHost: "975949451883.dkr.ecr.us-east-2.amazonaws.com"
+  imageTag: "1.1.1"
+  imagePullPolicy: IfNotPresent
+  # imagePullSecrets can be set to the name of a pre-existing secret,
+  # or use auth.registryCredentials to have the chart create one automatically.
+  imagePullSecrets: []
+
+# ---------------------------------------------------------------------------
+# Authentication & Secrets
+# ---------------------------------------------------------------------------
+auth:
+  # REQUIRED — no default. Provide via --set or a sealed secret.
+  postgresPassword: ""
+  neo4jPassword: ""
+  # Gateway API token (clients send Authorization: Bearer <token>)
+  gatewayToken: "dev-token"
+  # Shared token used by Python agents to register with the gateway
+  agentToken: "dev-token"
+  # ECR pull credentials. When set, the chart creates a regcred imagePullSecret.
+  # Supply the base64-encoded Docker config JSON for your ECR token:
+  #   aws ecr get-login-password | base64
+  # Leave blank if supplying your own imagePullSecret via global.imagePullSecrets.
+  registryCredentials: ""
+
+# ---------------------------------------------------------------------------
+# Model bootstrap (automatic download on first install)
+# ---------------------------------------------------------------------------
+# When enabled, an init container downloads models before agents start.
+# Skipped if the file already exists (safe to re-run on upgrade).
+# Disable for air-gapped environments — pre-stage models on the PVC manually.
+bootstrap:
+  enabled: true
+  # Embedding model — fixed, not user-selectable (nomic-embed-text v1.5 Q4_0, ~274 MB)
+  embedModelUrl: "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_0.gguf"
+  # LLM model URL is derived automatically from models.llm catalog — no longer set here.
+
+# ---------------------------------------------------------------------------
+# Model Catalog
+# ---------------------------------------------------------------------------
+# models.llm.category — "general" or "coding"
+# models.llm.preset   — key from catalog.<category> (see list below)
+# models.image.preset — key from catalog (image agent reads IMAGE_MODEL_ID env var)
+# models.video.preset — key from catalog (video agent reads VIDEO_MODEL_ID env var)
+#
+# To use a model not in the catalog, leave preset blank and set
+# llmAgent.modelPath to the full path of a pre-staged GGUF file.
+#
+# All catalog entries use Apache 2.0 or MIT licenses only.
+# ---------------------------------------------------------------------------
+models:
+  llm:
+    category: "general"  # general | coding
+    preset: "qwen-7b"    # see catalog keys below
+    catalog:
+      general:
+        mistral-7b:
+          name: "Mistral 7B Instruct v0.3"
+          tier: "entry"
+          license: "Apache-2.0"
+          sizeGb: 4.4
+          huggingface: "bartowski/Mistral-7B-Instruct-v0.3-GGUF"
+          filename: "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"
+          url: "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"
+        qwen-7b:
+          name: "Qwen 2.5 7B Instruct"
+          tier: "entry"
+          license: "Apache-2.0"
+          sizeGb: 4.7
+          huggingface: "bartowski/Qwen2.5-7B-Instruct-GGUF"
+          filename: "Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+          url: "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+        qwen-32b:
+          name: "Qwen 2.5 32B Instruct"
+          tier: "mid"
+          license: "Apache-2.0"
+          sizeGb: 19.9
+          huggingface: "bartowski/Qwen2.5-32B-Instruct-GGUF"
+          filename: "Qwen2.5-32B-Instruct-Q4_K_M.gguf"
+          url: "https://huggingface.co/bartowski/Qwen2.5-32B-Instruct-GGUF/resolve/main/Qwen2.5-32B-Instruct-Q4_K_M.gguf"
+        mixtral-8x7b:
+          name: "Mixtral 8x7B Instruct v0.1"
+          tier: "mid"
+          license: "Apache-2.0"
+          sizeGb: 26.4
+          huggingface: "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF"
+          filename: "mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf"
+          url: "https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf"
+        mixtral-8x22b:
+          name: "Mixtral 8x22B Instruct v0.1"
+          tier: "large"
+          license: "Apache-2.0"
+          sizeGb: 67.8
+          huggingface: "MaziyarPanahi/Mixtral-8x22B-Instruct-v0.1-GGUF"
+          filename: "Mixtral-8x22B-Instruct-v0.1.Q3_K_M.gguf"
+          url: "https://huggingface.co/MaziyarPanahi/Mixtral-8x22B-Instruct-v0.1-GGUF/resolve/main/Mixtral-8x22B-Instruct-v0.1.Q3_K_M.gguf"
+        deepseek-r1:
+          name: "DeepSeek R1 671B"
+          tier: "flagship"
+          license: "MIT"
+          sizeGb: 161
+          shards: 9
+          subdir: "DeepSeek-R1-Q2_K"
+          filenameBase: "DeepSeek-R1-Q2_K"
+          filename: "DeepSeek-R1-Q2_K-00001-of-00009.gguf"
+          huggingface: "unsloth/DeepSeek-R1-GGUF"
+          baseUrl: "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/resolve/main/DeepSeek-R1-Q2_K"
+      coding:
+        qwen-coder-7b:
+          name: "Qwen 2.5 Coder 7B Instruct"
+          tier: "entry"
+          license: "Apache-2.0"
+          sizeGb: 4.7
+          huggingface: "bartowski/Qwen2.5-Coder-7B-Instruct-GGUF"
+          filename: "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
+          url: "https://huggingface.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
+        granite-8b:
+          name: "IBM Granite 8B Code Instruct 128K"
+          tier: "entry"
+          license: "Apache-2.0"
+          sizeGb: 4.6
+          huggingface: "RichardErkhov/ibm-granite_-_granite-8b-code-instruct-128k-gguf"
+          filename: "granite-8b-code-instruct-128k.Q4_K_M.gguf"
+          url: "https://huggingface.co/RichardErkhov/ibm-granite_-_granite-8b-code-instruct-128k-gguf/resolve/main/granite-8b-code-instruct-128k.Q4_K_M.gguf"
+        qwen-coder-14b:
+          name: "Qwen 2.5 Coder 14B Instruct"
+          tier: "mid"
+          license: "Apache-2.0"
+          sizeGb: 14.9
+          huggingface: "bartowski/Qwen2.5-Coder-14B-Instruct-GGUF"
+          filename: "Qwen2.5-Coder-14B-Instruct-Q8_0.gguf"
+          url: "https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q8_0.gguf"
+        qwen-coder-32b:
+          name: "Qwen 2.5 Coder 32B Instruct"
+          tier: "mid"
+          license: "Apache-2.0"
+          sizeGb: 19.9
+          huggingface: "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF"
+          filename: "Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf"
+          url: "https://huggingface.co/bartowski/Qwen2.5-Coder-32B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-32B-Instruct-Q4_K_M.gguf"
+        mixtral-8x22b:
+          name: "Mixtral 8x22B Instruct v0.1"
+          tier: "large"
+          license: "Apache-2.0"
+          sizeGb: 67.8
+          huggingface: "MaziyarPanahi/Mixtral-8x22B-Instruct-v0.1-GGUF"
+          filename: "Mixtral-8x22B-Instruct-v0.1.Q3_K_M.gguf"
+          url: "https://huggingface.co/MaziyarPanahi/Mixtral-8x22B-Instruct-v0.1-GGUF/resolve/main/Mixtral-8x22B-Instruct-v0.1.Q3_K_M.gguf"
+        deepseek-r1:
+          name: "DeepSeek R1 671B"
+          tier: "flagship"
+          license: "MIT"
+          sizeGb: 161
+          shards: 9
+          subdir: "DeepSeek-R1-Q2_K"
+          filenameBase: "DeepSeek-R1-Q2_K"
+          filename: "DeepSeek-R1-Q2_K-00001-of-00009.gguf"
+          huggingface: "unsloth/DeepSeek-R1-GGUF"
+          baseUrl: "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/resolve/main/DeepSeek-R1-Q2_K"
+
+  # Image generation models — downloaded by image-agent via HuggingFace Hub.
+  # The selected preset's huggingface repo ID is passed as IMAGE_MODEL_ID env var.
+  image:
+    preset: "cogview3-plus"  # cogview3-plus | auraflow | cogview4 | hidream-i1
+    catalog:
+      cogview3-plus:
+        name: "CogView3-Plus 3B"
+        tier: "entry"
+        license: "Apache-2.0"
+        sizeGb: 26
+        huggingface: "THUDM/CogView3-Plus-3B"
+      auraflow:
+        name: "AuraFlow v0.3"
+        tier: "mid"
+        license: "Apache-2.0"
+        sizeGb: 16.5
+        huggingface: "fal/AuraFlow-v0.3"
+      cogview4:
+        name: "CogView4 6B"
+        tier: "large"
+        license: "Apache-2.0"
+        sizeGb: 31.1
+        huggingface: "THUDM/CogView4-6B"
+      hidream-i1:
+        name: "HiDream-I1 Full 17B"
+        tier: "flagship"
+        license: "MIT"
+        sizeGb: 47.2
+        huggingface: "HiDream-ai/HiDream-I1-Full"
+
+  # Video generation models — downloaded by video-agent via HuggingFace Hub.
+  # The selected preset's huggingface repo ID is passed as VIDEO_MODEL_ID env var.
+  video:
+    preset: "cogvideox-2b"  # cogvideox-2b | wan-1-3b | mochi-1 | wan-14b
+    catalog:
+      cogvideox-2b:
+        name: "CogVideoX 2B"
+        tier: "entry"
+        license: "Apache-2.0"
+        sizeGb: 14
+        huggingface: "THUDM/CogVideoX-2b"
+      wan-1-3b:
+        name: "Wan 2.1 T2V 1.3B"
+        tier: "mid"
+        license: "Apache-2.0"
+        sizeGb: 17.6
+        huggingface: "Wan-AI/Wan2.1-T2V-1.3B"
+      mochi-1:
+        name: "Mochi-1"
+        tier: "large"
+        license: "Apache-2.0"
+        sizeGb: 42
+        huggingface: "genmo/mochi-1-preview"
+      wan-14b:
+        name: "Wan 2.1 T2V 14B"
+        tier: "flagship"
+        license: "Apache-2.0"
+        sizeGb: 69
+        huggingface: "Wan-AI/Wan2.1-T2V-14B"
+
+# ---------------------------------------------------------------------------
+# Data directory
+# ---------------------------------------------------------------------------
+# All services write to the same PVC mounted at dataDir.
+# Override with GRIDLIGHT_DATA_DIR to use a host-path or different mount.
+dataDir: "/gridlight-data"
+
+# Shared persistent volume claim for model files and data.
+pvc:
+  enabled: true
+  storageClassName: ""   # leave blank for cluster default
+  size: "100Gi"
+  accessMode: ReadWriteOnce
+
+# ---------------------------------------------------------------------------
+# Gateway
+# ---------------------------------------------------------------------------
+gateway:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/gateway"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  replicas: 1
+  port: 8080
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Additional env vars passed to the gateway container
+  env: {}
+
+# ---------------------------------------------------------------------------
+# PostgreSQL (in-cluster)
+# ---------------------------------------------------------------------------
+postgres:
+  deploy: true
+  image: "postgres:16-bookworm"
+  port: 5432
+  database: "gridlight"
+  user: "gridlight"
+  # Password comes from auth.postgresPassword via Secret
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+  storage:
+    size: "20Gi"
+    storageClassName: ""
+
+# ---------------------------------------------------------------------------
+# Qdrant (in-cluster)
+# ---------------------------------------------------------------------------
+qdrant:
+  deploy: true
+  image: "qdrant/qdrant:v1.10.0"
+  grpcPort: 6334
+  httpPort: 6333
+  collection: "gridlight"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  storage:
+    size: "20Gi"
+    storageClassName: ""
+
+# ---------------------------------------------------------------------------
+# Neo4j (in-cluster)
+# ---------------------------------------------------------------------------
+neo4j:
+  deploy: true
+  image: "neo4j:5.18-community"
+  boltPort: 7687
+  httpPort: 7474
+  user: "neo4j"
+  # Password comes from auth.neo4jPassword via Secret
+  jvm:
+    heapInitial: "512m"
+    heapMax: "1G"
+    pagecache: "512m"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
+    limits:
+      cpu: "3"
+      memory: "4Gi"
+  storage:
+    size: "10Gi"
+    storageClassName: ""
+
+# ---------------------------------------------------------------------------
+# LLM Agent (Rust, port 8001)
+# ---------------------------------------------------------------------------
+llmAgent:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/agent"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  port: 8001
+  # Override the model path used by llama-server. Leave empty to auto-derive
+  # from models.llm.catalog. Set this only when using a pre-staged model
+  # outside the catalog (also set bootstrap.enabled=false in that case).
+  modelPath: ""
+  # CPU-only mode: set to "cpu" to bypass GPU detection
+  # device: ""
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  env: {}
+
+# ---------------------------------------------------------------------------
+# Embed Agent (Rust, port 8002)
+# ---------------------------------------------------------------------------
+embedAgent:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/agent"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  port: 8002
+  # Path to the embedding .gguf model file inside the container.
+  # Defaults to the bootstrap download destination.
+  modelPath: "/gridlight-data/models/embeddings/nomic-embed-text-v1.5.Q4_0.gguf"
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "6Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  env: {}
+
+# ---------------------------------------------------------------------------
+# STT Agent (Python / faster-whisper, port 8004)
+# ---------------------------------------------------------------------------
+sttAgent:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/agent-stt"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  port: 8004
+  # Whisper model size: tiny (39MB), base (74MB), small (244MB), medium (769MB), large-v3 (1.5GB)
+  modelSize: "tiny"
+  # Quantization: auto, float16, int8 (int8 recommended for CPU)
+  computeType: "auto"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "4"
+      memory: "4Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  env: {}
+
+# ---------------------------------------------------------------------------
+# Image Agent (Python / diffusers, port 8005)
+# ---------------------------------------------------------------------------
+imageAgent:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/agent-image"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  port: 8005
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  env: {}
+
+# ---------------------------------------------------------------------------
+# Voice Agent (Python / Piper TTS, port 8006)
+# ---------------------------------------------------------------------------
+voiceAgent:
+  deploy: true
+  image:
+    repository: "{{ .Values.global.imageRegistry }}/agent-voice"
+    tag: "{{ .Values.global.imageTag }}"
+    pullPolicy: "{{ .Values.global.imagePullPolicy }}"
+  port: 8006
+  defaultVoice: "en_US-amy-medium"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  env: {}
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  # ingressClassName: "nginx"
+  host: ""
+  # tls: []
+  annotations: {}
