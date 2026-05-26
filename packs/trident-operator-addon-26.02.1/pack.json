@@ -1,0 +1,28 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "netapp"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Trident",
+  "charts": [
+    "charts/trident-operator-100.2602.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "csi-trident-addon",
+  "version": "26.02.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
