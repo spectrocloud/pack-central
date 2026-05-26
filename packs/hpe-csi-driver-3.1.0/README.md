@@ -1,7 +1,5 @@
 # HPE CSI Driver for Kubernetes
 
-<!-- Note to pack contributor: There are version specific links in this page. -->
-
 The HPE CSI Driver for Kubernetes leverages Hewlett Packard Enterprise primary storage platforms to provide scalable, persistent block and file storage for stateful and ephemeral applications. Currently supported storage platforms include HPE Alletra Storage MP B10000, HPE Alletra 5000/6000/9000, HPE Nimble Storage, HPE Primera and HPE 3PAR.
 
 ## Prerequisites
