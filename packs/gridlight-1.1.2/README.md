@@ -145,9 +145,10 @@ essentially every Debian-based image — for example `CVE-2023-45853` (zlib1g,
 (perl-base), and `CVE-2019-1010022` (glibc, disputed by Debian/not rated critical). They
 are accepted and tracked pending upstream fixes. The image- and video-generation agents
 carry a larger dependency surface (PyTorch/CUDA/diffusers), which is inherent to ML
-workloads. The video agent additionally installs ffmpeg with `--no-install-recommends`
-to exclude the Mesa GL/VA/Vulkan hardware-decode drivers (unused in a headless CUDA
-container), removing their `will_not_fix` CVEs.
+workloads. The speech-to-text and video agents install ffmpeg with
+`--no-install-recommends` to exclude the Mesa GL/VA/Vulkan hardware-decode drivers
+(unused for headless audio decoding / CUDA generation), removing their `will_not_fix`
+CVEs.
 
 ## References
 
