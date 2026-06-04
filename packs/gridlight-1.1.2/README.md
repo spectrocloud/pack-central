@@ -132,6 +132,21 @@ external object store is required.
 - `videoAgent` is **experimental** and `deploy: false` by default; do not rely on it in
   production in this release.
 
+## Security / CVE posture
+
+All six container images are built on the latest Debian `bookworm` base with security
+updates applied at build time (`apt-get upgrade`), which clears every base-OS CVE that
+has a released fix.
+
+The CVEs that remain are predominantly **upstream Debian packages with no available
+fix** (marked `will_not_fix` or `affected`/awaiting-patch by Debian) and are present in
+essentially every Debian-based image — for example `CVE-2023-45853` (zlib1g,
+`will_not_fix`), `CVE-2025-7458` (libsqlite3-0), `CVE-2026-42496` / `CVE-2026-8376`
+(perl-base), and `CVE-2019-1010022` (glibc, disputed by Debian/not rated critical). They
+are accepted and tracked pending upstream fixes. The image- and video-generation agents
+carry a larger dependency surface (PyTorch/CUDA/diffusers), which is inherent to ML
+workloads.
+
 ## References
 
 - Gridlight: <https://gridlight.ai>
