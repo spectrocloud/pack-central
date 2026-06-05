@@ -239,6 +239,11 @@ charts:
       # Set preset: "auto" to let the agent pick by detected VRAM.
       video:
         preset: "wan-2.1"  # wan-2.1(14B) | wan-2.1-1.3b | cogvideox-5b | ltx-video | auto
+        # Default output quality/resolution when a request omits it (gateway reads this
+        # as DEFAULT_VIDEO_QUALITY). Higher = sharper + slower + more VRAM. A per-request
+        # "quality_preset" (or explicit width/height/fps/steps) always overrides.
+        #   proxy(512x320) draft(640x480) preview(768x512) 720p(1280x720) 1080p 2k 4k
+        defaultQuality: "draft"
         catalog:
           wan-2.1-1.3b:
             name: "Wan 2.1 T2V 1.3B"
@@ -562,6 +567,11 @@ charts:
     # video, run multiple replicas. Object storage / async generation tracked in GRD-2354.
     videoAgent:
       deploy: false
+      # Replicas >1 enable parallel generation (the agent is single-concurrency and
+      # returns 429 while busy). Each replica needs its own model storage: set
+      # pvc.enabled=false (emptyDir per pod — re-downloads the model) or use a
+      # ReadWriteMany storage class. The default ReadWriteOnce PVC attaches to one pod.
+      replicas: 1
       image:
         repository: "{{ .Values.global.imageRegistry }}/agent-video"
         tag: "{{ .Values.global.imageTag }}"

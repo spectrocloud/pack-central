@@ -125,6 +125,42 @@ external object store is required.
 > the pack sets an `fsGroup` so they can. If you override pod security contexts, retain
 > a group that can write the volume.
 
+### Video generation (optional, GPU-heavy)
+
+Video is **off by default** (`videoAgent.deploy: false`) and needs its own GPU. The
+default model is the production-quality 14B — set expectations before enabling it:
+
+| `models.video.preset` | Fits | Warm gen (5 s @ 480p) | Quality | Download |
+|-----------------------|------|-----------------------|---------|----------|
+| `wan-2.1-1.3b` | 8–24 GB | ~1–2 min | Low (warps on motion) | ~17 GB |
+| `ltx-video` | 12–24 GB | ~30–60 s | Decent, fast | ~20 GB |
+| `cogvideox-5b` | 16 GB+ (offload) | ~3–5 min | Good | ~22 GB |
+| `wan-2.1` (14B, **default**) | **48 GB** ideal / 16–24 GB offload | ~3–5 min @ 48 GB · **~30 min** with offload | High | ~40–76 GB |
+| `wan-2.2` (A14B) | 48 GB+ | ~5–8 min | Highest | ~55 GB |
+
+- **First generation is a cold start:** model download (17–76 GB) + GPU load (14B ≈ 8 min).
+  Pre-stage the model on the PVC to skip it. Warm generations only pay the time above.
+- **Single-concurrency:** one clip at a time; concurrent requests get `429`. A client
+  disconnect does NOT cancel the in-flight job.
+- **On a ≥48 GB GPU set `videoAgent.offloadMode: none`** — the default `model` swaps weights
+  and is ~6× slower; use `model` only on 16–24 GB GPUs.
+
+```yaml
+charts:
+  gridlight-palette:
+    models:
+      video:
+        preset: "wan-2.1"        # quality tier (see table)
+        defaultQuality: "720p"   # default res/fps: proxy|draft|preview|720p|1080p|2k|4k
+    videoAgent:
+      deploy: true
+      offloadMode: "none"        # auto | none | model | sequential
+      replicas: 1                # >1 for parallel gen — also set pvc.enabled=false
+```
+
+Clients can override per request with `quality_preset` or explicit
+`width`/`height`/`fps`/`duration_seconds`/`steps`.
+
 ## Upgrade
 
 - Initial community release (1.1.2). Keep the pack **name** and **display name** across
