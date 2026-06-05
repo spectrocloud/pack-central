@@ -35,6 +35,7 @@ Set under `charts.gridlight-palette.*` in the pack values. Minimum to deploy:
 | `auth.gatewayToken` | Bearer token clients send (change from `dev-token`) | String | `dev-token` | No |
 | `models.llm.preset` | LLM model: `qwen-7b`, `mistral-7b`, `qwen-32b`, `mixtral-8x7b`, … | String | `qwen-7b` | No |
 | `models.image.preset` | Image model: `juggernautxl`, `cogview3-plus`, `auraflow`, `cogview4` | String | `juggernautxl` | No |
+| `models.video.preset` | Video model: `wan-2.1` (14B, **default** — needs ~48GB GPU / L40S/A100; runs on 16–24GB via CPU offload), `wan-2.2`, `cogvideox-5b`, `ltx-video`, `wan-2.1-1.3b` (fits 8–24GB), `auto` | String | `wan-2.1` | No |
 | `gateway.service.type` | `ClusterIP` / `LoadBalancer` / `NodePort` | String | `ClusterIP` | No |
 | `pvc.size` | Shared volume for models + data (raise for large LLMs) | String | `100Gi` | No |
 | `imageAgent.deploy`, `sttAgent.deploy`, `voiceAgent.deploy`, `videoAgent.deploy` | Toggle each specialist agent on/off | Bool | `true` (video: `false`) | No |

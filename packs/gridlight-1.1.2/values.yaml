@@ -80,7 +80,7 @@ charts:
     # models.llm.category — "general" or "coding"
     # models.llm.preset   — key from catalog.<category> (see list below)
     # models.image.preset — key from catalog (image agent reads IMAGE_MODEL_ID env var)
-    # models.video.preset — key from catalog (video agent reads VIDEO_MODEL_ID env var)
+    # models.video.preset — key from catalog (video agent reads DEFAULT_VIDEO_MODEL env var)
     #
     # To use a model not in the catalog, leave preset blank and set
     # llmAgent.modelPath to the full path of a pre-staged GGUF file.
@@ -231,34 +231,45 @@ charts:
           # 17B/~47GB it doesn't fit common GPUs. Re-add once the agent supports it.
 
       # Video generation models — downloaded by video-agent via HuggingFace Hub.
-      # The selected preset's huggingface repo ID is passed as VIDEO_MODEL_ID env var.
+      # The preset key is passed to the agent as DEFAULT_VIDEO_MODEL.
+      #
+      # DEFAULT IS wan-2.1 (14B) — production-quality output. It needs a ~48GB GPU
+      # (L40S / A100) to run at full speed; it also fits 16–24GB GPUs (A10G/4090) via
+      # CPU offload, just slower. On smaller GPUs, switch preset to "wan-2.1-1.3b".
+      # Set preset: "auto" to let the agent pick by detected VRAM.
       video:
-        preset: "cogvideox-2b"  # cogvideox-2b | wan-1-3b | mochi-1 | wan-14b
+        preset: "wan-2.1"  # wan-2.1(14B) | wan-2.1-1.3b | cogvideox-5b | ltx-video | auto
         catalog:
-          cogvideox-2b:
-            name: "CogVideoX 2B"
+          wan-2.1-1.3b:
+            name: "Wan 2.1 T2V 1.3B"
             tier: "entry"
             license: "Apache-2.0"
-            sizeGb: 14
-            huggingface: "THUDM/CogVideoX-2b"
-          wan-1-3b:
-            name: "Wan 2.1 T2V 1.3B"
+            sizeGb: 17
+            huggingface: "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+          ltx-video:
+            name: "LTX-Video 0.9.7 Distilled"
+            tier: "fast"
+            license: "Apache-2.0"
+            sizeGb: 20
+            huggingface: "Lightricks/LTX-Video-0.9.7-distilled"
+          cogvideox-5b:
+            name: "CogVideoX 5B"
             tier: "mid"
             license: "Apache-2.0"
-            sizeGb: 17.6
-            huggingface: "Wan-AI/Wan2.1-T2V-1.3B"
-          mochi-1:
-            name: "Mochi-1"
-            tier: "large"
-            license: "Apache-2.0"
-            sizeGb: 42
-            huggingface: "genmo/mochi-1-preview"
-          wan-14b:
+            sizeGb: 22
+            huggingface: "THUDM/CogVideoX-5b"
+          wan-2.1:
             name: "Wan 2.1 T2V 14B"
             tier: "flagship"
             license: "Apache-2.0"
-            sizeGb: 69
-            huggingface: "Wan-AI/Wan2.1-T2V-14B"
+            sizeGb: 40
+            huggingface: "Wan-AI/Wan2.1-T2V-14B-Diffusers"
+          wan-2.2:
+            name: "Wan 2.2 T2V A14B"
+            tier: "flagship"
+            license: "Apache-2.0"
+            sizeGb: 55
+            huggingface: "Wan-AI/Wan2.2-T2V-A14B-Diffusers"
 
     # ---------------------------------------------------------------------------
     # Data directory
@@ -537,12 +548,18 @@ charts:
     # ---------------------------------------------------------------------------
     # Video Agent (Python / diffusers, port 8007)
     # ---------------------------------------------------------------------------
-    # EXPERIMENTAL — not validated end-to-end and OFF by default. Before enabling in
-    # production: (1) the video agent still needs the fast plain-GET model downloader
-    # (Xet-backed model repos stall in huggingface_hub — same fix the image agent got),
-    # (2) video models are large (14-69 GB) and slow to first-generate, and (3) it
-    # requires its own GPU. Enable only for evaluation. Tracked in GRD-2354 (object
-    # storage) and the async-generation follow-up.
+    # OFF by default (needs its own GPU) but validated end-to-end. The default model
+    # (models.video.preset) is wan-2.1 (14B, production quality).
+    #
+    # GPU SIZING — this is the important one:
+    #   • wan-2.1 (14B, DEFAULT): best on a ~48GB GPU (L40S / A100). It also runs on a
+    #     16–24GB GPU (A10G/4090) via CPU offload (offloadMode=model) — slower, and
+    #     needs the larger host-memory limit below for the offloaded weights.
+    #   • On smaller GPUs, set models.video.preset to "wan-2.1-1.3b" or "auto".
+    # The image bundles the fast plain-GET model downloader (Xet repos otherwise stall).
+    # The video agent is single-concurrency: it returns 429 while a generation is in
+    # flight, and a client disconnect does NOT cancel the in-flight job. For concurrent
+    # video, run multiple replicas. Object storage / async generation tracked in GRD-2354.
     videoAgent:
       deploy: false
       image:
@@ -550,13 +567,20 @@ charts:
         tag: "{{ .Values.global.imageTag }}"
         pullPolicy: "{{ .Values.global.imagePullPolicy }}"
       port: 8007
+      # CPU offload for large models: auto | none | model | sequential.
+      # "model" keeps the 14B default within VRAM on 16–24GB GPUs; "none" is fastest
+      # on a 48GB GPU that fits the whole pipeline.
+      offloadMode: "model"
       resources:
         requests:
           cpu: "2"
           memory: "16Gi"
         limits:
           cpu: "8"
-          memory: "32Gi"
+          # 56Gi headroom for CPU-offloaded 14B weights; lower to 24Gi if pinning a
+          # small model (wan-2.1-1.3b) that stays resident on the GPU.
+          memory: "56Gi"
+          nvidia.com/gpu: "1"   # video generation requires a GPU
       nodeSelector: {}
       tolerations: []
       affinity: {}
