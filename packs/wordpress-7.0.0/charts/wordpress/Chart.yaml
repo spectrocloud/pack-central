@@ -1,0 +1,48 @@
+annotations:
+  fips: "true"
+  images: |
+    - name: apache-exporter
+      version: 1.0.12
+      image: registry-1.docker.io/bitnami/apache-exporter:latest
+    - name: os-shell
+      version: "5"
+      image: registry-1.docker.io/bitnami/os-shell:latest
+    - name: wordpress
+      version: 7.0.0
+      image: registry-1.docker.io/bitnami/wordpress:latest
+  licenses: Apache-2.0
+  tanzuCategory: application
+apiVersion: v2
+appVersion: 7.0.0
+dependencies:
+- condition: memcached.enabled
+  name: memcached
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 8.6.0
+- condition: mariadb.enabled
+  name: mariadb
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 26.1.0
+- name: common
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.40.0
+description: "WordPress is the world's most popular blogging and content management platform. Powerful yet simple, everyone from students to global corporations use it to build beautiful, functional websites."
+home: https://bitnami.com
+icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/wordpress/img/wordpress-stack-220x234.png
+keywords:
+- application
+- blog
+- cms
+- http
+- php
+- web
+- wordpress
+maintainers:
+- name: "Broadcom, Inc. All Rights Reserved."
+  url: https://github.com/bitnami/charts
+name: wordpress
+sources:
+- https://github.com/bitnami/charts/tree/main/bitnami/wordpress
+version: 32.0.0
