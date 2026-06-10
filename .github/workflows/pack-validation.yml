@@ -26,11 +26,11 @@ jobs:
         sudo tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
     # Checkout code
     - name: Checkout branch
-      uses: actions/checkout@v3
+      uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
     
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v46.0.1
+      uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
   
     # Run Validations
     - name: Check Packs
