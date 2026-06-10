@@ -42,7 +42,8 @@
           "edge",
           "libvirt",
           "edge-native",
-          "coxedge"
+          "coxedge",
+      	  "custom"
         ]
       }
     },
@@ -54,12 +55,17 @@
         "azure",
         "gcp",
         "vsphere",
+        "openstack",
+        "baremetal",
         "maas",
         "aks",
         "eks",
+        "tencent",
+        "tke",
+        "edge",
+        "libvirt",
         "edge-native",
-        "apache-cloudstack",
-        "custom"
+        "coxedge"
       ]
     },
     "eol": {

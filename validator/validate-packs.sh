@@ -123,6 +123,26 @@ validate_pack_schema(){
   return $rc
 }
 
+validate_pack_version() {
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+  log_info "Checking pack.json version field for $pack_json_file..."
+  local version
+  version="$(jq -r '.version // empty | tostring' "$pack_json_file")"
+  if [ -z "$version" ] || [ "$version" = "null" ]; then
+    log_error "Missing or null version in $pack_json_file"
+    return 1
+  fi
+  case "$version" in
+  v*)
+    log_error "pack.json version must not have a leading 'v' (found: $version) in $pack_json_file"
+    return 1
+    ;;
+  esac
+  log_success "pack.json version has no leading 'v' for $pack_json_file"
+  return 0
+}
+
 validate_logo() {
 
   local pack_dir=$1
@@ -205,8 +225,15 @@ validate_content(){
 get_pack_layer() {
   local pack_dir=$1
   local layer="$(jq -r '.layer' $pack_dir/pack.json)"
-  echo "$layer" 
+  echo "$layer"
 }
+
+get_pack_name() {
+  local pack_dir=$1
+  local name="$(jq -r '.name' $pack_dir/pack.json)"
+  echo "$name"
+}
+
 run_validations() {
  local pack_dir
  local final_ret_code=0
@@ -228,6 +255,12 @@ run_validations() {
   fi
 
   validate_pack_schema $pack_dir
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+  fi
+
+  validate_pack_version "$pack_dir"
   rc=$?
   if [ $rc -ne 0 ]; then
    final_ret_code=$rc
@@ -263,8 +296,6 @@ run_validations() {
  done
  return $final_ret_code
 }
-
-
 
 
 #Main section starts here
