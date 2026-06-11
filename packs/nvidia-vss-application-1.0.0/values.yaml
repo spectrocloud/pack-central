@@ -1,0 +1,151 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS PLATFORM MATRIX (canonical — keep identical across all VSS packs) ───────
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in EVERY VSS pack. Packs per profile: data-infra + core-nims +
+# │ application (always) + nvidia-vss-vllm (vLLM profiles only; H100/L40S omit it).
+# │
+# │ Platform          LLM backend   LLM model              VLM mem/len  decode    validated
+# │ DGX-SPARK         vLLM          llama-3.1-8b           0.28/10240   disabled  YES (GB10)
+# │ OTHER             vLLM          llama-3.1-8b           0.4 /16384   disabled  no
+# │ H100              nim (trtllm)  llama-3.1-70b (gpu 4)  0.8 /32768   dGPU      no
+# │ L40S              nim (trtllm)  llama-3.1-8b  (gpu 2)  0.8 /32768   dGPU      no
+# │ RTXPRO6000BW      vLLM          nemotron-nano-9b-fp8   0.4 /32768   dGPU      no
+# │ AGX-THOR/IGX-THOR vLLM (jetson) nemotron-nano-9b-fp8   0.4 /16384   Tegra*    no
+# │ "VLM mem/len" = the application vss-engine VLM; the vLLM LLM engine has its own
+# │   gpu-mem/max-len in the nvidia-vss-vllm presets (do not conflate the two).
+# │ * Tegra: runtimeClassName nvidia; the NVIDIA container runtime injects L4T libs.
+# └──────────────────────────────────────────────────────────────────────────────
+# NVIDIA VSS Application Pack Values — Version 2.4.2
+# Video Search & Summarization engine (Cosmos-Reason2 VLM + CA-RAG pipeline).
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# P1 PROFILIZATION (see PLATFORM-SUPPORT-PLAN.md §8)
+# ═══════════════════════════════════════════════════════════════════════════════
+# The "VSS Platform" preset group (presets.yaml) selects a per-hardware profile.
+# The values below are the DGX-SPARK (GB10, arm64 SBSA, 1 time-sliced GPU) baseline
+# the ansible/ harness validates, and are the default-selected preset.
+#
+# DGX-SPARK hard constraints encoded here:
+#  - VIDEO DECODE = disabled. The vss-engine 2.4.1 arm64 image is a Jetson/L4T
+#    (Tegra) build; its decoder needs the Tegra NvRm stack, absent in GB10's
+#    dGPU/SBSA mode. global.ucfGlobalEnv injects VSS_EXTRA_ARGS=--disable-decoding
+#    (appended to via_server by the chart's start_via.sh) so the engine starts
+#    (VLM + CA-RAG) and reaches Ready. dgpu/tegra profiles clear this and switch
+#    the engine image (P3/P4).
+#  - CA-RAG LLM points at in-cluster llm-nim-svc:8000 — served on DGX-SPARK by the
+#    nvidia-vss-vllm pack's raw vLLM manifest (egress.llm-openai-api below).
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "15"
+  namespaceLabels:
+    "nvidia-vss": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: busybox:1.37
+      - image: curlimages/curl:8.17.0
+
+charts:
+  nvidia-vss-application:
+    global:
+      namespace: nvidia-vss
+      ngcApiKey: "{{.spectro.var.NGC_API_KEY}}"
+      imagePullSecrets:
+        - name: ngc-pull-secret
+      # VIDEO_DECODE_MODE=disabled (DGX-SPARK). ucfGlobalEnv is appended to the vss
+      # container env; the chart's start_via.sh appends $VSS_EXTRA_ARGS to via_server.
+      ucfGlobalEnv:
+        - name: VSS_EXTRA_ARGS
+          value: "--disable-decoding"
+
+    vss:
+      image:
+        repository: nvcr.io/nvidia/blueprint/vss-engine
+        tag: "2.4.1"
+        pullPolicy: IfNotPresent
+
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          # Scheduling requests kept small so VLM + LLM + embedding co-fit on one
+          # 20-core / 119 GB node (not a cap — usage can burst).
+          memory: "8Gi"
+          cpu: "2"
+
+      persistence:
+        modelCache:
+          enabled: true
+          size: "100Gi"
+
+      service:
+        type: NodePort
+        apiPort: 8000
+        uiPort: 9000
+
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+
+      # --- VLM (local, single time-sliced GPU): Cosmos-Reason2-8B ---
+      vlmModelType: "cosmos-reason2"
+      vlmModelPath: "git:https://huggingface.co/nvidia/Cosmos-Reason2-8B"
+      vlmBatchSize: "32"
+      trtllmMode: int4_awq
+      # VLM's share of the shared GB10 pool (8B bf16 needs >= ~0.25; <= 0.18 OOMs).
+      vlmGpuMemoryUtilization: "0.28"
+      vlmMaxModelLen: "10240"
+
+      # Remote VLM (only when the profile sets VLM to openai-compat / REMOTE)
+      vlmEndpoint: ""
+      vlmApiKey: ""
+      vlmOpenAiModelName: ""
+      openAiVersion: ""
+      azureApiVersion: ""
+
+      # --- CA-RAG LLM (in-cluster llm-nim-svc) ---
+      llmModel: "meta/llama-3.1-8b-instruct"
+
+      enableAudio: "false"
+      disableGuardrails: "true"
+      caRagEmbeddingsDimension: "500"
+
+      # --- Service discovery (must match the data-infrastructure / core-nims svc names) ---
+      egress:
+        llm-openai-api:
+          address: llm-nim-svc
+          port: 8000
+        milvus:
+          address: milvus-milvus-deployment-milvus-service
+          port: 19530
+        neo4j-bolt:
+          address: neo-4-j-service
+          port: 7687
+        minio:
+          address: minio-minio-deployment-minio-service
+          port: 9000
+        arango-db:
+          address: arango-db-arango-db-deployment-arango-db-service
+          port: 8529
+        elasticsearch:
+          address: elasticsearch-elasticsearch-deployment-elasticsearch-service
+          port: 9200
+        nemo-embed:
+          address: nemo-embedding-embedding-deployment-embedding-service
+          port: 8000
+        nemo-rerank:
+          address: nemo-rerank-ranking-deployment-ranking-service
+          port: 8000
+        riva-api:
+          address: riva-service
+          port: 50051
