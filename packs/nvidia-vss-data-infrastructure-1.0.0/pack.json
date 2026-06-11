@@ -1,0 +1,28 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS Data Infrastructure - Milvus vector database, Neo4j graph database, MinIO object storage, and supporting services for Video Search and Summarization",
+    "upstreamVersion": "2.4.1",
+    "upstreamRef": "NVIDIA VSS Blueprint 2.4.1"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS Data Infrastructure (VSS 2.4.1)",
+  "charts": [
+    "charts/nvidia-vss-data-infrastructure-1.0.0.tgz"
+  ],
+  "kubeManifests": [
+    "manifests/hf-token-secret.yaml",
+    "manifests/vss-platform.yaml"
+  ],
+  "layer": "addon",
+  "name": "nvidia-vss-data-infrastructure",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": []
+  }
+}
