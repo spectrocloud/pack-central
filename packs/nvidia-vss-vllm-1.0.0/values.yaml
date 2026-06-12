@@ -39,8 +39,8 @@ pack:
   spectrocloud.com/install-priority: "12"
   content:
     images:
-      - image: nvcr.io/nvidia/vllm:25.12.post1-py3
-      - image: nginx:1.27-alpine
+      - image: nvcr.io/nvidia/vllm:26.05.post1-py3
+      - image: nginx:1.30.2-alpine
       # Jetson Thor (AGX-THOR/IGX-THOR presets) — floating tag, verify before use
       - image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor
 
@@ -50,8 +50,8 @@ manifests:
     # DGX-SPARK (GB10) default — the empirically-validated config.
     replicas: 1
     gpuCount: 1
-    image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
-    nginxImage: "nginx:1.27-alpine"
+    image: "nvcr.io/nvidia/vllm:26.05.post1-py3"
+    nginxImage: "nginx:1.30.2-alpine"
     hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
     servedModelName: "meta/llama-3.1-8b-instruct"
     tensorParallel: "1"
