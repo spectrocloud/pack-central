@@ -195,12 +195,13 @@ validate_content(){
     if [ "$img" != "" ]; 
     then
       log_info "Valid entry $img found for image in $values_yaml_file"
-      crane pull $img image.tar
+      manifest_err=$(crane manifest $img 2>&1 >/dev/null)
       if [ $? -eq 0 ]; then
-        log_info "Image pull succeeded for $img"
-        rm -f image.tar     
+        log_info "Image manifest resolved for $img"
+      elif echo "$manifest_err" | grep -qiE 'DENIED|UNAUTHORIZED|no matching credentials|access denied'; then
+        log_info "Image $img is gated (registry auth not available to CI); skipping existence check - still listed in content.images for airgap image mirroring"
       else
-        log_error "Image pull failed. $img may not be a valid image"
+        log_error "Image manifest fetch failed. $img may not be a valid image: $manifest_err"
         fail=1
       fi 
     else
