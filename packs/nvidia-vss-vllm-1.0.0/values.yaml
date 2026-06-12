@@ -1,0 +1,68 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS PLATFORM MATRIX (canonical — keep identical across all VSS packs) ───────
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in EVERY VSS pack. Packs per profile: data-infra + core-nims +
+# │ application (always) + nvidia-vss-vllm (vLLM profiles only; H100/L40S omit it).
+# │
+# │ Platform          LLM backend   LLM model              VLM mem/len  decode    validated
+# │ DGX-SPARK         vLLM          llama-3.1-8b           0.28/10240   disabled  YES (GB10)
+# │ OTHER             vLLM          llama-3.1-8b           0.4 /16384   disabled  no
+# │ H100              nim (trtllm)  llama-3.1-70b (gpu 4)  0.8 /32768   dGPU      no
+# │ L40S              nim (trtllm)  llama-3.1-8b  (gpu 2)  0.8 /32768   dGPU      no
+# │ RTXPRO6000BW      vLLM          nemotron-nano-9b-fp8   0.4 /32768   dGPU      no
+# │ AGX-THOR/IGX-THOR vLLM (jetson) nemotron-nano-9b-fp8   0.4 /16384   Tegra*    no
+# │ "VLM mem/len" = the application vss-engine VLM; the vLLM LLM engine has its own
+# │   gpu-mem/max-len in the nvidia-vss-vllm presets (do not conflate the two).
+# │ * Tegra: runtimeClassName nvidia; the NVIDIA container runtime injects L4T libs.
+# └──────────────────────────────────────────────────────────────────────────────
+# NVIDIA VSS LLM backend — raw bounded vLLM (manifest-only pack).
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# WHY A SEPARATE PACK (P2-P4, see PLATFORM-SUPPORT-PLAN.md §6.4 / §8)
+# ═══════════════════════════════════════════════════════════════════════════════
+# VSS needs one of two mutually-exclusive LLM backends, selected by hardware:
+#   - raw vLLM (THIS pack)         → DGX-SPARK / RTXPRO6000BW / AGX-THOR / IGX-THOR / OTHER
+#   - nim-llm TensorRT-LLM subchart → H100 / L40S   (in nvidia-vss-core-nims)
+# Palette presets can parameterize a kubeManifest but cannot EXCLUDE one, and both
+# backends create a Service named llm-nim-svc — so they must never coexist. We make
+# the choice by PROFILE COMPOSITION: add this pack only to vLLM profiles; trtllm
+# profiles simply omit it. (Confirmed against docs.spectrocloud.com.)
+#
+# The manifest (manifests/llm-vllm.yaml) is Go-templated against the
+# manifests.llm-vllm.* block below; the "VSS Platform" presets set per-profile
+# values. install-priority 12 → after core-nims (10, creates ngc-pull-secret) and
+# data-infra (5, creates hf-token-secret), before application (15).
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "12"
+  content:
+    images:
+      - image: nvcr.io/nvidia/vllm:25.12.post1-py3
+      - image: nginx:1.30.2-alpine
+      # Jetson Thor (AGX-THOR/IGX-THOR presets) — floating tag, verify before use
+      - image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor
+
+manifests:
+  llm-vllm:
+    namespace: nvidia-vss
+    # DGX-SPARK (GB10) default — the empirically-validated config.
+    replicas: 1
+    gpuCount: 1
+    image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+    nginxImage: "nginx:1.30.2-alpine"
+    hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
+    servedModelName: "meta/llama-3.1-8b-instruct"
+    tensorParallel: "1"
+    gpuMemUtil: "0.35"
+    maxModelLen: "8192"
+    maxNumSeqs: "4"
+    cacheSize: "80Gi"
+    dshmSize: "16Gi"
+    memRequest: "8Gi"
+    cpuRequest: "2"
+    # Extra vLLM args appended verbatim. DGX-SPARK uses --enforce-eager.
+    # Nemotron/Edge models also need their tool-call parser flags (see presets).
+    extraArgs:
+      - "--enforce-eager"

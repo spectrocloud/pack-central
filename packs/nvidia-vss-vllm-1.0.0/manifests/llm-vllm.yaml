@@ -1,0 +1,129 @@
+# Raw bounded vLLM LLM backend, Go-templated against the manifests.llm-vllm.*
+# values block (Palette renders kubeManifests as Helm templates + resolves
+# spectro.var / spectro.macro macros at deploy time). vLLM serves the OpenAI API on :8001; the
+# nginx sidecar on :8000 answers /v1/health/live (the path the vss-engine
+# check-llm-up init container probes, which raw vLLM lacks) and proxies the rest.
+# Service llm-nim-svc:8000 is what the application pack's egress (llm-openai-api)
+# targets. hf-token-secret is created by the data-infrastructure pack (priority 5).
+# Mirrors the validated ansible harness (roles/vss_deploy/templates/llm-vllm.yaml.j2).
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llm-vllm-cache
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.cacheSize }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-vllm-nginx
+  namespace: {{ .Values.namespace }}
+data:
+  default.conf: |
+    server {
+      listen 8000;
+      location = /v1/health/live  { proxy_pass http://127.0.0.1:8001/health; }
+      location = /v1/health/ready { proxy_pass http://127.0.0.1:8001/health; }
+      location / {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_read_timeout 600s;
+        proxy_buffering off;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-vllm
+  namespace: {{ .Values.namespace }}
+  labels: { app: llm-vllm }
+spec:
+  replicas: {{ .Values.replicas }}
+  selector: { matchLabels: { app: llm-vllm } }
+  strategy: { type: Recreate }
+  template:
+    metadata:
+      labels: { app: llm-vllm }
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      imagePullSecrets:
+        - name: ngc-pull-secret
+      containers:
+        - name: vllm
+          image: {{ .Values.image }}
+          command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+          args:
+            - --model
+            - {{ .Values.hfModel }}
+            - --served-model-name
+            - {{ .Values.servedModelName }}
+            - --tensor-parallel-size
+            - "{{ .Values.tensorParallel }}"
+            - --gpu-memory-utilization
+            - "{{ .Values.gpuMemUtil }}"
+            - --max-model-len
+            - "{{ .Values.maxModelLen }}"
+            - --max-num-seqs
+            - "{{ .Values.maxNumSeqs }}"
+            {{- range .Values.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8001"
+          env:
+            - name: HF_HOME
+              value: /cache
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hf-token-secret, key: HF_TOKEN, optional: true }
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hf-token-secret, key: HF_TOKEN, optional: true }
+          ports:
+            - { containerPort: 8001, name: openai }
+          resources:
+            limits:
+              nvidia.com/gpu: {{ .Values.gpuCount }}
+            requests:
+              memory: {{ .Values.memRequest | quote }}
+              cpu: {{ .Values.cpuRequest | quote }}
+          volumeMounts:
+            - { name: cache, mountPath: /cache }
+            - { name: dshm, mountPath: /dev/shm }
+        - name: nginx
+          image: {{ .Values.nginxImage }}
+          ports:
+            - { containerPort: 8000, name: http }
+          volumeMounts:
+            - { name: nginx-conf, mountPath: /etc/nginx/conf.d }
+      volumes:
+        - name: cache
+          persistentVolumeClaim: { claimName: llm-vllm-cache }
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: {{ .Values.dshmSize }} }
+        - name: nginx-conf
+          configMap: { name: llm-vllm-nginx }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-nim-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: llm-vllm }
+  ports:
+    - name: openai
+      port: 8000
+      targetPort: 8000
