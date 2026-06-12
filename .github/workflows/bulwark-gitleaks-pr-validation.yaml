@@ -9,7 +9,7 @@ jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
     container:
-      image: gcr.io/spectro-dev-public/bulwark/gitleaks:latest
+      image: gcr.io/spectro-dev-public/bulwark/gitleaks@sha256:1ae9377df2b48b310eee67260a25a68f0d60b3cb6d662ce28cd45ef1b1426a1a # latest
       env:
         REPO: ${{ github.event.repository.name }}
         BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -27,12 +27,16 @@ jobs:
       - name: run-bulwark-gitleaks-scan-from-fork
         if: github.event.pull_request.head.repo.full_name != github.repository
         shell: sh
+        env:
+          FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git clone https://github.com/${{ github.event.pull_request.head.repo.full_name }}.git -b ${BRANCH} ${REPO}
-          cd ${REPO}
-          git remote add scRepo https://github.com/${{ github.repository }}.git
+          git clone "https://github.com/${FORK_REPO}.git" -b "${BRANCH}" "${REPO}"
+          cd "${REPO}"
+          git remote add scRepo "https://github.com/${BASE_REPO}.git"
           git fetch scRepo
-          /workspace/bulwark -name CodeSASTGitLeaks -target pwd -tags "branch:$BRANCH,options:--log-opts HEAD..scRepo/${{ github.base_ref }}"
+          /workspace/bulwark -name CodeSASTGitLeaks -target pwd -tags "branch:${BRANCH},options:--log-opts HEAD..scRepo/${BASE_REF}"
 
       - name: check-result
         shell: sh

@@ -1,44 +1,152 @@
- name: Packs Validation
-
+name: Packs Validation
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI or API.
 on:
   pull_request:
     types: [opened, reopened, synchronize]
 
- 
-# # A workflow run is made up of one or more jobs that can run sequentially or in parallel
- jobs:
-#   # This workflow contains a single job called "validator"
-   validator:
-#     # The type of runner that the job will run on
-     runs-on: ubuntu-latest
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "validator"
+  validator:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
 
-#     # Steps represent a sequence of tasks that will be executed as part of the job
-     steps:
-     - name: Install packages
-       run: |
-         sudo apt-get update
-         sudo apt-get install -y nodejs npm
-         sudo npm install -g validate-json
-         sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
-         sudo chmod +x /usr/bin/yq
-         VERSION=$(curl -s "https://api.github.com/repos/google/go-containerregistry/releases/latest" | jq -r '.tag_name')
-         curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_$(uname -a | awk '{print $1}')_$(arch).tar.gz"  > go-containerregistry.tar.gz
-         sudo tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane 
-#     # Checkout code
-     - name: Checkout branch
-       uses: actions/checkout@v3
-     
-     - name: Get changed files
-       id: changed-files
-       uses: tj-actions/changed-files@v46.0.1
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - name: Install packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nodejs npm jq
+        sudo npm install -g validate-json
+        sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+        sudo chmod +x /usr/bin/yq
+        VERSION=$(curl -s "https://api.github.com/repos/google/go-containerregistry/releases/latest" | jq -r '.tag_name')
+        curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_$(uname -a | awk '{print $1}')_$(arch).tar.gz"  > go-containerregistry.tar.gz
+        sudo tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
+    # Checkout code
+    - name: Checkout branch
+      uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
     
-#     # Run Validations
-     - name: Check Packs
-       shell: bash
-       run: |
-         echo "${{ steps.changed-files.outputs.all_changed_files }}" >> /tmp/modified_files
-         chmod +x ${GITHUB_WORKSPACE}/validator/validate-packs.sh
-         cd ${GITHUB_WORKSPACE}/validator
-         ./validate-packs.sh
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+  
+    # Run Validations
+    - name: Check Packs
+      shell: bash
+      run: |
+        echo "${{ steps.changed-files.outputs.all_changed_files }}" >> /tmp/modified_files
+        chmod +x ${GITHUB_WORKSPACE}/validator/validate-packs.sh
+        cd ${GITHUB_WORKSPACE}/validator
+        ./validate-packs.sh
+
+    # Validate values.yaml files
+    - name: Validate Values.yaml Files
+      shell: bash
+      run: |
+        echo "Validating values.yaml files in changed pack directories..."
+        
+        # Make the validation script executable
+        chmod +x ${GITHUB_WORKSPACE}/validator/validate-values.sh
+        
+        # Get all changed files
+        changed_files=$(cat /tmp/modified_files)
+        
+        # Find pack directories that have values.yaml files (only in stable/ directory)
+        pack_dirs=()
+        
+        for file in $changed_files; do
+          # Check if this is a values.yaml file in stable/ directory (root level only)
+          if [[ "$file" =~ ^stable/[^/]+/[^/]+/values\.yaml$ ]]; then
+            # Get the pack directory (parent directory of values.yaml)
+            pack_dir=$(dirname "$file")
+            
+            # Check if this pack directory is not already in our list
+            if [[ ! " ${pack_dirs[@]} " =~ " ${pack_dir} " ]]; then
+              pack_dirs+=("$pack_dir")
+              echo "Found pack directory: $pack_dir"
+            fi
+          fi
+        done
+        
+        # Also check for any pack directories that might have been modified
+        # but don't have values.yaml in the changed files list
+        for file in $changed_files; do
+          # If any file in a pack directory was changed, check if it has values.yaml
+          if [[ "$file" =~ ^stable/[^/]+/[^/]+/ ]]; then
+            # Extract the pack root directory based on file depth
+            # For stable/networking/calico_3.30.1/pack.json -> stable/networking/calico_3.30.1/
+            # For stable/networking/calico_3.30.1/charts/calico/pack.json -> stable/networking/calico_3.30.1/
+            # For stable/networking/calico_3.30.1/manifests/common.yaml -> stable/networking/calico_3.30.1/
+            
+            # Count the number of path segments
+            path_segments=$(echo "$file" | tr -cd '/' | wc -c)
+            
+            if [ $path_segments -eq 2 ]; then
+              # stable/networking/calico_3.30.1/pack.json
+              pack_dir=$(dirname "$file")
+            elif [ $path_segments -gt 2 ]; then
+              # stable/networking/calico_3.30.1/charts/calico/pack.json
+              # Go up to the pack root (2 levels up from the file)
+              pack_dir=$(dirname "$(dirname "$(dirname "$file")")")
+            else
+              # Skip files that don't match our pattern
+              continue
+            fi
+            
+            # Check if this pack directory is not already in our list
+            if [[ ! " ${pack_dirs[@]} " =~ " ${pack_dir} " ]]; then
+              # Only add to validation list if this pack directory has a values.yaml file
+              if [[ -f "$pack_dir/values.yaml" ]]; then
+                pack_dirs+=("$pack_dir")
+                echo "Found pack directory with values.yaml: $pack_dir"
+              else
+                echo "Skipping pack directory without values.yaml: $pack_dir"
+              fi
+            fi
+          fi
+        done
+        
+        # Validate each values.yaml file
+        validation_errors=0
+        validated_files=0
+        
+        for pack_dir in "${pack_dirs[@]}"; do
+          values_file="$pack_dir/values.yaml"
+          
+          if [[ -f "$values_file" ]]; then
+            echo "=================================================================="
+            echo "Validating: $values_file"
+            echo "=================================================================="
+            
+            # Run validation without strict mode (ignore warnings, only fail on errors)
+            if ${GITHUB_WORKSPACE}/validator/validate-values.sh "$values_file"; then
+              echo "✅ Validation passed for $values_file"
+              validated_files=$((validated_files + 1))
+            else
+              echo "❌ Validation failed for $values_file"
+              validation_errors=$((validation_errors + 1))
+            fi
+          fi
+        done
+        
+        # Summary
+        echo "=================================================================="
+        echo "Validation Summary:"
+        echo "=================================================================="
+        echo "Total pack directories checked: ${#pack_dirs[@]}"
+        echo "Values.yaml files validated: $validated_files"
+        echo "Validation errors: $validation_errors"
+        
+        # Exit with error if any validation failed
+        if [ $validation_errors -gt 0 ]; then
+          echo "=================================================================="
+          echo "❌ Values.yaml validation failed for $validation_errors file(s)"
+          echo "=================================================================="
+          exit 1
+        else
+          echo "=================================================================="
+          echo "✅ All values.yaml files passed validation"
+          echo "=================================================================="
+        fi
