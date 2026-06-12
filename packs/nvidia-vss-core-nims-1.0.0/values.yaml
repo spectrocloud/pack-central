@@ -45,8 +45,13 @@ pack:
   content:
     images:
       # embedding NIM (on for every profile)
-      - image: curlimages/curl:8.17.0
+      - image: nvcr.io/nim/nvidia/llama-3.2-nv-embedqa-1b-v2:1.9.0
+      - image: curlimages/curl:8.20.0
       # trtllm datacenter NIMs (H100/L40S presets; union member)
+      - image: nvcr.io/nim/meta/llama-3.1-70b-instruct:1.10.1
+      - image: nvcr.io/nim/meta/llama-3.1-8b-instruct:1.10.1
+      - image: nvcr.io/nim/nvidia/llama-3.2-nv-rerankqa-1b-v2:1.9.0
+      - image: nvcr.io/nim/nvidia/parakeet-0-6b-ctc-en-us:2.0.0
 
 charts:
   nvidia-vss-core-nims:
