@@ -23,7 +23,7 @@ presets:
         llm-vllm:
           replicas: 1
           gpuCount: 1
-          image: "nvcr.io/nvidia/vllm:26.05.post1-py3"
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
           hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
           servedModelName: "meta/llama-3.1-8b-instruct"
           tensorParallel: "1"
@@ -42,7 +42,7 @@ presets:
         llm-vllm:
           replicas: 1
           gpuCount: 1
-          image: "nvcr.io/nvidia/vllm:26.05.post1-py3"
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
           hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
           servedModelName: "meta/llama-3.1-8b-instruct"
           tensorParallel: "1"
@@ -62,7 +62,7 @@ presets:
         llm-vllm:
           replicas: 1
           gpuCount: 1
-          image: "nvcr.io/nvidia/vllm:26.05.post1-py3"
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
           hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
           servedModelName: "nvidia/nemotron-nano-9b-v2-fp8"
           tensorParallel: "1"
