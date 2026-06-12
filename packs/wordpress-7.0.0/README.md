@@ -4,7 +4,7 @@ WordPress is the world's most popular blogging and content management platform. 
 
 ## Prerequisites
 
-- Kubernetes 1.25+
+- Kubernetes 1.29
 
 ## Parameters
 
