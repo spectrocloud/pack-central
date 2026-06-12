@@ -43,8 +43,9 @@ pack:
     "nvidia-vss": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
   content:
     images:
+      - image: nvcr.io/nvidia/blueprint/vss-engine:2.4.1
       - image: busybox:1.37
-      - image: curlimages/curl:8.17.0
+      - image: curlimages/curl:8.20.0
 
 charts:
   nvidia-vss-application:
