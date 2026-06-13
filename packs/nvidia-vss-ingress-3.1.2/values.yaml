@@ -1,0 +1,21 @@
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: '18'
+  content:
+    images:
+    - image: nvcr.io/nvidia/vss-core/envoy-proxy:3.1.0
+    - image: nvcr.io/nvidia/vss-core/vss-vios-ingress:3.1.0
+    - image: nginx:1.27-alpine
+namespace: nvidia-vss
+envoyProxy:
+  imageTag: 3.1.0
+sdr:
+  imageTag: 3.1.0
+vssViosIngress:
+  imageTag: 3.1.0
+  hostIp: ''
+  externalIp: ''
+vssProxy:
+  image: nginx:1.27-alpine
+  subFilterHost: _DISABLED_
+  subFilterExternal: _DISABLED_
