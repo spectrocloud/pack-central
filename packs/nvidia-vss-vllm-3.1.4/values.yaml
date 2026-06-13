@@ -1,0 +1,27 @@
+namespace: nvidia-vss
+replicas: 1
+gpuCount: 1
+image: nvcr.io/nvidia/vllm:25.12.post1-py3
+nginxImage: nginx:1.27-alpine
+hfModel: nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8
+tensorParallel: '1'
+gpuMemUtil: "0.4"
+mambaSsmCacheDtype: float32
+toolCallParser: nemotron_json
+toolcallInitImage: docker.io/alpine/curl:8.12.1
+toolcallParserFile: nemotron_toolcall_parser_no_streaming.py
+toolcallParserUrl: https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-9B-v2/resolve/main/nemotron_toolcall_parser_no_streaming.py
+cacheSize: 80Gi
+dshmSize: 16Gi
+memRequest: 8Gi
+cpuRequest: '2'
+runAsUser: 1000
+runAsGroup: 1000
+extraArgs: []
+pack:
+  content:
+    images:
+    - image: nvcr.io/nvidia/vllm:25.12.post1-py3
+    - image: nginx:1.27-alpine
+    - image: docker.io/alpine/curl:8.12.1
+    - image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor

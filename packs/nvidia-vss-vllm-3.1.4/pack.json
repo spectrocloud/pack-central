@@ -1,0 +1,35 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS 3.1.0 LLM backend \u2014 standalone bounded vLLM serving the OpenAI API as llm-nim-svc:8000. In VSS 3.x this vLLM is the LLM for ALL platforms (there is no NIM-LLM), so this pack is present in every VSS 3.x profile (no include/omit contract). Default model is nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8 via nvcr.io/nvidia/vllm:25.12.post1-py3 (grounded in the 3.1.0 nemotron-nano-9b-v2-fp8 compose). The AGX-THOR/IGX-THOR preset swaps to the Jetson Thor image. Decode is NATIVE in 3.x (VIOS/rt-cv microservices) \u2014 this pack carries no decode flags."
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS 3.1.0 LLM (vLLM)",
+  "layer": "addon",
+  "name": "nvidia-vss-vllm",
+  "version": "3.1.4",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "nvidia-vss-data-infrastructure",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "optional"
+      },
+      {
+        "packName": "nvidia-vss-core-nims",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "optional"
+      }
+    ]
+  },
+  "charts": [
+    "charts/nvidia-vss-vllm-3.1.4.tgz"
+  ]
+}
