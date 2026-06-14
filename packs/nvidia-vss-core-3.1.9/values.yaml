@@ -34,21 +34,21 @@ pack:
   spectrocloud.com/install-priority: "15"
   content:
     images:
-      # Multiarch 3.1.0 (no -sbsa variant)
-      - image: nvcr.io/nvidia/vss-core/vss-agent:3.1.0
-      - image: nvcr.io/nvidia/vss-core/vss-agent-ui:3.1.0
-      - image: nvcr.io/nvidia/vss-core/vss-vios-mcp:3.1.0
-      # Services WITH a -sbsa variant — both 3.1.0 (x86/Tegra) and 3.1.0-sbsa (GB10)
-      - image: nvcr.io/nvidia/vss-core/vss-vios-sensor:3.1.0
-      - image: nvcr.io/nvidia/vss-core/vss-vios-sensor:3.1.0-sbsa
-      - image: nvcr.io/nvidia/vss-core/vss-vios-streamprocessing:3.1.0
-      - image: nvcr.io/nvidia/vss-core/vss-vios-streamprocessing:3.1.0-sbsa
+      # BUILD-ON-DEPLOY (0/0): only public wolfi-base is pack content. All 7 gated nvcr
+      # vss-core images are crane-fetched as runtime DATA at deploy and run on wolfi-base
+      # via the matched-ld swap (CPU services GB10-validated: nat/node/python; GPU VST
+      # services author-equivalent, live validation pending a free GPU slot).
+      - image: cgr.dev/chainguard/wolfi-base:latest
 
 # Shared namespace (every manifest renders metadata.namespace from this).
 namespace: nvidia-vss
 
+# Public 0/0 base that crane-fetches + runs the gated vss-core binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+
 # ── vss-agent — orchestrator (Service "vss-agent":8000) ───────────────────────────
 vssAgent:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-agent:3.1.0
   # Multiarch image, no -sbsa variant.
   imageTag: "3.1.0"
   # Path the agent reads its config from (mountPath/config.yml). The compose value
@@ -89,6 +89,7 @@ vssAgent:
 
 # ── vss-agent-ui — web UI (Service "vss-agent-ui":3000) ───────────────────────────
 vssAgentUi:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-agent-ui:3.1.0
   # Multiarch image, no -sbsa variant.
   imageTag: "3.1.0"
   appTitle: "NVIDIA VSS"
@@ -105,6 +106,7 @@ vssAgentUi:
 # ── vss-vios-sensor — VST sensor microservice (Service "sensor-ms":30000) ─────────
 # HAS a -sbsa variant: DGX-SPARK preset flips imageTag to 3.1.0-sbsa.
 vssViosSensor:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-sensor:3.1.0-sbsa
   imageTag: "3.1.0-sbsa"
   # Stream processor module endpoint — compose pointed at http://HOST_IP:10000; here
   # the in-cluster streamprocessing Service. TODO(verify): port — compose used 10000,
@@ -114,6 +116,7 @@ vssViosSensor:
 # ── vss-vios-streamprocessing — NVDEC/DeepStream decode (Service "streamprocessing-ms":30001/30554) ─
 # HAS a -sbsa variant: DGX-SPARK preset flips imageTag to 3.1.0-sbsa.
 vssViosStreamprocessing:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-streamprocessing:3.1.0-sbsa
   imageTag: "3.1.0-sbsa"
   sensorModuleEndpoint: "http://sensor-ms:30000"
   # VST ingress data plane — ingress pack. TODO(verify): confirm the ingress Service/port.
@@ -122,6 +125,7 @@ vssViosStreamprocessing:
 # ── vss-vios-mcp — VST MCP gateway (Service "vst-mcp":8001) ───────────────────────
 # Multiarch, no -sbsa variant (tag kept for uniformity).
 vssViosMcp:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-mcp:3.1.0
   imageTag: "3.1.0"
   # CPP API base → VST ingress data plane (/vst on 30888). TODO(verify): confirm target.
   cppApiBaseUrl: "http://vss-vios-ingress:30888"
