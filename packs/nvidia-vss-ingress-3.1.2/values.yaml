@@ -3,19 +3,22 @@ pack:
   spectrocloud.com/install-priority: '18'
   content:
     images:
-    - image: nvcr.io/nvidia/vss-core/envoy-proxy:3.1.0
-    - image: nvcr.io/nvidia/vss-core/vss-vios-ingress:3.1.0
-    - image: nginx:1.27-alpine
+    # BUILD-ON-DEPLOY: the pack references ONLY public 0/0 Chainguard images. The gated
+    # nvcr.io/nvidia/vss-core/{envoy-proxy,vss-vios-ingress} rootfs is crane-fetched as
+    # runtime DATA at deploy and run on wolfi-base via the matched-ld swap (GB10-validated:
+    # envoy 1.23.1/BoringSSL, nginx/1.24.0). vss-proxy uses the public Chainguard nginx.
+    - image: cgr.dev/chainguard/wolfi-base:latest
+    - image: cgr.dev/chainguard/nginx:latest
 namespace: nvidia-vss
+# Public 0/0 base that fetches + runs the gated ingress binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
 envoyProxy:
-  imageTag: 3.1.0
-sdr:
-  imageTag: 3.1.0
+  gatedImage: nvcr.io/nvidia/vss-core/envoy-proxy:3.1.0
 vssViosIngress:
-  imageTag: 3.1.0
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-ingress:3.1.0
   hostIp: ''
   externalIp: ''
 vssProxy:
-  image: nginx:1.27-alpine
+  image: cgr.dev/chainguard/nginx:latest
   subFilterHost: _DISABLED_
   subFilterExternal: _DISABLED_
