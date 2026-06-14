@@ -12,7 +12,7 @@
   "displayName": "NVIDIA VSS 3.1.0 LLM (vLLM)",
   "layer": "addon",
   "name": "nvidia-vss-vllm",
-  "version": "3.1.4",
+  "version": "3.2.0",
   "constraints": {
     "dependencies": [
       {
@@ -30,6 +30,6 @@
     ]
   },
   "charts": [
-    "charts/nvidia-vss-vllm-3.1.4.tgz"
+    "charts/nvidia-vss-vllm-3.2.0.tgz"
   ]
 }

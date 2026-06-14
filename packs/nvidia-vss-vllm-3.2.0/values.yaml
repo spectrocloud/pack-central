@@ -1,0 +1,26 @@
+namespace: nvidia-vss
+replicas: 1
+gpuCount: 1
+# Public 0/0 base the pack runs on; the gated runtime is fetched as data at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+gatedImage: nvcr.io/nvidia/vllm:25.12.post1-py3
+nginxImage: cgr.dev/chainguard/nginx:latest
+hfModel: nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8
+tensorParallel: '1'
+gpuMemUtil: "0.33"
+mambaSsmCacheDtype: float32
+toolCallParser: nemotron_json
+toolcallInitImage: cgr.dev/chainguard/curl:latest
+toolcallParserFile: nemotron_toolcall_parser_no_streaming.py
+toolcallParserUrl: https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-9B-v2/resolve/main/nemotron_toolcall_parser_no_streaming.py
+cacheSize: 80Gi
+runtimeStorageSize: 25Gi
+dshmSize: 16Gi
+memRequest: 8Gi
+cpuRequest: '2'
+pack:
+  content:
+    images:
+    - image: cgr.dev/chainguard/wolfi-base:latest
+    - image: cgr.dev/chainguard/nginx:latest
+    - image: cgr.dev/chainguard/curl:latest
