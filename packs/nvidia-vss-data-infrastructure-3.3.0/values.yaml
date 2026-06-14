@@ -1,0 +1,41 @@
+pack:
+  content:
+    images:
+    - image: cgr.dev/chainguard/redis:latest
+    - image: cgr.dev/chainguard/postgres:latest
+    - image: cgr.dev/chainguard/wolfi-base:latest
+namespace: nvidia-vss
+redis:
+  image: cgr.dev/chainguard/redis:latest
+  dataStorageSize: 10Gi
+  logStorageSize: 2Gi
+postgres:
+  image: cgr.dev/chainguard/postgres:latest
+  dataStorageSize: 20Gi
+phoenix:
+  image: cgr.dev/chainguard/wolfi-base:latest
+  storageSize: 5Gi
+  pipSpec: arize-phoenix
+elasticsearch:
+  image: cgr.dev/chainguard/wolfi-base:latest
+  dataStorageSize: 30Gi
+  logStorageSize: 5Gi
+  esVersion: 9.3.0
+  esJavaOpts: -Xmx1024m -Xms256m
+  homeStorageSize: 3Gi
+kafka:
+  image: confluentinc/cp-kafka:8.1.1
+  dataStorageSize: 20Gi
+kibana:
+  image: docker.elastic.co/kibana/kibana:9.3.0
+  publicBaseUrl: http://localhost:5601
+logstash:
+  image: docker.elastic.co/logstash/logstash:9.3.0
+  streamType: kafka
+manifests:
+  hf-token-secret:
+    namespace: nvidia-vss
+    hfToken: '{{.spectro.var.HF_TOKEN}}'
+  vss-platform:
+    namespace: nvidia-vss
+    vssPlatform: '{{.spectro.var.VSS_PLATFORM}}'
