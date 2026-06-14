@@ -37,17 +37,22 @@ pack:
   spectrocloud.com/install-priority: "10"
   content:
     images:
-      # cosmos VLM NIM — /nim/ image, multiarch, NO -sbsa variant.
-      - image: nvcr.io/nim/nvidia/cosmos-reason2-8b:1.6.0
-      # vss-rt-embed (embedding) — vss-core/* image; multiarch 3.1.0 (NO -sbsa variant).
-      - image: nvcr.io/nvidia/vss-core/vss-rt-embed:3.1.0
+      # BUILD-ON-DEPLOY (0/0): only public wolfi-base is pack content. The gated cosmos +
+      # vss-rt-embed NIM rootfs are crane-fetched as runtime DATA at deploy and run on
+      # wolfi-base via the matched-ld + CUDA block validated for the vLLM pack (live GPU
+      # NIM validation pending a free GPU slot).
+      - image: cgr.dev/chainguard/wolfi-base:latest
 
 # Top-level namespace consumed by every manifest ({{ .Values.namespace }}).
 namespace: nvidia-vss
 
+# Public 0/0 base that crane-fetches + runs the gated NIM binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+
 # ── cosmos-reason2-8b VLM NIM (in BASE; rendered on every platform) ──────────────
 # DGX-SPARK defaults from the shared-gpu compose service + hw-DGX-SPARK-shared.env.
 cosmos:
+  gatedImage: nvcr.io/nim/nvidia/cosmos-reason2-8b:1.6.0
   image: "nvcr.io/nim/nvidia/cosmos-reason2-8b"
   # /nim/ image has NO -sbsa variant — same tag on every platform.
   # Tag from the compose source (deployments/nim/cosmos-reason2-8b/compose.yml).
@@ -75,6 +80,7 @@ cosmos:
 # vss-core/* image, multiarch 3.1.0 — NO -sbsa variant (per BASE-SPEC: only the VIOS
 # services + rtvi-vlm have -sbsa), so the DGX-SPARK preset does NOT flip this tag.
 rtviEmbed:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-rt-embed:3.1.0
   enabled: false
   image: "nvcr.io/nvidia/vss-core/vss-rt-embed"
   imageTag: "3.1.0"
