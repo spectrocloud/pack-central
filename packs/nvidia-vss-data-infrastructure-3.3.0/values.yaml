@@ -3,7 +3,6 @@ pack:
     images:
     - image: cgr.dev/chainguard/redis:latest
     - image: cgr.dev/chainguard/postgres:latest
-    - image: cgr.dev/chainguard/python:latest-dev
     - image: cgr.dev/chainguard/wolfi-base:latest
 namespace: nvidia-vss
 redis:
@@ -14,7 +13,7 @@ postgres:
   image: cgr.dev/chainguard/postgres:latest
   dataStorageSize: 20Gi
 phoenix:
-  image: cgr.dev/chainguard/python:latest-dev
+  image: cgr.dev/chainguard/wolfi-base:latest
   storageSize: 5Gi
   pipSpec: arize-phoenix
 elasticsearch:
