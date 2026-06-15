@@ -1,0 +1,49 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS Application - Video Search and Summarization Engine powered by Cosmos-Reason2 VLM and CA-RAG pipeline",
+    "upstreamVersion": "2.4.1",
+    "upstreamRef": "NVIDIA VSS Blueprint 2.4.1"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS Application (VSS 2.4.1)",
+  "charts": [
+    "charts/nvidia-vss-application-1.0.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "nvidia-vss-application",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "nvidia-vss-core-nims",
+        "layer": "addon",
+        "minVersion": "1.0.0",
+        "type": "required"
+      },
+      {
+        "packName": "nvidia-vss-data-infrastructure",
+        "layer": "addon",
+        "minVersion": "1.0.0",
+        "type": "required"
+      },
+      {
+        "packName": "nvidia-gpu-operator",
+        "layer": "addon",
+        "minVersion": "24.6.0",
+        "type": "optional"
+      },
+      {
+        "packName": "nvidia-gpu-operator-ai",
+        "layer": "addon",
+        "minVersion": "24.6.0",
+        "type": "optional"
+      }
+    ]
+  }
+}

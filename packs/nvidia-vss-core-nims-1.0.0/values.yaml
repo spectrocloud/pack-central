@@ -1,0 +1,177 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS PLATFORM MATRIX (canonical — keep identical across all VSS packs) ───────
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in EVERY VSS pack. Packs per profile: data-infra + core-nims +
+# │ application (always) + nvidia-vss-vllm (vLLM profiles only; H100/L40S omit it).
+# │
+# │ Platform          LLM backend   LLM model              VLM mem/len  decode    validated
+# │ DGX-SPARK         vLLM          llama-3.1-8b           0.28/10240   disabled  YES (GB10)
+# │ OTHER             vLLM          llama-3.1-8b           0.4 /16384   disabled  no
+# │ H100              nim (trtllm)  llama-3.1-70b (gpu 4)  0.8 /32768   dGPU      no
+# │ L40S              nim (trtllm)  llama-3.1-8b  (gpu 2)  0.8 /32768   dGPU      no
+# │ RTXPRO6000BW      vLLM          nemotron-nano-9b-fp8   0.4 /32768   dGPU      no
+# │ AGX-THOR/IGX-THOR vLLM (jetson) nemotron-nano-9b-fp8   0.4 /16384   Tegra*    no
+# │ "VLM mem/len" = the application vss-engine VLM; the vLLM LLM engine has its own
+# │   gpu-mem/max-len in the nvidia-vss-vllm presets (do not conflate the two).
+# │ * Tegra: runtimeClassName nvidia; the NVIDIA container runtime injects L4T libs.
+# └──────────────────────────────────────────────────────────────────────────────
+# NVIDIA VSS Core NIMs Pack Values — Version 2.4.3
+# GPU-intensive serving layer (LLM + embedding + rerank + optional Riva ASR).
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# P1 PROFILIZATION (see PLATFORM-SUPPORT-PLAN.md §8)
+# ═══════════════════════════════════════════════════════════════════════════════
+# The "VSS Platform" preset group (presets.yaml) selects a per-hardware profile.
+# The values BELOW are the DGX-SPARK (GB10 Grace-Blackwell, arm64 SBSA, 1 GPU)
+# baseline — the configuration the ansible/ harness empirically validates. It is
+# the default-selected preset, so this pack deploys correctly on a GB10 as-is.
+#
+# LLM backend is chosen by PROFILE COMPOSITION (P2-P4):
+#   - vLLM profiles (DGX-SPARK/RTXPRO6000BW/AGX-THOR/IGX-THOR/OTHER): `nim-llm` is
+#     DISABLED here; the LLM is served by the separate `nvidia-vss-vllm` pack
+#     (added to those profiles), which exposes `llm-nim-svc:8000`.
+#   - Datacenter trtllm profiles (H100/L40S): `nim-llm` is ENABLED here (see the
+#     H100/L40S presets) and the `nvidia-vss-vllm` pack is OMITTED from the profile,
+#     so `llm-nim-svc` is created exactly once. (A preset cannot exclude a manifest,
+#     so the two backends live in separate packs — see nvidia-vss-vllm/values.yaml.)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "10"
+  namespaceLabels:
+    "nvidia-vss": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      # embedding NIM (on for every profile)
+      - image: nvcr.io/nim/nvidia/llama-3.2-nv-embedqa-1b-v2:1.9.0
+      - image: curlimages/curl:8.20.0
+      # trtllm datacenter NIMs (H100/L40S presets; union member)
+      - image: nvcr.io/nim/meta/llama-3.1-70b-instruct:1.10.1
+      - image: nvcr.io/nim/meta/llama-3.1-8b-instruct:1.10.1
+      - image: nvcr.io/nim/nvidia/llama-3.2-nv-rerankqa-1b-v2:1.9.0
+      - image: nvcr.io/nim/nvidia/parakeet-0-6b-ctc-en-us:2.0.0
+
+charts:
+  nvidia-vss-core-nims:
+    global:
+      namespace: nvidia-vss
+      storageClass: ""
+      # NGC_API_KEY is a profile variable (masked). The chart creates
+      # ngc-pull-secret + ngc-api-key-secret from it.
+      ngcApiKey: "{{.spectro.var.NGC_API_KEY}}"
+      ngcImagePullSecretName: ngc-pull-secret
+      imagePullSecrets:
+        - name: ngc-pull-secret
+
+    # Chart-managed nvcr.io pull secret (consumed by this pack's manifests and by
+    # the application pack, by name, in the same namespace).
+    ngcPullSecret:
+      create: true
+      name: ngc-pull-secret
+      registry: nvcr.io
+      username: "$oauthtoken"
+
+    # hf-token-secret is created by the nvidia-vss-data-infrastructure pack
+    # (manifests/hf-token-secret.yaml, install-priority 5) so it is present for both
+    # vss-engine and vLLM. Keep the chart's optional secrets off to avoid duplicate
+    # ownership.
+    optionalSecrets:
+      nvidia:
+        enabled: false
+      openai:
+        enabled: false
+      huggingface:
+        enabled: false
+        token: ""
+
+    # ── LLM NIM ─────────────────────────────────────────────────────────────
+    # DGX-SPARK: DISABLED. The LLM runs as raw vLLM in the separate nvidia-vss-vllm
+    # pack (install-priority 12). trtllm profiles (H100/L40S) re-enable this via
+    # their preset and OMIT the nvidia-vss-vllm pack.
+    nim-llm:
+      enabled: false
+      image:
+        repository: nvcr.io/nim/meta/llama-3.1-70b-instruct
+        tag: "1.10.1"
+        pullPolicy: IfNotPresent
+      model:
+        name: meta/llama-3.1-70b-instruct
+        ngcAPISecret: ngc-api-key-secret
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          memory: "64Gi"
+          cpu: "8"
+      persistence:
+        enabled: true
+        size: "100Gi"
+      hostPath:
+        enabled: true
+      service:
+        name: llm-nim-svc
+        type: ClusterIP
+        openaiPort: 8000
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      env:
+        - name: NIM_MAX_MODEL_LEN
+          value: "128000"
+
+    # ── Embedding NIM ───────────────────────────────────────────────────────
+    # DGX-SPARK: ON, one time-sliced GPU slice. Requests lowered so VLM + LLM +
+    # embed co-fit on a single 20-core / 119 GB node.
+    nemo-embedding:
+      enabled: true
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          memory: "4Gi"
+          cpu: "1"
+
+    # ── Reranker NIM ────────────────────────────────────────────────────────
+    # DGX-SPARK: OFF (won't fit alongside VLM + LLM + embed on one GPU).
+    nemo-rerank:
+      enabled: false
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          memory: "8Gi"
+          cpu: "2"
+
+    # ── Riva ASR NIM (audio) ──────────────────────────────────────────────────
+    # DGX-SPARK: OFF.
+    riva:
+      enabled: false
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+        requests:
+          memory: "16Gi"
+          cpu: "4"
