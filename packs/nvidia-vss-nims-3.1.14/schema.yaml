@@ -1,7 +1,7 @@
 # Value constraints for the VSS 3.x NIMs pack (full dotted paths into values.yaml).
 # Image tags are driven by the VSS Platform presets, not constrained here.
 cosmos.imageTag:
-  schema: '{{ required | format "${string}" | hints "cosmos-reason2-8b NIM image tag (multiarch /nim/ image; no -sbsa variant)." }}'
+  schema: '{{ format "${string}" | hints "cosmos-reason2-8b NIM image tag (multiarch /nim/ image; no -sbsa variant)." }}'
 cosmos.gpuCount:
   schema: '{{ format "${number}" | hints "GPUs reserved for the cosmos VLM NIM (1 on a single-GPU node)." }}'
 cosmos.servicePort:
@@ -17,7 +17,7 @@ cosmos.cacheSize:
 rtviEmbed.enabled:
   schema: '{{ format "${boolean}" | hints "Render the rtvi-embed embedding microservice. SEARCH profile only; false in BASE." }}'
 rtviEmbed.imageTag:
-  schema: '{{ required | format "${string}" | hints "rtvi-embed image tag (vss-core/* image; 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere — set by preset)." }}'
+  schema: '{{ format "${string}" | hints "rtvi-embed image tag (vss-core/* image; 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere — set by preset)." }}'
 rtviEmbed.gpuCount:
   schema: '{{ format "${number}" | hints "GPUs reserved for rtvi-embed (1)." }}'
 rtviEmbed.servicePort:
