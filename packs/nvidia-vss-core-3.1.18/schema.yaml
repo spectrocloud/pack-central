@@ -3,15 +3,15 @@
 
 # ── image tags (sensor + streamprocessing have a -sbsa variant; set by preset) ──
 vssViosSensor.imageTag:
-  schema: '{{ required | format "${string}" | hints "vss-vios-sensor image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
+  schema: '{{ format "${string}" | hints "vss-vios-sensor image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
 vssViosStreamprocessing.imageTag:
-  schema: '{{ required | format "${string}" | hints "vss-vios-streamprocessing image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
+  schema: '{{ format "${string}" | hints "vss-vios-streamprocessing image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
 vssAgent.imageTag:
-  schema: '{{ required | format "${string}" | hints "vss-agent image tag (multiarch, no -sbsa variant): 3.1.0." }}'
+  schema: '{{ format "${string}" | hints "vss-agent image tag (multiarch, no -sbsa variant): 3.1.0." }}'
 vssAgentUi.imageTag:
-  schema: '{{ required | format "${string}" | hints "vss-agent-ui image tag (multiarch): 3.1.0." }}'
+  schema: '{{ format "${string}" | hints "vss-agent-ui image tag (multiarch): 3.1.0." }}'
 vssViosMcp.imageTag:
-  schema: '{{ required | format "${string}" | hints "vss-vios-mcp image tag (multiarch): 3.1.0." }}'
+  schema: '{{ format "${string}" | hints "vss-vios-mcp image tag (multiarch): 3.1.0." }}'
 
 # ── vss-agent LLM/VLM wiring (keep in lockstep with the vllm + nims packs) ──
 vssAgent.llmName:
