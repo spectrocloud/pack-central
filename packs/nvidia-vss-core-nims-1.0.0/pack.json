@@ -1,0 +1,37 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS Core NIMs - LLM (Llama 3.1 70B), Embedding, Reranker, and optional Riva ASR for Video Search and Summarization",
+    "upstreamVersion": "2.4.1",
+    "upstreamRef": "NVIDIA VSS Blueprint 2.4.1"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS Core NIMs (VSS 2.4.1)",
+  "charts": [
+    "charts/nvidia-vss-core-nims-1.0.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "nvidia-vss-core-nims",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "nvidia-gpu-operator",
+        "layer": "addon",
+        "minVersion": "24.6.0",
+        "type": "optional"
+      },
+      {
+        "packName": "nvidia-gpu-operator-ai",
+        "layer": "addon",
+        "minVersion": "24.6.0",
+        "type": "optional"
+      }
+    ]
+  }
+}
