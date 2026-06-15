@@ -13,7 +13,7 @@
   "displayName": "NVIDIA VSS Ingress (envoy + sdr + vios-ingress + proxy)",
   "layer": "addon",
   "name": "nvidia-vss-ingress",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "constraints": {
     "dependencies": [
       {
