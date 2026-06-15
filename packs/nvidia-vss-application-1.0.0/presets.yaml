@@ -1,0 +1,167 @@
+# VSS Platform profiles for the Application (vss-engine) layer (group "VSS Platform").
+# DGX-SPARK is the default-selected, validated GB10 profile.
+#
+# ⚠️ OPERATOR CONTRACT: select the SAME "VSS Platform" preset in EVERY VSS pack in
+#    the profile (and include/omit nvidia-vss-vllm per P1-P5-IMPLEMENTATION.md). In
+#    particular vss.llmModel here MUST name the model the chosen LLM backend serves
+#    (vLLM servedModelName, or the nim-llm model.name on H100/L40S) or CA-RAG calls
+#    a model that isn't there. Each preset sets the VLM topology + decode branch.
+# Each preset sets the
+# VLM topology + the VIDEO-DECODE branch for that hardware.
+#
+# Decode (the vss-engine 2.4.1 image is multi-arch: x86 = dGPU build, arm64 = Tegra
+# build):
+#  - DGX-SPARK / OTHER (arm64 engine on a dGPU/SBSA host): Tegra decoder can't init
+#    → keep global.ucfGlobalEnv VSS_EXTRA_ARGS=--disable-decoding (set in values.yaml).
+#  - H100 / L40S / RTXPRO6000BW (x86 dGPU build): decode works → REMOVE the
+#    ucfGlobalEnv key so --disable-decoding is not passed.
+#  - AGX-THOR / IGX-THOR (arm64 Tegra build on a real Tegra host): decode works →
+#    REMOVE ucfGlobalEnv AND set runtimeClassName: nvidia (the NVIDIA container
+#    runtime injects the L4T/Tegra libs+devices; no manual hostPath mounts needed).
+#
+# Non-DGX-SPARK presets are authored from PLATFORM-SUPPORT-PLAN §4 and are NOT
+# hardware-validated here.
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, 1 GPU) — decode disabled"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-application:
+          global:
+            ucfGlobalEnv:
+              - name: VSS_EXTRA_ARGS
+                value: "--disable-decoding"
+          vss:
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.28"
+            vlmMaxModelLen: "10240"
+            vlmBatchSize: "32"
+            llmModel: "meta/llama-3.1-8b-instruct"
+            disableGuardrails: "true"
+            caRagEmbeddingsDimension: "500"
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — decode disabled"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-application:
+          global:
+            ucfGlobalEnv:
+              - name: VSS_EXTRA_ARGS
+                value: "--disable-decoding"
+          vss:
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.4"
+            vlmMaxModelLen: "16384"
+            llmModel: "meta/llama-3.1-8b-instruct"
+            disableGuardrails: "true"
+            caRagEmbeddingsDimension: "500"
+
+  # ── P2 — datacenter, dGPU decode ENABLED (drop --disable-decoding) ───────────
+  - name: "H100"
+    displayName: "H100 (datacenter, 2 GPU) — dGPU decode (unvalidated)"
+    group: "VSS Platform"
+    remove: ["charts.nvidia-vss-application.global.ucfGlobalEnv"]
+    add: |
+      charts:
+        nvidia-vss-application:
+          vss:
+            resources:
+              limits:
+                nvidia.com/gpu: "2"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.8"
+            vlmMaxModelLen: "32768"
+            vlmBatchSize: "32"
+            llmModel: "meta/llama-3.1-70b-instruct"
+            disableGuardrails: "false"
+
+  - name: "L40S"
+    displayName: "L40S (datacenter, 1 GPU) — dGPU decode (unvalidated)"
+    group: "VSS Platform"
+    remove: ["charts.nvidia-vss-application.global.ucfGlobalEnv"]
+    add: |
+      charts:
+        nvidia-vss-application:
+          vss:
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.8"
+            vlmMaxModelLen: "32768"
+            llmModel: "meta/llama-3.1-8b-instruct"
+            disableGuardrails: "false"
+
+  # ── P3 — RTX PRO 6000 Blackwell workstation, dGPU decode ENABLED ─────────────
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell (1 GPU) — dGPU decode (unvalidated)"
+    group: "VSS Platform"
+    remove: ["charts.nvidia-vss-application.global.ucfGlobalEnv"]
+    add: |
+      charts:
+        nvidia-vss-application:
+          vss:
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.4"
+            vlmMaxModelLen: "32768"
+            llmModel: "nvidia/nemotron-nano-9b-v2-fp8"
+            disableGuardrails: "true"
+
+  # ── P4 — Jetson Thor (Tegra iGPU), decode ENABLED + runtimeClassName nvidia ───
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (iGPU) — Tegra decode (unvalidated)"
+    group: "VSS Platform"
+    remove: ["charts.nvidia-vss-application.global.ucfGlobalEnv"]
+    add: |
+      charts:
+        nvidia-vss-application:
+          vss:
+            applicationSpecs:
+              vss-deployment:
+                extraPodSpecs:
+                  runtimeClassName: nvidia
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.4"
+            vlmMaxModelLen: "16384"
+            llmModel: "nvidia/nemotron-nano-9b-v2-fp8"
+            disableGuardrails: "true"
+            caRagEmbeddingsDimension: "500"
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU — Tegra decode (unvalidated)"
+    group: "VSS Platform"
+    remove: ["charts.nvidia-vss-application.global.ucfGlobalEnv"]
+    add: |
+      charts:
+        nvidia-vss-application:
+          vss:
+            applicationSpecs:
+              vss-deployment:
+                extraPodSpecs:
+                  runtimeClassName: nvidia
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            vlmModelType: "cosmos-reason2"
+            vlmGpuMemoryUtilization: "0.4"
+            vlmMaxModelLen: "16384"
+            llmModel: "nvidia/nemotron-nano-9b-v2-fp8"
+            disableGuardrails: "true"
+            caRagEmbeddingsDimension: "500"
