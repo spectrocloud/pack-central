@@ -1,8 +1,11 @@
 pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: '5'
   content:
     images:
     - image: cgr.dev/chainguard/redis:latest
     - image: cgr.dev/chainguard/postgres:latest
+    - image: cgr.dev/chainguard/python:latest-dev
     - image: cgr.dev/chainguard/wolfi-base:latest
 namespace: nvidia-vss
 redis:
@@ -13,16 +16,12 @@ postgres:
   image: cgr.dev/chainguard/postgres:latest
   dataStorageSize: 20Gi
 phoenix:
-  image: cgr.dev/chainguard/wolfi-base:latest
+  image: cgr.dev/chainguard/python:latest-dev
   storageSize: 5Gi
-  pipSpec: arize-phoenix
 elasticsearch:
   image: cgr.dev/chainguard/wolfi-base:latest
   dataStorageSize: 30Gi
   logStorageSize: 5Gi
-  esVersion: 9.3.0
-  esJavaOpts: -Xmx1024m -Xms256m
-  homeStorageSize: 3Gi
 kafka:
   image: confluentinc/cp-kafka:8.1.1
   dataStorageSize: 20Gi
