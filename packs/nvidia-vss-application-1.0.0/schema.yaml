@@ -1,0 +1,22 @@
+# Pack value constraints for the Application (vss-engine) layer.
+# Keys are full dotted paths into values.yaml.
+charts.nvidia-vss-application.global.ngcApiKey:
+  schema: '{{ required | format "${password}" | hints "NGC API key (nvcr.io) for the vss-engine image." }}'
+
+charts.nvidia-vss-application.vss.vlmModelType:
+  schema: '{{ format "${list:[cosmos-reason2,cosmos-reason1,qwen3-vl,openai-compat]}" | hints "VLM family. openai-compat = remote VLM (set vlmEndpoint)." }}'
+charts.nvidia-vss-application.vss.vlmGpuMemoryUtilization:
+  schema: '{{ format "${number}" | hints "VLM share of the GPU memory pool (e.g. 0.28 on GB10)." }}'
+charts.nvidia-vss-application.vss.vlmMaxModelLen:
+  schema: '{{ format "${number}" | hints "VLM max sequence length (e.g. 10240 on GB10)." }}'
+charts.nvidia-vss-application.vss.vlmBatchSize:
+  schema: '{{ format "${number}" | hints "VLM batch size." }}'
+
+charts.nvidia-vss-application.vss.llmModel:
+  schema: '{{ format "${string}" | hints "Served LLM model name reachable at llm-nim-svc:8000." }}'
+charts.nvidia-vss-application.vss.disableGuardrails:
+  schema: '{{ format "${boolean}" | hints "Disable NeMo guardrails (true on constrained single-GPU)." }}'
+charts.nvidia-vss-application.vss.enableAudio:
+  schema: '{{ format "${boolean}" | hints "Requires the Riva NIM in the core-nims pack." }}'
+charts.nvidia-vss-application.vss.caRagEmbeddingsDimension:
+  schema: '{{ format "${number}" | hints "CA-RAG embedding dimension (e.g. 500 on GB10)." }}'
