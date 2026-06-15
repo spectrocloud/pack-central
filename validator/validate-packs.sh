@@ -195,14 +195,13 @@ validate_content(){
     if [ "$img" != "" ]; 
     then
       log_info "Valid entry $img found for image in $values_yaml_file"
-      crane pull $img image.tar
+      crane manifest $img > /dev/null 2>&1
       if [ $? -eq 0 ]; then
-        log_info "Image pull succeeded for $img"
-        rm -f image.tar     
+        log_info "Image manifest resolved for $img"
       else
-        log_error "Image pull failed. $img may not be a valid image"
+        log_error "Image manifest failed. $img may not be a valid image"
         fail=1
-      fi 
+      fi
     else
       log_error "Invalid entry $img found for images. images should have a -image entry in $values_yaml_file"
       fail =1
