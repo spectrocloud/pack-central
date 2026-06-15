@@ -52,6 +52,7 @@ baseImage: cgr.dev/chainguard/wolfi-base:latest
 # ── cosmos-reason2-8b VLM NIM (in BASE; rendered on every platform) ──────────────
 # DGX-SPARK defaults from the shared-gpu compose service + hw-DGX-SPARK-shared.env.
 cosmos:
+  enabled: true
   gatedImage: nvcr.io/nim/nvidia/cosmos-reason2-8b:1.6.0
   image: "nvcr.io/nim/nvidia/cosmos-reason2-8b"
   # /nim/ image has NO -sbsa variant — same tag on every platform.
@@ -82,6 +83,7 @@ cosmos:
 rtviEmbed:
   gatedImage: nvcr.io/nvidia/vss-core/vss-rt-embed:3.1.0
   enabled: false
+  decodeBackend: "nvdec"
   image: "nvcr.io/nvidia/vss-core/vss-rt-embed"
   imageTag: "3.1.0"
   # compose user: "1001:1001"
