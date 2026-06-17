@@ -1,0 +1,17 @@
+{
+  "addonType": "app-services",
+  "annotations": {
+    "source": "community",
+    "contributor": "Gridlight"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Gridlight AI Platform",
+  "eol": "",
+  "group": "",
+  "kubeManifests": [],
+  "kubeVersion": ">=1.26.0-0",
+  "layer": "addon",
+  "name": "gridlight",
+  "version": "1.1.2",
+  "charts": ["charts/gridlight-palette-1.1.2.tgz"]
+}

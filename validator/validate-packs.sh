@@ -123,6 +123,26 @@ validate_pack_schema(){
   return $rc
 }
 
+validate_pack_version() {
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+  log_info "Checking pack.json version field for $pack_json_file..."
+  local version
+  version="$(jq -r '.version // empty | tostring' "$pack_json_file")"
+  if [ -z "$version" ] || [ "$version" = "null" ]; then
+    log_error "Missing or null version in $pack_json_file"
+    return 1
+  fi
+  case "$version" in
+  v*)
+    log_error "pack.json version must not have a leading 'v' (found: $version) in $pack_json_file"
+    return 1
+    ;;
+  esac
+  log_success "pack.json version has no leading 'v' for $pack_json_file"
+  return 0
+}
+
 validate_logo() {
 
   local pack_dir=$1
@@ -175,12 +195,13 @@ validate_content(){
     if [ "$img" != "" ]; 
     then
       log_info "Valid entry $img found for image in $values_yaml_file"
-      crane pull $img image.tar
+      manifest_err=$(crane manifest $img 2>&1 >/dev/null)
       if [ $? -eq 0 ]; then
-        log_info "Image pull succeeded for $img"
-        rm -f image.tar     
+        log_info "Image manifest resolved for $img"
+      elif echo "$manifest_err" | grep -qiE 'DENIED|UNAUTHORIZED|no matching credentials|access denied'; then
+        log_info "Image $img is gated (registry auth not available to CI); skipping existence check - still listed in content.images for airgap image mirroring"
       else
-        log_error "Image pull failed. $img may not be a valid image"
+        log_error "Image manifest fetch failed. $img may not be a valid image: $manifest_err"
         fail=1
       fi 
     else
@@ -205,8 +226,15 @@ validate_content(){
 get_pack_layer() {
   local pack_dir=$1
   local layer="$(jq -r '.layer' $pack_dir/pack.json)"
-  echo "$layer" 
+  echo "$layer"
 }
+
+get_pack_name() {
+  local pack_dir=$1
+  local name="$(jq -r '.name' $pack_dir/pack.json)"
+  echo "$name"
+}
+
 run_validations() {
  local pack_dir
  local final_ret_code=0
@@ -228,6 +256,12 @@ run_validations() {
   fi
 
   validate_pack_schema $pack_dir
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+  fi
+
+  validate_pack_version "$pack_dir"
   rc=$?
   if [ $rc -ne 0 ]; then
    final_ret_code=$rc
@@ -263,8 +297,6 @@ run_validations() {
  done
  return $final_ret_code
 }
-
-
 
 
 #Main section starts here
