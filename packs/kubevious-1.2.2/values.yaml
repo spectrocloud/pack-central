@@ -3,6 +3,15 @@ pack:
   #The namespace (on the target cluster) to install this chart
   #When not found, a new namespace will be created
   namespace: "kubevious"
+  content:
+    images:
+      - image: docker.io/kubevious/backend:1.2.2
+      - image: docker.io/kubevious/collector:1.2.1
+      - image: docker.io/kubevious/guard:1.2.1
+      - image: docker.io/kubevious/parser:1.2.2
+      - image: docker.io/kubevious/ui:1.2.1
+      - image: docker.io/mysql:8.0.30
+      - image: docker.io/redislabs/redisearch:2.4.14
 
 charts:
   kubevious:
@@ -31,7 +40,7 @@ charts:
     backend:
       image:
         repository: kubevious/backend
-        tag: 1.0.9
+        tag: 1.2.2
         pullPolicy: IfNotPresent
       imagePullSecrets: []
       podAnnotations: {}
@@ -66,7 +75,7 @@ charts:
     collector:
       image:
         repository: kubevious/collector
-        tag: 1.0.9
+        tag: 1.2.1
         pullPolicy: IfNotPresent
       imagePullSecrets: []
       podAnnotations: {}
@@ -102,7 +111,7 @@ charts:
     guard:
       image:
         repository: kubevious/guard
-        tag: 1.0.3
+        tag: 1.2.1
         pullPolicy: IfNotPresent
       imagePullSecrets: []
       podAnnotations: {}
@@ -138,7 +147,7 @@ charts:
     parser:
       image:
         repository: kubevious/parser
-        tag: 1.0.8
+        tag: 1.2.2
         pullPolicy: IfNotPresent
       imagePullSecrets: []
       podAnnotations: {}
@@ -174,7 +183,7 @@ charts:
     ui:
       image:
         repository: kubevious/ui
-        tag: 1.0.8
+        tag: 1.2.1
         pullPolicy: IfNotPresent
       imagePullSecrets: []
       podAnnotations: {}
@@ -214,7 +223,7 @@ charts:
         password: ""
       image:
         repository: mysql
-        tag: 8.0.22
+        tag: 8.0.30
         pullPolicy: IfNotPresent
       db_name: kubevious
       db_user: "kubevious"
@@ -257,7 +266,7 @@ charts:
     redis:
       image:
         repository: redislabs/redisearch
-        tag: 2.0.9
+        tag: 2.4.14
         pullPolicy: IfNotPresent
       service:
         type: ClusterIP
