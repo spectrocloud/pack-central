@@ -1,0 +1,146 @@
+# Example values file to enable Trusted Execution Environment (TEE) shims
+# This includes confidential computing shims: SNP, TDX, SE, and COCO-dev
+#
+# Usage:
+#   helm install kata-deploy oci://ghcr.io/kata-containers/kata-deploy-charts/kata-deploy \
+#     --version VERSION \
+#     -f try-kata-tee.values.yaml
+
+debug: false
+
+snapshotter:
+  setup: ["nydus"]  # TEE shims typically use nydus snapshotter
+
+# Enable TEE (Trusted Execution Environment) shims
+# Disable all shims at once, then enable only the ones we need
+shims:
+  disableAll: true
+
+  # Enable TEE shims (qemu-snp, qemu-snp-runtime-rs, qemu-tdx, qemu-tdx-runtime-rs, qemu-se, qemu-se-runtime-rs, qemu-coco-dev, qemu-coco-dev-runtime-rs)
+  # NFD TEE labels (snp, tdx, se) are auto-injected into RuntimeClasses when NFD is detected; no need to set nodeSelector here.
+  qemu-snp:
+    enabled: true
+    supportedArches:
+      - amd64
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-snp-runtime-rs:
+    enabled: true
+    supportedArches:
+      - amd64
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-tdx:
+    enabled: true
+    supportedArches:
+      - amd64
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-tdx-runtime-rs:
+    enabled: true
+    supportedArches:
+      - amd64
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-se:
+    enabled: true
+    supportedArches:
+      - s390x
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-se-runtime-rs:
+    enabled: true
+    supportedArches:
+      - s390x
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-coco-dev:
+    enabled: true
+    supportedArches:
+      - amd64
+      - s390x
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+  qemu-coco-dev-runtime-rs:
+    enabled: true
+    supportedArches:
+      - amd64
+      - arm64
+      - s390x
+    allowedHypervisorAnnotations: []
+    containerd:
+      snapshotter: nydus
+      forceGuestPull: false
+    crio:
+      guestPull: true
+    agent:
+      httpsProxy: ""
+      noProxy: ""
+
+# Default shim per architecture (prefer TEE shims)
+defaultShim:
+  amd64: qemu-snp  # Can be changed to qemu-tdx if preferred
+  arm64: qemu-coco-dev-runtime-rs
+  s390x: qemu-se
+
+runtimeClasses:
+  enabled: true
+  createDefault: false
+  defaultName: "kata"
+

@@ -1,0 +1,150 @@
+{{- /*
+  Common RuntimeClass overhead defaults keyed by shim/baseConfig.
+*/ -}}
+{{- define "kata-deploy.runtimeClassConfigs" -}}
+{{- toYaml (dict
+  "clh" (dict "memory" "130Mi" "cpu" "250m")
+  "clh-azure" (dict "memory" "130Mi" "cpu" "250m")
+  "clh-runtime-rs" (dict "memory" "130Mi" "cpu" "250m")
+  "clh-azure-runtime-rs" (dict "memory" "130Mi" "cpu" "250m")
+  "dragonball" (dict "memory" "130Mi" "cpu" "250m")
+  "fc" (dict "memory" "130Mi" "cpu" "250m")
+  "qemu" (dict "memory" "160Mi" "cpu" "250m")
+  "qemu-coco-dev" (dict "memory" "160Mi" "cpu" "250m")
+  "qemu-coco-dev-runtime-rs" (dict "memory" "160Mi" "cpu" "250m")
+  "qemu-runtime-rs" (dict "memory" "160Mi" "cpu" "250m")
+  "qemu-se-runtime-rs" (dict "memory" "1024Mi" "cpu" "1.0")
+  "qemu-se" (dict "memory" "1024Mi" "cpu" "1.0")
+  "qemu-snp" (dict "memory" "2048Mi" "cpu" "1.0")
+  "qemu-snp-runtime-rs" (dict "memory" "2048Mi" "cpu" "1.0")
+  "qemu-tdx" (dict "memory" "2048Mi" "cpu" "1.0")
+  "qemu-tdx-runtime-rs" (dict "memory" "2048Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu-runtime-rs" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu-snp" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu-snp-runtime-rs" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu-tdx" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-nvidia-gpu-tdx-runtime-rs" (dict "memory" "10240Mi" "cpu" "1.0")
+  "qemu-cca" (dict "memory" "2048Mi" "cpu" "1.0")
+  "stratovirt" (dict "memory" "130Mi" "cpu" "250m")
+  "remote" (dict "memory" "120Mi" "cpu" "250m")
+) -}}
+{{- end -}}
+
+{{- /*
+  Render a single RuntimeClass. Params (dict): root (.), shim, config, shimConfig,
+  nameOverride (optional; if set, use as metadata.name for default RC), useShimNodeSelectors.
+*/ -}}
+{{- define "kata-deploy.runtimeclass" -}}
+---
+kind: RuntimeClass
+apiVersion: node.k8s.io/v1
+metadata:
+{{- if .root.Values.env.multiInstallSuffix }}
+  name: kata-{{ .shim }}-{{ .root.Values.env.multiInstallSuffix }}
+{{- else if .nameOverride }}
+  name: {{ .nameOverride }}
+{{- else }}
+  name: kata-{{ .shim }}
+{{- end }}
+  labels:
+    app.kubernetes.io/managed-by: kata-deploy
+{{- if .root.Values.env.multiInstallSuffix }}
+    kata-deploy/instance: {{ .root.Values.env.multiInstallSuffix | quote }}
+{{- else }}
+    kata-deploy/instance: "default"
+{{- end }}
+  annotations:
+{{- include "kata-deploy.runtimeclassAnnotations" .root | nindent 4 }}
+{{- if .root.Values.env.multiInstallSuffix }}
+handler: kata-{{ .shim }}-{{ .root.Values.env.multiInstallSuffix }}
+{{- else }}
+handler: kata-{{ .shim }}
+{{- end }}
+{{- /* Overhead section - controlled by global or per-shim overheadEnabled flag (default: true) */ -}}
+{{- $shimOverheadEnabled := true -}}
+{{- if hasKey .root.Values.runtimeClasses "overheadEnabled" -}}
+{{- $shimOverheadEnabled = .root.Values.runtimeClasses.overheadEnabled -}}
+{{- end -}}
+{{- with .shimConfig.runtimeClass -}}
+{{- if hasKey . "overheadEnabled" -}}
+{{- $shimOverheadEnabled = .overheadEnabled -}}
+{{- end -}}
+{{- end -}}
+{{- if $shimOverheadEnabled }}
+overhead:
+  podFixed:
+    memory: {{ .config.memory | quote }}
+    cpu: {{ .config.cpu | quote }}
+{{- end }}
+scheduling:
+  nodeSelector:
+    katacontainers.io/kata-runtime: "true"
+{{- /* TEE shims: snp, tdx, -se, -se-runtime-rs (SE = IBM Secure Execution / SEL) */ -}}
+{{- $isTeeShim := or (contains "snp" .shim) (contains "tdx" .shim) (hasSuffix "-se" .shim) (hasSuffix "-se-runtime-rs" .shim) -}}
+{{- $isPureTeeShim := and $isTeeShim (not (contains "nvidia-gpu" .shim)) -}}
+{{- if or (and .shimConfig.runtimeClass .shimConfig.runtimeClass.nodeSelector) (and .useShimNodeSelectors $isPureTeeShim) }}
+{{- if and .shimConfig.runtimeClass .shimConfig.runtimeClass.nodeSelector }}
+{{- range $key, $value := .shimConfig.runtimeClass.nodeSelector }}
+    {{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- else }}
+{{- if contains "snp" .shim }}
+    amd.feature.node.kubernetes.io/snp: "true"
+{{- end }}
+{{- if contains "tdx" .shim }}
+    intel.feature.node.kubernetes.io/tdx: "true"
+{{- end }}
+{{- if or (hasSuffix "-se" .shim) (hasSuffix "-se-runtime-rs" .shim) }}
+    feature.node.kubernetes.io/cpu-security.se.enabled: "true"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{- if .Values.runtimeClasses.enabled }}
+{{- $multiInstallSuffix := .Values.env.multiInstallSuffix }}
+{{- $createDefaultRC := .Values.runtimeClasses.createDefault }}
+{{- $defaultRCName := .Values.runtimeClasses.defaultName }}
+{{- $nfdEnabled := index .Values "node-feature-discovery" "enabled" | default false }}
+{{- $externalNFDNamespace := include "kata-deploy.detectExistingNFD" . | trim -}}
+{{- $useShimNodeSelectors := or $nfdEnabled (ne $externalNFDNamespace "") -}}
+
+{{- $disableAll := .Values.shims.disableAll | default false -}}
+{{- $enabledShims := list -}}
+{{- range $shimName, $shimConfig := .Values.shims -}}
+{{- if ne $shimName "disableAll" -}}
+{{- $shimEnabled := false -}}
+{{- if eq $shimConfig.enabled true -}}
+{{- $shimEnabled = true -}}
+{{- else if eq $shimConfig.enabled false -}}
+{{- $shimEnabled = false -}}
+{{- else if not $disableAll -}}
+{{- $shimEnabled = true -}}
+{{- end -}}
+{{- if $shimEnabled -}}
+{{- $enabledShims = append $enabledShims $shimName -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- $runtimeClassConfigs := fromYaml (include "kata-deploy.runtimeClassConfigs" .) }}
+
+{{- /* Create RuntimeClass for each enabled shim; when default RC is requested, emit it by reusing the same template with nameOverride */ -}}
+{{- $defaultShim := index .Values.defaultShim "amd64" | default (index .Values.defaultShim "arm64") | default (index .Values.defaultShim "s390x") | default (index .Values.defaultShim "ppc64le") }}
+{{- range $shim := $enabledShims }}
+{{- $config := index $runtimeClassConfigs $shim }}
+{{- $shimConfig := index $.Values.shims $shim }}
+{{- if $config }}
+{{- /* Allow per-shim overrides of pod overhead via .shims.<name>.runtimeClass.overhead */ -}}
+{{- $effectiveConfig := deepCopy $config }}
+{{- if and $shimConfig.runtimeClass $shimConfig.runtimeClass.overhead }}
+{{- $effectiveConfig = mergeOverwrite $effectiveConfig $shimConfig.runtimeClass.overhead }}
+{{- end }}
+{{ include "kata-deploy.runtimeclass" (dict "root" $ "shim" $shim "config" $effectiveConfig "shimConfig" $shimConfig "nameOverride" "" "useShimNodeSelectors" $useShimNodeSelectors) }}
+{{- if and $createDefaultRC (not $multiInstallSuffix) (eq $shim $defaultShim) }}
+{{ include "kata-deploy.runtimeclass" (dict "root" $ "shim" $shim "config" $effectiveConfig "shimConfig" $shimConfig "nameOverride" $defaultRCName "useShimNodeSelectors" $useShimNodeSelectors) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

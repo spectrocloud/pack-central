@@ -1,0 +1,208 @@
+{{- if eq (.Values.deploymentMode | default "daemonset") "daemonset" -}}
+{{- if index .Values "node-feature-discovery" "enabled" -}}
+{{- $existingNFDNamespace := include "kata-deploy.detectExistingNFD" . | trim -}}
+{{- if $existingNFDNamespace -}}
+{{- /* Check if NFD is part of the current release (deployed by us previously) */ -}}
+{{- $nfdInCurrentRelease := false -}}
+{{- $nfdWorkerDS := lookup "apps/v1" "DaemonSet" .Release.Namespace "node-feature-discovery-worker" -}}
+{{- if $nfdWorkerDS -}}
+{{- if $nfdWorkerDS.metadata.labels -}}
+{{- $releaseLabel := index $nfdWorkerDS.metadata.labels "app.kubernetes.io/instance" | default (index $nfdWorkerDS.metadata.labels "helm.sh/release") | default "" -}}
+{{- if eq $releaseLabel .Release.Name -}}
+{{- $nfdInCurrentRelease = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- /* Only fail if NFD exists externally (not part of our release) */ -}}
+{{- if not $nfdInCurrentRelease -}}
+{{- fail (printf "\n\nERROR: Cannot deploy kata-deploy with node-feature-discovery.enabled=true\n\nnode-feature-discovery is already installed in namespace '%s'.\n\nTo fix this, deploy with node-feature-discovery disabled:\n  helm upgrade --install %s ... --set node-feature-discovery.enabled=false\n\nThe existing node-feature-discovery installation will work with kata-deploy.\n" $existingNFDNamespace .Release.Name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+{{- if .Values.env.multiInstallSuffix }}
+  name: {{ .Chart.Name }}-{{ .Values.env.multiInstallSuffix }}
+{{- else }}
+  name: {{ .Chart.Name }}
+{{- end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+{{- if .Values.env.multiInstallSuffix }}
+      name: {{ .Chart.Name }}-{{ .Values.env.multiInstallSuffix }}
+{{- else }}
+      name: {{ .Chart.Name }}
+{{- end }}
+  template:
+    metadata:
+      labels:
+{{- if .Values.env.multiInstallSuffix }}
+        name: {{ .Chart.Name }}-{{ .Values.env.multiInstallSuffix }}
+{{- else }}
+        name: {{ .Chart.Name }}
+{{- end }}
+    spec:
+{{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{- toYaml . | nindent 6 }}
+{{- end }}
+{{- if .Values.env.multiInstallSuffix }}
+      serviceAccountName: {{ .Chart.Name }}-sa-{{ .Values.env.multiInstallSuffix }}
+{{- else }}
+      serviceAccountName: {{ .Chart.Name }}-sa
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{- toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{- toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+{{- end }}
+{{- if index .Values "node-feature-discovery" "enabled" }}
+      # When node-feature-discovery is managed by this chart (enabled: true), enforce virtualization requirements.
+      # Kata Containers requires hardware virtualization support to function.
+      #
+      # Note: Virtualization checks are ONLY enforced when node-feature-discovery is
+      #       managed by kata-deploy
+      #
+      #       If node-feature-discovery is installed independently (enabled: false),
+      #       no checks are applied because we cannot guarantee the external
+      #       node-feature-discovery configuration and labels.
+      #
+      # NOTE: For kata-remote/peer-pods support in the future, add a condition here:
+      #       if and (index .Values "node-feature-discovery" "enabled") (not .Values.cloud-api-adaptor.enabled)
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            # x86_64: Intel VT-x (VMX) support
+            - matchExpressions:
+              - key: feature.node.kubernetes.io/cpu-cpuid.VMX
+                operator: In
+                values:
+                - "true"
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "amd64"
+            # x86_64: AMD-V (SVM) support
+            - matchExpressions:
+              - key: feature.node.kubernetes.io/cpu-cpuid.SVM
+                operator: In
+                values:
+                - "true"
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "amd64"
+            # aarch64: Allow all ARM64 nodes (virtualization check not yet implemented)
+            # TODO: Implement proper virtualization detection for aarch64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "arm64"
+                - "aarch64"
+            # s390x: Allow all s390x nodes (virtualization check not yet implemented)
+            # TODO: Implement proper virtualization detection for s390x
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "s390x"
+            # ppc64le: Allow all ppc64le nodes (virtualization check not yet implemented)
+            # TODO: Implement proper virtualization detection for ppc64le
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "ppc64le"
+            # riscv64: Allow all RISC-V nodes (virtualization support not yet available)
+            # TODO: Implement virtualization detection when RISC-V virt support is available
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - "riscv64"
+{{- end }}
+      hostPID: true
+      # Allow SIGTERM cleanup (uninstall) to complete before force-kill.
+      # Cleanup restarts the CRI runtime and waits for the node to become
+      # ready again, which can take several minutes on k3s/rke2.
+      terminationGracePeriodSeconds: 600
+      containers:
+      - name: kube-kata
+        image: {{ include "kata-deploy.image" . }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        {{- $logLevel := .Values.logLevel | default "" | trim -}}
+        {{- if and (not $logLevel) .Values.debug -}}
+        {{- $logLevel = "debug" -}}
+        {{- end }}
+        command:
+        - /usr/bin/kata-deploy
+        {{- if $logLevel }}
+        - --log-level
+        - {{ $logLevel | quote }}
+        {{- end }}
+        - install
+        env:
+{{- include "kata-deploy.commonEnv" . | nindent 8 }}
+{{- $healthDefaults := dict
+    "port" 8090
+    "startupProbe" (dict "enabled" true "initialDelaySeconds" 1 "periodSeconds" 10 "failureThreshold" 60 "timeoutSeconds" 3)
+    "livenessProbe" (dict "enabled" true "periodSeconds" 30 "failureThreshold" 3 "timeoutSeconds" 3)
+    "readinessProbe" (dict "enabled" true "periodSeconds" 10 "failureThreshold" 3 "timeoutSeconds" 3)
+}}
+{{- $health := merge (.Values.health | default dict) $healthDefaults }}
+        - name: HEALTH_PORT
+          value: {{ $health.port | quote }}
+        securityContext:
+          privileged: true
+{{- if $health.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            path: /readyz
+            port: {{ $health.port }}
+          initialDelaySeconds: {{ $health.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ $health.startupProbe.periodSeconds }}
+          failureThreshold: {{ $health.startupProbe.failureThreshold }}
+          timeoutSeconds: {{ $health.startupProbe.timeoutSeconds }}
+{{- end }}
+{{- if $health.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ $health.port }}
+          periodSeconds: {{ $health.livenessProbe.periodSeconds }}
+          failureThreshold: {{ $health.livenessProbe.failureThreshold }}
+          timeoutSeconds: {{ $health.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if $health.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ $health.port }}
+          periodSeconds: {{ $health.readinessProbe.periodSeconds }}
+          failureThreshold: {{ $health.readinessProbe.failureThreshold }}
+          timeoutSeconds: {{ $health.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- with .Values.resources }}
+        resources:
+{{- toYaml . | nindent 10 }}
+{{- end }}
+        volumeMounts:
+{{- include "kata-deploy.commonVolumeMounts" . | nindent 8 }}
+      volumes:
+{{- include "kata-deploy.commonVolumes" . | nindent 6 }}
+{{- with .Values.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+{{- end}}
+{{- end -}}

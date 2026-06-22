@@ -1,0 +1,28 @@
+{
+  "addonType": "security",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Kata Containers",
+  "charts": [
+    "charts/kata-deploy-3.32.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "kata-deploy",
+  "version": "3.32.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
