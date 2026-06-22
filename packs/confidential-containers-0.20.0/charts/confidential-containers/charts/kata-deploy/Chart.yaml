@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: 3.29.0
+dependencies:
+- condition: node-feature-discovery.enabled
+  name: node-feature-discovery
+  repository: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+  version: ~0.18.0
+description: A Helm chart for deploying Kata Containers
+name: kata-deploy
+type: application
+version: 3.29.0

@@ -1,0 +1,31 @@
+apiVersion: v2
+appVersion: v0.21.1
+dependencies:
+- condition: kata-deploy.enabled
+  name: kata-deploy
+  repository: oci://ghcr.io/kata-containers/kata-deploy-charts
+  version: 3.31.0
+- alias: resourceCtrl
+  condition: resourceCtrl.enabled
+  name: peerpodctrl
+  repository: file://../../../../peerpod-ctrl/chart
+  version: 0.3.1
+- alias: webhook
+  condition: webhook.enabled
+  name: peerpods-webhook
+  repository: file://../../../../webhook/chart
+  version: 0.3.1
+description: Cloud API Adaptor (Peerpods) Helm Chart
+home: https://github.com/confidential-containers/cloud-api-adaptor
+keywords:
+- confidential-containers
+- peer-pods
+- cloud-api-adaptor
+maintainers:
+- name: Confidential Containers Community
+  url: https://github.com/confidential-containers
+name: peerpods
+sources:
+- https://github.com/confidential-containers/cloud-api-adaptor
+type: application
+version: 0.3.1

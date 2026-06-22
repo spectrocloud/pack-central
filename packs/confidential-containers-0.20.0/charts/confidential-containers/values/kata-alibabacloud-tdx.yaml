@@ -1,0 +1,86 @@
+# This file is used to configure the kata runtime for Alibaba Cloud TDX baremetal environment
+#
+# This deployment will use the mirror image from Alibaba Cloud
+
+architecture: x86_64
+
+kata-as-coco-runtime:
+  image:
+    reference: registry-cn-hangzhou.ack.aliyuncs.com/dev/coco-kata-deploy
+  imagePullPolicy: Always
+  k8sDistribution: k8s
+  debug: false
+
+  # Snapshotter configuration
+  snapshotter:
+    setup: ["nydus"]
+
+  # TEE (Trusted Execution Environment) shims configuration
+  # Only enable the shims we want to expose, explicitly disable all others
+  shims:
+    qemu-tdx:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+      agent:
+        httpsProxy: ""
+        noProxy: ""
+
+    qemu-coco-dev:
+      enabled: true
+      supportedArches:
+        - amd64
+      allowedHypervisorAnnotations: []
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+      agent:
+        httpsProxy: ""
+        noProxy: ""
+
+    qemu-snp:
+      enabled: false
+
+    qemu-coco-dev-runtime-rs:
+      enabled: false
+
+    qemu-cca:
+      enabled: false
+
+    qemu-se:
+      enabled: false
+
+    qemu-se-runtime-rs:
+      enabled: false
+
+    qemu-nvidia-gpu:
+      enabled: false
+
+    qemu-nvidia-gpu-tdx:
+      enabled: false
+
+    qemu-nvidia-gpu-snp:
+      enabled: false
+
+    qemu-snp-runtime-rs:
+      enabled: false
+
+    qemu-tdx-runtime-rs:
+      enabled: false
+
+  # RuntimeClasses configuration
+  runtimeClasses:
+    enabled: true
+    createDefault: false
+    defaultName: "kata"
+
+  # Default shim per architecture
+  defaultShim:
+    amd64: qemu-tdx

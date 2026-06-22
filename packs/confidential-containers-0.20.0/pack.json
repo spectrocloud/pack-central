@@ -1,0 +1,28 @@
+{
+  "addonType": "security",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Confidential Containers",
+  "charts": [
+    "charts/confidential-containers-0.20.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "confidential-containers",
+  "version": "0.20.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: cloud-api-adaptor
+  name: cloud-api-adaptor-daemonset
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: cloud-api-adaptor
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.daemonset.updateStrategy.maxUnavailable }}
+      maxSurge: {{ .Values.daemonset.updateStrategy.maxSurge }}
+  template:
+    metadata:
+      labels:
+        app: cloud-api-adaptor
+        {{- with .Values.daemonset.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: cloud-api-adaptor
+      containers:
+      - command:
+        - /usr/local/bin/entrypoint.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        envFrom:
+{{- if include "peerpods.secretName" . }}
+        - secretRef:
+            name: {{ include "peerpods.secretName" . }}
+{{- end }}
+        - configMapRef:
+            name: peer-pods-cm
+        image: {{ .Values.image.name | default "quay.io/confidential-containers/cloud-api-adaptor" }}:{{ .Values.image.tag | default "latest" }}
+        imagePullPolicy: Always
+        name: cloud-api-adaptor-con
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8000
+          failureThreshold: 30
+          periodSeconds: 20
+          initialDelaySeconds: 20
+        # TODO: We should think about a better patch strategy for keeping per provider
+        # patches in different files, otherwise this template might get bloated.
+        volumeMounts:
+{{- if and (or (eq .Values.provider "libvirt") (eq .Values.provider "byom")) (include "peerpods.sshKeySecretName" .) }}
+        - mountPath: /root/.ssh/
+          name: ssh
+          readOnly: true
+{{- end }}
+{{- if include "peerpods.hasTlsCerts" . }}
+        - mountPath: /etc/certificates
+          name: certs
+          readOnly: true
+{{- end }}
+{{- if include "peerpods.alibabacloudRrsaEnabled" . }}
+        - mountPath: /var/run/secrets/ack.alibabacloud.com/rrsa-tokens
+          name: rrsa-oidc-token
+          readOnly: true
+{{- end }}
+        - mountPath: /run/peerpod
+          name: pods-dir
+        - mountPath: /run/netns
+          mountPropagation: HostToContainer
+          name: netns
+        - mountPath: /run/xtables.lock
+          name: xtables-lock
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
+        # # setting for cloud provider external plugin
+        # - mountPath: /cloud-providers
+        #   name: provider-dir
+        # # setting for cloud provider external plugin
+{{- if eq .Values.provider "docker" }}
+        - mountPath: /var/run/docker.sock
+          name: docker-socket
+        - mountPath: /var/lib/docker
+          name: docker-dir
+{{- end }}
+{{- if eq .Values.provider "ibmcloud" }}
+        - mountPath: /run/kata-containers/shared/direct-volumes
+          name: kata-direct-volumes-dir
+        - mountPath: /var/run/secrets/tokens
+          name: vault-token
+{{- end }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        node.kubernetes.io/worker: ""
+      volumes:
+{{- if and (or (eq .Values.provider "libvirt") (eq .Values.provider "byom")) (include "peerpods.sshKeySecretName" .) }}
+      - name: ssh
+        secret:
+          defaultMode: 384
+          optional: true
+          secretName: {{ include "peerpods.sshKeySecretName" . }}
+{{- end }}
+{{- if include "peerpods.hasTlsCerts" . }}
+      - name: certs
+        secret:
+          defaultMode: 384
+          optional: true
+          secretName: {{ include "peerpods.tlsSecretName" . }}
+{{- end }}
+{{- if include "peerpods.alibabacloudRrsaEnabled" . }}
+      - name: rrsa-oidc-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              audience: "sts.aliyuncs.com"
+              expirationSeconds: 3600
+              path: token
+{{- end }}
+      - hostPath:
+          path: /run/peerpod
+        name: pods-dir
+      - hostPath:
+          path: /run/netns
+        name: netns
+      - hostPath:
+          path: /run/xtables.lock
+          type: FileOrCreate
+        name: xtables-lock
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: lib-modules
+      # # setting for cloud provider external plugin
+      # - hostPath:
+      #     path: /opt/cloud-api-adaptor/plugins
+      #     type: Directory
+      #   name: provider-dir
+      # # setting for cloud provider external plugin
+{{- if eq .Values.provider "docker" }}
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: docker-dir
+        hostPath:
+          path: /var/lib/docker
+{{- end }}
+{{- if eq .Values.provider "ibmcloud" }}
+      - name: kata-direct-volumes-dir
+        hostPath:
+          path: /run/kata-containers/shared/direct-volumes
+          type: DirectoryOrCreate
+      - name: vault-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: vault-token
+              expirationSeconds: 3600
+              audience: iam
+{{- end }}

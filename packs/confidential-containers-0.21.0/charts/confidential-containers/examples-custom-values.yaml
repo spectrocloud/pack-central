@@ -1,0 +1,166 @@
+# Example: Custom values file for Confidential Containers Helm Chart
+#
+# This file demonstrates how to create a custom configuration
+# for your specific needs while using architecture-specific settings.
+
+# Example 1: s390x with custom node selector
+architecture: s390x
+
+kata-as-coco-runtime:
+  debug: true
+
+  snapshotter:
+    setup: ["nydus"]
+
+  shims:
+    qemu-coco-dev:
+      enabled: true
+      supportedArches:
+        - amd64
+        - s390x
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+
+    qemu-se:
+      enabled: true
+      supportedArches:
+        - s390x
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+  
+  # Only deploy on worker nodes with specific label
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+    confidential-computing: "enabled"
+
+---
+# Example 2: x86_64 with only SEV-SNP and TDX (no GPU support)
+architecture: x86_64
+
+kata-as-coco-runtime:
+  debug: false
+  
+  snapshotter:
+    setup: ["nydus"]
+
+  shims:
+    qemu-snp:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+      agent:
+        httpsProxy: "http://proxy.example.com:8080"
+        noProxy: "localhost,127.0.0.1"
+
+    qemu-tdx:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+      agent:
+        httpsProxy: "http://proxy.example.com:8080"
+        noProxy: "localhost,127.0.0.1"
+
+    qemu-coco-dev:
+      enabled: true
+      supportedArches:
+        - amd64
+        - s390x
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+      agent:
+        httpsProxy: "http://proxy.example.com:8080"
+        noProxy: "localhost,127.0.0.1"
+
+---
+# Example 3: x86_64 with custom image and selected shims
+# Note: qemu-nvidia-gpu-snp and qemu-nvidia-gpu-tdx are not in our standard set
+# This example shows the shims we expose: qemu-snp, qemu-tdx, qemu-coco-dev
+architecture: x86_64
+
+kata-as-coco-runtime:
+  image:
+    reference: quay.io/kata-containers/kata-deploy
+  debug: true
+  
+  snapshotter:
+    setup: ["nydus"]
+  
+  shims:
+    qemu-snp:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+  
+    qemu-tdx:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+  
+    qemu-coco-dev:
+      enabled: true
+      supportedArches:
+        - amd64
+        - s390x
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+    
+  # Deploy on GPU nodes only
+  nodeSelector:
+    nvidia.com/gpu: "true"
+
+---
+# Example 4: Multi-installation on x86_64 (for testing multiple configurations)
+architecture: x86_64
+
+kata-as-coco-runtime:
+  debug: true
+  env:
+    multiInstallSuffix: "snp-only"
+
+  snapshotter:
+    setup: ["nydus"]
+
+  shims:
+    qemu-snp:
+      enabled: true
+      supportedArches:
+        - amd64
+      containerd:
+        snapshotter: nydus
+        forceGuestPull: false
+      crio:
+        guestPull: true
+
+

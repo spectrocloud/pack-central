@@ -1,0 +1,231 @@
+{{- if .Values.customContainerd.enabled }}
+{{- $k8sDistribution := (index .Values "kata-as-coco-runtime").k8sDistribution | default "k8s" }}
+{{- if eq $k8sDistribution "k8s" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "confidential-containers.fullname" . }}-containerd-installer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "confidential-containers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: containerd-installer
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "confidential-containers.name" . }}-containerd-installer
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: containerd-installer
+    spec:
+      restartPolicy: OnFailure
+      hostNetwork: true
+      hostPID: true
+      {{- with .Values.customContainerd.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.customContainerd.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: containerd-installer
+        image: {{ .Values.customContainerd.image.repository }}:{{ .Values.customContainerd.image.tag }}
+        imagePullPolicy: {{ .Values.customContainerd.image.pullPolicy | default "IfNotPresent" }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -euo pipefail
+          
+          echo "🔧 Custom Containerd Installer"
+          echo "=============================="
+          
+          # Detect node architecture
+          NODE_ARCH=$(uname -m)
+          case "${NODE_ARCH}" in
+            x86_64) ARCH="amd64" ;;
+            s390x) ARCH="s390x" ;;
+            *)
+              echo "❌ Unsupported architecture: ${NODE_ARCH}"
+              exit 1
+              ;;
+          esac
+          
+          echo "Architecture: ${ARCH}"
+          
+          # Detect containerd installation path
+          echo "🔍 Detecting containerd installation path..."
+          CONTAINERD_BIN=$(nsenter --target 1 --mount which containerd 2>/dev/null || echo "")
+          if [ -z "${CONTAINERD_BIN}" ]; then
+            echo "❌ Could not find containerd in PATH"
+            exit 1
+          fi
+          # Get the directory (e.g., /usr/bin/containerd -> /usr)
+          BIN_DIR=$(dirname "${CONTAINERD_BIN}")
+          INSTALL_PATH=$(dirname "${BIN_DIR}")
+          echo "   Detected: ${INSTALL_PATH} (containerd at ${CONTAINERD_BIN})"
+          
+          # Check if containerd was already upgraded by a previous installation
+          MARKER_FILE="/host${INSTALL_PATH}/.containerd-installer-complete"
+          if [ -f "${MARKER_FILE}" ]; then
+            echo "❌ Containerd was already upgraded by another installation!"
+            echo "   Marker file exists: ${MARKER_FILE#/host}"
+            echo ""
+            echo "   This prevents accidental double-upgrades that would lose the original backup."
+            echo "   To proceed, you must:"
+            echo "   1. Uninstall the existing chart that installed custom containerd"
+            echo "   2. Verify containerd was rolled back: rm ${MARKER_FILE#/host}"
+            echo "   3. Then install again"
+            exit 1
+          fi
+          
+          # Determine tarball URL
+          TARBALL_URL=""
+          {{- if .Values.customContainerd.tarballUrls }}
+          {{- if .Values.customContainerd.tarballUrls.amd64 }}
+          [ "${ARCH}" = "amd64" ] && TARBALL_URL="{{ .Values.customContainerd.tarballUrls.amd64 }}"
+          {{- end }}
+          {{- if .Values.customContainerd.tarballUrls.s390x }}
+          [ "${ARCH}" = "s390x" ] && TARBALL_URL="{{ .Values.customContainerd.tarballUrls.s390x }}"
+          {{- end }}
+          {{- end }}
+          
+          [ -z "${TARBALL_URL}" ] && TARBALL_URL="{{ .Values.customContainerd.tarballUrl }}"
+          
+          if [ -z "${TARBALL_URL}" ]; then
+            echo "❌ No tarball URL configured"
+            exit 1
+          fi
+          
+          echo "Tarball URL: ${TARBALL_URL}"
+          
+          # Download and extract
+          TMP_DIR=$(mktemp -d)
+          TARBALL="${TMP_DIR}/containerd.tar.gz"
+          
+          echo "📥 Downloading containerd..."
+          wget -q -O "${TARBALL}" "${TARBALL_URL}" || {
+            echo "❌ Download failed"
+            exit 1
+          }
+          
+          # Backup existing containerd binaries
+          BACKUP_DIR="/host${INSTALL_PATH}/.containerd-backup"
+          INSTALL_BIN_DIR="/host${INSTALL_PATH}/bin"
+          
+          if [ -d "${INSTALL_BIN_DIR}" ]; then
+            echo "💾 Backing up existing binaries..."
+            mkdir -p "${BACKUP_DIR}"
+            for binary in containerd containerd-shim containerd-shim-runc-v1 containerd-shim-runc-v2 ctr; do
+              [ -f "${INSTALL_BIN_DIR}/${binary}" ] && cp -p "${INSTALL_BIN_DIR}/${binary}" "${BACKUP_DIR}/"
+            done
+          fi
+          
+          echo "📦 Extracting to ${INSTALL_PATH}..."
+          tar -C "/host${INSTALL_PATH}" -xzf "${TARBALL}" || {
+            echo "❌ Extraction failed"
+            exit 1
+          }
+          
+          # Verify critical binaries were extracted and are executable
+          echo "🔍 Verifying extracted binaries..."
+          for binary in containerd containerd-shim-runc-v2 ctr; do
+            if [ -f "${INSTALL_BIN_DIR}/${binary}" ]; then
+              if [ -x "${INSTALL_BIN_DIR}/${binary}" ]; then
+                echo "  ✅ ${binary} (executable)"
+              else
+                echo "  ⚠️  ${binary} (not executable, fixing...)"
+                chmod +x "${INSTALL_BIN_DIR}/${binary}"
+              fi
+            else
+              echo "  ❌ ${binary} missing!"
+              exit 1
+            fi
+          done
+          
+          # Make all binaries executable
+          echo "📋 Setting execute permissions on all binaries..."
+          chmod +x "${INSTALL_BIN_DIR}"/* 2>/dev/null || true
+          
+          # Show what was extracted
+          echo "📋 Extracted files:"
+          ls -lh "${INSTALL_BIN_DIR}/" | grep -E "(containerd|ctr|runc)" || true
+          
+          rm -rf "${TMP_DIR}"
+          touch "${BACKUP_DIR}/../.containerd-installer-complete"
+          
+          # Restart containerd using nsenter to access host systemd
+          echo "🔄 Restarting containerd..."
+          nsenter --target 1 --mount systemctl daemon-reload || {
+            echo "❌ daemon-reload failed"
+            exit 1
+          }
+          
+          nsenter --target 1 --mount systemctl restart containerd || {
+            echo "❌ restart containerd failed"
+            exit 1
+          }
+          
+          # Wait for containerd to be ready with retry
+          echo "⏳ Waiting for containerd to be active..."
+          TIMEOUT=30
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nsenter --target 1 --mount systemctl is-active containerd >/dev/null 2>&1; then
+              echo "✅ containerd is active (after ${ELAPSED}s)"
+              break
+            fi
+            sleep 3
+            ELAPSED=$((ELAPSED + 3))
+          done
+          
+          if ! nsenter --target 1 --mount systemctl is-active containerd >/dev/null 2>&1; then
+            echo "❌ containerd failed to start after ${TIMEOUT}s"
+            nsenter --target 1 --mount systemctl status containerd || true
+            exit 1
+          fi
+          
+          # Restart kubelet to pick up the new containerd/shims
+          echo "🔄 Restarting kubelet..."
+          nsenter --target 1 --mount systemctl restart kubelet || {
+            echo "⚠️  Failed to restart kubelet"
+          }
+          
+          # Wait for kubelet to be ready
+          echo "⏳ Waiting for kubelet to be active..."
+          TIMEOUT=30
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nsenter --target 1 --mount systemctl is-active kubelet >/dev/null 2>&1; then
+              echo "✅ kubelet is active (after ${ELAPSED}s)"
+              break
+            fi
+            sleep 3
+            ELAPSED=$((ELAPSED + 3))
+          done
+          
+          # Get and display version
+          CONTAINERD_VERSION=$(nsenter --target 1 --mount ${INSTALL_PATH}/bin/containerd --version 2>/dev/null | head -1 || echo "unknown")
+          echo "✅ Installation complete!"
+          echo "   ${CONTAINERD_VERSION}"
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+        env:
+        - name: PATH
+          value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+          type: Directory
+{{- end }}
+{{- end }}
+

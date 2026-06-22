@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: 0.20.0
+dependencies:
+- alias: kata-as-coco-runtime
+  condition: kata-as-coco-runtime.enabled
+  name: kata-deploy
+  repository: oci://ghcr.io/kata-containers/kata-deploy-charts
+  version: 3.29.0
+- condition: peerpods.enabled
+  name: peerpods
+  repository: oci://ghcr.io/confidential-containers/cloud-api-adaptor/charts
+  version: 0.2.0
+description: Helm chart for Confidential Containers deployment
+maintainers:
+- name: Confidential Containers Community
+  url: https://github.com/confidential-containers
+name: confidential-containers
+type: application
+version: 0.20.0

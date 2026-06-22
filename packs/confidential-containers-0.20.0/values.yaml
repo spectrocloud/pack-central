@@ -1,0 +1,264 @@
+pack:
+  content:
+    images:
+      - image: quay.io/kata-containers/kata-deploy:3.29.0
+      - image: quay.io/kata-containers/kubectl:v1.36.2
+      # Optional: customContainerd installer Job (customContainerd.enabled=true)
+      - image: docker.io/library/alpine:3.22
+      # Optional: peer-pods / cloud-api-adaptor (peerpods.enabled=true)
+      - image: registry.k8s.io/kubebuilder/kube-rbac-proxy:v0.14.0
+      - image: quay.io/confidential-containers/cloud-api-adaptor:2d2e7c2c0736ec41c889cd98442a598b8b93bc0b
+      - image: quay.io/confidential-containers/peerpod-ctrl:2d2e7c2c0736ec41c889cd98442a598b8b93bc0b
+      - image: quay.io/confidential-containers/peer-pods-webhook:2d2e7c2c0736ec41c889cd98442a598b8b93bc0b
+    charts:
+      - repo: oci://ghcr.io/confidential-containers/charts
+        name: confidential-containers
+        version: 0.20.0
+  # The namespace (on the target cluster) to install this chart
+  namespace: "confidential-containers-system"
+charts:
+  confidential-containers:
+    # Default values for Confidential Containers
+    # This file provides x86_64 architecture defaults.
+    # For other architectures, use:
+    #   - values/kata-s390x.yaml for IBM Z
+    #   - values/kata-remote.yaml for peer-pods
+    
+    # Architecture label (for NOTES template)
+    architecture: "x86_64"
+    
+    # Custom Containerd Installation (optional)
+    # Allows installation of a custom containerd binary from a tarball before runtime deployment.
+    # This is useful for testing custom containerd builds or specific versions.
+    # Disabled by default.
+    #
+    # IMPORTANT: Only works with k8sDistribution: k8s (not k3s, rke2, k0s, microk8s).
+    #            These distributions manage their own containerd.
+    #
+    # Example:
+    #   helm install coco oci://... \
+    #     --set customContainerd.enabled=true \
+    #     --set customContainerd.tarballUrl=https://example.com/containerd-1.7.0-linux-amd64.tar.gz
+    #
+    customContainerd:
+      enabled: false
+      # URL to the containerd tarball
+      # For single-arch clusters, use tarballUrl. For multi-arch, use tarballUrls with arch keys.
+      # The tarball should extract to bin/containerd, bin/containerd-shim-runc-v2, etc.
+      tarballUrl: ""
+      # Multi-arch tarball URLs (takes precedence over tarballUrl if specified)
+      # Supported architectures: amd64, s390x
+      tarballUrls:
+        amd64: ""
+        s390x: ""
+      # Image used for the installer Job (should have wget, tar, sh)
+      image:
+        repository: "docker.io/library/alpine"
+        tag: "3.22"
+        pullPolicy: "IfNotPresent"
+      # Node selector for targeting specific nodes
+      nodeSelector: {}
+      # Tolerations for scheduling on tainted nodes
+      tolerations:
+      - operator: Exists
+    
+    # Runtime configuration (kata-deploy)
+    # Most values are inherited from the kata-deploy subchart defaults.
+    # We only override what's specific to Confidential Containers.
+    #
+    # Common customizations (use --set flags to override defaults):
+    #   imagePullPolicy: IfNotPresent | Always (default) | Never
+    #   imagePullSecrets: [{"name": "my-secret"}]
+    #   k8sDistribution: k8s (default) | k3s | rke2 | k0s | microk8s
+    #   nodeSelector: {"key": "value"}
+    #   debug: true | false (default)
+    #
+    # Advanced customizations (kata-deploy specific options):
+    #   image.tag: Override image tag (uses chart's appVersion by default)
+    #   env.defaultShim: "" (default) | "qemu-snp" | "qemu-tdx" | etc.
+    #                    The default shim to use if `kata` is specified as the pod runtimeClass
+    #   env.createRuntimeClasses: "true" (default) | "false"
+    #                             Create Kubernetes RuntimeClass resources
+    #   env.createDefaultRuntimeClass: "false" (default) | "true"
+    #                                  Create the default k8s RuntimeClass
+    #   env.installationPrefix: "" (default, uses "/opt/kata") | "/opt/custom-path"
+    #                           Custom installation path prefix
+    #   env.multiInstallSuffix: "" (default) | "/opt/kata-PR12232"
+    #                           Enable multiple installations with suffix
+    #   env.allowedHypervisorAnnotations: Enable specific annotations when launching containers
+    #   env.agentNoProxy: Set NO_PROXY for the Kata agent
+    #   env.agentHttpsProxy: Set HTTPS_PROXY for the Kata agent
+    #
+    # Example:
+    #   helm install coco oci://... -f values/kata-s390x.yaml \
+    #     --set kata-as-coco-runtime.imagePullPolicy=IfNotPresent \
+    #     --set kata-as-coco-runtime.k8sDistribution=k3s \
+    #     --set kata-as-coco-runtime.env.defaultShim=qemu-tdx
+    #
+    kata-as-coco-runtime:
+      enabled: true
+      imagePullPolicy: Always
+      k8sDistribution: k8s
+      debug: false
+
+      # Pin the kubectl image used by cleanup/verification jobs (chart default is :latest)
+      kubectlImage:
+        reference: quay.io/kata-containers/kubectl
+        tag: v1.36.2
+    
+      # Deploy TEE-enabled runtime shims for x86_64
+      # For other architectures, use the appropriate values file:
+      #   - values/kata-s390x.yaml for IBM Z
+      #   - values/kata-remote.yaml for peer-pods
+    
+      # Snapshotter configuration
+      snapshotter:
+        setup: ["nydus"]
+    
+      # TEE (Trusted Execution Environment) shims configuration
+      # Only enable the shims we want to expose, explicitly disable all others
+      shims:
+        # Enabled shims - TEE shims we want to expose
+        qemu-snp:
+          enabled: true
+          supportedArches:
+            - amd64
+          allowedHypervisorAnnotations: []
+          containerd:
+            snapshotter: nydus
+            forceGuestPull: false
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        qemu-tdx:
+          enabled: true
+          supportedArches:
+            - amd64
+          allowedHypervisorAnnotations: []
+          containerd:
+            snapshotter: nydus
+            forceGuestPull: false
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        qemu-coco-dev:
+          enabled: true
+          supportedArches:
+            - amd64
+            - s390x
+          allowedHypervisorAnnotations: []
+          containerd:
+            snapshotter: nydus
+            forceGuestPull: false
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        qemu-coco-dev-runtime-rs:
+          enabled: true
+          supportedArches:
+            - amd64
+            - s390x
+          allowedHypervisorAnnotations: []
+          containerd:
+            snapshotter: nydus
+            forceGuestPull: false
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        # NVIDIA GPU shims with TEE protection
+        # These use experimental-force-guest-pull to match kata-containers configuration
+        qemu-nvidia-gpu-snp:
+          enabled: true
+          supportedArches:
+            - amd64
+          allowedHypervisorAnnotations: []
+          containerd:
+            forceGuestPull: true
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        qemu-nvidia-gpu-tdx:
+          enabled: true
+          supportedArches:
+            - amd64
+          allowedHypervisorAnnotations: []
+          containerd:
+            forceGuestPull: true
+          crio:
+            guestPull: true
+          agent:
+            httpsProxy: ""
+            noProxy: ""
+    
+        # Kata runtimes that are not for TEE
+        clh:
+          enabled: false
+    
+        cloud-hypervisor:
+          enabled: false
+    
+        dragonball:
+          enabled: false
+    
+        fc:
+          enabled: false
+    
+        qemu:
+          enabled: false
+    
+        qemu-runtime-rs:
+          enabled: false
+    
+        qemu-snp-runtime-rs:
+          enabled: false
+    
+        qemu-tdx-runtime-rs:
+          enabled: false
+    
+        qemu-cca:
+          enabled: false
+    
+        qemu-nvidia-gpu:
+          enabled: false
+    
+        qemu-se:
+          enabled: false
+    
+        qemu-se-runtime-rs:
+          enabled: false
+    
+        stratovirt:
+          enabled: false
+    
+        remote:
+          enabled: false
+    
+      # RuntimeClasses configuration
+      runtimeClasses:
+        enabled: true
+        createDefault: false
+        defaultName: "kata"
+    
+      # Default shim per architecture
+      defaultShim:
+        amd64: qemu-snp
+    
+    # Peer Pods (Cloud API Adaptor) subchart
+    # Disabled by default. Use values/kata-remote.yaml to enable.
+    peerpods:
+      enabled: false

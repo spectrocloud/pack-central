@@ -1,0 +1,39 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Release name: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Architecture: {{ include "confidential-containers.architectureDisplayName" . }}
+
+The Confidential Containers runtime has been deployed successfully.
+
+Configured runtime shims:
+{{- if index .Values "kata-as-coco-runtime" }}
+{{- if (index .Values "kata-as-coco-runtime").env }}
+{{- if (index .Values "kata-as-coco-runtime").env.shims }}
+{{- $shims := (index .Values "kata-as-coco-runtime").env.shims | toString | splitList " " }}
+{{- range $shims }}
+  - kata-{{ . }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+Verify the installation:
+
+  kubectl get daemonset -n {{ .Release.Namespace }}
+  kubectl get runtimeclass
+
+Use confidential containers in your pods by specifying a RuntimeClass:
+
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: my-pod
+  spec:
+    runtimeClassName: kata-qemu-snp  # Choose appropriate RuntimeClass for your hardware
+    containers:
+    - name: app
+      image: your-image:tag
+
+For more information:
+  https://github.com/confidential-containers

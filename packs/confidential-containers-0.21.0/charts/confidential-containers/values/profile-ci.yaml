@@ -1,0 +1,49 @@
+# CI Profile - Uses latest kata-containers build from main branch
+#
+# This profile configures the chart to use the latest development builds
+# from the kata-containers CI pipeline instead of stable releases.
+#
+# Usage:
+#   helm install coco . -f values/kata-remote.yaml -f values/profile-ci.yaml --namespace coco-system
+#
+# For different architectures, combine with architecture-specific values:
+#   helm install coco . -f values/kata-s390x.yaml -f values/profile-ci.yaml --namespace coco-system
+#
+
+kata-as-coco-runtime:
+  image:
+    # CI image repository (built from main branch)
+    reference: "quay.io/kata-containers/kata-deploy-ci"
+    # Latest tag from CI builds
+    tag: "kata-containers-latest"
+  # Enable debug logging for CI testing
+  debug: true
+  # Snapshotter configuration (using new structured format)
+  # This will be merged with the snapshotter config from base values files
+  snapshotter:
+    setup: ["nydus"]
+
+  shims:
+    # Kata runtimes that are not for TEE
+    clh:
+      enabled: false
+
+    cloud-hypervisor:
+      enabled: false
+
+    dragonball:
+      enabled: false
+
+    fc:
+      enabled: false
+
+    qemu:
+      enabled: false
+
+    qemu-runtime-rs:
+      enabled: false
+
+  # Default shim per architecture
+  defaultShim:
+    amd64: qemu-coco-dev
+    s390x: qemu-coco-dev

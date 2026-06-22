@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: v0.21.1
+description: Controller for cleaning up dangling peer pod cloud resources
+home: https://github.com/confidential-containers/cloud-api-adaptor
+keywords:
+- confidential-containers
+- peerpods
+- controller
+maintainers:
+- name: Confidential Containers Community
+  url: https://github.com/confidential-containers
+name: peerpodctrl
+sources:
+- https://github.com/confidential-containers/cloud-api-adaptor
+type: application
+version: 0.3.1
