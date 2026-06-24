@@ -1,0 +1,16 @@
+# Pack value constraints for the Core NIMs layer (validated/labelled in the
+# Palette profile UI). Keys are full dotted paths into values.yaml.
+charts.nvidia-vss-core-nims.global.ngcApiKey:
+  schema: '{{ required | format "${password}" | hints "NGC API key (nvcr.io). Used to create ngc-pull-secret + ngc-api-key-secret." }}'
+
+charts.nvidia-vss-core-nims.nim-llm.enabled:
+  schema: '{{ format "${boolean}" | hints "Serve the LLM via the llama NIM (TensorRT-LLM). DGX-SPARK/OTHER keep this false and use the raw-vLLM manifest instead." }}'
+
+charts.nvidia-vss-core-nims.nemo-embedding.enabled:
+  schema: '{{ format "${boolean}" | hints "Local embedding NIM (llama-3.2-nv-embedqa-1b)." }}'
+
+charts.nvidia-vss-core-nims.nemo-rerank.enabled:
+  schema: '{{ format "${boolean}" | hints "Local reranker NIM. Off on single-GPU profiles." }}'
+
+charts.nvidia-vss-core-nims.riva.enabled:
+  schema: '{{ format "${boolean}" | hints "Riva ASR NIM for audio transcription. Off by default." }}'

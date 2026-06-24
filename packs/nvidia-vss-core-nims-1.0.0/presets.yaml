@@ -1,0 +1,187 @@
+# VSS Platform profiles for the Core NIMs layer (group "VSS Platform").
+# Mutually-exclusive; DGX-SPARK is the default-selected, validated GB10 profile.
+#
+# ⚠️ OPERATOR CONTRACT (Palette does NOT coordinate presets across packs):
+#    Select the SAME "VSS Platform" preset in EVERY VSS pack in the profile, AND
+#    include/omit the nvidia-vss-vllm pack per the matrix in P1-P5-IMPLEMENTATION.md
+#    (vLLM profiles include it; H100/L40S omit it). Mismatched selections create
+#    ZERO or TWO llm-nim-svc Services — a broken cluster.
+#
+# Two classes of profile:
+#  - vLLM profiles (DGX-SPARK/OTHER/RTXPRO6000BW/AGX-THOR/IGX-THOR): nim-llm OFF
+#    here; the LLM comes from the separate nvidia-vss-vllm pack (add it to the
+#    profile). Embedding on, rerank/riva off.
+#  - trtllm profiles (H100/L40S): nim-llm ON here (TensorRT-LLM NIM); do NOT add
+#    the nvidia-vss-vllm pack to these profiles. Decode runs on the dGPU (x86
+#    engine build) so the application pack clears --disable-decoding.
+#
+# trtllm presets are authored from the 2.4.x chart defaults + PLATFORM-SUPPORT-PLAN
+# §4. They are NOT hardware-validated here; verify NGC image tags and that the LLM
+# fits the target GPU memory before use. (The current 3.x VSS blueprint uses a
+# different model layout — see P1-P5-IMPLEMENTATION.md §"2.4.x vs 3.x".)
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, 1 GPU) — vLLM backend (add nvidia-vss-vllm)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: false
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+              requests:
+                memory: "4Gi"
+                cpu: "1"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — vLLM backend (add nvidia-vss-vllm)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: false
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+              requests:
+                memory: "8Gi"
+                cpu: "2"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
+
+  # ── P2 — Datacenter TensorRT-LLM. Do NOT add nvidia-vss-vllm to these. ───────
+  - name: "H100"
+    displayName: "H100 (datacenter, multi-GPU) — TensorRT-LLM 70B (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: true
+            image:
+              repository: nvcr.io/nim/meta/llama-3.1-70b-instruct
+              tag: "1.10.1"
+            model:
+              name: meta/llama-3.1-70b-instruct
+            resources:
+              limits:
+                nvidia.com/gpu: "4"
+            env:
+              - name: NIM_MAX_MODEL_LEN
+                value: "128000"
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          nemo-rerank:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          riva:
+            enabled: false
+
+  - name: "L40S"
+    displayName: "L40S (datacenter, reduced) — TensorRT-LLM 8B (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: true
+            image:
+              repository: nvcr.io/nim/meta/llama-3.1-8b-instruct
+              tag: "1.10.1"
+            model:
+              name: meta/llama-3.1-8b-instruct
+            resources:
+              limits:
+                nvidia.com/gpu: "2"
+            env:
+              - name: NIM_MAX_MODEL_LEN
+                value: "32768"
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
+
+  # ── P3/P4 — vLLM workstation/edge profiles (nim-llm OFF; add nvidia-vss-vllm) ──
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell — vLLM backend (add nvidia-vss-vllm)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: false
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
+
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (iGPU) — vLLM backend (add nvidia-vss-vllm)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: false
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU — vLLM backend (add nvidia-vss-vllm)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      charts:
+        nvidia-vss-core-nims:
+          nim-llm:
+            enabled: false
+          nemo-embedding:
+            enabled: true
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+          nemo-rerank:
+            enabled: false
+          riva:
+            enabled: false
