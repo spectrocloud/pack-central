@@ -1,0 +1,25 @@
+# Spectrocloud Palette schema — controls UI rendering of sensitive fields.
+# Fields listed here are rendered as masked password inputs in the Palette UI.
+# Keys are charts.<chart-name>.<value-path>; the chart name is gridlight-palette
+# (Chart.yaml name), which is also the key these values live under in values.yaml.
+
+charts.gridlight-palette.auth.postgresPassword:
+  schema: '{{ format "${password}" | hints "PostgreSQL password for the gridlight user" }}'
+
+charts.gridlight-palette.auth.neo4jPassword:
+  schema: '{{ format "${password}" | hints "Neo4j password for the neo4j user" }}'
+
+charts.gridlight-palette.auth.gatewayToken:
+  schema: '{{ format "${password}" | hints "Bearer token clients send in Authorization header. Change from dev-token before production." }}'
+
+charts.gridlight-palette.auth.agentToken:
+  schema: '{{ format "${password}" | hints "Token agents use to self-register with the gateway. Change from dev-token before production." }}'
+
+charts.gridlight-palette.auth.licenseId:
+  schema: '{{ format "${input}" | hints "Gridlight license UUID from https://license.gridlight.ai" }}'
+
+charts.gridlight-palette.auth.signingSecret:
+  schema: '{{ format "${password}" | hints "Auto-acquired at startup. Only set when migrating a pre-existing deployment that already has a signing secret." }}'
+
+charts.gridlight-palette.auth.huggingFaceToken:
+  schema: '{{ format "${password}" | hints "HuggingFace read token for gated models. Leave blank if using only open models." }}'

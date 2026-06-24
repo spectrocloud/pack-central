@@ -1,0 +1,119 @@
+{{- $gatewayMode := default "shared" .Values.global.gatewayMode }}
+{{- $hostInt := index .Values "hostIntegration" | default dict }}
+{{- $migrate := and (eq $gatewayMode "shared") (index $hostInt "migrateResolvedDns" | default true) }}
+{{- if $migrate }}
+---
+# Migrate systemd-resolved DNS to the OVS bridge after OVN shared gateway moves the node IP.
+# OVN creates bridges named br<iface> (e.g. breth0, br-enp0s3, brbr0) and moves the IP there.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ovn-resolved-dns-migration
+  namespace: ovn-kubernetes
+  labels:
+    app.kubernetes.io/component: host-integration
+data:
+  migrate-resolved-dns.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    HOST_ROOT="${HOST_ROOT:-/host}"
+
+    # Locate resolvectl on the host (path relative to chroot root)
+    RESOLVECTL_BIN="/usr/bin/resolvectl"
+    [ -x "${HOST_ROOT}${RESOLVECTL_BIN}" ] || RESOLVECTL_BIN="/usr/sbin/resolvectl"
+    if [ ! -x "${HOST_ROOT}${RESOLVECTL_BIN}" ]; then
+      echo "resolvectl not found on host, skipping"
+      exit 0
+    fi
+    if [ ! -d "${HOST_ROOT}/run/systemd" ]; then
+      echo "systemd not detected on host, skipping"
+      exit 0
+    fi
+
+    # Wait for the default route to move to an OVS bridge.
+    # OVN shared gateway creates a bridge (breth0, br-enp0s3, brbr0, etc.)
+    # and moves the node IP + default route there. The bridge is virtual
+    # (no /sys/class/net/<iface>/device) and its name starts with "br".
+    MAX_WAIT=120
+    BRIDGE=""
+    for i in $(seq 1 "$MAX_WAIT"); do
+      DEFAULT_IF=$(ip -o route get 1 2>/dev/null | awk '{print $5}' || true)
+      if [[ -n "$DEFAULT_IF" && "$DEFAULT_IF" == br* ]]; then
+        # Virtual device check: physical NICs have a device symlink, bridges do not
+        if [ ! -d "${HOST_ROOT}/sys/class/net/${DEFAULT_IF}/device" ]; then
+          BRIDGE="$DEFAULT_IF"
+          break
+        fi
+      fi
+      sleep 1
+    done
+    if [[ -z "$BRIDGE" ]]; then
+      echo "No OVS bridge as default route after ${MAX_WAIT}s, skipping"
+      exit 0
+    fi
+    echo "Detected OVS bridge as default route: $BRIDGE"
+
+    # Collect DNS servers from multiple sources (in priority order).
+    DNS_SERVERS=""
+    DOMAINS=""
+
+    # Source 1: /etc/systemd/resolved.conf  (DNS= / FallbackDNS=)
+    RESOLVED_CONF="${HOST_ROOT}/etc/systemd/resolved.conf"
+    FALLBACK_DNS=""
+    if [ -f "$RESOLVED_CONF" ]; then
+      while IFS= read -r line; do
+        [[ "$line" =~ ^#.*$ || -z "${line// }" ]] && continue
+        if [[ "$line" =~ ^DNS=(.*)$ ]]; then
+          DNS_SERVERS=$(echo "${BASH_REMATCH[1]}" | xargs)
+        elif [[ "$line" =~ ^FallbackDNS=(.*)$ ]]; then
+          FALLBACK_DNS=$(echo "${BASH_REMATCH[1]}" | xargs)
+        elif [[ "$line" =~ ^Domains=(.*)$ ]]; then
+          DOMAINS=$(echo "${BASH_REMATCH[1]}" | xargs)
+        fi
+      done < "$RESOLVED_CONF"
+    fi
+    [[ -z "$DNS_SERVERS" && -n "$FALLBACK_DNS" ]] && DNS_SERVERS="$FALLBACK_DNS"
+
+    # Source 2: systemd-networkd .network files (DNS= lines)
+    if [[ -z "$DNS_SERVERS" ]]; then
+      for netfile in "${HOST_ROOT}"/etc/systemd/network/*.network \
+                     "${HOST_ROOT}"/run/systemd/network/*.network; do
+        [ -f "$netfile" ] || continue
+        while IFS= read -r line; do
+          if [[ "$line" =~ ^DNS=(.*)$ ]]; then
+            srv=$(echo "${BASH_REMATCH[1]}" | xargs)
+            [[ -n "$srv" ]] && DNS_SERVERS="${DNS_SERVERS:+$DNS_SERVERS }$srv"
+          fi
+        done < "$netfile"
+      done
+    fi
+
+    # Source 3: per-link DNS from resolvectl (already configured on other interfaces)
+    if [[ -z "$DNS_SERVERS" ]]; then
+      DNS_SERVERS=$(chroot "$HOST_ROOT" "$RESOLVECTL_BIN" status 2>/dev/null \
+        | grep -oP '(?<=DNS Servers: ).*' \
+        | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
+    fi
+
+    # Filter out loopback/stub addresses (127.x.x.x) and de-duplicate
+    if [[ -n "$DNS_SERVERS" ]]; then
+      DNS_SERVERS=$(echo "$DNS_SERVERS" | tr ' ' '\n' \
+        | grep -vE '^127\.' | sort -u | tr '\n' ' ' | xargs)
+    fi
+
+    if [[ -z "$DNS_SERVERS" ]]; then
+      echo "No usable DNS servers found, skipping migration"
+      exit 0
+    fi
+    echo "DNS servers to apply: $DNS_SERVERS"
+
+    # Apply DNS to the OVS bridge and mark it as a default-route link
+    chroot "$HOST_ROOT" "$RESOLVECTL_BIN" dns "$BRIDGE" $DNS_SERVERS
+    chroot "$HOST_ROOT" "$RESOLVECTL_BIN" default-route "$BRIDGE" true 2>/dev/null || true
+    if [[ -n "$DOMAINS" ]]; then
+      chroot "$HOST_ROOT" "$RESOLVECTL_BIN" domain "$BRIDGE" $DOMAINS
+    fi
+    chroot "$HOST_ROOT" systemctl restart systemd-resolved 2>/dev/null || true
+    echo "Migrated systemd-resolved DNS to $BRIDGE: $DNS_SERVERS"
+# Migration runs as a sidecar in the ovnkube-node DaemonSet (same pod = same image, no pull after DNS breaks).
+{{- end }}

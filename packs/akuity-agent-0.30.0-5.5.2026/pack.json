@@ -1,0 +1,13 @@
+{
+  "addonType": "app-services",
+  "annotations": {},
+  "cloudTypes": ["all"],
+  "displayName": "Akuity Agent",
+  "eol": " ",
+  "group": " ",
+  "kubeManifests": [],
+  "charts": ["charts/akuity-agent-0.30.0-5.5.2026.tgz"],
+  "layer": "addon",
+  "name": "akuity-agent",
+  "version": "0.30.0-5.5.2026"
+}
