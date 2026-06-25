@@ -2,21 +2,21 @@ pack:
   namespace: "hpe-storage"
   content:
     images:
-      - quay.io/hpestorage/csi-driver:v3.1.0
-      - quay.io/hpestorage/csi-driver:v3.1.0
-      - quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.1.0
-      - quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.1.0
-      - quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.1.0
-      - quay.io/hpestorage/nfs-provisioner:v3.0.9
-      - quay.io/hpestorage/csi-extensions:v1.2.10
-      - quay.io/hpestorage/volume-group-provisioner:v1.0.9
-      - quay.io/hpestorage/volume-group-snapshotter:v1.0.9
-      - quay.io/hpestorage/volume-mutator:v1.3.9
-      - registry.k8s.io/sig-storage/csi-attacher:v4.11.0
-      - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
-      - registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
-      - registry.k8s.io/sig-storage/csi-resizer:v2.1.0
-      - registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
+      - image: quay.io/hpestorage/csi-driver:v3.1.0
+      - image: quay.io/hpestorage/csi-driver:v3.1.0
+      - image: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.1.0
+      - image: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.1.0
+      - image: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.1.0
+      - image: quay.io/hpestorage/nfs-provisioner:v3.0.9
+      - image: quay.io/hpestorage/csi-extensions:v1.2.10
+      - image: quay.io/hpestorage/volume-group-provisioner:v1.0.9
+      - image: quay.io/hpestorage/volume-group-snapshotter:v1.0.9
+      - image: quay.io/hpestorage/volume-mutator:v1.3.9
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.11.0
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      - image: registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
+      - image: registry.k8s.io/sig-storage/csi-resizer:v2.1.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
 charts:
   hpe-csi-driver:
 
