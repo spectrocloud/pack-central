@@ -1,0 +1,147 @@
+{{- if and .Values.workload.denyNamespaces .Values.workload.allowNamespaces -}}
+{{- fail "Chart values `workload.denyNamespaces` and `workload.allowNamespaces` are mutually exclusive! You must set at least one of these values to `null`" -}}
+{{- end -}}
+{{- if and .Values.enableCostMetrics (or .Values.workload.denyNamespaces .Values.workload.allowNamespaces) -}}
+{{- fail "Chart value `enableCostMetrics` is mutually exclusive with `workload.allowNamespaces` and `workload.denyNamespaces`! You must set both of these values to `null` to use `enableCostMetrics`" -}}
+{{- end -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stormforge-agent.agentName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.workload.configMapAnnotations }}
+  annotations: {{ toYaml .Values.workload.configMapAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: {{ include "stormforge-agent.agentComponent" . }}
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+data:
+  workload-agent.yml: |
+    # CascadingConfigs controls where, and with what precedence, StormForge looks for
+    # optimization configuration for workloads
+    {{- if .Values.cascadingConfigs }}
+    {{/* THIS IS A DEVELOPMENT CONFIGURATION OPTION AND WILL BE REMOVED IN A FUTURE RELEASE */}}
+    {{- dict "cascadingConfigs" .Values.cascadingConfigs | toYaml | nindent 4 }}
+    {{- else }}
+    cascadingConfigs:
+    - name: "api-cluster-optimization-configuration"
+      config:
+        optimizationConfigurationKind: "APIClusterOptimizationConfiguration"
+    - name: "cluster-defaults"
+      config:
+        annotationsFile: "/etc/stormforge/cluster-defaults.yaml"
+    {{- with .Values.clusterDefaultsAutoDeployExemptNamespaces }}
+    - name: "cluster-defaults-auto-deploy-exempt-namespaces"
+      namespaceSelector:
+        matchNamesRegex: {{- . | toYaml | nindent 8 }}
+      config:
+        annotationsInline:
+          live.stormforge.io/auto-deploy: "Disabled"
+    {{- end }}
+    {{- if ne .Values.enableOptimizationConfigurationCRDs false }}
+    - name: "clusteroptimizationconfigurations"
+      config:
+        optimizationConfigurationKind: "ClusterOptimizationConfiguration"
+    {{- end }}
+    - name: "namespace-annotations"
+      config:
+        annotationsFrom: "namespace"
+    {{- if ne .Values.enableOptimizationConfigurationCRDs false }}
+    - name: "optimizationconfigurations"
+      config:
+        optimizationConfigurationKind: "OptimizationConfiguration"
+    {{- end }}
+    - name: "workload-annotations"
+      config:
+        annotationsFrom: "workload"
+    - name: "pod-annotations"
+      config:
+        annotationsFrom: "pod"
+    {{- end }}
+    {{- "\n" -}}
+
+    {{- if .Values.workload.allowNamespaces -}}
+    {{- dict "allowNamespaces" .Values.workload.allowNamespaces | toYaml | nindent 4 }}
+    {{- else }}
+    {{- if .Values.workload.denyNamespaces -}}
+    {{- dict "denyNamespaces" .Values.workload.denyNamespaces | toYaml | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.workload.workloadSyncInterval }}
+    workloadSyncInterval: {{ .Values.workload.workloadSyncInterval }}
+    {{- end }}
+    {{- if .Values.workload.apiConfigSyncInterval }}
+    apiConfigSyncInterval: {{ .Values.workload.apiConfigSyncInterval }}
+    {{- end }}
+    {{- if .Values.workload.collectLabels }}
+    collectLabels: {{ .Values.workload.collectLabels }}
+    {{- end }}
+    {{- if .Values.enableCostMetrics }}
+    enableCostMetrics: {{ .Values.enableCostMetrics }}
+    {{- end }}
+    {{- if .Values.nodeCPUPressureDetection }}
+    nodeCPUPressureDetection: {{ .Values.nodeCPUPressureDetection }}
+    {{- end }}
+    {{- if .Values.workload.inactiveWorkloadsGC }}
+    inactiveWorkloadsGC: {{ .Values.workload.inactiveWorkloadsGC }}
+    {{- end }}
+    {{- if .Values.workload.watchWorkloadResources }}
+    watchWorkloadResources: {{ .Values.workload.watchWorkloadResources }}
+    {{- end }}
+    {{- if .Values.clusterLabels }}
+    {{- dict "clusterLabels" .Values.clusterLabels | toYaml | nindent 4 }}
+    {{- end }}
+    {{- if .Values.clusterProvider }}
+    clusterProvider: {{ .Values.clusterProvider }}
+    {{- end }}
+
+    {{- $ptTypes := list -}}
+    {{- /* NOTE: `patchTargetTypes` is deprecated and will be removed in a future release */}}
+    {{- range .Values.patchTargetTypes -}}
+      {{- $ptTypes = append $ptTypes (pick . "group" "kind" "patchTargetTypeDefaults") -}}
+    {{- end -}}
+    {{- range .Values.workloadResourceTypes -}}
+      {{- if .patchTargetTypeDefaults -}}
+        {{- $ptTypes = append $ptTypes (pick . "group" "kind" "patchTargetTypeDefaults") -}}
+      {{- end }}
+    {{- end -}}
+    {{- range .Values.ownerResourceTypes -}}
+      {{- if .patchTargetTypeDefaults -}}
+        {{- $ptTypes = append $ptTypes (pick . "group" "kind" "patchTargetTypeDefaults") -}}
+      {{- end }}
+    {{- end -}}
+    {{- dict "patchTargetTypes" $ptTypes | toYaml | nindent 4 }}
+
+    {{- $wTypes := list -}}
+    {{- range .Values.workloadResourceTypes -}}
+      {{- $wTypes = append $wTypes (pick . "group" "kind" "conditional") -}}
+    {{- end }}
+    {{- with .Values.featureGates }}
+      {{- if .optimizeCronJobs }}
+        {{- $wTypes = append $wTypes (dict "group" "batch" "kind" "CronJob") }}
+      {{- end }}
+      {{- if .optimizeSparkOperator }}
+        {{- $wTypes = append $wTypes (dict "group" "sparkoperator.k8s.io" "kind" "ScheduledSparkApplication") }}
+      {{- end }}
+      {{- if .optimizeGithubARC }}
+        {{- $wTypes = append $wTypes (dict "group" "actions.github.com" "kind" "AutoscalingRunnerSet") }}
+      {{- end }}
+    {{- end }}
+    {{- dict "workloadResourceTypes" (uniq $wTypes) | toYaml | nindent 4 }}
+
+    {{- $ownerTypes := list -}}
+    {{- range .Values.ownerResourceTypes -}}
+      {{- $ownerTypes = append $ownerTypes (pick . "group" "kind" "stopTraversal" "ignoreOwner") -}}
+    {{- end -}}
+    {{- dict "ownerResourceTypes" $ownerTypes | toYaml | nindent 4 }}
+
+    {{- with .Values.jvmWorkloadConfigs }}
+      {{- $selectors := list }}
+      {{- range . }}
+        {{- if not .metricsOnly }}
+          {{- $selectors = append $selectors .labelSelector }}
+        {{- end }}
+      {{- end }}
+      {{- dict "jvmLabelSelectors" $selectors | toYaml | nindent 4 }}
+    {{- end }}
