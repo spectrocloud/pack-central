@@ -1,0 +1,34 @@
+# Pack value constraints for the VSS 3.x core microservices.
+# Keys are full dotted paths into values.yaml. (No keys with embedded dots/slashes.)
+
+# ── image tags (sensor + streamprocessing have a -sbsa variant; set by preset) ──
+vssViosSensor.imageTag:
+  schema: '{{ format "${string}" | hints "vss-vios-sensor image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
+vssViosStreamprocessing.imageTag:
+  schema: '{{ format "${string}" | hints "vss-vios-streamprocessing image tag: 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere." }}'
+vssAgent.imageTag:
+  schema: '{{ format "${string}" | hints "vss-agent image tag (multiarch, no -sbsa variant): 3.1.0." }}'
+vssAgentUi.imageTag:
+  schema: '{{ format "${string}" | hints "vss-agent-ui image tag (multiarch): 3.1.0." }}'
+vssViosMcp.imageTag:
+  schema: '{{ format "${string}" | hints "vss-vios-mcp image tag (multiarch): 3.1.0." }}'
+
+# ── vss-agent LLM/VLM wiring (keep in lockstep with the vllm + nims packs) ──
+vssAgent.llmName:
+  schema: '{{ format "${string}" | hints "OpenAI served-model name of the LLM; must match the vllm pack servedModelName." }}'
+vssAgent.llmBaseUrl:
+  schema: '{{ format "${string}" | hints "LLM OpenAI base URL (vllm pack Service, e.g. http://llm-nim-svc:8000/v1)." }}'
+vssAgent.vlmName:
+  schema: '{{ format "${string}" | hints "VLM model name served by the cosmos NIM (nims pack)." }}'
+vssAgent.vlmBaseUrl:
+  schema: '{{ format "${string}" | hints "VLM base URL (nims pack cosmos NIM Service)." }}'
+
+# ── browser-facing / node-reachable addresses (must be set per deployment) ──
+vssAgent.externalIp:
+  schema: '{{ format "${string}" | hints "Node-reachable EXTERNAL_IP for URL rewriting (not the ClusterIP)." }}'
+vssAgentUi.wsAgentUrl:
+  schema: '{{ format "${string}" | hints "Browser-facing websocket chat-completion URL to the vss-agent (NodePort/ingress address)." }}'
+vssAgentUi.httpAgentUrl:
+  schema: '{{ format "${string}" | hints "Browser-facing HTTP chat-completion URL to the vss-agent (NodePort/ingress address)." }}'
+vssAgentUi.vstApiUrl:
+  schema: '{{ format "${string}" | hints "Browser-facing VST API URL (NodePort/ingress address)." }}'
