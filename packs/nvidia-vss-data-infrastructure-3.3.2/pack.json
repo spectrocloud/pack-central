@@ -1,0 +1,23 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS 3.x shared data infrastructure (install-priority 5, present in EVERY profile). Owns the cross-pack hf-token-secret and the P5 vss-platform ConfigMap (single source of truth for VSS_PLATFORM), plus the data stores. Platform-invariant: all images are standard public ones (Elasticsearch/Kafka/Redis/Postgres/Kibana/Logstash/Phoenix) so this pack has NO VSS Platform presets. Only phoenix/redis/postgres run in the base profile; elasticsearch/kafka/kibana/logstash are authored for the search/alerts profiles. Installs first so hf-token-secret and the data stores exist before the model backends (vllm/nims), core, and ingress consume them."
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS Data Infrastructure",
+  "kubeManifests": [
+    "manifests/hf-token-secret.yaml",
+    "manifests/vss-platform.yaml"
+  ],
+  "layer": "addon",
+  "name": "nvidia-vss-data-infrastructure",
+  "version": "3.3.2",
+  "charts": [
+    "charts/nvidia-vss-data-infrastructure-3.2.1.tgz"
+  ]
+}
