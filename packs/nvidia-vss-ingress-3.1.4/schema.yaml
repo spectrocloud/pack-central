@@ -1,0 +1,19 @@
+# Pack value constraints for the VSS 3.x ingress / routing layer.
+# Keys are full dotted paths into values.yaml. Only the genuinely user-tunable keys
+# are constrained (no keys with embedded dot/slash segments).
+envoyProxy.imageTag:
+  schema: '{{ format "${string}" | hints "envoy-proxy image tag (multiarch 3.1.0; no -sbsa variant exists)." }}'
+sdr.imageTag:
+  schema: '{{ format "${string}" | hints "sdr image tag (multiarch 3.1.0; no -sbsa variant exists)." }}'
+vssViosIngress.imageTag:
+  schema: '{{ format "${string}" | hints "vss-vios-ingress image tag (multiarch 3.1.0; no -sbsa variant exists)." }}'
+vssViosIngress.hostIp:
+  schema: '{{ format "${string}" | hints "Internal/reachable node IP for the nginx CORS-origin map (template __INTERNAL_IP__). Leave empty until wired." }}'
+vssViosIngress.externalIp:
+  schema: '{{ format "${string}" | hints "External client-facing IP for the nginx CORS-origin map (template __EXTERNAL_IP__). Leave empty until wired." }}'
+vssProxy.image:
+  schema: '{{ format "${string}" | hints "vss-proxy nginx image (standard public image, e.g. nginx:1.27-alpine)." }}'
+vssProxy.subFilterHost:
+  schema: '{{ format "${string}" | hints "Host IP for the vss-proxy /vst/ response-body URL rewrite; _DISABLED_ no-ops it (no_proxy default)." }}'
+vssProxy.subFilterExternal:
+  schema: '{{ format "${string}" | hints "External IP for the vss-proxy /vst/ response-body URL rewrite; _DISABLED_ no-ops it (no_proxy default)." }}'
