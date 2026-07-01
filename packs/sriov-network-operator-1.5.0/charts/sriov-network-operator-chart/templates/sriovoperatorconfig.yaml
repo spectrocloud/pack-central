@@ -13,9 +13,6 @@ spec:
   {{- end }}
   logLevel: {{ .Values.sriovOperatorConfig.logLevel }}
   disableDrain: {{ .Values.sriovOperatorConfig.disableDrain }}
-  {{- if .Values.sriovOperatorConfig.disablePlugins }}
-  disablePlugins: {{ .Values.sriovOperatorConfig.disablePlugins | toYaml | nindent 4 }}
-  {{- end }}
   configurationMode: {{ .Values.sriovOperatorConfig.configurationMode }}
   {{- with .Values.sriovOperatorConfig.featureGates }}
   featureGates:

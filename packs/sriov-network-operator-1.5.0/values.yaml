@@ -11,15 +11,15 @@ pack:
       - image: ghcr.io/k8snetworkplumbingwg/network-resources-injector:v1.7.1
       - image: ghcr.io/k8snetworkplumbingwg/sriov-network-operator-webhook:v1.5.0
       - image: ghcr.io/k8snetworkplumbingwg/sriov-network-metrics-exporter:v1.1.1
-      - image: docker.io/kubebuilder/kube-rbac-proxy:v0.15.0
+      - image: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
+  releaseNameOverride:
+      sriov-network-operator-chart: sriov-network-operator-chart
   namespace: sriov-network-operator
   namespaceLabels:
     "sriov-network-operator": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=v{{ .spectro.system.kubernetes.version | substr 0 4 }}"
 
 charts:
   sriov-network-operator-chart:
-    nameOverride: sriov-network-operator
-    fullnameOverride: sriov-network-operator
     operator:
       tolerations:
         - key: "node-role.kubernetes.io/master"
@@ -44,9 +44,9 @@ charts:
                   - key: "node-role.kubernetes.io/control-plane"
                     operator: In
                     values: [""]
-      nameOverride: "sriov-network-operator"
-      fullnameOverride: "sriov-network-operator"
-      resourcePrefix: "spectro"
+      nameOverride: ""
+      fullnameOverride: ""
+      resourcePrefix: "openshift.io"
       cniBinPath: "/opt/cni/bin"
       clusterType: "kubernetes"
       # minimal amount of time (in minutes) the operator will wait before removing
@@ -63,17 +63,17 @@ charts:
           namespace: "monitoring"
           deployRules: false
       admissionControllers:
-        enabled: true
+        enabled: false
         certificates:
           secretNames:
             operator: "operator-webhook-cert"
             injector: "network-resources-injector-cert"
           certManager:
             # When enabled, makes use of certificates managed by cert-manager.
-            enabled: true
+            enabled: false
             # When enabled, certificates are generated via cert-manager and then name will match the name of the secrets
             # defined above
-            generateSelfSigned: true
+            generateSelfSigned: false
           # If not specified, no secret is created and secrets with the names defined above are expected to exist in the
           # cluster. In that case, the ca.crt must be base64 encoded twice since it ends up being an env variable.
           custom:
@@ -112,7 +112,7 @@ charts:
             #      -----END EC PRIVATE KEY-----
     sriovOperatorConfig:
       # deploy sriovOperatorConfig CR with the below values
-      deploy: true
+      deploy: false
       # node selectors for sriov-network-config-daemon
       configDaemonNodeSelector: {}
       # log level for both operator and sriov-network-config-daemon
@@ -120,8 +120,6 @@ charts:
       # disable node draining when configuring SR-IOV, set to true in case of a single node
       # cluster or any other justifiable reason
       disableDrain: false
-      # Optionally disable plugins (Currently only `mellanox` plugin can be disabled)
-      disablePlugins: []
       # sriov-network-config-daemon configuration mode. either "daemon" or "systemd"
       configurationMode: daemon
       # feature gates to enable/disable
@@ -140,6 +138,6 @@ charts:
       resourcesInjector: ghcr.io/k8snetworkplumbingwg/network-resources-injector:v1.7.1
       webhook: ghcr.io/k8snetworkplumbingwg/sriov-network-operator-webhook:v1.5.0
       metricsExporter: ghcr.io/k8snetworkplumbingwg/sriov-network-metrics-exporter:v1.1.1
-      metricsExporterKubeRbacProxy: docker.io/kubebuilder/kube-rbac-proxy:v0.15.0
+      metricsExporterKubeRbacProxy: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
     imagePullSecrets: []
     extraDeploy: []

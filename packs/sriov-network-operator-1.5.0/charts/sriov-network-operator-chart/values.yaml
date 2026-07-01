@@ -98,8 +98,6 @@ sriovOperatorConfig:
   # disable node draining when configuring SR-IOV, set to true in case of a single node
   # cluster or any other justifiable reason
   disableDrain: false
-  # Optionally  disable plugins (Currently only `mellanox` plugin can be disabled)
-  disablePlugins: []
   # sriov-network-config-daemon configuration mode. either "daemon" or "systemd"
   configurationMode: daemon
   # feature gates to enable/disable
@@ -118,6 +116,6 @@ images:
   resourcesInjector: ghcr.io/k8snetworkplumbingwg/network-resources-injector:v1.7.1
   webhook: ghcr.io/k8snetworkplumbingwg/sriov-network-operator-webhook:v1.5.0
   metricsExporter: ghcr.io/k8snetworkplumbingwg/sriov-network-metrics-exporter:v1.1.1
-  metricsExporterKubeRbacProxy: docker.io/kubebuilder/kube-rbac-proxy:v0.15.0
+  metricsExporterKubeRbacProxy: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
 imagePullSecrets: []
 extraDeploy: []
