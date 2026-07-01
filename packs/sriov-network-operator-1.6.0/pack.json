@@ -1,0 +1,18 @@
+{
+  "annotations": {
+    "docsURL": "",
+    "source": "spectrocloud",
+    "description": "SR-IOV Network Operator"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "SR-IOV Network Operator",
+  "charts": [
+    "charts/sriov-network-operator-chart-1.6.0.tgz"
+  ],
+  "layer": "addon",
+  "addonType":"system app",
+  "name": "sriov-network-operator",
+  "version": "1.6.0"
+}
