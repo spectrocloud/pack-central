@@ -1,0 +1,83 @@
+pack:
+  content:
+    # BUILD-ON-DEPLOY (0/0 scan surface): the only image pulled as pack content is
+    # the 0-CVE Chainguard wolfi-base. The VAST driver + the 5 CSI sidecars are NOT
+    # listed here — the chart's fetch-runtime init container crane-exports each at
+    # deploy and runs it on wolfi-base (see the chart's templates/shared/_buildondeploy.tpl
+    # and .Values.image.* for the upstream crane sources). Mirrors the NVIDIA VSS 3.x
+    # mitigation. To pin/repoint the upstream sources, set charts.vastcsi.image.<role>.
+    images:
+      - image: cgr.dev/chainguard/wolfi-base:latest
+      - image: vastdataorg/csi:v2.6.5
+  namespace: vast-csi
+  # The CSI node plugin requires privileged pods to perform mounts.
+  # If a Pod Security Admission / Kyverno / OPA policy is enforced, the
+  # 'vast-csi' namespace must be whitelisted (privileged PSA level).
+  namespaceLabels:
+    "vast-csi": "pod-security.kubernetes.io/enforce=privileged"
+
+charts:
+  vastcsi:
+    ####################
+    # VAST REST SESSION (controller -> VMS)
+    ####################
+    # VMS REST API host -- BARE host or IP, NO scheme. The driver parses a leading
+    # scheme as the hostname (https://10.20.9.141 -> tries to resolve host 'https'
+    # and CreateVolume fails NameResolutionError), so use e.g. 10.20.9.141.
+    # (May instead be supplied via the credentials secret's `endpoint` field.)
+    endpoint: ""
+    # Set true to validate the VMS TLS certificate (recommended in production;
+    # supply the CA via sslCertsSecretName).
+    verifySsl: false
+    # Name of a pre-created secret holding VAST credentials. Create with:
+    #   kubectl -n vast-csi create secret generic vast-mgmt \
+    #     --from-literal=username='<VAST user>' \
+    #     --from-literal=password='<VAST password>' \
+    #     --from-literal=endpoint='<VMS-VIP>'        # BARE host/IP, NO scheme
+    # (or use --from-literal=token='<API token>' for VAST 5.3+ token auth)
+    secretName: "vast-mgmt"
+
+    ####################
+    # STORAGE CLASS DEFAULTS
+    # Cloud (AWS/VoC) tuning: the data path is TCP-only (no NFSoRDMA on AWS),
+    # so we load-balance across CNodes (vipPoolFQDNRandomPrefix) and open
+    # multiple TCP streams per mount (nconnect). Place worker nodes in the
+    # same AZ as the VIP pool for lowest latency / no cross-AZ charges.
+    ####################
+    storageClassDefaults:
+      secretName: "vast-mgmt"
+      # Where CSI volumes (views) are created on VAST. VoC default export root: /csi
+      storagePath: "/csi"
+      # VIP pool for the NFS data path. VoC auto-creates a PROTOCOLS-role pool
+      # named "protocolsPool" (via --auto-allocate-vips); override for non-VoC.
+      vipPool: "protocolsPool"
+      vipPoolFQDN: ""
+      vipPoolFQDNRandomPrefix: true
+      # VAST view policy controlling client access -- MUST be set per env.
+      viewPolicy: "default"
+      allowVolumeExpansion: true
+      reclaimPolicy: "Delete"
+      qosPolicy: ""
+      mountOptions:
+        - vers=3
+        - proto=tcp
+        - nolock
+        - nconnect=16
+
+    # Declare one or more StorageClasses. Ships with a VoC-ready default
+    # (protocolsPool / /csi / default view policy -- the values validated by a
+    # bound+mounted PVC on a VoC cluster). Override per Palette cluster profile /
+    # per tenant -- see README. setDefaultStorageClass:false to avoid clobbering
+    # an existing cluster default (e.g. ebs).
+    storageClasses:
+      vastdata-filesystem:
+        storagePath: /csi
+        vipPool: protocolsPool
+        viewPolicy: default
+        setDefaultStorageClass: false
+    #   tenant-b:
+    #     storagePath: /k8s/<tenant>
+    #     vipPool: <tenant-vip-pool>
+    #     viewPolicy: <tenant-view-policy>
+    #     qosPolicy: <tenant-qos-policy>
+    #     setDefaultStorageClass: true

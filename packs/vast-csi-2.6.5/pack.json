@@ -1,0 +1,17 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "vast-data"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "VAST CSI Driver (NFS)",
+  "charts": [
+    "charts/vastcsi-2.6.5.tgz"
+  ],
+  "layer": "addon",
+  "name": "vast-csi",
+  "version": "2.6.5"
+}
