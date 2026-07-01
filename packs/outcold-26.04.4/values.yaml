@@ -1,0 +1,698 @@
+pack:
+  content:
+    images:
+      - image: docker.io/outcoldsolutions/collectorforkubernetes:26.04.4
+  namespace: collectorforkubernetes
+  namespaceLabels:
+    "collectorforkubernetes": "pod-security.kubernetes.io/enforce=privileged" 
+
+charts:
+  collectord-splunk-kubernetes:
+    collectord:
+      image:
+        repository: docker.io/outcoldsolutions/collectorforkubernetes
+        tag: 26.04.4
+      
+      clusterRole:
+        name: ""
+        create: true
+        rules:
+        - apiGroups:     ['extensions']
+          resources:     ['podsecuritypolicies']
+          verbs:         ['use']
+          resourceNames: ['privileged']
+      
+      # Liveness/readiness probes for the /healthz and /readyz endpoints (26.04.4+).
+      # DaemonSets run on the host network, so the kubelet probes them on the loopback
+      # bind via httpGet.host 127.0.0.1; the addon runs off the host network and is
+      # probed on the pod IP. Requires the http server enabled in configuration.general
+      # below (httpServerBinding + httpServerEndpoints.health/ready).
+      daemonset:
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 11888
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /readyz
+            port: 11888
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+      daemonsetMaster:
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 11888
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /readyz
+            port: 11888
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+      deployment:
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 11888
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 11888
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      configuration:
+        general:
+          # IMPORTANT: Please review license https://www.outcoldsolutions.com/legal/license-agreement/
+          # and accept license by changing the value to *true*
+          acceptLicense: false
+          license: ""
+          dataPath: "./data/"
+          logLevel: info
+          httpServerBinding: "127.0.0.1:11888"
+          "httpServerEndpoints.health": true
+          "httpServerEndpoints.ready": true
+          "httpServerEndpoints.metrics": false
+          "httpServerEndpoints.pprof": false
+          httpServerLog: false
+          telemetryEndpoint: "https://license.outcold.solutions/telemetry/"
+          licenseEndpoint: "https://license.outcold.solutions/license/"
+          licenseServerProxyUrl: ""
+          licenseServerProxyBasicAuth: ""
+          hostname: ""
+          defaultOutput: "splunk"
+          fileInputBufferSize: "256b"
+          fileInputLineMaxSize: "1mb"
+          fields:
+            kubernetes_cluster: "-"
+          ec2Metadata: {}
+          annotationsSubdomain: ""
+          thruputPerSecond: ""
+          tooOldEvents: ""
+          tooNewEvents: ""
+          autoSkipGzipFiles: true
+          "multioutput.async": true
+          "multioutput.asyncBufferSize": 100
+          kubernetes:
+            serviceURL: ""
+            nodeName: ""
+            tokenPath: /var/run/secrets/kubernetes.io/serviceaccount/token
+            certPath: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            timeout: 30m
+            metadataTTL: 30s
+            volumesRootDir: /rootfs/var/lib/kubelet/
+            includeAnnotations: []
+            excludeLabels: []
+            watch:
+              - 'v1/namespace'
+              - 'apps/v1/deployment'
+              - 'collectord.io/v1/configuration'
+            watchImplementation: 2
+          crio:
+            url: unix:///rootfs/var/run/crio/crio.sock
+            timeout: 1m
+          containerd:
+            runtimePath: /rootfs/var/run/containerd
+            namespace: k8s.io
+        licenseClient:
+          url: ""
+          basicAuth: ""
+          insecure: false
+          capath: ""
+          caname: ""
+          proxyUrl: ""
+          proxyBasicAuth: ""
+        pipeJoin:
+          disabled: false
+          maxInterval: 100ms
+          maxWait: 1s
+          maxSize: 1MB
+          patternRegex: '^[^\s]'
+        pipeReplace: []
+        pipeHash: []
+        
+        outputs:
+          splunk:
+            default:
+              url: ""
+              urls: []
+              urlSelection: random-with-round-robin
+              token: ""
+              insecure: false
+              minTLSVersion: ""
+              maxTLSVersion: ""
+              caPath: ""
+              caName: ""
+              clientCertPath: ""
+              clientKeyPath: ""
+              frequency: 5s
+              batchSize: 768K
+              events: 50
+              proxyUrl: ""
+              proxyBasicAuth: ""
+              ackUrl: ""
+              ackUrls: []
+              ackEnabled: false
+              ackTimeout: 3m
+              timeout: 30s
+              dedicatedClientPerIndex: true
+              incorrectIndexBehavior: RedirectToDefault
+              compressionLevel: default
+              threads: 2
+              threadsAlgorithm:
+              excludeFields: []
+              requireExplicitIndex: false
+              maximumMessageLength: ""
+              includeEventID: false
+              queueSize: 1024
+              timestampPrecision: 
+      
+        # Input configurations
+        inputs:
+          # Collectord internal metrics
+          collectordMetrics:
+            disabled: false
+            type: "kubernetes_prometheus"
+            interval: 1m
+            output: ""
+            index: ""
+            whitelist:
+            - "^file_input_open$"
+            - "^file_input_read_bytes$"
+            - "^kubernetes_handlers$"
+            - "^pipe$"
+            - "^pipelines_num$"
+            - "^splunk_post_bytes_sum.*$"
+            - "^splunk_post_events_count_sum.*$"
+            - "^splunk_post_failed_requests$"
+            - "^splunk_post_message_max_lag_seconds_bucket.*$"
+            - "^splunk_post_requests_seconds_sum.*$"
+            - "^splunk_post_retries_required_sum.*$"
+            blacklist: []
+        
+          # Prometheus auto-discovery
+          prometheusAuto:
+            disabled: false
+            type: "kubernetes_prometheus"
+            index: ""
+            interval: 60s
+            includeHelp: true
+            timeout: 30s
+            output: ""
+            authorization: []
+        
+          # System stats
+          systemStats:
+            disabled:
+              host: false
+              cgroup: false
+            pathCgroups: /rootfs/sys/fs/cgroup
+            pathProc: /rootfs/proc
+            statsInterval: 30s
+            type:
+              host: "kubernetes_stats_v2_host"
+              cgroup: "kubernetes_stats_v2_cgroup"
+            index:
+              host: ""
+              cgroup: ""
+            output:
+              host: ""
+              cgroup: ""
+          
+          # Process stats
+          procStats:
+            disabled: false
+            pathProc: /rootfs/proc
+            statsInterval: 30s
+            type: "kubernetes_proc_stats_v2"
+            index:
+              host: ""
+              cgroup: ""
+            includeSystemThreads: false
+            output:
+              host: ""
+              cgroup: ""
+            hideArgs: false
+            
+          netStats:
+            disabled: false
+            pathProc: /rootfs/proc
+            statsInterval: 30s
+            type: "kubernetes_net_stats_v2"
+            index:
+              host: ""
+              cgroup: ""
+            output:
+              host: ""
+              cgroup: ""
+          
+          netSocketTable:
+            disabled: false
+            pathProc: /rootfs/proc
+            statsInterval: 30s
+            type: "kubernetes_net_socket_table"
+            index:
+              host: ""
+              cgroup: ""
+            output:
+              host: ""
+              cgroup: ""
+            group: true
+            disableLookup: false
+            
+          mountStats:
+            disabled: false
+            statsInterval: 30s
+            type: "kubernetes_mount_stats"
+            index: ""
+            output: ""
+          
+          diskStats:
+            disabled: false
+            statsInterval: 30s
+            type: "kubernetes_disk_stats"
+            index: ""
+            output: ""
+            
+          containerLogs:
+            disabled: false
+            type: "kubernetes_logs"
+            path: "/rootfs/var/lib/docker/containers/"
+            crioPath: "/rootfs/var/log/pods/"
+            pollingInterval: 250ms
+            walkingInterval: 5s
+            verboseFields: false
+            index: ""
+            joinPartialEvents: true
+            stripTerminalEscapeSequences: false
+            stripTerminalEscapeSequencesRegex: '(\x1b\[\d{1,3}(;\d{1,3})*m)|(\x07)|(\x1b]\d+(\s\d)?;[^\x07]+\x07)|(.*\x1b\[K)'
+            samplingPercent: -1
+            samplingKey: ""
+            output: ""
+            thruputPerSecond: ""
+            tooOldEvents: ""
+            tooNewEvents: ""
+            
+          applicationLogs:
+            disabled: false
+            root: /rootfs/
+            syncInterval: 5s
+            glob: "*.log*"
+            pollingInterval: 250ms
+            walkingInterval: 5s
+            verboseFields: false
+            type: "kubernetes_logs"
+            index: ""
+            eventPatternRegex: '^[^\s]'
+            eventPatternMaxInterval: 100ms
+            eventPatternMaxWait: 1s
+            eventPatternMaxSize: 1MB
+            samplingPercent: -1
+            samplingKey: ""
+            output: ""
+            thruputPerSecond: ""
+            tooOldEvents: ""
+            tooNewEvents: ""
+            maxHoldAfterClose: 1800s
+          
+          hostLogs:
+            "audit-logs":
+              disabled: false
+              controlPlaneOnly: true
+              path: '/rootfs/var/log/kube-apiserver/'
+              glob: 'audit*.log'
+              match: ""
+              recursive: false
+              pollingInterval: 250ms
+              walkingInterval: 5s
+              verboseFields: false
+              type: "kubernetes_host_logs"
+              index: ""
+              extraction: '(?P<message>.*"stageTimestamp":"(?P<timestamp>[^"]+)".*)'
+              extractionMessageField: 'message'
+              timestampField: 'timestamp'
+              timestampFormat: '2006-01-02T15:04:05.999999999Z07:00'
+              timestampLocation: ""
+              samplingPercent: -1
+              samplingKey: ""
+              output: ""
+              thruputPerSecond: ""
+              tooOldEvents: ""
+              tooNewEvents: ""
+              eventPattern: ""
+              blacklist: []
+              whitelist: []
+            "syslog":
+              disabled: false
+              controlPlaneOnly: false
+              path: '/rootfs/var/log/'
+              glob: ""
+              match: '^(syslog|messages)(.\d+)?$'
+              recursive: false
+              pollingInterval: 250ms
+              walkingInterval: 5s
+              verboseFields: false
+              type: "kubernetes_host_logs"
+              index: ""
+              extraction: '^(?P<timestamp>[A-Za-z]+\s+\d+\s\d+:\d+:\d+)\s(?P<syslog_hostname>[^\s]+)\s(?P<syslog_component>[^:\[]+)(\[(?P<syslog_pid>\d+)\])?: (.+)$'
+              extractionMessageField: ""
+              timestampField: "timestamp"
+              timestampFormat: "Jan 2 15:04:05"
+              timestampSetMonth: false
+              timestampSetDay: false
+              timestampLocation: "Local"
+              samplingPercent: -1
+              samplingKey: ""
+              output: ""
+              thruputPerSecond: ""
+              tooOldEvents: ""
+              tooNewEvents: ""
+              eventPattern: '^[^\s]'
+              blacklist: []
+              whitelist: []
+            "logs":
+              disabled: false
+              controlPlaneOnly: false
+              path: '/rootfs/var/log/'
+              glob: ""
+              match: '^(([\w\-.]+\.log(.[\d\-]+)?)|(docker))$'
+              recursive: false
+              pollingInterval: 250ms
+              walkingInterval: 5s
+              verboseFields: false
+              type: "kubernetes_host_logs"
+              index: ""
+              extraction: ''
+              extractionMessageField: ""
+              timestampField: ""
+              timestampFormat: ""
+              timestampSetMonth: false
+              timestampSetDay: false
+              timestampLocation: ""
+              samplingPercent: -1
+              samplingKey: ""
+              output: ""
+              thruputPerSecond: ""
+              tooOldEvents: ""
+              tooNewEvents: ""
+              eventPattern: '^[^\s]'
+              blacklist: []
+              whitelist: []
+            
+          
+          journald:
+            disabled: false
+            path:
+              persistent: /rootfs/var/log/journal/
+              volatile: /rootfs/run/log/journal/
+            pollingInterval: 250ms
+            startFromRel: ""
+            type: "kubernetes_host_logs"
+            index: ""
+            samplingPercent: -1
+            samplingKey: ""
+            reopenInterval: 1h
+            output: ""
+            thruputPerSecond: ""
+            tooOldEvents: ""
+            tooNewEvents: ""
+            eventPattern: '^[^\s]'
+            blacklist: []
+            whitelist: []
+            spawnExternalProcess: false
+            
+          diagnostics:
+            # Collectord can report if node reboot is required (uncomment to use it)
+            node-reboot-required:
+              path: /rootfs/var/run/reboot-required*
+              interval: "1h"
+            # See https://www.kernel.org/doc/Documentation/admin-guide/hw-vuln/index.rst
+            # And https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-devices-system-cpu
+            cpu-vulnerabilities:
+              path: /rootfs/sys/devices/system/cpu/vulnerabilities/*
+              interval: 1h
+              
+          prometheus:
+            # Each entry below renders a [input.prometheus::<name>] stanza in
+            # 002-daemonset.conf (controlPlaneOnly: false) or 003-daemonset-master.conf
+            # (controlPlaneOnly: true).
+            #
+            # The "WHERE" of the scrape is controlled by exactly one of three keys
+            # (since 26.04.2 - legacy endpoint-http://<svc>:<port>/path syntax was
+            # removed and now fails fast at config load):
+            #   endpointSlice: <svc>.<ns>  - per-pod fan-out via discovery.k8s.io/v1.EndpointSlice
+            #   service:       <svc>.<ns>  - hit the ClusterIP, kube-proxy load-balances
+            #   endpoint(s):   literal URL(s) - no Kubernetes discovery; the existing
+            #                                   localhost-then-proxy fallback idiom.
+            # When endpointSlice or service is used, set port (number) or portName
+            # (matches EndpointSlice port name), plus scheme (http/https) and path.
+            #
+            # Example - scheduler reached through a headless discovery Service:
+            # "scheduler-via-discovery":
+            #   controlPlaneOnly: true
+            #   disabled: false
+            #   type: "kubernetes_prometheus"
+            #   source: "scheduler"
+            #   interval: "60s"
+            #   timeout: "60s"
+            #   endpointSlice: kube-scheduler-collectorforkubernetes-discovery.kube-system
+            #   port: 10251
+            #   scheme: http
+            #   path: /metrics
+            #   tokenPath: ""
+            #   certPath: ""
+            #   clientCertPath: ""
+            #   insecure: false
+            #   includeHelp: true
+            "kubelet":
+              controlPlaneOnly: false
+              disabled: false
+              type: "kubernetes_prometheus"
+              index: ""
+              host: '${KUBERNETES_NODENAME}'
+              source: "kubelet"
+              interval: "60s"
+              timeout: "60s"
+              endpoint: ""
+              endpoints:
+                - 'https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/nodes/${KUBERNETES_NODENAME}/proxy/metrics'
+                - 'http://127.0.0.1:10255/metrics'
+                - 'https://127.0.0.1:10250/metrics'
+                - 'http://127.0.0.1:10250/metrics'
+              tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+              certPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              clientCertPath: ""
+              clientKeyPath: ""
+              insecure: true
+              includeHelp: false
+              output: ""
+              whitelist:
+                - '^kubernetes_build_info$'
+                - '^kubelet_runtime_operations_duration_seconds_sum$'
+                - '^kubelet_docker_operations_duration_seconds_sum$'
+                - '^kubelet_network_plugin_operations_duration_seconds_sum$'
+                - '^kubelet_cgroup_manager_duration_seconds_sum$'
+                - '^storage_operation_duration_seconds_sum$'
+                - '^kubelet_docker_operations_errors_total$'
+                - '^kubelet_runtime_operations_errors_total$'
+                - '^rest_client_requests_total$'
+                - '^process_cpu_seconds_total$'
+                - '^process_resident_memory_bytes$'
+                - '^process_virtual_memory_bytes$'
+                - '^rest_client_request_duration_seconds_sum$'
+                - '^kubelet_volume_stats_.+$'
+                - '^rest_client_requests_total$'
+              backlist: []
+            "kubernetes-api":
+              controlPlaneOnly: true
+              disabled: false
+              type: "kubernetes_prometheus"
+              index: ""
+              host: '${KUBERNETES_NODENAME}'
+              source: "kubernetes-api"
+              interval: "60s"
+              timeout: "60s"
+              endpoint: ""
+              endpoints:
+                - "https://127.0.0.1:6443/metrics"
+                - "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/metrics"
+              tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+              certPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              clientCertPath: ""
+              clientKeyPath: ""
+              insecure: true
+              includeHelp: false
+              output: ""
+              whitelist:
+                - '^kubernetes_build_info$'
+                - '^authenticated_user_requests$'
+                - '^apiserver_request_total$'
+                - '^process_cpu_seconds_total$'
+                - '^process_resident_memory_bytes$'
+                - '^process_virtual_memory_bytes$'
+                - '^rest_client_request_duration_seconds_sum$'
+                - '^rest_client_requests_total$'
+              backlist: []
+            "scheduler":
+              controlPlaneOnly: true
+              disabled: false
+              type: "kubernetes_prometheus"
+              index: ""
+              host: '${KUBERNETES_NODENAME}'
+              source: "scheduler"
+              interval: "60s"
+              timeout: "60s"
+              endpoint: ""
+              endpoints:
+                - "https://:10259/metrics"
+                - "http://127.0.0.1:10251/metrics"
+              tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+              certPath: ""
+              clientCertPath: ""
+              clientKeyPath: ""
+              insecure: true
+              includeHelp: false
+              output: ""
+              whitelist:
+                - '^kubernetes_build_info$'
+                - '^scheduler_e2e_scheduling_duration_seconds_sum$'
+                - '^scheduler_binding_duration_seconds_sum$'
+                - '^scheduler_scheduling_algorithm_duration_seconds_sum$'
+                - '^process_cpu_seconds_total$'
+                - '^process_resident_memory_bytes$'
+                - '^process_virtual_memory_bytes$'                
+              backlist: []
+            "controller-manager":
+              controlPlaneOnly: true
+              disabled: false
+              type: "kubernetes_prometheus"
+              index: ""
+              host: '${KUBERNETES_NODENAME}'
+              source: "controller-manager"
+              interval: "60s"
+              timeout: "60s"
+              endpoint: ""
+              endpoints:
+                - "https://:10257/metrics"
+                - "http://127.0.0.1:10252/metrics"
+              tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+              certPath: ""
+              clientCertPath: ""
+              clientKeyPath: ""
+              insecure: true
+              includeHelp: false
+              output: ""
+              whitelist:
+                - '^kubernetes_build_info$'
+                - '^process_cpu_seconds_total$'
+                - '^process_resident_memory_bytes$'
+                - '^process_virtual_memory_bytes$'
+                - '^node_collector_zone_size$'
+                - '^node_collector_zone_health$'
+                - '^node_collector_unhealthy_nodes_in_zone$'
+              backlist: []
+            "etcd":
+              controlPlaneOnly: true
+              disabled: false
+              type: "kubernetes_prometheus"
+              index: ""
+              host: '${KUBERNETES_NODENAME}'
+              source: "etcd"
+              interval: "60s"
+              timeout: "60s"
+              endpoint: ""
+              endpoints:
+                - "https://:2379/metrics"
+                - "http://:2379/metrics"
+                - "http://:2381/metrics"
+              tokenPath: ""
+              certPath: "/rootfs/etc/kubernetes/pki/etcd/ca.crt"
+              clientCertPath: "/rootfs/etc/kubernetes/pki/apiserver-etcd-client.crt"
+              clientKeyPath: "/rootfs/etc/kubernetes/pki/apiserver-etcd-client.key"
+              insecure: true
+              includeHelp: false
+              output: ""
+              whitelist:
+                - '^etcd_server_leader_changes_seen_total$'
+                - '^etcd_server_has_leader$'
+                - '^etcd_server_proposals_committed_total$'
+                - '^etcd_server_proposals_applied_total$'                
+                - '^etcd_server_proposals_pending$'
+                - '^etcd_server_proposals_failed_total$'
+                - '^etcd_disk_wal_fsync_duration_seconds_sum$'
+                - '^etcd_disk_wal_fsync_duration_seconds_count$'
+                - '^etcd_disk_backend_commit_duration_seconds_sum$'
+                - '^etcd_disk_backend_commit_duration_seconds_count$'
+                - '^etcd_network_client_grpc_.*$'
+                - '^grpc_server_handled_total$'
+                - '^etcd_network_peer_round_trip_time_seconds_bucket$'
+                - '^process_cpu_seconds_total$'
+                - '^process_resident_memory_bytes$'
+                - '^process_virtual_memory_bytes$'
+                - '^process_open_fds$'
+                - '^process_max_fds$'
+                - '^etcd_disk_backend_commit_duration_seconds_bucket$'
+                - '^etcd_disk_wal_fsync_duration_seconds_bucket$'
+              backlist: []
+          kubernetesEvents:
+            disabled: false
+            type: "kubernetes_events"
+            index: ""
+            output: ""
+            excludeManagedFields: true
+          kubernetesWatch:
+            "pods":
+              disabled: false
+              refresh: 10m
+              apiVersion: v1
+              kind: Pod
+              namespace: ""
+              type: "kubernetes_objects"
+              index: ""
+              output: ""
+              modifyValues: []
+              excludeManagedFields: true
+            "resourcequota":
+              disabled: false
+              refresh: 10m
+              apiVersion: v1
+              kind: ResourceQuota
+              namespace: ""
+              type: "kubernetes_objects"
+              index: ""
+              output: ""
+              modifyValues: []
+              excludeManagedFields: true
+            "nodes":
+              disabled: false
+              refresh: 10m
+              apiVersion: v1
+              kind: Node
+              namespace: ""
+              type: "kubernetes_objects"
+              index: ""
+              output: ""
+              modifyValues: []
+              excludeManagedFields: true

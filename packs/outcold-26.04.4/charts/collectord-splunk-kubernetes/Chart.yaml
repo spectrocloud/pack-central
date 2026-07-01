@@ -1,0 +1,23 @@
+apiVersion: v2
+name: collectord-splunk-kubernetes
+description: Collectord chart for Monitoring Kubernetes in Splunk Enterprise and Splunk Cloud
+type: application
+version: 2604.4.0
+appVersion: "26.04.4"
+kubeVersion: ">=1.24.0-0"
+home: https://www.outcoldsolutions.com
+icon: https://www.outcoldsolutions.com/images/collectord.svg
+keywords:
+  - kubernetes
+  - monitoring
+  - logs
+  - metrics
+  - splunk
+dependencies:
+  - name: collectord
+    version: 2604.4.0
+    repository: "oci://registry-1.docker.io/outcoldsolutions"
+maintainers:
+  - name: Outcold Solutions
+    url: https://www.outcoldsolutions.com
+    email: support@outcoldsolutions.com
