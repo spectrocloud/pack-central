@@ -1,0 +1,42 @@
+pack:
+  content:
+    # BUILD-ON-DEPLOY (0/0 scan surface): only the 0-CVE Chainguard wolfi-base is
+    # pack content. The VAST driver + 5 CSI sidecars are crane-exported at deploy by
+    # the chart's fetch-runtime init container and run on wolfi-base (see the chart's
+    # templates/shared/_buildondeploy.tpl; upstream crane sources are .Values.image.*).
+    # Repoint via charts.vastblock.image.<role>.
+    images:
+      - image: cgr.dev/chainguard/wolfi-base:latest
+      - image: vastdataorg/csi:v2.6.5
+  namespace: vast-block
+  namespaceLabels:
+    "vast-block": "pod-security.kubernetes.io/enforce=privileged"
+
+charts:
+  vastblock:
+    endpoint: ""
+    verifySsl: false
+    secretName: "vast-mgmt"
+    # Auto-prune stale host NQN entries on VAST when no PVC uses them
+    # (recommended for ephemeral/autoscaled node pools).
+    blockHostsAutoPrune: true
+    # Optional prefix for auto-generated block-host NQN names.
+    hostNamePrefix: ""
+
+    storageClassDefaults:
+      secretName: "vast-mgmt"
+      vipPool: ""
+      vipPoolFQDN: ""
+      vipPoolFQDNRandomPrefix: true
+      # Block transport. AWS supports NVMe over TCP only.
+      transportType: "TCP"
+      # Filesystem laid on the block device (e.g. ext4, xfs). Empty = raw block.
+      fsType: "ext4"
+      allowVolumeExpansion: true
+      reclaimPolicy: "Delete"
+
+    # NVMe/TCP block volumes are typically ReadWriteOnce. Define per env.
+    storageClasses: {}
+    #   vastdata-block:
+    #     vipPool: <tenant-vip-pool>
+    #     fsType: ext4
