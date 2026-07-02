@@ -2,23 +2,24 @@ pack:
   namespace: "hpe-storage"
   content:
     images:
-      - image: quay.io/hpestorage/csi-driver:v3.1.0
-      - image: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.1.0
-      - image: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.1.0
-      - image: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.1.0
-      - image: quay.io/hpestorage/nfs-provisioner:v3.0.9
-      - image: quay.io/hpestorage/csi-extensions:v1.2.10
-      - image: quay.io/hpestorage/volume-group-provisioner:v1.0.9
-      - image: quay.io/hpestorage/volume-group-snapshotter:v1.0.9
-      - image: quay.io/hpestorage/volume-mutator:v1.3.9
-      - image: registry.k8s.io/sig-storage/csi-attacher:v4.11.0
-      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      - image: quay.io/hpestorage/csi-driver:v3.2.0
+      - image: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.2.0
+      - image: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.2.0
+      - image: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.2.0
+      - image: quay.io/hpestorage/alletrastoragemp-x10000-nfs-csp:v1.0.0
+      - image: quay.io/hpestorage/nfs-provisioner:v3.0.10
+      - image: quay.io/hpestorage/csi-extensions:v1.2.11
+      - image: quay.io/hpestorage/volume-group-provisioner:v1.0.10
+      - image: quay.io/hpestorage/volume-group-snapshotter:v1.0.10
+      - image: quay.io/hpestorage/volume-mutator:v1.3.10
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.12.0
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0
       - image: registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
       - image: registry.k8s.io/sig-storage/csi-resizer:v2.1.0
       - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
 charts:
   hpe-csi-driver:
-
+    
     # Default values for hpe-csi-driver Helm chart
     # This is a YAML-formatted file.
     # Declare variables to be passed into your templates.
@@ -31,6 +32,7 @@ charts:
       alletra9000: false
       alletraStorageMP: false
       b10000FileService: false
+      x10000FileService: false
 
     # For controlling automatic iscsi/multipath package installation
     disableNodeConformance: true
@@ -131,18 +133,19 @@ charts:
 
     # Release images
     images:
-      csiNodeDriver: quay.io/hpestorage/csi-driver:v3.1.0
-      csiControllerDriver: quay.io/hpestorage/csi-driver:v3.1.0
-      nimbleCSP: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.1.0
-      primera3parCSP: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.1.0
-      b10000FileServiceCSP: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.1.0
-      nfsProvisioner: quay.io/hpestorage/nfs-provisioner:v3.0.9
-      csiExtensions: quay.io/hpestorage/csi-extensions:v1.2.10
-      csiVolumeGroupProvisioner: quay.io/hpestorage/volume-group-provisioner:v1.0.9
-      csiVolumeGroupSnapshotter: quay.io/hpestorage/volume-group-snapshotter:v1.0.9
-      csiVolumeMutator: quay.io/hpestorage/volume-mutator:v1.3.9
-      csiAttacher: registry.k8s.io/sig-storage/csi-attacher:v4.11.0
-      csiNodeDriverRegistrar: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      csiNodeDriver: quay.io/hpestorage/csi-driver:v3.2.0
+      csiControllerDriver: quay.io/hpestorage/csi-driver:v3.2.0
+      nimbleCSP: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.2.0
+      primera3parCSP: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.2.0
+      b10000FileServiceCSP: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.2.0
+      x10000FileServiceCSP: quay.io/hpestorage/alletrastoragemp-x10000-nfs-csp:v1.0.0
+      nfsProvisioner: quay.io/hpestorage/nfs-provisioner:v3.0.10
+      csiExtensions: quay.io/hpestorage/csi-extensions:v1.2.11
+      csiVolumeGroupProvisioner: quay.io/hpestorage/volume-group-provisioner:v1.0.10
+      csiVolumeGroupSnapshotter: quay.io/hpestorage/volume-group-snapshotter:v1.0.10
+      csiVolumeMutator: quay.io/hpestorage/volume-mutator:v1.3.10
+      csiAttacher: registry.k8s.io/sig-storage/csi-attacher:v4.12.0
+      csiNodeDriverRegistrar: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0
       csiProvisioner: registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
       csiResizer: registry.k8s.io/sig-storage/csi-resizer:v2.1.0
       csiSnapshotter: registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
