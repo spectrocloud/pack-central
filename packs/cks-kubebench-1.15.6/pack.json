@@ -1,0 +1,17 @@
+{
+    "addonType": "security",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "kubeManifests": [
+      "manifests/job.yaml"
+    ],
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Kubebench",
+    "layer":"addon",
+    "name": "kubebench",
+    "version": "1.15.6"
+  }
