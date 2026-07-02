@@ -1,0 +1,38 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Kyverno",
+  "charts": [
+    "charts/kyverno-3.8.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "kyverno",
+  "version": "1.18.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 10
+      },
+      {
+        "type": "memory",
+        "minLimit": 64
+      }
+    ]
+  }
+}
