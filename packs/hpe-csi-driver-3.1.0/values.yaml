@@ -3,7 +3,6 @@ pack:
   content:
     images:
       - image: quay.io/hpestorage/csi-driver:v3.1.0
-      - image: quay.io/hpestorage/csi-driver:v3.1.0
       - image: quay.io/hpestorage/alletra-6000-and-nimble-csp:v3.1.0
       - image: quay.io/hpestorage/alletra-9000-primera-and-3par-csp:v3.1.0
       - image: quay.io/hpestorage/alletrastoragemp-b10000-nfs-csp:v1.1.0
@@ -52,7 +51,7 @@ charts:
     disableHostDeletion: false
 
     # Disable pre-install hooks when the chart is rendered outside of Kubernetes, such as CI/CD systems
-    disablePreInstallHooks: false
+    disablePreInstallHooks: true
 
     # imagePullPolicy applied for all hpe-csi-driver images
     imagePullPolicy: "IfNotPresent"

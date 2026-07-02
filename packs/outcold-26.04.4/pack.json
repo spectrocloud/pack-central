@@ -1,0 +1,30 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "docsURL": "https://docs.spectrocloud.com/integrations/collectord",
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Outcold Solutions",
+  "charts": [
+    "charts/collectord-splunk-kubernetes-2604.4.0.tgz"
+  ],
+  "layer":"addon",
+  "name": "outcold-monitoring",
+  "version": "26.04.4",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

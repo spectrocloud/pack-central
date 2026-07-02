@@ -1,0 +1,16 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor": "hpe"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "HPE CSI Driver for Kubernetes",
+  "charts": [
+    "charts/hpe-csi-driver-3.2.0.tgz"
+  ],
+  "layer": "csi",
+  "name": "hpe-csi-driver",
+  "version": "3.2.0"
+}
