@@ -1,0 +1,29 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/thanos-17.6.0.tgz"
+  ],
+  "displayName": "Thanos",
+  "layer": "addon",
+  "name": "thanos",
+  "version": "17.6.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
