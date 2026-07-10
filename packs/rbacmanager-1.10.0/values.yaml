@@ -1,0 +1,94 @@
+pack:
+  namespace: "rbac-manager"
+  content:
+    images:
+      - image: us-docker.pkg.dev/fairwinds-ops/oss/rbac-manager:v1.10.0
+      
+    charts:
+      - repo: 
+        name: rbac-manager
+        version: 2.0.0
+  
+  
+charts:
+  rbac-manager:
+    image:
+      # image.repository -- The image to run for rbac manager
+      repository: us-docker.pkg.dev/fairwinds-ops/oss/rbac-manager
+      # image.tag -- The tag of the image to run. Defaults to the Chart's AppVersion
+      tag: "v1.10.0"
+      # image.digest -- The digest of the image to run
+      digest: ""
+      # image.pullPolicy -- The image pullPolicy. Recommend not changing this
+      pullPolicy: Always
+      # imagePullSecrets -- A list of imagePullSecrets to reference for pulling the image
+      imagePullSecrets: []
+
+    # extraArgs -- A map of flag=value to pass to rbac-manager
+    extraArgs: {}
+
+    # installCRDs -- If true, install and upgrade CRDs. See the Helm documentation for [best practices regarding CRDs](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/#install-a-crd-declaration-before-using-the-resource).
+    installCRDs: true
+
+    crds:
+    # crds.additionalLabels -- add additional labels to the installed CRDs
+      additionalLabels: {}
+
+    rbac:
+    # rbac.additionalLabels -- add additional labels to the installed RBAC resources
+      additionalLabels: {}
+
+    # resources -- A resources block for the rbac-manager pods
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+    # priorityClassName -- The name of a priorityClass to use
+    priorityClassName: ""
+
+    # nodeSelector -- Deployment nodeSelector
+    nodeSelector: {}
+
+    # tolerations -- Deployment tolerations
+    tolerations: []
+
+    # affinity -- Deployment affinity
+    affinity: {}
+
+    # podAnnotations -- Annotations to apply to the pods
+    podAnnotations: {}
+    # podLabels -- Labels to apply to the pod
+    podLabels: {}
+
+    # podSecurityContext -- securityContext to apply to the whole pod
+    podSecurityContext: {}
+    # securityContext -- securityContext to apply to the rbac-manager container
+    securityContext:
+      allowPrivilegeEscalation: false
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - ALL
+
+    # deploymentLabels -- Labels to apply to the Deployment resource
+    deploymentLabels: {}
+
+    serviceMonitor:
+      # serviceMonitor.enabled -- If true, a ServiceMonitor will be created for Prometheus
+      enabled: false
+      # serviceMonitor.additionalLabels -- Additional labels to ServiceMonitor
+      additionalLabels: []
+      # serviceMonitor.annotations -- Annotations to apply to the serviceMonitor and headless service
+      annotations: {}
+      # serviceMonitor.namespace -- The namespace to deploy the serviceMonitor into
+      namespace: ""
+      # serviceMonitor.interval -- How often to scrape the metrics endpoint
+      interval: 60s
+      # serviceMonitor.relabelings -- RelabelConfigs to apply to samples before scraping
+      relabelings: []
