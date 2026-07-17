@@ -1,0 +1,18 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectro"
+  },
+  "cloudTypes": ["all"],
+  "displayName": "Victoria Metrics Operator",
+  "eol": " ",
+  "group": " ",
+  "charts": [
+    "charts/victoria-metrics-operator-0.66.2.tgz", 
+    "charts/victoria-metrics-operator-crds-0.13.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "victoria-metrics-operator",
+  "version": "v0.66.2"
+}
