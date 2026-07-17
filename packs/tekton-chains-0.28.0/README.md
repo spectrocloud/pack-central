@@ -8,7 +8,7 @@ This file describes the usage of the Helm chart to deploy Tekton Chains.
 
 Before installing this chart, ensure your cluster meets the following requirements:
 
-*   **Kubernetes:** Version 1.18 or higher.
+*   **Kubernetes:** Version 1.29 or higher.
 *   **Helm:** Version 3.0+.
 *   **Tekton Pipelines:** Tekton Pipelines must be previously installed on the cluster.
 *   **Signing Tool:** Optionally, have `cosign` installed on your local machine to generate the cryptographic key pair.
