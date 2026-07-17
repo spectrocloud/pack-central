@@ -9,8 +9,10 @@ pack:
       - image: docker.io/victoriametrics/operator:v0.73.1
       - image: docker.io/victoriametrics/operator:config-reloader-v0.73.1
       # CRD upgrade/cleanup helper jobs (disabled by default)
+      # kubectl has no `latest` tag; the chart uses the tag matching the
+      # target cluster's Kubernetes version. Pin/mirror the tag for your clusters.
       - image: docker.io/busybox:latest
-      - image: registry.k8s.io/kubectl
+      - image: registry.k8s.io/kubectl:v1.33.0
       # Operator-managed component defaults (pulled when the matching CR is created)
       - image: docker.io/victoriametrics/vmagent:v1.147.0
       - image: docker.io/victoriametrics/vmalert:v1.147.0
