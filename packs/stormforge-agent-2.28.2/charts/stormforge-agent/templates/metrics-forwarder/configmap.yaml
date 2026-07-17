@@ -1,0 +1,380 @@
+{{- if and .Values.workload.denyNamespaces .Values.workload.allowNamespaces -}}
+{{- fail "Chart values `workload.denyNamespaces` and `workload.allowNamespaces` are mutually exclusive! You must set at least one of these values to `null`" -}}
+{{- end -}}
+{{- if and .Values.enableCostMetrics (or .Values.workload.denyNamespaces .Values.workload.allowNamespaces) -}}
+{{- fail "Chart value `enableCostMetrics` is mutually exclusive with `workload.allowNamespaces` and `workload.denyNamespaces`! You must set both of these values to `null` to use `enableCostMetrics`" -}}
+{{- end -}}
+
+{{/*
+  Render relabel_configs shared between two of our job definitions.
+
+  Usage:
+  {{- include "stormforge.commonNodeRelabelConfigs"
+        (dict "metricsPath" "/metrics/cadvisor" "context" $) -}}
+*/}}
+{{- define "stormforge.commonNodeRelabelConfigs" -}}
+- action: labelmap
+  regex: __meta_kubernetes_node_label_(.+)
+{{- if .context.Values.gkeAutopilot }}
+# Use target configuration specific to GKE Autopilot
+- target_label: __scheme__
+  replacement: "http"
+- target_label: __address__
+  source_labels: [__address__]
+  regex: "(.+):(.+)"
+  replacement: "${1}:10255"
+- target_label: __metrics_path__
+  replacement: {{ .metricsPath | quote }}
+{{- else }}
+# Use kubeproxy to scrape node data
+- target_label: __address__
+  replacement: kubernetes.default.svc:443
+- source_labels: [__meta_kubernetes_node_name]
+  regex: (.+)
+  target_label: __metrics_path__
+  replacement: {{ printf "/api/v1/nodes/${1}/proxy%s" .metricsPath | quote }}
+{{- end }}
+# Inject a "node" label to match StormForge agent metrics on
+- source_labels: [__meta_kubernetes_node_name]
+  target_label: node
+- regex: {{ include "stormforge-agent.workload.labels-to-keep-duringingest" . }}
+  action: labelkeep
+{{- end -}}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stormforge-agent.metricsForwarderName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.prom.configMapAnnotations }}
+  annotations: {{ toYaml .Values.prom.configMapAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: {{ include "stormforge-agent.metricsForwarderComponent" . }}
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+data:
+  prometheus.yml: |
+    {{- if .Values.standbyMode }}
+    ---
+    # Helm installed in standby mode.
+    {{- else }}
+    ---
+    global:
+      scrape_interval: {{ .Values.prom.scrapeInterval | quote }}
+      scrape_timeout: {{ .Values.prom.scrapeTimeout | quote }}
+      external_labels:
+        cluster_name: "$STORMFORGE_CLUSTER_NAME"
+
+    remote_write:
+      - url: {{ .Values.prom.remoteWriteUrl }}
+        name: application
+        {{- if .Values.prom.remoteTimeout }}
+        remote_timeout: {{ .Values.prom.remoteTimeout }}
+        {{- end }}
+        proxy_from_environment: true
+        oauth2:
+          proxy_from_environment: true
+          client_id: "$STORMFORGE_CLIENT_ID"
+          client_secret_file: /prometheus/client/client_secret_file
+          token_url: {{ .Values.authorization.issuer }}oauth/token
+          endpoint_params:
+            audience: {{ .Values.stormforge.address }}
+            cluster: "$STORMFORGE_CLUSTER_NAME"
+        queue_config:
+          {{- toYaml .Values.prom.remoteWriteQueueConfig | nindent 10 }}
+        write_relabel_configs:
+          - target_label: cluster_name
+            replacement: "$STORMFORGE_CLUSTER_NAME"
+
+      {{- if .Values.nodeCPUPressureDetection }}
+      - url: http://{{ include "stormforge-agent.agentName" . }}:8080/write
+        name: psi-detection
+        write_relabel_configs:
+          - source_labels: [__name__]
+            regex: ^container_pressure_cpu_(waiting|stalled)_seconds_total$
+            action: keep
+          - source_labels: [id]
+            regex: ^/$
+            action: keep
+          - source_labels: [__name__]
+            regex: ^container_pressure_cpu_waiting_seconds_total$
+            target_label: __name__
+            replacement: sf_container_cpu_pressure_waiting_seconds_total
+          - source_labels: [__name__]
+            regex: ^container_pressure_cpu_stalled_seconds_total$
+            target_label: __name__
+            replacement: sf_container_cpu_pressure_stalled_seconds_total
+      {{- end }}
+
+    scrape_configs:
+      - job_name: 'kubernetes-cadvisor'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        honor_timestamps: {{ .Values.prom.honorTimestamps }}
+        relabel_configs: {{- include "stormforge.commonNodeRelabelConfigs"
+                               (dict "metricsPath" "/metrics/cadvisor" "context" $) | nindent 8 }}
+        metric_relabel_configs:
+        # Limit input to only these metrics
+        - regex: ^{{- list
+                        "container_cpu_usage_seconds_total"
+                        "container_memory_working_set_bytes"
+                        "container_cpu_cfs_throttled_seconds_total"
+                        "container_cpu_cfs_throttled_periods_total"
+                        "container_cpu_cfs_periods_total"
+                        "container_memory_max_usage_bytes"
+                      | concat
+                          (ternary
+                            (list "container_network_transmit_bytes_total")
+                            list
+                            .Values.enableCostMetrics)
+                      | concat (.Values.prom.extraCAdvisorMetrics | default list)
+                      | uniq
+                      | join "|" -}}$
+          source_labels: [ __name__ ]
+          action: keep
+        # Earmark network metrics to keep even without a container label
+        - source_labels: [__name__]
+          regex: container_network_transmit_bytes_total
+          action: replace
+          target_label: __keep
+          replacement: t
+        # Remove non-earmarked metrics that don't have a 'container' label
+        - source_labels: [ container, __keep ]
+          regex: ^(POD|);$
+          action: drop
+        # Remove metrics that don't have a 'pod' label
+        - source_labels: [ pod ]
+          regex: |
+          action: drop
+        # Remove metrics that don't have a 'image' label
+        - source_labels: [ image ]
+          regex: |
+          action: drop
+        # Remove metrics that don't have a 'name' label
+        - source_labels: [ name ]
+          regex: |
+          action: drop
+        # Filter by these namespaces
+        - source_labels: [ namespace ]
+          {{- if .Values.workload.allowNamespaces }}
+          regex: ({{ .Values.workload.allowNamespaces | join "|" }})
+          action: keep
+          {{- else }}
+          regex: ({{ .Values.workload.denyNamespaces | default list | join "|" }})
+          action: drop
+          {{- end }}
+        # And keep these labels
+        - regex: {{ include "stormforge-agent.workload.labels-to-keep-postingest" . }}
+          action: labelkeep
+
+      - job_name: kubernetes-resource
+        scrape_interval: 2m
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        honor_timestamps: true
+        relabel_configs: {{- include "stormforge.commonNodeRelabelConfigs"
+                              (dict "metricsPath" "/metrics/resource" "context" $) | nindent 8 }}
+        metric_relabel_configs:
+        - regex: ^{{- list
+                        "node_cpu_usage_seconds_total"
+                        "node_memory_working_set_bytes"
+                          | uniq | join "|" -}}$
+          source_labels: [ __name__ ]
+          action: keep
+
+      - job_name: workload-agent
+        # This scrape interval is set to 30s to scrape more often, but will be modified by Agent to `2m` after 10 minutes
+        scrape_interval: 30s
+        scheme: http
+        static_configs:
+        - targets:
+          - {{ include "stormforge-agent.agentName" . }}:8080
+        metric_relabel_configs:
+        - regex: ^{{- list
+                        "sf_workload_pod_owner"
+                        "sf_workload_pod_container_resource_limits"
+                        "sf_workload_pod_container_resource_requests"
+                        "sf_workload_spec_replicas"
+                        "sf_workload_status_replicas"
+                        "sf_workload_terminated_total"
+                        "sf_horizontalpodautoscaler_spec_target_metric"
+                        "sf_horizontalpodautoscaler_spec_max_replicas"
+                        "sf_horizontalpodautoscaler_spec_min_replicas"
+                        "sf_node_allocated_limits"
+                        "sf_node_allocated_requests"
+                        "sf_node_allocated_pods"
+                        "sf_node_allocatable_resources"
+                        "sf_node_capacity_resources"
+                        "sf_node_labels"
+                      | concat
+                          (ternary
+                            (list
+                              "sf_pod_container_resource_limits"
+                              "sf_pod_container_resource_requests"
+                              "sf_namespace_labels"
+                              "sf_pod_labels"
+                              "sf_workload_labels")
+                            list
+                            .Values.enableCostMetrics)
+                      | concat (.Values.prom.extraWorkloadControllerMetrics | default list)
+                      | uniq
+                      | join "|" -}}$
+          source_labels: [ __name__ ]
+          action: keep
+
+      {{- if .Values.nodeCPUPressureDetection }}
+      - job_name: kubernetes-psi
+        scrape_interval: 2m
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        honor_timestamps: {{ .Values.prom.honorTimestamps }}
+        relabel_configs: {{- include "stormforge.commonNodeRelabelConfigs"
+                               (dict "metricsPath" "/metrics/cadvisor" "context" $) | nindent 8 }}
+        metric_relabel_configs:
+        - regex: ^container_pressure_cpu_(waiting|stalled)_seconds_total$
+          source_labels: [__name__]
+          action: keep
+        - source_labels: [id]
+          regex: ^/$
+          action: keep
+      {{- end }}
+
+      - job_name: prometheus-agent-metrics
+        static_configs:
+        - targets:
+          - "localhost:9090"
+        metric_relabel_configs:
+        - action: keep
+          regex: ^{{- list
+                        "prometheus_agent_active_series"
+                        "prometheus_agent_deleted_series"
+                        "prometheus_remote_.*"
+                        "prometheus_target_scrape_pool_targets"
+                        "scrape_duration_seconds"
+                        "scrape_samples_post_metric_relabeling"
+                        "scrape_samples_scraped"
+                        "scrape_series_added"
+                        "up"
+                          | uniq | join "|" -}}$
+          source_labels: [ __name__ ]
+        - action: drop
+          regex: ^prometheus_remote_storage_exemplars$
+          source_labels: [ __name__ ]
+
+      {{- range $i, $_ := .Values.jvmWorkloadConfigs }}
+
+      - job_name: {{ printf "jvm-metrics-%d" $i | quote }}
+        scrape_interval: 30s
+        scheme: {{ (.metricsPort).scheme | default "http" | quote }}
+        metrics_path: {{ .metricsPath | default "/metrics" | quote }}
+        {{- with .authorization }}
+        authorization:  {{- . | toYaml | nindent 10 }}
+        {{- end }}
+        kubernetes_sd_configs:
+        - role: pod
+          selectors:
+          - role: pod
+            label: {{ .labelSelector | quote }}
+        relabel_configs:
+        {{- with .extraRelabelConfigs }}
+        # Extra relabel_configs
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
+        {{- with .metricsPort }}
+        # Port matching configuration for JVM metrics port
+        {{- if .matchNumber }}
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex: {{ printf "^%s$" (.matchNumber | toString) | quote }}
+          action: keep
+        {{- end }}
+        {{- if .matchName }}
+        - source_labels: [__meta_kubernetes_pod_container_port_name]
+          regex: {{ printf "^%s$" .matchName | quote }}
+          action: keep
+        {{- end }}
+        {{- end }}
+        # Keep namespace, pod, and container meta as labels
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: pod
+        - source_labels: [__meta_kubernetes_pod_container_name]
+          action: replace
+          target_label: container
+        metric_relabel_configs:
+        {{- with .extraMetricRelabelConfigs }}
+        # Extra metric_relabel_configs
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
+        # Normalize older client_java metric names to new format
+        - action: replace
+          source_labels: [__name__]
+          regex:  '^jvm_memory_bytes_(\w+)$'
+          replacement: 'jvm_memory_${1}_bytes'
+          target_label: __name__
+        # Normalize micrometer metrics to match client_java form
+        - source_labels: [__name__]
+          regex: '^jvm_info$'
+          target_label: instrumentation
+          replacement: 'micrometer'
+        - source_labels: [__name__]
+          regex: '^jvm_info$'
+          target_label: __name__
+          replacement: 'jvm_runtime_info'
+        - action: replace
+          source_labels: [__name__]
+          regex: '^jvm_gc_pause_seconds_(\w+)$'
+          replacement: 'jvm_gc_collection_seconds_${1}'
+          target_label: __name__
+        # Normalize opentelemetry metrics to match client_java form
+        - action: replace
+          source_labels: [__name__, jvm_memory_type]
+          regex:  '^jvm_memory_limit_bytes;(.+)$'
+          target_label: __name__
+          replacement: 'jvm_memory_max_bytes'
+        - action: replace
+          source_labels: [__name__, jvm_memory_type]
+          regex: '^jvm_memory_.*_bytes;(.+)$'
+          target_label: area
+          replacement: '${1}'
+        - action: replace
+          source_labels: [__name__, area]
+          regex: '^jvm_memory_.*_bytes;non_heap$'
+          target_label: area
+          replacement: 'nonheap'
+        # Keep only specific named metrics
+        - action: keep
+          source_labels: [ __name__ ]
+          regex: {{ printf "^(%s)$" (
+                     list
+                         "jvm_memory_used_bytes"
+                         "jvm_memory_committed_bytes"
+                         "jvm_memory_init_bytes"
+                         "jvm_memory_max_bytes"
+                         "jvm_gc_collection_seconds_count"
+                         "jvm_gc_collection_seconds_sum"
+                         "jvm_runtime_info"
+                     | concat ($.Values.prom.extraJVMMetrics | default list)
+                     | uniq
+                     | join "|"
+                 ) | quote }}
+      {{- end }}
+      {{- with .Values.prom.extraScrapeConfigs }}
+      {{- . | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
