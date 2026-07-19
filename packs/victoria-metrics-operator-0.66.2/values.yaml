@@ -70,7 +70,7 @@ charts:
 
     crds:
       # -- manages CRD creation. Disables CRD creation only in combination with `crds.plain: false` due to helm dependency conditions limitation
-      enabled: true
+      enabled: false
       # -- check if plain or templated CRDs should be created.
       # with this option set to `false`, all CRDs will be rendered from templates.
       # with this option set to `true`, all CRDs are immutable and require manual upgrade.
