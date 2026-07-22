@@ -1,0 +1,31 @@
+{
+  "addonType": "service-mesh",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "charts": [
+    "charts/linkerd-control-plane-2026.6.3.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Linkerd Control Plane",
+  "layer":"addon",
+  "name": "linkerd-control-plane",
+  "version": "edge-26.6.3",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
+
+
+
