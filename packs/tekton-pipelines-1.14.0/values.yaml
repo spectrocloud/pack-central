@@ -1,2 +1,4 @@
 pack:
   namespace: "tekton-pipelines"
+  content:
+    images: []
