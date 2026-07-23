@@ -1,10 +1,11 @@
 {
-  "addonType": "service-mesh",
+  "addonType": "servicemesh",
   "annotations": {
     "source": "community",
     "contributor" : "spectrocloud"
   },
   "charts": [
+    "charts/linkerd-crds-2026.6.3.tgz",
     "charts/linkerd-control-plane-2026.6.3.tgz"
   ],
   "cloudTypes": [
@@ -13,7 +14,7 @@
   "displayName": "Linkerd Control Plane",
   "layer":"addon",
   "name": "linkerd-control-plane",
-  "version": "edge-26.6.3",
+  "version": "26.6.3",
   "constraints": {
     "dependencies": [
       {

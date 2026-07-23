@@ -7,6 +7,9 @@ pack:
 
     charts:
     - repo: https://helm.linkerd.io/edge
+      name: linkerd-crds
+      version: 2026.6.3
+    - repo: https://helm.linkerd.io/edge
       name: linkerd-control-plane
       version: 2026.6.3
 
@@ -15,7 +18,8 @@ pack:
   namespace: linkerd-control-plane
 
 charts:
-  linkerd:
+  linkerd-crds: {}
+  linkerd-control-plane:
     # Default values for linkerd.
     # This is a YAML-formatted file.
     # Declare variables to be passed into your templates.
@@ -79,7 +83,18 @@ charts:
     # requires the linkerd-cni plugin to already be installed
     cniEnabled: false
     # -- Trust root certificate (ECDSA). It must be provided during install.
-    identityTrustAnchorsPEM: ""
+    identityTrustAnchorsPEM: |
+      -----BEGIN CERTIFICATE-----
+      MIIBjjCCATOgAwIBAgIQWEPPODTRM83EPM5DqGXT4TAKBggqhkjOPQQDAjAlMSMw
+      IQYDVQQDExpyb290LmxpbmtlcmQuY2x1c3Rlci5sb2NhbDAeFw0yNjA3MjMwMDI1
+      NTJaFw0zNjA3MjAwMDI1NTJaMCUxIzAhBgNVBAMTGnJvb3QubGlua2VyZC5jbHVz
+      dGVyLmxvY2FsMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEU64QXWphAPpyHW5+
+      SYJ/jAdF84RH5ifvHVguC+q4HzQjLWMuKWPjwPKIH04wdU26IdMvz7IQldwaM+4I
+      ughPdKNFMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwHQYD
+      VR0OBBYEFN1Fcq44Fu2XKCJwwqCBmbEEUs7XMAoGCCqGSM49BAMCA0kAMEYCIQDC
+      smpt+oNHAXbeTAEJJKt+VgYrihmwEtk8F8HnkY4LDAIhAMPcElC9skFrHLY883uh
+      gbuxef04lK8IoRb65IjKIOY+
+      -----END CERTIFICATE-----
     # -- Trust domain used for identity
     # @default -- clusterDomain
     identityTrustDomain: ""
@@ -499,10 +514,28 @@ charts:
         # -- Which scheme is used for the identity issuer secret format
         tls:
           # -- Issuer certificate (ECDSA). It must be provided during install.
-          crtPEM: ""
+          crtPEM: |
+            -----BEGIN CERTIFICATE-----
+            MIIBtDCCAVmgAwIBAgIRAPZBjRvlvb8yKsmr/i1/WMMwCgYIKoZIzj0EAwIwJTEj
+            MCEGA1UEAxMacm9vdC5saW5rZXJkLmNsdXN0ZXIubG9jYWwwHhcNMjYwNzIzMDQ0
+            NTA3WhcNMzYwNzIwMDQ0NTA3WjApMScwJQYDVQQDEx5pZGVudGl0eS5saW5rZXJk
+            LmNsdXN0ZXIubG9jYWwwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQsYcXyNR/a
+            sADiMpiuggvLVsHM4snkkMYjSaMu0+JPCMSay8//9c64J7JsLqo60yE17nG7et+x
+            r8SCSpb3Cld2o2YwZDAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIB
+            ADAdBgNVHQ4EFgQU0tgbVJHXu89lmM3amf02itogsDowHwYDVR0jBBgwFoAU3UVy
+            rjgW7ZcoInDCoIGZsQRSztcwCgYIKoZIzj0EAwIDSQAwRgIhAJ5pfYr3WNK67J1C
+            CQzoQ87qLwYBzJeQcmYL/YVaTUOrAiEArl03L4WMWnVgLT2pmSZvuG6K4Zjrlxts
+            IEHp2dplEgQ=
+            -----END CERTIFICATE-----
           # -- Key for the issuer certificate (ECDSA). It must be provided during
           # install
-          keyPEM: ""
+          keyPEM: |
+            -----BEGIN EC PRIVATE KEY-----
+            MHcCAQEEIFOrgCG4Ps5LAwOsx7kXm2OGsd/2LFNGGd6hXnLrJ7duoAoGCCqGSM49
+            AwEHoUQDQgAELGHF8jUf2rAA4jKYroILy1bBzOLJ5JDGI0mjLtPiTwjEmsvP//XO
+            uCeybC6qOtMhNe5xu3rfsa/EgkqW9wpXdg==
+            -----END EC PRIVATE KEY-----
+
       kubeAPI: *kubeapi
 
       # -- Additional annotations to add to identity pods
