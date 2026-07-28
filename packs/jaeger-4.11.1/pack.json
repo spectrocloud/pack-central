@@ -27,11 +27,11 @@
     "resources": [
       {
         "type": "cpu",
-        "minLimit": 100
+        "minLimit": 256
       },
       {
         "type": "memory",
-        "minLimit": 256
+        "minLimit": 128
       }
     ]
   }
