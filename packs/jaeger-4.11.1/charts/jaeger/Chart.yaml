@@ -1,0 +1,37 @@
+annotations:
+  artifacthub.io/images: |
+    - name: jaeger
+      image: jaegertracing/jaeger:2.19.0
+      whitelisted: true
+      ignored: true
+apiVersion: v2
+appVersion: 2.19.0
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 2.x.x
+description: A Jaeger Helm chart for Kubernetes
+home: https://jaegertracing.io
+icon: https://www.jaegertracing.io/img/jaeger-icon-reverse-color.svg
+keywords:
+- jaeger
+- opentracing
+- tracing
+- instrumentation
+kubeVersion: '>= 1.21-0'
+maintainers:
+- email: ankit.mehta@appian.com
+  name: mehta-ankit
+- email: michael.lorant@fairfaxmedia.com.au
+  name: mikelorant
+- email: naseem@transit.app
+  name: naseemkullah
+- email: me@pavelnikolov.net
+  name: pavelnikolov
+- email: jkowall@kowall.net
+  name: jkowall
+name: jaeger
+sources:
+- https://hub.docker.com/u/jaegertracing/
+type: application
+version: 4.11.1
