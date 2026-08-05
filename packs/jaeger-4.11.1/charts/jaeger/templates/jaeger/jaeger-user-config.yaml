@@ -1,0 +1,17 @@
+{{- if .Values.userconfig -}}
+# Generates a config map from a file provided by user via `--set-file userconfig=`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger.labels" . | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations:
+    {{- include "jaeger.annotations" . | nindent 4 }}
+  {{- end }}
+data:
+  user-config.yaml: |
+{{ toYaml .Values.userconfig | indent 4 }}
+{{- end -}}
