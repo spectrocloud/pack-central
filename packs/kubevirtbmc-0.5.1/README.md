@@ -24,22 +24,16 @@ This pack packages chart version `0.5.1`, which deploys KubeVirtBMC `v0.8.1`.
 - [KubeVirt](https://kubevirt.io) installed and healthy in the cluster. KubeVirt v1.6.0 or later.
   KubeVirtBMC's controller watches `VirtualMachine` and `VirtualMachineInstance` resources, so the KubeVirt CRDs must
   exist before this pack is deployed.
-- [cert-manager](https://cert-manager.io) installed and healthy in the cluster. This is a hard requirement, not an
-  option — the chart unconditionally creates a cert-manager `Issuer` and `Certificate`, and the admission webhooks rely
-  on cert-manager's `cert-manager.io/inject-ca-from` annotation to have their CA bundle injected. Without cert-manager
-  the pack will fail to install because the `cert-manager.io/v1` API is not registered.
+- [cert-manager](https://cert-manager.io) available in the cluster. The chart unconditionally creates a cert-manager
+  `Issuer` and `Certificate`, and the admission webhooks rely on cert-manager's `cert-manager.io/inject-ca-from`
+  annotation to have their CA bundle injected. Palette installs and manages cert-manager on its clusters, so no action
+  is needed there; outside Palette you must install it yourself, or the pack fails to install because the
+  `cert-manager.io/v1` API is not registered.
 
-This pack declares a **required** dependency on the
-[Virtual Machine Orchestrator](https://docs.spectrocloud.com/vm-management/) (VMO) pack, version 4.8.3 or later, which
-is how Palette delivers a curated KubeVirt. 4.8.3 is the first VMO release to ship KubeVirt v1.6.0 or newer; 4.8.2 and
-earlier ship v1.5.2 and will not satisfy KubeVirtBMC. Palette blocks a cluster profile that includes this pack without
-a satisfying VMO layer.
-
-If you run upstream KubeVirt rather than VMO, the software works the same, but you will need to remove this dependency
-from `pack.json` in your own copy of the pack — Palette dependency constraints have no "one of" semantics.
-
-cert-manager needs no dependency entry: Palette installs and manages it on its clusters. The requirement is listed
-above because it still applies when the chart is installed outside Palette.
+KubeVirt is satisfied through the [Virtual Machine Orchestrator](https://docs.spectrocloud.com/vm-management/) (VMO)
+pack, which is how Palette delivers a curated KubeVirt. This pack declares a **required** dependency on VMO 4.8.3 or
+later, so Palette blocks any cluster profile that includes this pack without a satisfying VMO layer. 4.8.3 is the first
+VMO release to ship KubeVirt v1.6.0 or newer — 4.8.2 and earlier ship v1.5.2, which does not satisfy KubeVirtBMC.
 
 Order matters. In a Palette cluster profile, place the VMO layer **above** this pack so it is reconciled first.
 
