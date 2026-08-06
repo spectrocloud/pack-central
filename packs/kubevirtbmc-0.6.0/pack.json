@@ -17,6 +17,13 @@
   "constraints": {
     "dependencies": [
       {
+        "packName": "virtual-machine-orchestrator",
+        "layer": "addon",
+        "minVersion": "4.8.3",
+        "maxVersion": "",
+        "type": "required"
+      },
+      {
         "packName": "kubernetes",
         "layer": "k8s",
         "minVersion": "1.32",
