@@ -1,10 +1,10 @@
 pack:
   content:
     images:
-      - image: docker.io/absaoss/k8gb:v0.20.0
+      - image: registry.k8gb.io/k8gb-io/k8gb:v0.20.0
       - image: registry.k8gb.io/k8gb-io/k8s_crd:v0.5.0
       - image: coredns/coredns:1.13.1
-      - image: registry.k8s.io/external-dns/external-dns:0.20.0
+      - image: registry.k8s.io/external-dns/external-dns:v0.20.0
       - image: otel/opentelemetry-collector:0.155.0
       - image: jaegertracing/all-in-one:1.76.0
 
