@@ -1,0 +1,45 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "KubeVirtBMC",
+  "charts": [
+    "charts/kubevirtbmc-0.4.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "kubevirtbmc",
+  "version": "0.4.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "virtual-machine-orchestrator",
+        "layer": "addon",
+        "minVersion": "4.8.3",
+        "maxVersion": "",
+        "type": "required"
+      },
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.32",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 128
+      }
+    ]
+  }
+}
