@@ -9,7 +9,7 @@ pack:
       - image: quay.io/dell/container-storage-modules/csi-unity:v2.17.0
       - image: quay.io/dell/container-storage-modules/csi-vxflexos:v2.17.0
       - image: quay.io/dell/container-storage-modules/cosi:v1.1.0
-      - image: quay.io/dell/storage/powerflex/sdc:5.0
+      - image: quay.io/dell/storage/powerflex/sdc:5.1
       - image: quay.io/dell/container-storage-modules/csm-authorization-sidecar:v2.5.0
       - image: quay.io/dell/container-storage-modules/csm-authorization-proxy:v2.5.0
       - image: quay.io/dell/container-storage-modules/csm-authorization-tenant:v2.5.0
