@@ -1,0 +1,30 @@
+{
+    "name": "tekton-pipelines",
+    "displayName": "Tekton Pipelines",
+    "annotations": {
+        "docsURL": "https://tekton.dev/docs/pipelines/",
+        "description": "Tekton Pipelines",
+        "source": "community",
+        "contributor" : "spectrocloud"
+    },
+    "version": "1.15.1",
+    "kubeManifests": [
+    "manifests/release.yaml"    
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ],
+    "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+    }
+}
