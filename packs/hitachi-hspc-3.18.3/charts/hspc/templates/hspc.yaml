@@ -1,0 +1,11 @@
+apiVersion: csi.hitachi.com/v1
+kind: HSPC
+metadata:
+  name:  {{ .Values.hspc.name }}
+  namespace: {{ .Values.hspc.namespace }}
+spec:
+{{- if .Values.hspc.spec }}
+{{ toYaml .Values.hspc.spec | indent 2 }}
+{{- else }}
+  {}
+{{- end }}
