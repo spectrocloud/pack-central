@@ -17,7 +17,7 @@ image:
   pullPolicy: IfNotPresent
 
 initImage:
-  repository: public.ecr.aws/docker/library/busybox
+  repository: docker.io/busybox
   tag: "1.37.0"
   pullPolicy: IfNotPresent
 

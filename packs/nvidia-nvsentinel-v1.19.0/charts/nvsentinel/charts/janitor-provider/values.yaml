@@ -113,7 +113,7 @@ csp:
   # Generic provider configuration (only used when provider=generic)
   generic:
     # Container image used for the reboot Job
-    rebootImage: "public.ecr.aws/docker/library/busybox:1.37.0"
+    rebootImage: "docker.io/busybox:1.37.0"
     # Use the Linux Magic SysRq trigger for an immediate kernel reboot instead of
     # running chroot /host reboot. Only enable this when target nodes support
     # Linux Magic SysRq and their kernel/config permissions allow an immediate

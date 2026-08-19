@@ -51,6 +51,7 @@ pack:
       - image: ghcr.io/nvidia/nvsentinel/gpu-health-monitor:v1.19.0-dcgm-4.x
       - image: ghcr.io/nvidia/nvsentinel/gpu-health-monitor:v1.19.0-dcgm-3.x
       # ── Dependency images (explicit tags, unchanged) ──
+      - image: docker.io/busybox:1.37.0
       - image: docker.io/bitnamilegacy/nginx:1.27.2-debian-12-r2
       - image: docker.io/bitnamilegacy/os-shell:12-debian-12-r30
       - image: docker.io/bitnamilegacy/os-shell:12-debian-12-r32
@@ -62,7 +63,6 @@ pack:
       - image: docker.io/bitnamilegacy/postgres-exporter:0.15.0-debian-12-r43
       - image: docker.io/lachlanevenson/k8s-kubectl:v1.25.4
       - image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.10.0
-      - image: public.ecr.aws/docker/library/busybox:1.37.0
       - image: percona/percona-server-mongodb:8.0.12-4
       - image: percona/pmm-client:3.4.1
       - image: percona/percona-backup-mongodb:2.11.0
