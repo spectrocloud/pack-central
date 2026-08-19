@@ -1,0 +1,358 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+global:
+  dryRun: false
+  image:
+    tag: "v1.19.0"
+  initContainerImage:
+    repository: docker.io/bitnamilegacy/os-shell
+    tag: "12-debian-12-r30"
+    pullPolicy: IfNotPresent
+  metricsPort: 2112
+
+  # Datastore configuration
+  # By default, datastore is not configured (internal mongodb-config ConfigMap is used).
+  # Uncomment and configure this section to use an external/managed database service,
+  # or to switch providers (e.g. from MongoDB to PostgreSQL).
+  #
+  # When using an external DB, also set:
+  #   global.mongodbStore.enabled: false   (skip deploying internal MongoDB)
+  #
+  # datastore:
+  #   # Database provider. Supported values: "mongodb", "postgresql"
+  #   provider: "mongodb"
+  #
+  #   # --- MongoDB connection URI ---
+  #   # External MongoDB (global.mongodbStore.enabled false): full URI only via Secret
+  #   # key MONGODB_URI and credentialsFromSecret.name (envFrom.secretRef). Do not set uri.
+  #   # In-cluster + global.mongodbStore.enabled true: credential-free URI can be built from
+  #   # connection.* in the ConfigMap unless credentialsFromSecret is set; see docs/external-datastore.md.
+  #   credentialsFromSecret:
+  #     name: ""
+  #
+  #   # --- Connection metadata ---
+  #   # Individual fields (PostgreSQL; optional MongoDB metadata such as database/collection names).
+  #   # For external MongoDB, connection.database etc. still configure collection env vars;
+  #   # the URI itself always comes from the Secret above.
+  #   connection:
+  #     host: ""
+  #     port: 5432           # 5432 for PostgreSQL, 27017 for MongoDB
+  #     database: "HealthEventsDatabase"
+  #     # PostgreSQL-only fields:
+  #     # username: ""
+  #     # sslmode: "require"   # disable | require | verify-ca | verify-full
+  #
+  #   # --- TLS ---
+  #   tls:
+  #     # Set to false only if the external DB does not support TLS (not recommended).
+  #     enabled: true
+  #     # Name of a Kubernetes Secret containing the CA certificate (key: ca.crt).
+  #     # Required when connecting to an external DB with a private/custom CA.
+  #     # Leave empty to use system CAs (e.g. public cloud services with public CA certs).
+  #     caSecretName: ""
+  #
+  #   # --- Authentication ---
+  #   auth:
+  #     # Authentication mechanism:
+  #     #   scram  - username/password (SCRAM-SHA-256). Credentials embedded in uri, or via existingSecret.
+  #     #   x509   - client certificate authentication (used by internal MongoDB).
+  #     mechanism: "scram"
+  #     # For scram: name of a Kubernetes Secret containing DB credentials.
+  #     # Secret must have keys: username, password.
+  #     # Not needed when application auth is via MONGODB_URI in credentialsFromSecret only.
+  #     existingSecret: ""
+  #     # For x509: name of a Kubernetes Secret containing the client certificate.
+  #     # Secret must have keys: tls.crt, tls.key, ca.crt.
+  #     clientCertSecretName: ""
+  #     # For x509: Subject DN of the application user certificate.
+  #     # Defaults to the NVIDIA internal DN if not set.
+  #     x509ApplicationUserDN: ""
+  #     # For x509: Subject DN of the dgxcops user certificate.
+  #     # Defaults to the NVIDIA internal DN if not set.
+  #     x509DgxcopsUserDN: ""
+  #
+  #   # --- Database setup job ---
+  #   # The setup job creates required collections and indexes in the external MongoDB.
+  #   # It runs once on install/upgrade when using an external DB.
+  #   setupJob:
+  #     enabled: true  # Set to false to skip the setup job entirely
+  #     image:
+  #       repository: ghcr.io/rtsp/docker-mongosh
+  #       tag: "2.5.2"
+  #       pullPolicy: IfNotPresent
+  #     # Optional: name of an existing Kubernetes Secret with admin credentials
+  #     # for the setup job to authenticate. Secret must have keys: username, password.
+  #     # Not needed if MONGODB_URI in credentialsFromSecret has sufficient privileges.
+  #     adminSecret: ""
+
+  # Certificate rotation (MongoDB only)
+  # When enabled, client certificates can be rotated without restarting pods.
+  # Uses controller-runtime's certwatcher to detect file changes and automatically
+  # provide updated certificates to new MongoDB connections.
+  certificateRotationEnabled: false
+
+  # Shared metadata path used by metadata-collector and syslog-health-monitor
+  metadataPath: /var/lib/nvsentinel/gpu_metadata.json
+
+  # DCGM (Data Center GPU Manager) configuration
+  # Used by gpu-health-monitor
+  dcgm:
+    # Source mode. Supported values: operator-service, external-hostengine, embedded-mode.
+    mode: operator-service
+    # Enable DCGM Kubernetes service integration
+    enabled: true
+    # GPU Operator DCGM service used by operator-service mode.
+    service:
+      endpoint: "nvidia-dcgm.gpu-operator.svc"
+      port: 5555
+    # Externally owned hostengine used by external-hostengine mode.
+    externalHostengine:
+      endpoint: localhost
+      port: 5555
+    # In-process hostengine listener used by embedded-mode. The endpoint must be
+    # localhost, 127.0.0.1, or ::1.
+    embedded:
+      endpoint: localhost
+      port: 5555
+  # OpenTelemetry tracing configuration
+  tracing:
+    enabled: false # Enable/disable tracing for all components
+    insecure: false # Set to true to disable TLS for the collector connection
+    # OTel collector's OTLP gRPC endpoint (host:port) for trace ingestion
+    endpoint: ""
+
+  # Audit logging configuration
+  auditLogging:
+    enabled: false  # Enable/disable audit logging for all components
+    logRequestBody: false  # Log request body in audit logs (may contain sensitive data)
+    maxSizeMB: 100  # Maximum size of each audit log file in MB
+    maxBackups: 7  # Maximum number of rotated log files to keep
+    maxAgeDays: 30  # Maximum age of rotated log files in days
+    compress: true  # Compress rotated log files
+
+  nodeSelector: {}
+  tolerations:
+    - operator: Exists
+  affinity: {}
+  systemNodeSelector: {}
+  systemNodeTolerations: []
+  imagePullSecrets: []
+
+  gpuHealthMonitor:
+    enabled: true
+  healthEventsAnalyzer:
+    enabled: false
+  faultQuarantine:
+    enabled: false
+  nodeDrainer:
+    enabled: false
+  faultRemediation:
+    enabled: false
+  janitor:
+    enabled: false
+  janitorProvider:
+    enabled: false
+  cspHealthMonitor:
+    enabled: false
+  syslogHealthMonitor:
+    enabled: true
+  labeler:
+    enabled: true
+  metadataCollector:
+    enabled: true
+  inclusterFileServer:
+    enabled: false
+    metricsPort: 9001
+    cleanupMetricsPort: 9002
+  mongodbStore:
+    enabled: false
+  kubernetesObjectMonitor:
+    enabled: false
+  eventExporter:
+    enabled: false
+  preflight:
+    enabled: false
+  k8sdatastoreCrds:
+    enabled: false
+  slurmDrainMonitor:
+    enabled: false
+  nicHealthMonitor:
+    enabled: false
+
+# Network policy configuration
+# The metrics-access network policy restricts ingress to metrics ports only.
+# This can block other services (e.g., cert-manager webhook) when deployed
+# in the same namespace. Set enabled=false to disable the network policy.
+networkPolicy:
+  enabled: true
+
+platformConnector:
+  image:
+    repository: ghcr.io/nvidia/nvsentinel/platform-connectors
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+  podAnnotations: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  logLevel: info
+
+  mongodbStore:
+    enabled: false
+    clientCertMountPath: "/etc/ssl/mongo-client"
+    maxRetries: 3
+
+  postgresqlStore:
+    clientCertMountPath: "/etc/ssl/client-certs"
+
+  # gRPC sink connector - forwards health events to an external gRPC server
+  # using the PlatformConnector HealthEventOccurredV1 RPC.
+  grpcSinkConnector:
+    # Enable or disable the gRPC sink connector.
+    enabled: false
+    # gRPC server address, e.g. "my-service.example.com:50051".
+    target: ""
+    # Number of retry attempts (with exponential backoff) before dropping an event.
+    # Total send attempts = 1 initial + maxRetries retries.
+    maxRetries: 3
+    # Optional: path to a projected Kubernetes ServiceAccount token for
+    # bearer token authentication.
+    # Leave empty to disable authentication.
+    tokenPath: ""
+
+  k8sConnector:
+    enabled: true
+    maxNodeConditionMessageLength: 1024
+    # Max length of the compacted message prefix (before Recommended Action) per health event
+    compactedHealthEventMsgLen: 72
+    qps: 5.0
+    burst: 10
+
+  dedup:
+    # Enable to mark repeated health events STORE_AND_ANALYSE before connector fan-out.
+    enabled: false
+    # How long repeated events with the same dedup key are marked STORE_AND_ANALYSE.
+    # Example: with "3m", a matching unhealthy event can trigger remediation again only after 3 minutes.
+    suppressionWindow: "3m"
+    # How often expired dedup keys are removed from the in-memory tracker.
+    cleanupInterval: "60s"
+    # Checks eligible for deduplication. Keep this focused on high-volume syslog
+    # fault streams; all other checks pass through unchanged.
+    includeChecks:
+      - SysLogsXIDError
+      - SysLogsSXIDError
+
+  # Node metadata enrichment configuration
+  # Health event transformers pipeline
+  pipeline:
+    # List of transformers to execute (in order)
+    - name: MetadataAugmentor
+      enabled: false
+      config: /etc/config/metadata.toml
+    
+    - name: OverrideTransformer
+      enabled: false
+      config: /etc/config/overrides.toml
+  
+  # Transformer-specific configurations
+  transformers:
+    # Metadata augmentor - enriches events with node labels and provider info
+    MetadataAugmentor:
+      cacheSize: 50
+      cacheTTLSeconds: 3600
+      allowedLabels:
+        - "topology.kubernetes.io/zone"
+        - "topology.kubernetes.io/region"
+        - "node.kubernetes.io/instance-type"
+        - "nvidia.com/cuda.driver-version.major"
+        - "nvidia.com/cuda.driver-version.minor"
+        - "nvidia.com/cuda.driver-version.revision"
+        - "nvidia.com/cuda.driver-version.full"
+        - "nvidia.com/cuda.runtime-version.major"
+        - "nvidia.com/cuda.runtime-version.minor"
+        - "nvidia.com/cuda.runtime-version.full"
+        - "topology.k8s.aws/capacity-block-id"
+        - "topology.k8s.aws/network-node-layer-1"
+        - "topology.k8s.aws/network-node-layer-2"
+        - "topology.k8s.aws/network-node-layer-3"
+        - "oci.oraclecloud.com/host.id"
+        - "oci.oraclecloud.com/host.network_block_id"
+        - "oci.oraclecloud.com/host.rack_id"
+        - "oci.oraclecloud.com/host.serial_number"
+        - "cloud.google.com/gce-topology-block"
+        - "cloud.google.com/gce-topology-host"
+        - "cloud.google.com/gce-topology-subblock"
+        # Topograph-applied topology labels (present when Topograph is deployed in the cluster;
+        # see https://github.com/NVIDIA/topograph/blob/main/docs/reference/node-labels.md)
+        - "network.topology.nvidia.com/accelerator"
+        - "network.topology.nvidia.com/leaf"
+        - "network.topology.nvidia.com/spine"
+        - "network.topology.nvidia.com/core"
+
+    # Property overrides - uses CEL expressions to override event properties
+    OverrideTransformer:
+      rules: []
+      # Example:
+      # - name: "suppress-xid-109"
+      #   when: 'event.agent == "syslog-health-monitor" && "109" in event.errorCode'
+      #   override:
+      #     isFatal: false
+      #     recommendedAction: "NONE"
+
+socketPath: "/var/run/nvsentinel.sock"
+
+# Node condition cleanup hook configuration
+nodeConditionCleanup:
+  enabled: false
+  deprecatedConditions: []
+  # - "OldConditionType1"
+  # - "OldConditionType2"
+  image:
+    repository: docker.io/bitnamilegacy/kubectl
+    tag: "1.30.6"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# PostgreSQL subchart configuration
+# Only enabled when using PostgreSQL as the datastore
+# See values-postgresql.yaml for a complete PostgreSQL configuration example
+postgresql:
+  enabled: false
+
+# PodMonitor configuration for Prometheus Operator
+# Disable this if using standard Prometheus with annotations instead
+podMonitor:
+  enabled: true
+  interval: 30s  # Scrape interval (defaults to 30s to maintain backward compatibility)
+  # scrapeTimeout: ""  # Scrape timeout (defaults to Prometheus default if not specified)
+  # metricsPath: "/metrics"  # Metrics path (defaults to /metrics)
+  # labels: {}  # Additional labels for the PodMonitor resource
