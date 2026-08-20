@@ -1,0 +1,29 @@
+{
+  "addonType":"authentication",
+  "annotations": {
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "charts": [
+    "charts/permission-manager-0.1.1.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Permission Manager",
+  "layer": "addon",
+  "name": "permission-manager",
+  "version": "1.9.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",        
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"    
+      } 
+    ]
+  }      
+}
