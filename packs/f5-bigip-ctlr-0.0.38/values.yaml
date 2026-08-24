@@ -5,7 +5,7 @@ pack:
   namespace: kube-system
   content:
     images:
-
+      - image: docker.io/f5networks/k8s-bigip-ctlr:2.20.4
 
 charts:
   f5-bigip-ctlr:
@@ -86,7 +86,7 @@ charts:
       user: f5networks
       repo: k8s-bigip-ctlr
       pullPolicy: Always
-    version: latest
+    version: 2.20.4
     # affinity:
     #   nodeAffinity:
     #     requiredDuringSchedulingIgnoredDuringExecution:
