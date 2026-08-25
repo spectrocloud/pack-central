@@ -4,7 +4,7 @@
 pack:
   content:
     images:
-      - image: registry.k8s.io/dra-driver-nvidia/dra-driver-nvidia-gpu:0.5.0
+      - image: registry.k8s.io/dra-driver-nvidia/dra-driver-nvidia-gpu:v0.5.0
   namespace: "nvidia-dra-driver-gpu"
   namespaceLabels:
     "nvidia-dra-driver-gpu": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
