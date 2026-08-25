@@ -1,0 +1,128 @@
+pack:
+  content:
+    images:
+      - image: quay.io/dell/container-storage-modules/dell-csm-operator:v1.12.1
+      - image: quay.io/dell/container-storage-modules/csi-isilon:v2.17.1
+      - image: quay.io/dell/container-storage-modules/csi-powermax:v2.17.1
+      - image: quay.io/dell/container-storage-modules/csipowermax-reverseproxy:v2.16.1
+      - image: quay.io/dell/container-storage-modules/csi-powerstore:v2.17.0
+      - image: quay.io/dell/container-storage-modules/csi-unity:v2.17.0
+      - image: quay.io/dell/container-storage-modules/csi-vxflexos:v2.17.0
+      - image: quay.io/dell/container-storage-modules/cosi:v1.1.0
+      - image: quay.io/dell/storage/powerflex/sdc:5.1
+      - image: quay.io/dell/container-storage-modules/csm-authorization-sidecar:v2.5.0
+      - image: quay.io/dell/container-storage-modules/csm-authorization-proxy:v2.5.0
+      - image: quay.io/dell/container-storage-modules/csm-authorization-tenant:v2.5.0
+      - image: quay.io/dell/container-storage-modules/csm-authorization-role:v2.5.0
+      - image: quay.io/dell/container-storage-modules/csm-authorization-storage:v2.5.0
+      - image: quay.io/dell/container-storage-modules/csm-authorization-controller:v2.5.0
+      - image: quay.io/dell/container-storage-modules/dell-csi-replicator:v1.15.0
+      - image: quay.io/dell/container-storage-modules/dell-replication-controller:v1.15.0
+      - image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.150.1
+      - image: quay.io/dell/container-storage-modules/csm-metrics-powerscale:v1.12.0
+      - image: quay.io/dell/container-storage-modules/csm-metrics-powermax:v1.10.1
+      - image: quay.io/dell/container-storage-modules/csm-metrics-powerflex:v1.15.0
+      - image: quay.io/dell/container-storage-modules/csm-metrics-powerstore:v1.15.0
+      - image: quay.io/dell/container-storage-modules/podmon:v1.16.0
+      - image: registry.k8s.io/sig-storage/csi-attacher:v4.11.0
+      - image: registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
+      - image: registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
+      - image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      - image: registry.k8s.io/sig-storage/csi-resizer:v2.1.0
+      - image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.17.0
+      - image: quay.io/dell/container-storage-modules/csi-metadata-retriever:v1.14.0
+      - image: quay.io/nginx/nginx-unprivileged:1.27
+      - image: docker.io/rediscommander/redis-commander:latest
+      - image: docker.io/openpolicyagent/opa:0.70.0
+      - image: docker.io/openpolicyagent/kube-mgmt:9.2.1
+      - image: gcr.io/k8s-staging-sig-storage/objectstorage-sidecar:release-0.2
+      - image: quay.io/jetstack/cert-manager-cainjector:v1.11.0
+      - image: quay.io/jetstack/cert-manager-controller:v1.11.0
+      - image: quay.io/jetstack/cert-manager-webhook:v1.11.0
+
+
+
+charts:
+  csm-operator:
+    namespace: dell-csm-operator
+
+    image:
+      repository: quay.io/dell/container-storage-modules/dell-csm-operator
+      pullPolicy: IfNotPresent
+      tag: "v1.12.1"
+
+    # Resources for the operator deployment. The Operator might need more resources if the environment is large (more than 1000 pods)
+    # https://dell.github.io/csm-docs/docs/getting-started/installation/operator/operatorinstallation_kubernetes/
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 192Mi
+
+    # Rendered into the "csm-images" ConfigMap, which the operator reads to resolve
+    # every image it deploys. This takes precedence over the image defaults baked into
+    # the operator container, so it is the authoritative place to pin versions.
+    #
+    # Keys are NOT free-form: each one must match the container name (sidecars, SDC) or
+    # the module component name (modules) that the operator looks up. They do not match
+    # the RELATED_IMAGE_* suffixes in the operator Deployment, which are OLM mirroring
+    # metadata and are never read at runtime.
+    #
+    # Clearing a value falls back to the operator default; removing every value skips
+    # the ConfigMap entirely.
+    csmImages:
+      # CSI drivers, keyed on csm.config.driver.csiDriverType
+      powerflex: quay.io/dell/container-storage-modules/csi-vxflexos:v2.17.0
+      powermax: quay.io/dell/container-storage-modules/csi-powermax:v2.17.1
+      powerstore: quay.io/dell/container-storage-modules/csi-powerstore:v2.17.0
+      isilon: quay.io/dell/container-storage-modules/csi-isilon:v2.17.1
+      unity: quay.io/dell/container-storage-modules/csi-unity:v2.17.0
+
+      # CSI sidecars, keyed on container name
+      attacher: registry.k8s.io/sig-storage/csi-attacher:v4.11.0
+      provisioner: registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
+      snapshotter: registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
+      registrar: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      resizer: registry.k8s.io/sig-storage/csi-resizer:v2.1.0
+      csi-metadata-retriever: quay.io/dell/container-storage-modules/csi-metadata-retriever:v1.14.0
+      # PowerFlex names this container csi-external-health-monitor-controller while every
+      # other driver names it external-health-monitor, so both keys are required.
+      external-health-monitor: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.17.0
+      csi-external-health-monitor-controller: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.17.0
+
+      # PowerFlex SDC. Both keys must move together; they are the same image.
+      sdc: quay.io/dell/storage/powerflex/sdc:5.1
+      sdc-monitor: quay.io/dell/storage/powerflex/sdc:5.1
+
+      # Modules, keyed on module component name. "podmon" is the container name and
+      # covers both the podmon-controller and podmon-node components.
+      podmon: quay.io/dell/container-storage-modules/podmon:v1.16.0
+      karavi-authorization-proxy: quay.io/dell/container-storage-modules/csm-authorization-sidecar:v2.5.0
+      dell-csi-replicator: quay.io/dell/container-storage-modules/dell-csi-replicator:v1.15.0
+      dell-replication-controller-manager: quay.io/dell/container-storage-modules/dell-replication-controller:v1.15.0
+      csipowermax-reverseproxy: quay.io/dell/container-storage-modules/csipowermax-reverseproxy:v2.16.1
+      otel-collector: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.150.1
+      nginx-proxy: quay.io/nginx/nginx-unprivileged:1.27
+      metrics-powerflex: quay.io/dell/container-storage-modules/csm-metrics-powerflex:v1.15.0
+      metrics-powermax: quay.io/dell/container-storage-modules/csm-metrics-powermax:v1.10.1
+      metrics-powerscale: quay.io/dell/container-storage-modules/csm-metrics-powerscale:v1.12.0
+      metrics-powerstore: quay.io/dell/container-storage-modules/csm-metrics-powerstore:v1.15.0
+      cert-manager-cainjector: quay.io/jetstack/cert-manager-cainjector:v1.11.0
+      cert-manager-controller: quay.io/jetstack/cert-manager-controller:v1.11.0
+      cert-manager-webhook: quay.io/jetstack/cert-manager-webhook:v1.11.0
+
+      # CSM Authorization proxy-server. Not deployed by any preset in this pack, but
+      # pinned here so enabling the module does not silently fall back to defaults.
+      proxy-service: quay.io/dell/container-storage-modules/csm-authorization-proxy:v2.5.0
+      tenant-service: quay.io/dell/container-storage-modules/csm-authorization-tenant:v2.5.0
+      role-service: quay.io/dell/container-storage-modules/csm-authorization-role:v2.5.0
+      storage-service: quay.io/dell/container-storage-modules/csm-authorization-storage:v2.5.0
+      authorization-controller: quay.io/dell/container-storage-modules/csm-authorization-controller:v2.5.0
+      opa: docker.io/openpolicyagent/opa:0.70.0
+      opa-kube-mgmt: docker.io/openpolicyagent/kube-mgmt:9.2.1
+      commander: docker.io/rediscommander/redis-commander:latest
+
+    csm:
+      # Select a preset to populate the default configuration for your platform

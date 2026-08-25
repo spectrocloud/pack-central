@@ -1,0 +1,18 @@
+{{- $images := dict }}
+{{- range $name, $image := .Values.csmImages }}
+{{- if $image }}
+{{- $_ := set $images $name $image }}
+{{- end }}
+{{- end }}
+{{- if $images }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: csm-images
+  namespace: {{ .Values.namespace }}
+data:
+  versions.yaml: |-
+    - version: {{ .Values.csm.version | default "v1.17.1" }}
+      images:
+{{ toYaml $images | indent 8 }}
+{{- end }}
