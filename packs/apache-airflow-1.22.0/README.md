@@ -113,19 +113,6 @@ Verify that:
 - The task status changes to **Success**.
 - Task logs can be viewed from the Airflow UI.
 
-## Uninstall
-
-Remove the Helm release.
-
-```bash
-helm uninstall airflow -n airflow
-```
-
-Optionally delete the namespace.
-
-```bash
-kubectl delete namespace airflow
-```
 
 ## References
 
