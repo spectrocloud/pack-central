@@ -6,7 +6,7 @@ pack:
       - image: quay.io/strimzi/operator:1.1.0
       - image: quay.io/strimzi/kafka:1.1.0-kafka-4.2.1
       - image: quay.io/strimzi/kafka:1.1.0-kafka-4.2.0
-      - image: quay.io/strimzi/kafka-bridge:1.1.0
+      - image: quay.io/strimzi/kafka-bridge:1.0.0
       - image: quay.io/strimzi/kaniko-executor:1.1.0
       - image: quay.io/strimzi/maven-builder:1.1.0
 
