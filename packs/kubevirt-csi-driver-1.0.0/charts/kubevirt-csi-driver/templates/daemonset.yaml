@@ -20,7 +20,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: bitnami/kubectl:latest
+        image: soldevelo/kubectl:latest
         args:
         - annotate
         - node
@@ -31,7 +31,7 @@ spec:
             cpu: 50m
             memory: 100Mi
       - name: set-node-providerid
-        image: bitnami/kubectl:latest
+        image: soldevelo/kubectl:latest
         env:
         - name: NODENAME
           valueFrom:

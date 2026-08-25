@@ -1,0 +1,11 @@
+# secret_key property is used by AWS, Baidu, COS to configure object store
+charts.thanos.objstoreConfig.config.secret_key:
+  schema: '{{ format "${password}" | hints "Enter secret key for Thanos object storage" }}'
+charts.thanos.objstoreConfig.config.service_account:
+  schema: '{{ format "${password}" | hints "Enter service account credential for Google storage bucket" }}'
+charts.thanos.objstoreConfig.config.storage_account_key:
+  schema: '{{ format "${password}" | hints "Enter storage account key for Azure storage" }}'
+charts.thanos.objstoreConfig.config.password:
+  schema: '{{ format "${password}" | hints "Enter password for OpenStack Swift container" }}'
+charts.thanos.objstoreConfig.config.access_key_secret:
+  schema: '{{ format "${password}" | hints "Enter access key secret for AliYun OSS object storage" }}'
