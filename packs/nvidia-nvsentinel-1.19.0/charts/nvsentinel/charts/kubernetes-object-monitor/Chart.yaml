@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: Monitors Kubernetes objects and publishes health events based on CEL
+  policy predicates
+name: kubernetes-object-monitor
+type: application
+version: 0.1.0

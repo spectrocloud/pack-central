@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: 1.16.0
+dependencies:
+- condition: useBitnami
+  name: mongodb
+  repository: ""
+  version: 16.2.2
+- condition: usePerconaOperator
+  name: psmdb-operator
+  repository: ""
+  version: 1.21.1
+- condition: usePerconaOperator
+  name: psmdb-db
+  repository: ""
+  version: 1.21.1
+description: A Helm chart for mongodb store
+name: mongodb-store
+type: application
+version: 0.1.0
