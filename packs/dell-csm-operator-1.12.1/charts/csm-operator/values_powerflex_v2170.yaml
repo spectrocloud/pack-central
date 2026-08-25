@@ -175,6 +175,7 @@ csm:
           # sdc-monitor is disabled by default, due to high CPU usage
         - name: sdc-monitor
           enabled: false
+          image: quay.io/dell/storage/powerflex/sdc:5.1
           envs:
             - name: HOST_PID
               value: "1"
@@ -307,6 +308,7 @@ csm:
       initContainers:
         - imagePullPolicy: IfNotPresent
           name: sdc
+          image: quay.io/dell/storage/powerflex/sdc:5.1
           envs:
             - name: MDM
               value: "10.xx.xx.xx,10.xx.xx.xx"  # provide MDM value
