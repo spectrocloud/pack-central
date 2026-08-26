@@ -95,7 +95,7 @@ charts:
       gpus:
         enabled: true
       computeDomains:
-        enabled: false
+        enabled: true
         # Changing `imex.mode` or `imex.isolation` on a cluster with active ComputeDomain workloads
         # is not supported and is not enforced by the driver, drain and remove existing ComputeDomains first.
         imex:
