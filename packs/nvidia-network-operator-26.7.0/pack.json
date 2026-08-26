@@ -1,0 +1,17 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "NVIDIA Network Operator",
+    "charts": [
+      "charts/network-operator-26.7.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "network-operator",
+    "version": "26.7.0"
+  }
