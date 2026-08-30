@@ -1,0 +1,98 @@
+# VSS Platform profiles for the VSS 3.x core (vss-agent + VST vios) microservices.
+#
+# ⚠️ OPERATOR CONTRACT: in 3.x ALL FIVE packs (data-infrastructure + nims + vllm +
+#    core + ingress) are in EVERY profile — there is no include/omit hazard. You MUST
+#    select the SAME "VSS Platform" preset in every VSS 3.x pack of the profile so the
+#    image arch (-sbsa vs multiarch) and platform tweaks line up. The data-infra pack
+#    records the chosen platform in the in-cluster vss-platform ConfigMap for audit.
+#    See P1-P5-IMPLEMENTATION.md.
+#
+# What this pack's presets flip: only the imageTag of the two services that ship a
+# -sbsa variant — vss-vios-sensor (sensor-ms) and vss-vios-streamprocessing
+# (streamprocessing-ms). vss-agent / vss-agent-ui / vss-vios-mcp are multiarch 3.1.0
+# with no -sbsa variant, so their tag is constant and is NOT set by any preset.
+#
+# DGX-SPARK is the default and the only migration target; every other row is
+# (unvalidated) — verify NGC image tags on the target hardware before use.
+presets:
+  # ── DGX-SPARK (GB10, arm64/SBSA, sm_121) — migration target (UNVALIDATED). -sbsa flip. ──
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, arm64/SBSA, sm_121) — vss-core 3.1.0-sbsa"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0-sbsa"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0-sbsa"
+
+  # ── OTHER — generic single-GPU dGPU x86/arm64 multiarch. UNVALIDATED. ───────────
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — vss-core 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
+
+  # ── H100 (x86 dGPU). UNVALIDATED. ───────────────────────────────────────────────
+  - name: "H100"
+    displayName: "H100 (x86 dGPU) — vss-core 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
+
+  # ── L40S (x86 dGPU). UNVALIDATED. ───────────────────────────────────────────────
+  - name: "L40S"
+    displayName: "L40S (x86 dGPU) — vss-core 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
+
+  # ── RTX PRO 6000 Blackwell (sm_120) workstation. UNVALIDATED. ───────────────────
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell — vss-core 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
+
+  # ── Jetson AGX Thor (arm64 Tegra/iGPU). UNVALIDATED. ────────────────────────────
+  # Multiarch 3.1.0 image (no -sbsa). Thor needs runtimeClassName nvidia on the GPU
+  # pods (sensor + streamprocessing) so the NVIDIA container runtime injects L4T libs.
+  # TODO(verify): these manifests do NOT expose an extraPodSpecs/runtimeClassName value
+  #   key, so the preset cannot set it — the runtimeClassName must be added by a manifest
+  #   edit (or nvidia made the node's default containerd runtime) before a Thor deploy.
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (arm64, iGPU) — vss-core 3.1.0 + runtimeClassName (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
+
+  # ── IGX + Thor iGPU (arm64 Tegra). UNVALIDATED. Same Thor runtimeClassName note. ──
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU (arm64) — vss-core 3.1.0 + runtimeClassName (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      vssViosSensor:
+        imageTag: "3.1.0"
+      vssViosStreamprocessing:
+        imageTag: "3.1.0"
