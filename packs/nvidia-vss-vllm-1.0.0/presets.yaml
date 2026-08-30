@@ -1,0 +1,124 @@
+# VSS Platform profiles for the vLLM LLM backend (the vLLM-backed hardware only).
+#
+# ⚠️ OPERATOR CONTRACT: add this pack ONLY to vLLM profiles (DGX-SPARK / OTHER /
+#    RTXPRO6000BW / AGX-THOR / IGX-THOR), and select the SAME "VSS Platform" preset
+#    here as in the other VSS packs. NEVER add this pack to an H100/L40S (trtllm)
+#    profile — the core-nims nim-llm subchart already creates llm-nim-svc there, and
+#    two Services with the same name collide. See P1-P5-IMPLEMENTATION.md.
+#
+# Mutually-exclusive presets (group "VSS Platform"); DGX-SPARK is the default and
+# is the empirically-validated GB10 config (P1). The others (P3/P4) are authored
+# from the NVIDIA blueprint but NOT hardware-validated here — verify NGC/GHCR image
+# tags and tool-call-parser flags against an authenticated registry before use.
+#
+# NOTE: H100 / L40S are NOT in this group — they use the TensorRT-LLM nim-llm
+# subchart in nvidia-vss-core-nims and must NOT include this pack in their profile.
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, arm64, sm_121) — llama-3.1-8b"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
+          servedModelName: "meta/llama-3.1-8b-instruct"
+          tensorParallel: "1"
+          gpuMemUtil: "0.35"
+          maxModelLen: "8192"
+          maxNumSeqs: "4"
+          extraArgs:
+            - "--enforce-eager"
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — llama-3.1-8b"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "NousResearch/Meta-Llama-3.1-8B-Instruct"
+          servedModelName: "meta/llama-3.1-8b-instruct"
+          tensorParallel: "1"
+          gpuMemUtil: "0.5"
+          maxModelLen: "8192"
+          maxNumSeqs: "4"
+          extraArgs:
+            - "--enforce-eager"
+
+  # ── P3 — RTX PRO 6000 Blackwell (sm_120) workstation. UNVALIDATED. ───────────
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell — nemotron-nano-9b-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          servedModelName: "nvidia/nemotron-nano-9b-v2-fp8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.5"
+          maxModelLen: "16384"
+          maxNumSeqs: "4"
+          extraArgs:
+            - "--trust-remote-code"
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "nemotron_json"
+
+  # ── P4 — Jetson AGX/IGX Thor (arm64 Tegra/iGPU). UNVALIDATED. ────────────────
+  # Uses the Jetson-specific vLLM image; the host's NVIDIA container runtime injects
+  # the L4T/Tegra libs+devices (no manual hostPath mounts). The application pack's
+  # Thor preset also sets runtimeClassName: nvidia on the engine pod.
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (arm64, iGPU) — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          servedModelName: "nvidia/nemotron-nano-9b-v2-fp8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.25"
+          maxModelLen: "16384"
+          maxNumSeqs: "4"
+          extraArgs:
+            - "--trust-remote-code"
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "nemotron_json"
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU (arm64) — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          servedModelName: "nvidia/nemotron-nano-9b-v2-fp8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.25"
+          maxModelLen: "16384"
+          maxNumSeqs: "4"
+          extraArgs:
+            - "--trust-remote-code"
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "nemotron_json"

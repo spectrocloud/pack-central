@@ -1,0 +1,31 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS LLM backend (bounded vLLM) serving the OpenAI API as llm-nim-svc.",
+    "upstreamVersion": "2.4.1",
+    "upstreamRef": "NVIDIA VSS Blueprint 2.4.1"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS LLM (vLLM) (VSS 2.4.1)",
+  "kubeManifests": [
+    "manifests/llm-vllm.yaml"
+  ],
+  "layer": "addon",
+  "name": "nvidia-vss-vllm",
+  "version": "1.0.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "nvidia-vss-core-nims",
+        "layer": "addon",
+        "minVersion": "1.0.0",
+        "type": "optional"
+      }
+    ]
+  }
+}
