@@ -1,0 +1,30 @@
+{{- if .Values.backend.serviceAccount.create -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kubevious-backend.fullname" . }}
+  labels:
+    app.kubernetes.io/component: {{ include "kubevious-backend.fullname" . }}
+    {{- include "kubevious.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - kubevious.io
+    resources:
+      - changepackages
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - kubevious.io
+    resources:
+      - validationstates
+    verbs:
+      - get
+      - list
+      - create
+      - delete
+      - update
+{{- end }}
