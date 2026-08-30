@@ -1,0 +1,48 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/vss/latest/index.html",
+    "description": "NVIDIA VSS 3.x ingress / routing layer \u2014 envoy-proxy (xDS stream router), sdr (envoy xDS control plane + Redis stream reconciler, runs in native k8s mode via WDM_CLUSTER_TYPE=k8s), vss-vios-ingress (nginx VST data-plane front door :30888) and vss-proxy (single public front door :7777, no_proxy-by-default). All services are multiarch 3.1.0 (no -sbsa variant). Manifest-only pack; references the ngc-pull-secret created by the data-infrastructure pack and the redis/sdr/streamprocessing/vss-agent/vss-ui/vss-vios-sensor Services from the other packs. install-priority 18. Part of the VSS 3.x five-pack set (data-infrastructure + nims + vllm + core + ingress); all five belong in every profile.",
+    "spectrocloud.com/install-priority": "18"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "NVIDIA VSS Ingress (envoy + sdr + vios-ingress + proxy)",
+  "layer": "addon",
+  "name": "nvidia-vss-ingress",
+  "version": "3.1.4",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "nvidia-vss-data-infrastructure",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "required"
+      },
+      {
+        "packName": "nvidia-vss-core",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "required"
+      },
+      {
+        "packName": "nvidia-vss-nims",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "optional"
+      },
+      {
+        "packName": "nvidia-vss-vllm",
+        "layer": "addon",
+        "minVersion": "3.1.0",
+        "type": "optional"
+      }
+    ]
+  },
+  "charts": [
+    "charts/nvidia-vss-ingress-3.1.4.tgz"
+  ]
+}
