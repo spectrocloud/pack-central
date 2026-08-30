@@ -1,0 +1,20 @@
+# P5 single-source-of-truth: records the selected VSS hardware platform in-cluster.
+# Set ONE profile variable, VSS_PLATFORM (a Dropdown of the platform names), and
+# select the matching "VSS Platform" preset in every VSS pack. This ConfigMap makes
+# the chosen platform auditable (kubectl get cm vss-platform -n nvidia-vss) so a
+# preflight/CI or operator can confirm the per-pack presets agree with it. Lives in
+# the data-infrastructure pack (priority 5, present in every profile).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vss-platform
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/part-of: nvidia-vss
+data:
+  VSS_PLATFORM: "{{ .Values.vssPlatform }}"
+  note: >-
+    Source of truth for the VSS hardware platform. In VSS 3.x ALL FIVE packs
+    (data-infrastructure + nims + vllm + core + ingress) are in EVERY profile — the
+    vLLM pack is the LLM for all platforms, so there is no include/omit choice. Every
+    pack's "VSS Platform" preset MUST match this value. See 3X-MIGRATION.md.
