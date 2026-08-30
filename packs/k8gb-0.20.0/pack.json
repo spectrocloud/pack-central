@@ -1,0 +1,39 @@
+{
+  "addonType": "system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "k8gb",
+  "charts": [
+    "charts/k8gb-v0.20.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "k8gb",
+  "version": "0.20.0",
+  "annotations": {
+    "description": "Kubernetes Global Balancer",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 128
+      }
+    ]
+  }
+}
