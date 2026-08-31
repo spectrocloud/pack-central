@@ -29,50 +29,15 @@ When configuring the operator via its main Custom Resource (`TektonConfig`), you
 
 ## Upgrade
 
-To upgrade the Tektoncd Operator to the latest LTS version, re-apply the official release manifest. The operator will automatically handle the lifecycle and rolling updates of the underlying Tekton components based on your active profile.
-
-### 1. Backup Existing Configuration
-
-```bash
-kubectl get tektonconfigs.operator.tekton.dev -o yaml > tektonconfig-backup.yaml
-```
-
-### 2. Apply the Updated Manifest
-
-```bash
-kubectl apply -f https://infra.tekton.dev/tekton-releases/operator/latest/release.yaml
-```
-
+To upgrade the Tektoncd Operator to the latest LTS version, replace the addon profile on cluster. The operator will automatically handle the lifecycle and rolling updates of the underlying Tekton components based on your active profile.
+ 
 ---
 
 ## Usage
 
-### 1. Install the Operator
+Deploy the addon tekton operator profile on cluster
 
-Deploy the operator using the official release manifest.
-
-```bash
-kubectl apply -f https://infra.tekton.dev/tekton-releases/operator/latest/release.yaml
-```
-
-### 2. Configure Installation Profiles (Optional)
-
-If you prefer a different subset of components instead of the default stack, apply a specific configuration profile:
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/tektoncd/operator/main/config/crs/kubernetes/config/all/operator_v1alpha1_config_cr.yaml
-```
-
-### 3. Verify the Installation
-
-Ensure the operator and its custom resources are successfully deployed:
-
-```bash
-kubectl get deployments -n tekton-operator
-kubectl get tektonconfig
-```
-
-### 4. Uninstall the Operator
+### Uninstall the Operator
 
 The Tekton Operator acts as an orchestrator for other Tekton components. For safety reasons, uninstalling the operator does not automatically remove all resources created and managed by those components.
 
@@ -82,12 +47,6 @@ This behavior helps:
 - Separate infrastructure lifecycle from workload lifecycle.
 - Prevent accidental cascading deletions.
 - Maintain cluster stability.
-
-Remove the operator with:
-
-```bash
-kubectl delete -f https://infra.tekton.dev/tekton-releases/operator/latest/release.yaml
-```
 
 Additional Tekton resources may need to be removed manually if no longer required.
 
