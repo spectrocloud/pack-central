@@ -25,38 +25,12 @@ The following tables lists the configurable parameters of the Tekton Pipelines c
 
 ## Upgrade
 
-To upgrade an existing installation of the Tekton Pipelines chart:
-
-```bash
-helm repo update
-helm upgrade tekton-pipelines <your-repo>/tekton-pipelines \
-  --namespace tekton-pipelines \
-  --values overrides.yaml
-```
-
-**Note:** Before upgrading, particularly across major versions, it is recommended to ensure no critical `PipelineRuns` or `TaskRuns` are actively executing. You may also want to use tools like `yq` or `jq` to audit your custom configuration overrides against the newly released default `values.yaml` to ensure compatibility.
+**Note:** Before upgrading, particularly across major versions, it is recommended to ensure no critical `PipelineRuns` or `TaskRuns` are actively executing.  
 
 ## Usage
 
-To install the chart with the release name `tekton-pipelines`:
-
-```bash
-# Add the Helm repository
-helm repo add tekton-charts <repository-url>
-helm repo update
-
-# Install the chart
-helm install tekton-pipelines tekton-charts/tekton-pipelines \
-  --namespace tekton-pipelines \
-  --create-namespace
-```
-
-Once deployed, you can verify that the controllers are running:
-
-```bash
-kubectl get pods -n tekton-pipelines
-```
-
+To install  `tekton-pipelines`, deploy a tekton-pipelines addon profile on cluster.
+ 
 You are now ready to deploy Tekton resources. For instance, to test your setup with a simple Task:
 
 ```bash
