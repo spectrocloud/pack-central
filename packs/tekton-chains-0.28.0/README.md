@@ -1,4 +1,4 @@
-# Tekton Chains Helm Chart
+# Tekton Chains 
 
 Tekton Chains is a Kubernetes controller designed for supply chain security and management in Tekton. This project observes the execution of `TaskRuns` and `PipelineRuns`, extracts their provenance, signs it, and stores it securely (e.g., as in-toto attestations or OCI signatures).
 
@@ -29,27 +29,15 @@ The following table lists the most common configuration parameters that you can 
 
 ## Upgrade
 
-To upgrade an existing Tekton Chains installation to a new version, run the following command with Helm, ensuring you use your custom values:
-
-```bash
-helm upgrade tekton-chains ./tekton-chains \
-  --namespace tekton-chains \
-  --values your-values.yaml
-```
+To update an existing Tekton Chains installation to a newer version, replace the addon with a different tekton chains profile.
 
 *Note:* Always check the release notes in the official repository to identify if there are any incompatible changes in the configuration `ConfigMaps` before applying the upgrade.
 
 ## Usage
 
-**1. Install the Chart:**
+**1. Install tekton chains:**
 
-To deploy Tekton Chains in your cluster within the `tekton-chains` namespace, run:
-
-```bash
-helm install tekton-chains ./tekton-chains \
-  --namespace tekton-chains \
-  --create-namespace
-```
+Deploy a Tekton Chains addon profile on cluster
 
 **2. Configure signing keys:**
 
