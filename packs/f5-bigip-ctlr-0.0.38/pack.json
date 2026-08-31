@@ -1,0 +1,17 @@
+{
+    "addonType": "load balancer",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "f5-bigip-ctlr",
+    "charts": [
+      "charts/f5-bigip-ctlr-0.0.38.tgz"
+    ],
+    "layer":"addon",
+    "name": "f5-bigip-ctlr",
+    "version": "0.0.38"
+  }
