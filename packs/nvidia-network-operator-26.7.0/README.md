@@ -229,6 +229,6 @@ project's github.
 
 ## References
 
-- [Official Documentation](https://docs.nvidia.com/networking/software/cloud-orchestration/index.html)
+- [Official Documentation](https://docs.nvidia.com/networking/display/kubernetes2670/index.html)
 - [Operator SDK](https://github.com/operator-framework/operator-sdk)
 - [GPU-Operator](https://github.com/NVIDIA/gpu-operator)
