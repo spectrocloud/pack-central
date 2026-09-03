@@ -1,0 +1,31 @@
+{
+  "addonType": "app services",
+  "annotations": {
+    "docsURL": "https://keda.sh/docs/latest/",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "charts": [
+    "charts/keda-2.20.2.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  },
+  "displayName": "KEDA",
+  "eol": "",
+  "group": "",
+  "layer": "addon",
+  "name": "keda",
+  "version": "2.20.2"
+}
