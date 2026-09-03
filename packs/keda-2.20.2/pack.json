@@ -1,5 +1,5 @@
 {
-  "addonType": "app services",
+  "addonType": "system app",
   "annotations": {
     "docsURL": "https://keda.sh/docs/latest/",
     "source": "community",
@@ -22,7 +22,7 @@
       }
     ]
   },
-  "displayName": "KEDA",
+  "displayName": "Keda",
   "eol": "",
   "group": "",
   "layer": "addon",
