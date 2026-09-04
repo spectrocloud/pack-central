@@ -1,0 +1,194 @@
+# Copyright (c) 2026, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/nic-health-monitor
+  pullPolicy: IfNotPresent
+  tag: ""
+
+podAnnotations: {}
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Checks to enable for the NIC health monitor
+# Available checks:
+#   - InfiniBandStateCheck: Monitors IB port state (UP/DOWN), physical state, device disappearance,
+#       card homogeneity anomalies; auto-excludes management NICs via NUMA topology
+#   - InfiniBandDegradationCheck: Monitors IB counter thresholds (fatal and non-fatal)
+#   - InfiniBandCharDeviceCheck: Detects missing IB character-device nodes (issm/umad/uverbs)
+#       via /sys/class/infiniband_mad and /sys/class/infiniband_verbs — a device whose ports
+#       read ACTIVE/LinkUp but whose /dev/infiniband/* nodes are missing (pods fail to start)
+#   - EthernetStateCheck: Monitors Ethernet/RoCE interface state (operstate), device disappearance,
+#       card homogeneity anomalies; auto-excludes management NICs via NUMA topology
+#   - EthernetDegradationCheck: Monitors Ethernet/RoCE counter thresholds
+enabledChecks:
+  - InfiniBandStateCheck
+  - InfiniBandDegradationCheck
+  - InfiniBandCharDeviceCheck
+  - EthernetStateCheck
+  - EthernetDegradationCheck
+
+# Polling interval for state checks. Counter checks run on their own
+# fixed 1s cadence (not configurable here) so delta counters stay
+# responsive and velocity windows have fresh data; this is independent
+# of statePollingInterval.
+statePollingInterval: "1s"
+
+# Regex patterns for NICs to exclude from normal discovery (comma-separated).
+# Ignored when nicInclusionRegexOverride is set.
+nicExclusionRegex: "^veth.*,^docker.*,^br-.*,^lo$"
+
+# Override automatic device discovery with an explicit inclusion regex (comma-separated).
+# When set, only NIC devices matching these patterns are monitored. All automatic
+# filters, including vendor, VF, management/NUMA, and NicExclusionRegex, are bypassed.
+# Pinned devices are reported unconditionally: the first-poll peer-evidence gate and
+# the card-homogeneity check do not apply while the override is active (explicit
+# operator intent replaces peer evidence).
+# Changing this value (or nicExclusionRegex) resets the monitor's persisted
+# port/device state on the next pod start (healthy baselines re-emitted) so scope
+# transitions cannot fabricate device-disappearance events or bypass first-poll
+# severity gating. Counter snapshots and latched breaches are preserved across the
+# reset: counters only clear on a real reboot or an admin counter reset.
+# Leave empty to use the default auto-discovery mechanism.
+nicInclusionRegexOverride: ""
+
+# sysfs paths (for containerized deployments with host mounts)
+sysClassNetPath: "/nvsentinel/sys/class/net"
+sysClassInfinibandPath: "/nvsentinel/sys/class/infiniband"
+
+# Counter detection configuration
+counterDetection:
+  enabled: true
+  # Counter names are validated against hardcoded definitions in the monitor.
+  # Operators may enable/disable supported counters and tune thresholds, but
+  # sysfs paths, severity, and event descriptions are owned by code.
+  #
+  # Allowed counters:
+  #   counters/: excessive_buffer_overrun_errors, link_downed,
+  #     link_error_recovery, local_link_integrity_errors,
+  #     port_rcv_discards, port_rcv_errors, port_rcv_remote_physical_errors,
+  #     port_rcv_switch_relay_errors, port_xmit_discards, port_xmit_wait,
+  #     symbol_error, symbol_error_fatal
+  #   hw_counters/: implied_nak_seq_err, local_ack_timeout_err,
+  #     out_of_sequence, packet_seq_err, req_transport_retries_exceeded,
+  #     rnr_nak_retry_err, roce_slow_restart
+  #   statistics/: rx_crc_errors, rx_errors, rx_missed_errors,
+  #     tx_carrier_errors, tx_errors
+  #   netdev root (/sys/class/net/<iface>/): carrier_changes
+  #
+  # Example allowed-counter customization:
+  #   - name: rx_missed_errors
+  #     enabled: true
+  #     thresholdType: velocity
+  #     threshold: 10.0
+  #     velocityUnit: second
+  counters:
+    #--------------------------------------------------------------------------
+    # FATAL COUNTER PROFILES (severity/action owned by code)
+    #--------------------------------------------------------------------------
+    - name: link_downed
+      enabled: true
+      thresholdType: delta
+      threshold: 0
+
+    - name: excessive_buffer_overrun_errors
+      enabled: true
+      thresholdType: delta
+      threshold: 0
+
+    - name: local_link_integrity_errors
+      enabled: true
+      thresholdType: delta
+      threshold: 0
+
+    - name: rnr_nak_retry_err
+      enabled: true
+      thresholdType: delta
+      threshold: 0
+
+    #--------------------------------------------------------------------------
+    # NON-FATAL COUNTER PROFILES (severity/action owned by code)
+    #--------------------------------------------------------------------------
+
+    # Physical Layer (PHY)
+    - name: symbol_error
+      enabled: true
+      thresholdType: velocity
+      threshold: 10.0
+      velocityUnit: second
+
+    - name: symbol_error_fatal
+      enabled: true
+      thresholdType: velocity
+      threshold: 120.0
+      velocityUnit: hour
+
+    - name: link_error_recovery
+      enabled: true
+      thresholdType: velocity
+      threshold: 5.0
+      velocityUnit: minute
+
+    # Transport Layer
+    - name: port_rcv_errors
+      enabled: true
+      thresholdType: velocity
+      threshold: 10.0
+      velocityUnit: second
+
+    - name: local_ack_timeout_err
+      enabled: true
+      thresholdType: velocity
+      threshold: 1.0
+      velocityUnit: second
+
+    # Congestion Indicators
+    - name: port_xmit_discards
+      enabled: true
+      thresholdType: velocity
+      threshold: 100.0
+      velocityUnit: second
+
+    # RoCE-specific
+    - name: roce_slow_restart
+      enabled: true
+      thresholdType: velocity
+      threshold: 10.0
+      velocityUnit: second
+
+    # Interface Level
+    - name: carrier_changes
+      enabled: true
+      thresholdType: delta
+      threshold: 2
+
+# Scheduling configuration
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+logLevel: info
+
+# Processing strategy for health events
+# valid values: EXECUTE_REMEDIATION, STORE_ONLY
+# default: EXECUTE_REMEDIATION
+# EXECUTE_REMEDIATION: normal behavior; downstream modules may update cluster state.
+# STORE_ONLY: observability-only behavior; event should be persisted/exported but should not modify cluster resources.
+processingStrategy: EXECUTE_REMEDIATION

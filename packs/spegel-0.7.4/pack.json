@@ -1,0 +1,28 @@
+{
+  "addonType": "registry",
+  "annotations": {
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Spegel",
+  "charts": [
+    "charts/spegel-0.7.4.tgz"
+  ],
+  "layer":"addon",
+  "name": "spegel",
+  "version": "0.7.4",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
