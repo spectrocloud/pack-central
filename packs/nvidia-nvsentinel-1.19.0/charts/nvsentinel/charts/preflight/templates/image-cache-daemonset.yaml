@@ -1,0 +1,73 @@
+# Copyright (c) 2026, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- if .Values.imageCache.enabled }}
+{{- $global := .Values.global | default dict }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "preflight.imageCacheName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "preflight.imageCacheLabels" . | nindent 4 }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 100%
+  selector:
+    matchLabels:
+      {{- include "preflight.imageCacheSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Force pod restart when configmap changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.imageCache.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "preflight.imageCacheSelectorLabels" . | nindent 8 }}
+    spec:
+      {{- with ($global.imagePullSecrets | default .Values.imagePullSecrets) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- range .Values.initContainers }}
+        - name: {{ .name }}
+          image: {{ include "preflight.initContainerImage" (dict "root" $ "container" .) | quote }}
+          {{- with .imagePullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - "trap 'exit 0' TERM INT; sleep infinity & wait $!"
+          resources:
+            {{- toYaml $.Values.imageCache.resources | nindent 12 }}
+        {{- end }}
+      {{- with ($global.nodeSelector | default .Values.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with ($global.affinity | default .Values.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with ($global.tolerations | default .Values.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

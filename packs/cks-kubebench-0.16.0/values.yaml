@@ -1,0 +1,5 @@
+pack:
+  namespace: "kube-bench"
+  content:
+    images:
+      - image: docker.io/aquasec/kube-bench:v0.16.0

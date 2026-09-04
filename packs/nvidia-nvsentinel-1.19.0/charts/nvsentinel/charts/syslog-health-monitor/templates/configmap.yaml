@@ -1,0 +1,48 @@
+# Copyright (c) 2026, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Single ConfigMap holding every file configuration owned by the
+# syslog-health-monitor pod. Each data key becomes a file under the mount
+# directory (/etc/syslog-health-monitor/) and is referenced by the matching
+# CLI flag in the DaemonSet args.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ include "syslog-health-monitor.fullname" . }}-config'
+  labels:
+    {{- include "syslog-health-monitor.labels" . | nindent 4 }}
+data:
+  nic-driver.toml: |
+    {{- range .Values.nicDriverDetection.patterns }}
+
+    [[nicDriverDetection.patterns]]
+    name = {{ .name | quote }}
+    enabled = {{ .enabled }}
+    {{ if .processingStrategy }}
+    processingStrategy = {{ .processingStrategy | quote }}
+    {{ end }}
+    {{- end }}
+  cancellations.toml: |
+    {{- range .Values.cancellations }}
+
+    [[checks]]
+      name    = {{ .name | quote }}
+      enabled = {{ .enabled }}
+      {{- range .rules }}
+
+      [[checks.cancellations]]
+        onErrorCode      = {{ .onErrorCode | quote }}
+        cancelErrorCodes = [{{ range $i, $c := .cancelErrorCodes }}{{ if $i }}, {{ end }}{{ $c | quote }}{{ end }}]
+      {{- end }}
+    {{- end }}

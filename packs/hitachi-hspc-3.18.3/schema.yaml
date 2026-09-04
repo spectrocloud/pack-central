@@ -1,0 +1,2 @@
+charts.hspc.vsp.password:
+  schema: '{{ format "${password}" | hints "Enter the password for the VSP user" }}'

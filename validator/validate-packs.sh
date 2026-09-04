@@ -223,6 +223,195 @@ validate_content(){
   return $fail
 }
 
+#If pack.json declares kubeManifests, every listed manifest path must exist under the pack root.
+validate_kube_manifests(){
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+
+  local km_size
+  km_size=$(jq -r '.kubeManifests // [] | length' "$pack_json_file")
+  if [ "$km_size" -eq 0 ]; then
+    log_info "No kubeManifests entries in $pack_json_file; skipping kubeManifests file check"
+    return 0
+  fi
+
+  log_info "Validating kubeManifests file existence for $pack_dir..."
+  local fail=0
+  local i=0
+  while [ $i -lt $km_size ]; do
+    local km_path
+    km_path=$(jq -r ".kubeManifests[$i]" "$pack_json_file")
+    if [ -z "$km_path" ] || [ "$km_path" = "null" ]; then
+      log_error "kubeManifests entry at index $i is empty in $pack_json_file"
+      fail=1
+    elif [ ! -f "$pack_dir/$km_path" ]; then
+      log_error "kubeManifests entry '$km_path' listed in $pack_json_file is missing at $pack_dir/$km_path"
+      fail=1
+    else
+      log_info "kubeManifests file exists: $pack_dir/$km_path"
+    fi
+    i=$(expr $i + 1)
+  done
+  if [ $fail -eq 0 ]; then
+    log_success "All kubeManifests files present for $pack_dir"
+  else
+    log_error "kubeManifests file check failed for $pack_dir"
+  fi
+  return $fail
+}
+
+#If pack.json declares charts, every listed .tgz path must exist under the pack root.
+validate_charts_exist(){
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+
+  local ch_size
+  ch_size=$(jq -r '.charts // [] | length' "$pack_json_file")
+  if [ "$ch_size" -eq 0 ]; then
+    log_info "No charts entries in $pack_json_file; skipping charts file check"
+    return 0
+  fi
+
+  log_info "Validating chart tarball existence for $pack_dir..."
+  local fail=0
+  local i=0
+  while [ $i -lt $ch_size ]; do
+    local ch_path
+    ch_path=$(jq -r ".charts[$i]" "$pack_json_file")
+    if [ -z "$ch_path" ] || [ "$ch_path" = "null" ]; then
+      log_error "charts entry at index $i is empty in $pack_json_file"
+      fail=1
+    elif [ ! -f "$pack_dir/$ch_path" ]; then
+      log_error "charts entry '$ch_path' listed in $pack_json_file is missing at $pack_dir/$ch_path"
+      fail=1
+    else
+      log_info "chart tarball exists: $pack_dir/$ch_path"
+    fi
+    i=$(expr $i + 1)
+  done
+  if [ $fail -eq 0 ]; then
+    log_success "All chart tarballs present for $pack_dir"
+  else
+    log_error "chart tarball existence check failed for $pack_dir"
+  fi
+  return $fail
+}
+
+#For chart-based packs, verify the pack-level values.yaml:
+#  1. has a charts.<name-from-Chart.yaml> mapping node
+#  2. its structure is a subset of the chart's own values.yaml (values may
+#     differ; empty arrays and empty mappings in the chart - Helm's usual
+#     user-extension points like tolerations:[], podLabels:{}, annotations:{} -
+#     are treated as free-form and may hold anything at pack level)
+#  3. contains no duplicate mapping keys or duplicate sequence items under
+#     charts.<name-from-Chart.yaml>
+validate_chart_values_structure(){
+  local pack_dir=$1
+  local pack_json_file="$pack_dir/pack.json"
+  local values_yaml_file="$pack_dir/values.yaml"
+
+  local ch_size
+  ch_size=$(jq -r '.charts // [] | length' "$pack_json_file")
+  if [ "$ch_size" -eq 0 ]; then
+    log_info "No charts entries in $pack_json_file; skipping chart values structure check"
+    return 0
+  fi
+
+  if [ ! -f "$values_yaml_file" ]; then
+    log_error "Pack values.yaml is missing at $values_yaml_file (required for chart-based pack)"
+    return 1
+  fi
+
+  local script_dir="${BASH_SOURCE[0]%/*}"
+  local checker="$script_dir/check-values-structure.py"
+  if [ ! -f "$checker" ]; then
+    log_error "Structural checker not found at $checker"
+    return 1
+  fi
+
+  log_info "Validating chart values structure in $values_yaml_file..."
+  local fail=0
+  local i=0
+  while [ $i -lt $ch_size ]; do
+    local ch_path
+    ch_path=$(jq -r ".charts[$i]" "$pack_json_file")
+    local ch_full_path="$pack_dir/$ch_path"
+
+    if [ ! -f "$ch_full_path" ]; then
+      #Already flagged by validate_charts_exist; skip
+      i=$(expr $i + 1)
+      continue
+    fi
+
+    #Locate <chart>/Chart.yaml and <chart>/values.yaml inside the tarball
+    local chart_yaml_in_tar chart_values_in_tar
+    chart_yaml_in_tar=$(tar -tzf "$ch_full_path" 2>/dev/null | awk -F/ 'NF==2 && $2=="Chart.yaml" {print; exit}')
+    chart_values_in_tar=$(tar -tzf "$ch_full_path" 2>/dev/null | awk -F/ 'NF==2 && $2=="values.yaml" {print; exit}')
+    if [ -z "$chart_yaml_in_tar" ]; then
+      log_error "Could not locate a top-level Chart.yaml inside $ch_full_path"
+      fail=1; i=$(expr $i + 1); continue
+    fi
+    #Templates-only charts may not ship a default values.yaml. That is not an
+    #error - we skip the subset check for that chart and only run duplicate
+    #detection on the pack's charts.<name> subtree.
+    if [ -z "$chart_values_in_tar" ]; then
+      log_info "Chart tarball $ch_full_path has no top-level values.yaml (templates-only chart); will skip subset check for it"
+    fi
+
+    local chart_name
+    chart_name=$(tar -xzOf "$ch_full_path" "$chart_yaml_in_tar" 2>/dev/null | yq '.name')
+    if [ -z "$chart_name" ] || [ "$chart_name" = "null" ]; then
+      log_error "Could not read .name from Chart.yaml inside $ch_full_path"
+      fail=1; i=$(expr $i + 1); continue
+    fi
+
+    #Bash-level pre-check: charts.<chart_name> is present and is a mapping
+    local node_type
+    node_type=$(NAME="$chart_name" yq '.charts[env(NAME)] | type' "$values_yaml_file" 2>/dev/null)
+    if [ "$node_type" = "!!null" ] || [ -z "$node_type" ]; then
+      log_error "Pack values.yaml is missing 'charts.$chart_name' node (chart name from $ch_path Chart.yaml) in $values_yaml_file"
+      fail=1; i=$(expr $i + 1); continue
+    elif [ "$node_type" != "!!map" ]; then
+      log_error "Pack values.yaml 'charts.$chart_name' must be a mapping (got type $node_type) in $values_yaml_file"
+      fail=1; i=$(expr $i + 1); continue
+    fi
+
+    #Extract the chart's values.yaml (if present) for the subset comparison.
+    #When absent, pass "-" so the checker skips the subset check but still
+    #runs duplicate detection.
+    local chart_values_tmp checker_chart_arg
+    if [ -n "$chart_values_in_tar" ]; then
+      chart_values_tmp=$(mktemp)
+      tar -xzOf "$ch_full_path" "$chart_values_in_tar" > "$chart_values_tmp" 2>/dev/null
+      checker_chart_arg="$chart_values_tmp"
+    else
+      chart_values_tmp=""
+      checker_chart_arg="-"
+    fi
+
+    #Structural subset + duplicate check
+    local check_out
+    check_out=$(python3 "$checker" "$values_yaml_file" "$checker_chart_arg" "$chart_name" 2>&1)
+    local check_rc=$?
+    [ -n "$chart_values_tmp" ] && rm -f "$chart_values_tmp"
+    if [ $check_rc -eq 0 ]; then
+      log_info "Structural + duplicate check passed for 'charts.$chart_name' (chart from $ch_path)"
+    else
+      log_error "Structural + duplicate check failed for 'charts.$chart_name' (chart from $ch_path):"
+      echo "$check_out" | sed 's/^/  /'
+      fail=1
+    fi
+
+    i=$(expr $i + 1)
+  done
+  if [ $fail -eq 0 ]; then
+    log_success "Chart values structure check passed for $pack_dir"
+  else
+    log_error "Chart values structure check failed for $pack_dir"
+  fi
+  return $fail
+}
+
 get_pack_layer() {
   local pack_dir=$1
   local layer="$(jq -r '.layer' $pack_dir/pack.json)"
@@ -278,7 +467,25 @@ run_validations() {
   if [ $rc -ne 0 ]; then
    final_ret_code=$rc
   fi
-  
+
+  validate_kube_manifests "$pack_dir"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+  fi
+
+  validate_charts_exist "$pack_dir"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+  fi
+
+  validate_chart_values_structure "$pack_dir"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+   final_ret_code=$rc
+  fi
+
   local pack_layer="$(get_pack_layer $pack_dir)"
   if [ "$pack_layer" == "" ];
   then
