@@ -1,0 +1,106 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+image:
+  repository: ghcr.io/nvidia/nvsentinel/syslog-health-monitor
+  pullPolicy: IfNotPresent
+  tag: ""
+
+podAnnotations: {}
+
+resources: 
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+enabledChecks: 
+  - SysLogsXIDError
+  - SysLogsSXIDError
+  - SysLogsGPUFallenOff
+
+# XID (GPU error) analyzer sidecar configuration
+xidSideCar:
+  # Enable XID analyzer sidecar for enhanced GPU error analysis
+  enabled: false
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+
+# Scheduling configuration
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+# Customize this if your journal is stored in a non-standard location
+journalHostPath: /var/log
+
+# How far back to scan the journal after a reboot (e.g. 30m, 1h).
+# Entries older than this window are skipped to avoid re-processing
+# ancient XIDs that may have already been manually remediated.
+# Set to "0" for unlimited lookback (scan from journal head, no clipping).
+bootLookbackWindow: "2h"
+
+logLevel: info
+
+# Processing strategy for health events
+# valid values: EXECUTE_REMEDIATION, STORE_ONLY
+# default: EXECUTE_REMEDIATION
+# EXECUTE_REMEDIATION: normal behavior; downstream modules may update cluster state.
+# STORE_ONLY: observability-only behavior; event should be persisted/exported but should not modify cluster resources (i.e., no node conditions, no quarantine, no drain, no remediation).
+processingStrategy: EXECUTE_REMEDIATION
+
+# NIC driver syslog pattern detection configuration.
+# Pattern definitions (regex, severity, recommended action, description) are
+# owned by code. Operators may enable/disable supported names and optionally
+# set per-pattern processingStrategy.
+# Only consumed when SysLogsNICDriverError is added to enabledChecks.
+nicDriverDetection:
+  patterns:
+    - name: cmd_exec_timeout
+      enabled: false
+    - name: health_poll_failed
+      enabled: false
+    - name: unrecoverable_err
+      enabled: false
+    - name: netdev_watchdog
+      enabled: false
+    - name: pci_power_insufficient
+      enabled: false
+    - name: port_module_high_temp
+      enabled: false
+    - name: access_reg_failed
+      enabled: false
+    - name: module_unplugged
+      enabled: false
+    - name: mlx5_tx_timeout_detected
+      enabled: false
+    - name: mlx5_rx_timeout_detected
+      enabled: false
+    - name: mlx5_napi_soft_lockup
+      enabled: false
+
+# Per-check cancellation rules: when the check observes `onErrorCode`, emit
+# synthetic healthy events for each `cancelErrorCodes` entry on the same
+# entities. Override or extend per-cluster as needed.
+cancellations:
+  - name: SysLogsXIDError
+    enabled: true
+    rules:
+      # XID 162 (PSHC re-engaged) implies recovery from XID 163 (PSHC disengaged).
+      - onErrorCode: "162"
+        cancelErrorCodes: ["163"]

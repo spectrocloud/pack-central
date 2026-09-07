@@ -1,0 +1,39 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "commit_msg": "Run RabbitMQ clusters on Kubernetes using the RabbitMQ Cluster Kubernetes Operator",
+    "source": "community",
+    "contributor" : "spectrocloud"
+  },
+  "charts": [
+    "charts/rabbitmq-cluster-operator-0.4.2.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "RabbitMQ",
+  "layer":"addon",
+  "name": "rabbitmq",
+  "version": "4.3.4",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 200
+      },
+      {
+        "type": "memory",
+        "minLimit": 256
+      }
+    ]
+  }
+}
