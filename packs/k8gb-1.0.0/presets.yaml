@@ -1,0 +1,22 @@
+presets:
+  - name: coredns-clusterip
+    displayName: "ClusterIP (Ingress Required)"
+    description: "Uses an Ingress resource to discover the external address."
+    group: "Address Discovery"
+    remove: []
+    add: |
+      charts:
+        k8gb:
+          coredns:
+            serviceType: ClusterIP
+
+  - name: coredns-loadbalancer
+    displayName: "LoadBalancer"
+    description: "Uses the CoreDNS LoadBalancer Service to discover the external address."
+    group: "Address Discovery"
+    remove: []
+    add: |
+      charts:
+        k8gb:
+          coredns:
+            serviceType: LoadBalancer
