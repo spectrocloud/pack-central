@@ -46,10 +46,13 @@ def is_empty_map(node):
 
 
 def check_subset(pack, chart, path, errs):
-    """Structural subset: every path in pack must exist in chart. Exception:
+    """Structural subset: every path in pack must exist in chart. Exceptions:
     when the chart node at any level is an empty sequence or an empty mapping
     (a Helm user-extension point like podLabels: {}, tolerations: [], etc.),
-    everything under the corresponding pack path is accepted."""
+    everything under the corresponding pack path is accepted; and a pack may
+    add a 'cpu' or 'memory' key under any 'limits' mapping even if the chart
+    doesn't define it there, since tightening resource limits beyond what a
+    chart ships is an intentional, allowed pack-level override."""
     if chart is None:
         errs.append(f"path '{path}' present in pack values.yaml but not in chart's values.yaml")
         return
@@ -62,12 +65,16 @@ def check_subset(pack, chart, path, errs):
                 f"{chart.tag}"
             )
             return
+        is_limits_map = path.rsplit(".", 1)[-1] == "limits"
         for k_node, v_node in pack.value:
             if not isinstance(k_node, yaml.ScalarNode):
                 continue
             key = k_node.value
             child_path = f"{path}.{key}" if path else key
-            check_subset(v_node, get_child(chart, key), child_path, errs)
+            child_chart = get_child(chart, key)
+            if child_chart is None and is_limits_map and key in ("cpu", "memory"):
+                continue
+            check_subset(v_node, child_chart, child_path, errs)
     elif isinstance(pack, yaml.SequenceNode):
         if not isinstance(chart, yaml.SequenceNode):
             errs.append(
