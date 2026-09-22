@@ -1,0 +1,3 @@
+# -- VM operator CRD annotations
+crds:
+  annotations: {}
