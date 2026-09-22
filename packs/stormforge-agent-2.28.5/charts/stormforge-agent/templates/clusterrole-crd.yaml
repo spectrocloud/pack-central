@@ -1,0 +1,29 @@
+{{- if .Values.rbac.create -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ printf "%s-crd" (include "stormforge-agent.fullname" .) }}
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - optimize.stormforge.io
+  resources:
+  - optimizationconfigurations
+  - clusteroptimizationconfigurations
+  - workloadoptimizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - optimize.stormforge.io
+  resources:
+  - workloadoptimizers/status
+  verbs:
+  - get
+  - list
+  - watch
+{{- end -}}

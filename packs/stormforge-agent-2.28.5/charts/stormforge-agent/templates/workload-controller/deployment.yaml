@@ -1,0 +1,176 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stormforge-agent.agentName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.workload.deploymentAnnotations }}
+  annotations: {{ toYaml .Values.workload.deploymentAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: {{ include "stormforge-agent.agentComponent" . }}
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "stormforge-agent.agentSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "stormforge-agent.agentSelectorLabels" . | nindent 8 }}
+        {{- with .Values.commonMetaLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/workload-controller/configmap.yaml") . | sha256sum | quote }}
+        checksum/env-secret: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum | quote }}
+        {{- if .Values.clusterDefaultConfig }}
+        checksum/cluster-defaults-configmap: {{ include (print $.Template.BasePath "/cluster-defaults-configmap.yaml") . | sha256sum | quote }}
+        {{- end }}
+        {{- if .Values.manageAuthSecret }}
+        checksum/auth-secret: {{ include (print $.Template.BasePath "/auth-secret.yaml") . | sha256sum | quote }}
+        {{- end }}
+        {{- if .Values.workload.podAnnotations }}
+        {{- toYaml .Values.workload.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "stormforge-agent.serviceAccountName" . }}
+      {{- with (coalesce .Values.workload.priorityClassName .Values.priorityClassName) }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      initContainers:
+      - name: init
+        image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag | default .Chart.Version }}"
+        imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        env:
+        - name: CHART_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if .Values.additionalEnvVars }}
+        {{- .Values.additionalEnvVars | toYaml | nindent 8 }}
+        {{- end }}
+        args:
+        - start
+        - --license-check
+        {{- if .Values.standbyMode }}
+        - --sleep
+        {{- end }}
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.additionalVolumeMounts }}
+        volumeMounts:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources: {{- toYaml .Values.workload.initResources | nindent 10 }}
+      containers:
+      - name: agent
+        image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag | default .Chart.Version }}"
+        imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        env:
+        - name: CHART_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if eq .Values.reliabilityOOMResponse false }}
+        - name: STORMFORGE_RELIABILITY_OOM_RESPONSE
+          value: {{ .Values.reliabilityOOMResponse | quote}}
+        {{- end }}
+        {{- if .Values.additionalEnvVars }}
+        {{- .Values.additionalEnvVars | toYaml | nindent 8 }}
+        {{- end }}
+        args:
+        - start
+        - --config=/etc/config/workload-agent.yml
+        {{- if or .Values.trace .Values.workload.trace }}
+        - --log-level=trace
+        {{- else if or .Values.debug .Values.workload.debug }}
+        - --log-level=debug
+        {{- end }}
+        {{- if .Values.clusterData }}
+        - --cluster-data
+        {{- end }}
+        {{- if .Values.standbyMode }}
+        - --sleep
+        {{- else }}
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        - name: management
+          containerPort: 6060
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        {{- end }}
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+        - name: defaults-volume
+          mountPath: /etc/stormforge
+          readOnly: true
+        {{- with .Values.additionalVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources: {{- toYaml .Values.workload.resources | nindent 10 }}
+      {{- if .Values.commonPodSecurityContext }}
+      securityContext: {{ .Values.commonPodSecurityContext | toYaml | nindent 8 }}
+      {{- else if not (kindIs "invalid" .Values.commonPodSecurityContext) }}
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      {{- end }}
+      terminationGracePeriodSeconds: 300
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "stormforge-agent.agentName" . | quote }}
+          items:
+          - key: workload-agent.yml
+            path: workload-agent.yml
+      - name: defaults-volume
+        configMap:
+          name: {{ include "stormforge-agent.defaultsConfigMap" . | quote }}
+          optional: true
+      {{- with .Values.additionalVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
