@@ -1,0 +1,28 @@
+{
+  "addonType": "system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Sealed Secrets",
+  "charts": [
+    "charts/sealed-secrets-2.19.3.tgz"
+  ],
+  "layer": "addon",
+  "name": "sealed-secrets",
+  "version": "2.19.3",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
