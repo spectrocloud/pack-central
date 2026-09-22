@@ -1,0 +1,30 @@
+{
+    "name": "tekton-chains",
+    "displayName": "Tekton Chains",
+    "annotations": {
+        "docsURL": "https://github.com/tektoncd/chains",
+        "description": "Tekton Chains",
+        "source": "community",
+        "contributor" : "spectrocloud"
+    },
+    "version": "0.29.0",
+    "kubeManifests": [
+        "manifests/release.yaml"
+    ],
+    "layer": "addon",
+    "addonType": "system app",
+    "cloudTypes": [
+        "all"
+    ],
+    "constraints": {
+        "dependencies": [
+            {
+                "packName": "tekton-pipelines",
+                "minVersion": "1.14.0",
+                "maxVersion": "",
+                "layer": "addon",
+                "type": "required"
+            }
+        ]
+    }
+}
