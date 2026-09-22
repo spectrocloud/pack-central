@@ -3,7 +3,7 @@
   "cloudTypes": [
     "all"
   ],
-  "displayName": "k8gb",
+  "displayName": "Kubernetes Global Balancer",
   "charts": [
     "charts/k8gb-v0.20.0.tgz"
   ],
