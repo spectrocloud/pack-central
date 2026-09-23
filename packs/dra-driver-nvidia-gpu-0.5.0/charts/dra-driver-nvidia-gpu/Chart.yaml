@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: 0.5.0
+description: Official Helm chart for the DRA Driver for NVIDIA GPUs
+kubeVersion: '>=1.32.0-0'
+name: dra-driver-nvidia-gpu
+type: application
+version: 0.5.0

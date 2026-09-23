@@ -1,0 +1,30 @@
+{{- if and (.Values.jaeger.enabled) (.Values.jaeger.ingress.enabled) -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "jaeger.fullname" . }}
+  labels:
+    {{- include "jaeger.labels" . | nindent 4 }}
+    app.kubernetes.io/component: all-in-one
+  {{- with include "jaeger.annotations" (dict "context" . "component" .Values.jaeger.ingress.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.jaeger.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.jaeger.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+    {{- range $host := .Values.jaeger.ingress.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /
+            pathType: {{ default "ImplementationSpecific" $.Values.jaeger.ingress.pathType }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (include "jaeger.fullname" $) "servicePort" 16686 "context" $) | nindent 14 }}
+  {{- end -}}
+  {{- if .Values.jaeger.ingress.tls }}
+  tls:
+  {{- toYaml .Values.jaeger.ingress.tls | nindent 4 }}
+  {{- end -}}
+{{- end -}}

@@ -1,0 +1,5 @@
+pack:
+  content:
+    images:
+      - image: ghcr.io/tektoncd/chains/github.com/tektoncd/chains/cmd/controller:v0.29.0@sha256:b1f1e5790243d13e2026e5a1af88ad3e7b798a9cddd2dcbef23289261f385421
+  namespace: "tekton-chains"

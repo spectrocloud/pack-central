@@ -1,0 +1,155 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "required": [
+        "standbyMode",
+        "authorization"
+    ],
+    "properties": {
+      "standbyMode": {
+          "type": "boolean"
+      },
+      "authorization": {
+        "type": "object",
+        "properties": {
+          "clientID": {
+            "type": "string",
+            "pattern": "^[^\n]*$"
+          },
+          "clientSecret": {
+            "type": "string",
+            "pattern": "^[^\n]*$"
+          },
+          "issuer": {
+            "type": "string",
+            "pattern": "^[^\n]*$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "proxyUrl": {
+        "type": "string",
+        "description": "Configuration for HTTPS_PROXY environment variable"
+      },
+      "noProxy": {
+        "type": "string",
+        "description": "Configuration for NO_PROXY environment variable"
+      },
+      "manageAuthSecret": {
+        "type": "boolean",
+        "description": "Whether or not to create and manage the authorization secret"
+      },
+      "workload": {
+        "type": "object",
+        "properties": {
+          "workloadSyncInterval": {
+            "type": "string",
+            "description": "Interval the agent will update probeTime for each existent workload."
+          },
+          "collectLabels": {
+            "type": "boolean",
+            "description": "Collect labels of the cluster's workloads."
+          },
+          "inactiveWorkloadsGC": {
+            "type": "boolean",
+            "description": "Garbage collection of inactive workloads on StormForge API backend."
+          },
+          "denyNamespaces": {
+            "type": ["array", "null"],
+            "description": "A list of namespaces (regex) to ignore workloads and metrics from",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowNamespaces": {
+            "type": ["array", "null"],
+            "description": "A list of namespaces (regex) to include workloads and metrics from",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "prom": {
+        "type": "object",
+        "properties": {
+          "proxy": { "type": "object" },
+          "remoteWriteUrl": { "type": "string" },
+          "resources": { "type": "object" },
+          "debug": { "type": "boolean" },
+          "scrapeInterval": { "type": "string" },
+          "scrapeTimeout": { "type": "string" },
+          "remoteTimeout": { "type": "string" },
+          "retentionMaxTime": { "type": "string" },
+          "retentionMinTime": { "type": "string" },
+          "tokenUrl": { "type": "string" },
+          "remoteWriteQueueConfig": { "type": "object" },
+          "honorTimestamps": { "type": "boolean" },
+          "extraCAdvisorMetrics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "clusterDefaultConfig": {
+        "type": "object",
+        "propertyNames": {
+          "enum": [
+            "schedule",
+            "autoDeploy",
+            "cpuOptimizationGoal",
+            "memoryOptimizationGoal",
+            "containersCpuOptimizationPolicy",
+            "containersCpuRequestsMin",
+            "containersCpuRequestsMax",
+            "containersCpuLimitsMin",
+            "containersCpuLimitsMax",
+            "containersCpuLimitsLimitRequestRatio",
+            "containersMemoryOptimizationPolicy",
+            "containersMemoryRequestsMin",
+            "containersMemoryRequestsMax",
+            "containersMemoryLimitsMin",
+            "containersMemoryLimitsMax",
+            "containersMemoryLimitsLimitRequestRatio"
+          ]
+        },
+        "properties": {
+          "schedule": {
+            "type": "string",
+            "pattern": "(^([-/(),\\*\\w]+ ){4,5}[-/(),\\*\\w]+$)|(^P\\w+$)|(^@\\w+$)"
+          },
+          "autoDeploy": {
+            "type": ["string", "boolean"],
+            "enum": ["true", true, "false", false]
+          }
+        },
+        "patternProperties": {
+          "^(cpu|memory)OptimizationGoal$": {
+            "enum": ["balanced", "savings", "reliability"]
+          },
+          "^containers": {
+            "pattern": "^([-.A-Za-z0-9]*[,=]?)+$"
+          }
+        }
+      },
+      "extraEnvVars": {
+        "type": "array",
+        "items": {
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "x-kubernetes-patch-merge-key": "name",
+        "x-kubernetes-patch-strategy": "merge"
+      }
+    },
+    "additionalProperties": true
+}

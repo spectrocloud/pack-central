@@ -1,0 +1,28 @@
+{
+  "addonType": "monitoring",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Metrics Server",
+  "charts": [
+    "charts/metrics-server-3.13.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "metrics-server",
+  "version": "3.13.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

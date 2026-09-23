@@ -1,0 +1,63 @@
+{{- if .Values.clusterDefaultConfig }}
+{{- $defaults := dict }}
+{{- $annotationKeys := dict
+  "schedule"                                   "live.stormforge.io/schedule"
+  "learningPeriod"                             "live.stormforge.io/learning-period"
+  "metricsFrom"                                "live.stormforge.io/metrics-from"
+  "applyMethod"                                "live.stormforge.io/apply.method"
+  "applyMaxPercentIncrease"                    "live.stormforge.io/apply.max-percent-increase"
+  "applyMaxPercentDecrease"                    "live.stormforge.io/apply.max-percent-decrease"
+  "autoDeploy"                                 "live.stormforge.io/auto-deploy"
+  "autoDeployThresholdsCpuUnit"                "live.stormforge.io/auto-deploy.thresholds.cpu.unit"
+  "autoDeployThresholdsCpuPercent"             "live.stormforge.io/auto-deploy.thresholds.cpu.percent"
+  "autoDeployThresholdsMemoryUnit"             "live.stormforge.io/auto-deploy.thresholds.memory.unit"
+  "autoDeployThresholdsMemoryPercent"          "live.stormforge.io/auto-deploy.thresholds.memory.percent"
+  "reliabilityOomMemoryBumpUpPeriod"           "live.stormforge.io/reliability.oom.memory-bump-up.period"
+  "reliabilityOomMemoryBumpUpPercent"          "live.stormforge.io/reliability.oom.memory-bump-up.percent"
+  "reliabilityOomMemoryBumpUpMin"              "live.stormforge.io/reliability.oom.memory-bump-up.min"
+  "reliabilityOomMemoryBumpUpMax"              "live.stormforge.io/reliability.oom.memory-bump-up.max"
+  "reliabilityOomMemoryBumpUpApplyImmediately" "live.stormforge.io/reliability.oom.memory-bump-up.apply-immediately"
+  "cpuOptimizationGoal"                        "live.stormforge.io/cpu.optimization-goal"
+  "memoryOptimizationGoal"                     "live.stormforge.io/memory.optimization-goal"
+  "hpaCpuTargetUtilizationMin"                 "live.stormforge.io/hpa.cpu.target-utilization.min"
+  "hpaCpuTargetUtilizationMax"                 "live.stormforge.io/hpa.cpu.target-utilization.max"
+  "hpaCpuTargetUtilizationPatchPath"           "live.stormforge.io/hpa.cpu.target-utilization.patch-path"
+  "hpaMemoryTargetUtilizationMin"              "live.stormforge.io/hpa.memory.target-utilization.min"
+  "hpaMemoryTargetUtilizationMax"              "live.stormforge.io/hpa.memory.target-utilization.max"
+  "hpaMemoryTargetUtilizationPatchPath"        "live.stormforge.io/hpa.memory.target-utilization.patch-path"
+  "containersCpuOptimizationPolicy"            "live.stormforge.io/containers.cpu.optimization-policy"
+  "containersCpuRequestsMin"                   "live.stormforge.io/containers.cpu.requests.min"
+  "containersCpuRequestsMax"                   "live.stormforge.io/containers.cpu.requests.max"
+  "containersCpuRequestsPatchPath"             "live.stormforge.io/containers.cpu.requests.patch-path"
+  "containersCpuLimitsMin"                     "live.stormforge.io/containers.cpu.limits.min"
+  "containersCpuLimitsMax"                     "live.stormforge.io/containers.cpu.limits.max"
+  "containersCpuLimitsPatchPath"               "live.stormforge.io/containers.cpu.limits.patch-path"
+  "containersCpuLimitsLimitRequestRatio"       "live.stormforge.io/containers.cpu.limits.limit-request-ratio"
+  "containersMemoryOptimizationPolicy"         "live.stormforge.io/containers.memory.optimization-policy"
+  "containersMemoryRequestsMin"                "live.stormforge.io/containers.memory.requests.min"
+  "containersMemoryRequestsMax"                "live.stormforge.io/containers.memory.requests.max"
+  "containersMemoryRequestsPatchPath"          "live.stormforge.io/containers.memory.requests.patch-path"
+  "containersMemoryLimitsMin"                  "live.stormforge.io/containers.memory.limits.min"
+  "containersMemoryLimitsMax"                  "live.stormforge.io/containers.memory.limits.max"
+  "containersMemoryLimitsLimitRequestRatio"    "live.stormforge.io/containers.memory.limits.limit-request-ratio"
+  "containersMemoryLimitsPatchPath"            "live.stormforge.io/containers.memory.limits.patch-path"
+  "containersJavaMaxHeapMin"                   "live.stormforge.io/containers.java.max-heap.min"
+  "containersJavaMaxHeapMax"                   "live.stormforge.io/containers.java.max-heap.max"
+  "containersJavaMaxHeapPatchPath"             "live.stormforge.io/containers.java.max-heap.patch-path"
+  "containersJavaMaxHeapPatchFormat"           "live.stormforge.io/containers.java.max-heap.patch-format"
+-}}
+{{- range $k, $v := .Values.clusterDefaultConfig -}}
+  {{- $_ := set $defaults (get $annotationKeys $k) ($v | toString) -}}
+{{- end -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stormforge-agent.defaultsConfigMap" . }}
+  labels:
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+data:
+  cluster-defaults.yaml: |
+    {{- $defaults | toYaml | nindent 4 }}
+{{- end }}
