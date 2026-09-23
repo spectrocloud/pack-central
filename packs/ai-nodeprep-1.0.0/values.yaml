@@ -1,0 +1,108 @@
+# spectrocloud.com/enabled-presets: CNI:cni-disabled,Gateway:gateway-disabled,Kiali Dashboard:kiali-disabled
+pack:
+  releaseNameOverride:
+    nodeprep: nodeprep
+  namespace: "nodeprep-system"
+  namespaceLabels:
+    "nodeprep-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.0-agent
+      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.0-controller
+
+charts:
+  nodeprep:
+    # NodePrep chart values.
+    #
+    # Deploy posture: the controller is a single cluster-scoped Deployment; the
+    # agent is a privileged DaemonSet that must reach EVERY node the walk can
+    # taint (the nodeprep taint survives reboots and is only released by the
+    # agent's own boot-verify — the DaemonSet tolerations are load-bearing).
+
+    nameOverride: ""
+    fullnameOverride: ""
+
+    # The NodePrepProfile/NodePrep CRDs render as regular templates so helm
+    # upgrade carries schema changes (the conventional crds/ directory is
+    # never upgraded). Set false when an external system (e.g. Palette)
+    # enforces the CRDs — two owners would otherwise fight.
+    crds:
+      create: true
+
+    # All nodeprep resources live in one namespace. The agent DaemonSet runs
+    # privileged with hostPID and hostPath mounts by design (host mutations,
+    # nsenter reboots), so the namespace opts out of baseline/restricted PSA
+    # enforcement. Set create=false when the namespace is managed externally
+    # (e.g. Palette) — name must then match the existing one.
+    namespace:
+      create: false
+      name: nodeprep-system
+
+    controller:
+      replicas: 1
+      image:
+        repository: ghcr.io/spectrocloud/fde-public/ai-nodeprep
+        # Empty = <appVersion>-controller (one tag per version, never re-pushed).
+        tag: ""
+        pullPolicy: IfNotPresent
+      # Extra arguments for the controller binary (kubeconfig/namespace are
+      # in-cluster defaults; nothing else is currently required).
+      extraArgs: []
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      # The controller tolerates the nodeprep taint (it must run while a node
+      # it schedules on is being prepped) and the control-plane taint (single-CP
+      # clusters have nowhere else to run it).
+      tolerations:
+        - key: spectrocloud.com/nodeprep
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector: {}
+      affinity: {}
+
+    agent:
+      image:
+        repository: ghcr.io/spectrocloud/fde-public/ai-nodeprep
+        # Empty = <appVersion>-agent.
+        tag: ""
+        pullPolicy: IfNotPresent
+      args:
+        # Poll cadence for the walk.
+        interval: 5s
+        # Safety flags (design: experimental gate) — both default OFF in the
+        # binary AND in this chart: with them off the agent is detect-only
+        # (mutating steps report Blocked instead of touching the host). A walk
+        # that should actually converge needs BOTH flags:
+        #   args: {hostMutations: true, allowReboot: true}
+        hostMutations: true
+        allowReboot: true
+        # Verbose host-exec logging (troubleshooting). Can also be toggled on a
+        # running cluster without a rollout:
+        #   kubectl -n nodeprep-system set env daemonset/nodeprep-agent NODEPREP_VERBOSE=true
+        verbose: false
+        # Command the agent runs to reboot the host (nsenter into PID 1).
+        # Empty = the binary default: nsenter -t 1 -m -u -i -n -- systemctl reboot
+        rebootCommand: ""
+      # Extra arguments appended verbatim (e.g. ["-kubeconfig=/host/..."]).
+      extraArgs: []
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      # The agent must run on the very nodes the contract taints — the taint
+      # survives reboots in etcd and only the agent's boot-verify releases it.
+      # Control-plane taints so the agent can prep control-plane nodes.
+      tolerations:
+        - key: spectrocloud.com/nodeprep
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector: {}
+      affinity: {}
