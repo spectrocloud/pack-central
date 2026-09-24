@@ -1,0 +1,110 @@
+{{- if .Values.spark.enabled -}}
+apiVersion: {{ include "common.capabilities.cronjob.apiVersion" $ }}
+kind: CronJob
+metadata:
+  name: {{ include "jaeger.fullname" . }}-spark
+  labels:
+    {{- include "jaeger.labels" . | nindent 4 }}
+    app.kubernetes.io/component: spark
+  {{- with include "jaeger.annotations" (dict "context" . "component" .Values.spark.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ .Values.spark.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.spark.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.spark.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ .Values.spark.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      {{- if .Values.spark.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ .Values.spark.activeDeadlineSeconds }}
+      {{- end}}
+      {{- if .Values.spark.ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ .Values.spark.ttlSecondsAfterFinished }}
+      {{- end }}
+      template:
+        metadata:
+          {{- if .Values.spark.podAnnotations }}
+          annotations:
+            {{- toYaml .Values.spark.podAnnotations | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "jaeger.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: spark
+            {{- if .Values.spark.podLabels }}
+            {{- toYaml .Values.spark.podLabels | nindent 12 }}
+            {{- end }}
+        spec:
+          serviceAccountName: {{ template "jaeger.spark.serviceAccountName" . }}
+          {{- include "spark.imagePullSecrets" . | nindent 10 }}
+          securityContext:
+            {{- toYaml .Values.spark.podSecurityContext | nindent 12 }}
+          containers:
+          - name: {{ include "jaeger.fullname" . }}-spark
+            image: {{ include "spark.image" . }}
+            imagePullPolicy: {{ .Values.spark.image.pullPolicy }}
+            args:
+            {{- if .Values.spark.cmdlineParams }}
+              {{ include "extra.cmdArgs" ( dict "cmdlineParams" .Values.spark.cmdlineParams ) | nindent 14  }}
+            {{- end }}
+            env:
+              # TODO: is this actually used by spark?
+              - name: STORAGE
+                value: {{ .Values.storage.type }}
+                # TODO: a lot of the storage values are only used here...
+              {{- include "storage.env" . | nindent 14 }}
+            # Elasticsearch configuration (ES_NODES, ES_NODES_WAN_ONLY) must be provided via extraEnv
+            {{- if .Values.spark.extraEnv }}
+              {{- toYaml .Values.spark.extraEnv | nindent 14 }}
+            {{- end }}
+            {{- if eq .Values.storage.type "cassandra" }}
+              - name: CASSANDRA_CONTACT_POINTS
+                value: {{ include "cassandra.contact_points" . }}
+            {{- end }}
+            resources:
+              {{- toYaml .Values.spark.resources | nindent 14 }}
+            {{- if or .Values.spark.extraConfigmapMounts .Values.spark.extraSecretMounts }}
+            volumeMounts:
+            {{- range .Values.spark.extraConfigmapMounts }}
+              - name: {{ .name }}
+                mountPath: {{ .mountPath }}
+                subPath: {{ .subPath }}
+                readOnly: {{ .readOnly }}
+            {{- end }}
+            {{- range .Values.spark.extraSecretMounts }}
+              - name: {{ .name }}
+                mountPath: {{ .mountPath }}
+                subPath: {{ .subPath }}
+                readOnly: {{ .readOnly }}
+            {{- end }}
+            {{- end }}
+            securityContext:
+              {{- toYaml .Values.spark.securityContext | nindent 14 }}
+          restartPolicy: OnFailure
+          {{- if or .Values.spark.extraConfigmapMounts .Values.spark.extraSecretMounts }}
+          volumes:
+          {{- range .Values.spark.extraConfigmapMounts }}
+            - name: {{ .name }}
+              configMap:
+                name: {{ .configMap }}
+          {{- end }}
+          {{- range .Values.spark.extraSecretMounts }}
+            - name: {{ .name }}
+              secret:
+                secretName: {{ .secretName }}
+          {{- end }}
+          {{- end }}
+        {{- with .Values.spark.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- with .Values.spark.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.spark.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+{{- end -}}
