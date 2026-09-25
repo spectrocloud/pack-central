@@ -7,8 +7,8 @@ pack:
     "nodeprep-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
   content:
     images:
-      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.0-agent
-      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.0-controller
+      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.1-agent
+      - image: ghcr.io/spectrocloud/fde-public/ai-nodeprep:1.0.1-controller
 
 charts:
   nodeprep:

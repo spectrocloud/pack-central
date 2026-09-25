@@ -10,12 +10,12 @@
     "all"
   ],
   "charts": [
-    "charts/nodeprep-1.0.0.tgz"
+    "charts/nodeprep-1.0.1.tgz"
   ],
   "displayName": "AI Nodeprep",
   "layer": "addon",
   "name": "ai-nodeprep",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "constraints": {
     "dependencies": [
       {
