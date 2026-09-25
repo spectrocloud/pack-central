@@ -1,0 +1,30 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "docsURL": "",
+    "source": "spectrocloud",
+    "architecture": "amd64",
+    "airgap": "true"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/nodeprep-1.0.1.tgz"
+  ],
+  "displayName": "AI Nodeprep",
+  "layer": "addon",
+  "name": "ai-nodeprep",
+  "version": "1.0.1",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.34",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
