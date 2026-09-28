@@ -1,0 +1,20 @@
+# Overall default image repository. (The default tag is .Chart.AppVersion.)
+defaultImageRepository: "ghcr.io/emissary-ingress/apiext"
+
+# Set enableLegacyVersions to true to include the conversion webhook and the
+# v2 CRDs.
+enableLegacyVersions: false
+
+# Set both enableLegacyVersions and enableV1 to true to include the v1 CRDs too.
+# enableV1 has no effect if enableLegacyVersions is not true.
+enableV1: false
+
+emissary:
+  namespace: emissary
+
+apiext:
+  # set to override repository for apiext Docker image
+  repository: ""
+  # set to override image tag for apiext Docker image
+  tag: ""
+  pullPolicy: IfNotPresent
