@@ -1,0 +1,80 @@
+# VSS Platform presets for the VSS 3.x NIMs pack (cosmos VLM NIM + vss-rt-embed).
+#
+# ⚠️ OPERATOR CONTRACT: select the SAME "VSS Platform" preset here as in EVERY other
+#    VSS 3.x pack in the profile (data-infrastructure records the choice in the
+#    vss-platform ConfigMap; it has no presets and is platform-invariant). Palette does
+#    NOT coordinate presets across packs. See P1-P5-IMPLEMENTATION.md.
+#
+# This pack has NO per-platform image variance: the cosmos VLM is a /nim/ image and
+# vss-rt-embed is a vss-core/* image, and per BASE-SPEC NEITHER has a -sbsa variant
+# (only the VIOS services + rtvi-vlm do). So no preset flips an image tag. The only real
+# per-platform difference for this pack is the cosmos NIM memory env — and only the
+# DGX-SPARK (shared-GPU) values are grounded in the source (hw-DGX-SPARK-shared.env);
+# they are the values.yaml defaults. Non-Spark cosmos env is NOT grounded → those presets
+# leave the defaults and are marked (unvalidated). vss-rt-embed stays enabled:false
+# (SEARCH-only) in every preset.
+#
+# DGX-SPARK is the default and the only migration target (UNVALIDATED — nothing here has
+# been hardware-tested; verify NGC tags against an authenticated registry first).
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, arm64) — cosmos shared-GPU env (migration target)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      # Grounded DGX-SPARK shared-GPU cosmos env (= values.yaml defaults, re-asserted).
+      cosmos:
+        nimKvcachePercent: "0.4"
+        nimMaxModelLen: "16384"
+        nimMaxNumSeqs: "4"
+        nimDisableCudaGraph: "1"
+      rtviEmbed:
+        enabled: false
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
+
+  - name: "H100"
+    displayName: "H100 (x86 dGPU) (unvalidated — cosmos env not grounded)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
+
+  - name: "L40S"
+    displayName: "L40S (x86 dGPU) (unvalidated — cosmos env not grounded)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
+
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell (x86 dGPU) (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
+
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (arm64, iGPU) (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU (arm64) (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      rtviEmbed:
+        enabled: false
