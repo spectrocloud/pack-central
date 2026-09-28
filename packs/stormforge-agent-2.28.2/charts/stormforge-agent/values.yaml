@@ -1,0 +1,419 @@
+##
+## StormForge Agent Settings
+##
+
+#########################
+## BEGIN REQUIRED VALUES
+
+# clusterName is the unique name for the cluster the agent is installed on
+clusterName: ""
+# authorization values will be supplied by `stormforge create auth`, or obtained
+# using the StormForge web app.
+authorization:
+  issuer: "https://api.stormforge.io/"
+  clientID: ""
+  clientSecret: ""
+## END REQUIRED VALUES
+#########################
+
+# proxyUrl should be set to a valid HTTPS_PROXY value, or "" for none. Use when
+# a proxy is required to reach *.stormforge.io. E.g. https://proxy.example.com/
+proxyUrl: ""
+# noProxy should be set to a valid NO_PROXY value, or "" for none. This
+# parameter ensures that the configured proxy (if present) is not used when
+# scraping local k8s nodes for cadvisor metrics. All private address ranges are
+# excluded from proxying by default.
+noProxy: "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+# clusterDefaultsAutoDeployExemptNamespaces defines a list of namespaces for which
+# the auto-deploy default setting, defined in cluster-defaults, will be ignored.
+# To auto-deploy to namespaces in this list, you must enable auto-deploy on the
+# namespace itself, or on individual workloads. This is a list of regular
+# expressions to be matched against namespace names.
+clusterDefaultsAutoDeployExemptNamespaces:
+- "^kube-system$"
+- "^openshift.*"
+# clusterDefaultConfig specifies the default optimization settings to use for
+# workloads in the cluster. If none are set, the cluster-defaults ConfigMap
+# will not be managed by Helm.
+
+# clusterDefaultConfig:
+#   schedule: "P1D"
+#   autoDeploy: "false"
+#   cpuOptimizationGoal: "balanced"
+#   memoryOptimizationGoal: "balanced"
+#   containersCpuOptimizationPolicy: "RequestsAndLimits"
+#   containersCpuRequestsMin: "20m"
+#   containersCpuRequestsMax: "16000m"
+#   containersCpuLimitsMin: "2000m"
+#   containersCpuLimitsMax: "16000m"
+#   containersCpuLimitsLimitRequestRatio: "2.0"
+#   containersMemoryOptimizationPolicy: "RequestsAndLimits"
+#   containersMemoryRequestsMin: "64Mi"
+#   containersMemoryRequestsMax: "32Gi"
+#   containersMemoryLimitsMin: "512Mi"
+#   containersMemoryLimitsMax: "64Gi"
+#   containersMemoryLimitsLimitRequestRatio: "2.0"
+
+# workloadResourceTypes defines CRD workload types for which support is not
+# built-in to StormForge. Workload resource types are types that StormForge
+# should recognize as a workload. Built-in examples of this are Deployments
+# (group: apps) and Rollouts (group: argoproj.io).
+#
+# workloadResourceTypes:
+# - group: example.com
+#   kind: ExampleWorkload
+#   resource: exampleworkloads # for ClusterRole
+#   # The patchTargetTypeDefaults settings can be used to configure patch-paths that
+#   # will be used when generating patches for workloads of this type, assuming the
+#   # workload is its own patchTarget. Note that if the workload has an operator-owner,
+#   # the operator will be the patchTarget, rather than the workload itself.
+#   patchTargetTypeDefaults:
+#     live.stormforge.io/pod-template.metadata.patch-path: ""
+#     live.stormforge.io/containers.cpu.requests.patch-path: ""
+#     live.stormforge.io/containers.cpu.limits.patch-path: ""
+#     live.stormforge.io/containers.memory.requests.patch-path: ""
+#     live.stormforge.io/containers.memory.limits.patch-path: ""
+#     live.stormforge.io/containers.java.max-heap.patch-path: ""
+#     live.stormforge.io/containers.java.max-heap.patch-format: ""
+
+# ownerResourceTypes defines configuration for types that may own workloads.
+# Workload owners may need to be patched in order to apply recommended resource
+# settings. This parameter can be used to define default patch-paths for each
+# owner type, to define owner types to ignore (treat as if they do not own
+# workloads), or types at which to stop owner reference traversal, treating the
+# stopped-at type as the owner of a workload, even if additional ownerReferences
+# exist. If a workload resource type should always be treated as its own owner,
+# it should be specified in both the workloadResourceTypes list, and also in this
+# list, with stopOwnerTraversal=true.
+#
+# ownerResourceTypes:
+# - group: example.com
+#   kind: ExampleOperator
+#   resource: exampleoperators # for ClusterRole
+#   # If true, stop owner reference traversal for workloads when the search for
+#   # owner references reaches a resource of this type. This resource will be
+#   # treated as the workload owner.
+#   stopTraversal: true
+#   # If true, and if an owner of this type is found to be the owner of a workload,
+#   # disregard the owner relationship when configuring the workload. Treat the
+#   # workload as if it has no owner. The workload will be its own patchTarget.
+#   ignoreOwner: true
+#   # When this type owns a workload, it will be the workload's patchTarget.
+#   # The patchTargetTypeDefaults settings can be used to configure patch-paths that
+#   # will be used when generating patches for the owner.
+#   patchTargetTypeDefaults:
+#     live.stormforge.io/pod-template.metadata.patch-path: ""
+#     live.stormforge.io/containers.cpu.requests.patch-path: ""
+#     live.stormforge.io/containers.cpu.limits.patch-path: ""
+#     live.stormforge.io/containers.memory.requests.patch-path: ""
+#     live.stormforge.io/containers.memory.limits.patch-path: ""
+#     live.stormforge.io/containers.java.max-heap.patch-path: ""
+#     live.stormforge.io/containers.java.max-heap.patch-format: ""
+
+# imagePullSecrets should be defined when using an internal registry that
+# requires the use of an image pull secret.
+
+# imagePullSecrets:
+# - name: secret-name
+
+# `clusterLabels` specifies key-value labels to associate with the cluster in the StormForge API.
+# These labels are synchronized to the StormForge API at agent startup.
+#
+# clusterLabels:
+#   env: production
+#   region: us-east-1
+clusterLabels: {}
+# `clusterProvider` specifies the cloud provider for this cluster (e.g., aws, gcp, azure, vsphere).
+# When set, auto-detection is skipped and this value is used directly.
+# If not set, the agent will auto-detect the provider from node providerID fields.
+#
+# clusterProvider: aws
+clusterProvider: ""
+# `commonMetaLabels` specifies custom labels that can be applied to StormForge components
+# commonMetaLabels:
+#   ci: "true"
+#   env: "ci"
+#   owner: infra
+commonMetaLabels: {}
+# `commonPodSecurityContext` specifies a custom securityContext to apply to all
+# StormForge pods. If non-empty, this replaces the default securityContext.
+# Set this value to `null` to remove securityContext from pods entirely.
+commonPodSecurityContext: {}
+# `commonContainerSecurityContext` specifies a custom securityContext to apply to all StormForge containers
+commonContainerSecurityContext: {}
+workload:
+  image:
+    repository: registry.stormforge.io/optimize/workload-agent
+    pullPolicy: IfNotPresent
+    tag: "2.28.2"
+  # `podAnnotations` specifies annotations to be applied to the stormforge-agent-workload-controller pod
+  # podAnnotations:
+  #   pod: annotation
+  podAnnotations: {}
+  # `deploymentAnnotations` specifies annotations to be applied to the stormforge-agent-workload-controller deployment
+  #
+  # deploymentAnnotations:
+  #   example.com/annotation-key: value
+  #
+  deploymentAnnotations:
+    live.stormforge.io/learning-period: P1D
+    live.stormforge.io/auto-deploy: Enabled
+  # `configMapAnnotations` specifies annotations to be applied to the stormforge-agent-workload-controller configMap
+  # configMapAnnotations:
+  #   configmap: annotation
+  configMapAnnotations: {}
+  # `serviceAnnotations` specifies annotations to be applied to the stormforge-agent-workload-controller service
+  # serviceAnnotations:
+  #   service: annotation
+  serviceAnnotations: {}
+  # `resources` specifies the request and limit settings for the workload
+  # controller. StormForge can self-optimize these settings once it is up and
+  # running.
+  #
+  # Example:
+  #
+  #   resources:
+  #     requests:
+  #       cpu: 400m
+  #       memory: 128Mi
+  #     limits:
+  #       cpu: "2"
+  #       memory: 4Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+  # initResources defines the resource settings for init and sidecar containers
+  # in the workload-controller pod.
+  initResources:
+    requests:
+      cpu: 5m
+      memory: 20Mi
+  debug: false
+  # `workloadSyncInterval` sets the interval the agent will perform
+  # a regular sync/heartbeat against the StormForge API
+  # for all active workloads on the cluster.
+  # This is used for garbage collection of the workloads created
+  # on StormForge API
+  # Default is 50m (50 minutes). It can be in days, hours, min and seconds
+  workloadSyncInterval: 50m
+  # `apiConfigSyncInterval` sets the interval the agent will poll the
+  # StormForge API for the cluster's ClusterOptimizationConfiguration.
+  # Default is 60s. It can be in days, hours, min and seconds
+  apiConfigSyncInterval: 60s
+  # `collectLabels` dictates the agent to retrieve labels of the
+  # cluster's workloads when running in auto discovery mode.
+  # Default is true.
+  collectLabels: true
+  # `inactiveWorkloadsFC` dictates the agent to garbage collect inactive workloads
+  # on the StormForge API backend on each workloadSyncInterval.
+  # Default is true.
+  inactiveWorkloadsGC: true
+  # `watchWorkloadResources` tells the agent to proactively watch
+  # workloads for better support of scale zero replicas. Default is true.
+  watchWorkloadResources: true
+prom:
+  image:
+    # overwrite the following with `prom/prometheus` to go to Docker Hub instead
+    # or `registry.hub.docker.com/prom/prometheus`
+    repository: quay.io/prometheus/prometheus
+    pullPolicy: IfNotPresent
+    tag: v3.12.0
+  # `podAnnotations` specifies annotations to be applied to the stormforge-agent-metrics-forwarder pod
+  # podAnnotations:
+  #   pod: annotation
+  podAnnotations: {}
+  # `deploymentAnnotations` specifies annotations to be applied to the stormforge-agent-metrics-forwarder deployment.
+  #
+  # deploymentAnnotations:
+  #   example.com/annotation-key: value
+  #
+  deploymentAnnotations:
+    live.stormforge.io/learning-period: P1D
+    live.stormforge.io/auto-deploy: Enabled
+  # `configMapAnnotations` specifies annotations to be applied to the stormforge-agent-metrics-forwarder configMap
+  # configMapAnnotations:
+  #   configmap: annotation
+  configMapAnnotations: {}
+  # `resources` specifies the request and limit settings for the Prometheus
+  # forwarder. StormForge can self-optimize these settings once it is up and
+  # running.
+  #
+  # Example:
+  #
+  #   resources:
+  #     requests:
+  #       cpu: 200m
+  #       memory: 500Mi
+  #     limits:
+  #       cpu: "2"
+  #       memory: 4Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+  # initResources defines the resource settings for init and sidecar containers
+  # in the metrics-forwarder pod.
+  initResources:
+    requests:
+      cpu: 5m
+      memory: 20Mi
+  remoteWriteUrl: "https://in.stormforge.io/prometheus/write"
+  scrapeInterval: 30s
+  scrapeTimeout: 16s
+  # These should usually be left at the Prometheus defaults (as of 2.45 version)
+  # remoteTimeout: 30s
+  # retentionMaxTime: 2h
+  # retentionMinTime: 5m
+  remoteWriteQueueConfig:
+    retry_on_http_429: true
+    # These should usually be left at the defaults; when using a constrained uplink
+    # it may be worth reducing the sizes from the defaults to something like the following
+    # max_shards: 200
+    # capacity: 2500
+    # max_samples_per_send: 500
+  # honorTimestamps is a boolean value used to configure the `honor_timestamps`
+  # configuration in the Prometheus agent. When true, Prometheus respects the
+  # timestamps present in scraped data. When false, Prometheus disregards them
+  # and substitutes a less accurate estimate in their stead (the time at which
+  # Prometheus scraped the data).
+  honorTimestamps: true
+  # prom.extraCAdvisorMetrics defines a list of additional metrics to collect from cAdvisor,
+  # beyond the required ones. Only modify this setting if directed to by StormForge support.
+  #
+  # extraCAdvisorMetrics:
+  # - container_oom_events_total
+
+  # prom.extraWorkloadControllerMetrics defines a list of additional metrics to collect from the
+  # workload controller, beyond the required ones. Only modify this setting if directed to by StormForge support.
+  extraWorkloadControllerMetrics:
+  - .*
+# openshift should be set to true when deploying the StormForge Agent on OpenShift.
+openshift: false
+# gkeAutopilot should be set to true when deploying the StormForge Agent on GKE in Autopilot mode.
+gkeAutopilot: false
+# `clusterData` enables node affinity
+# Default is true.
+clusterData: true
+# `enableCostMetrics` enables the collection of k8's cost-related data.
+# Default is false
+enableCostMetrics: false
+# `nodeCPUPressureDetection` enables detection of node-level CPU pressure via PSI metrics.
+# Requires Linux kernel 4.20+, cgroup v2, and KubeletPSI feature gate (default in Kubernetes v1.34+).
+# Default is false
+nodeCPUPressureDetection: false
+# manageAuthSecret specifies whether or not to create and manage the
+# authorization secret. The auth secret is required in order for the agent to
+# work correctly. Auth secret management should only be disabled if external
+# automation is in place to manage it. This option may be set to false by
+# customers who wish to use 3rd party automation tools to manage and rotate the
+# agent credentials.
+manageAuthSecret: true
+# authSecret optionally specifies the name of the secret containing the agent
+# authorization credentials. Defaults to {{ .Release.Name }}-stormforge-agent-auth.
+# authSecret: ""
+
+# envSecret optionally specifies the name of the secret containing the agent
+# environment configuration. Defaults to {{ .Release.Name }}-stormforge-agent-env.
+# envSecret: ""
+
+# jvmWorkloadConfigs defines configuration for identifying and scraping metrics
+# for JVM workloads.
+#
+# jvmWorkloadConfigs:
+# - labelSelector: "example.com/jvm-runtime=true,example.com/environment in (dev, prod)"
+#   metricsPort:
+#     scheme: ""        # Optional string. Scheme port uses. Default is "http"
+#     matchNumber: 0    # Optional number. Matches port number to scrape metrics from
+#     matchName: ""     # Optional string. Matches port name to scrape metrics from
+#   metricsPath: ""     # Default is "/metrics"
+#   authorization: {}   # Optional Prometheus scrape job authorization config.
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+# `featureGates` specifies flags for enabling or disabling support for optional
+# StormForge features, which may not be enabled by default.
+featureGates:
+  optimizeCronJobs: false
+  optimizeSparkOperator: false
+  optimizeGithubARC: false
+rbac:
+  # If set to false, user needs to handle all rbac needed for agent + workload manager
+  # There is a minimum of rules for metrics required, see template
+  create: true
+  # Leverage k8s "view" role for resources, minimizing RBAC rules needed
+  # and creating an additional clusterrolebinding for the service account
+  useViewRole: true
+  # Here we add resources that are not part of the view role
+  # by default, we are adding CNCF KEDA and Prometheus Operator resources
+  additional: |-
+    # In this section, we add resources that are not usually part of the view role
+    - apiGroups:
+      - monitoring.coreos.com
+      resources:
+      - prometheuses
+      - alertmanagers
+      verbs:
+      - get
+      - list
+      - watch
+    - apiGroups:
+      - keda.sh
+      resources:
+      - scaledobjects
+      verbs:
+      - get
+      - list
+      - watch
+    - apiGroups:
+      - argoproj.io
+      resources:
+      - rollouts
+      verbs:
+      - get
+      - list
+      - watch
+networkPolicies:
+  # Set to true to create network policies for component-to-component agent
+  # communication. This should be enabled for clusters that use default-deny
+  # ingress network policies.
+  create: false
+  # Additional ingress rules for all pods
+  additionalIngressRules: []
+  # Additional egress rules for all pods. If your cluster uses a default-deny egress
+  # policy, you will need to define required egress rules here.
+  additionalEgressRules: []
+  # By default, egress rules are not created
+  # If you want to restrict outbound traffic, here is an example
+  # additionalEgressRules:
+  # - ports:
+  #   - protocol: TCP
+  #     port: 443
+  # - ports:
+  #   - protocol: TCP
+  #     port: 6443 # required for kube-apiserver access
+  # - to:
+  #   - namespaceSelector:
+  #       matchLabels:
+  #         kubernetes.io/metadata.name: kube-system
+  #     podSelector:
+  #       matchLabels:
+  #         k8s-app: kube-dns
+  #   ports:
+  #   - protocol: UDP
+  #     port: 53
+  # - to:
+  #   - namespaceSelector:
+  #       matchLabels:
+  #         kubernetes.io/metadata.name: stormforge-system
+  #     podSelector: {}
+# Volume for WAL
+storageVolumeSize: 2G
+# Scheduling and priority configurations to add to all pods
+priorityClassName: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}
+stormforge:
+  address: "https://api.stormforge.io/"

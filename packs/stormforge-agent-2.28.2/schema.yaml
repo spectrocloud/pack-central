@@ -1,0 +1,8 @@
+charts.stormforge-agent.clusterName:
+  schema: '{{ required }}'
+
+charts.stormforge-agent.authorization.clientID:
+  schema: '{{ required }}'
+
+charts.stormforge-agent.authorization.clientSecret:
+  schema: '{{ required | format "${password}" }}'

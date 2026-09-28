@@ -1,0 +1,28 @@
+{
+  "addonType": "monitoring",
+  "annotations": {},
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "StormForge Agent",
+  "eol": "",
+  "group": "",
+  "kubeManifests": [],
+  "charts": [
+    "charts/stormforge-agent-2.28.2.tgz"
+  ],
+  "layer": "addon",
+  "name": "stormforge-agent",
+  "version": "2.28.2",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

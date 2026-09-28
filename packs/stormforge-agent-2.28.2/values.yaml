@@ -1,0 +1,179 @@
+pack:
+  namespace: "stormforge-system"
+  content:
+    images:
+      - image: registry.stormforge.io/optimize/workload-agent:2.28.2
+      - image: quay.io/prometheus/prometheus:v3.12.0
+
+charts:
+  stormforge-agent:
+    # -----------------------------------------------------------------------------
+    # REQUIRED — set these before deploying
+    # -----------------------------------------------------------------------------
+
+    # Unique name that identifies this cluster in the StormForge platform
+    clusterName: ""
+
+    authorization:
+      issuer: "https://api.stormforge.io/"
+      # OAuth2 client ID obtained from the StormForge web app or `stormforge create auth`
+      clientID: ""
+      # OAuth2 client secret (store in a sealed-secret or external-secrets object)
+      clientSecret: ""
+
+    # Namespaces exempt from the cluster-level auto-deploy default (regex list)
+    clusterDefaultsAutoDeployExemptNamespaces:
+    - "^kube-system$"
+    - "^openshift.*"
+
+    # -----------------------------------------------------------------------------
+    # Workload controller — observes and applies recommendations
+    # -----------------------------------------------------------------------------
+    workload:
+      image:
+        repository: registry.stormforge.io/optimize/workload-agent
+        pullPolicy: IfNotPresent
+        tag: "2.28.2"
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+      # Controls StormForge self-optimization of the agent deployment itself
+      deploymentAnnotations:
+        live.stormforge.io/learning-period: P1D
+        live.stormforge.io/auto-deploy: Enabled
+      workloadSyncInterval: 50m
+      apiConfigSyncInterval: 60s
+      collectLabels: true
+      inactiveWorkloadsGC: true
+      watchWorkloadResources: true
+
+    # -----------------------------------------------------------------------------
+    # Prometheus metrics forwarder — scrapes cAdvisor / kube-state-metrics
+    # -----------------------------------------------------------------------------
+    prom:
+      image:
+        # Swap to `prom/prometheus` for Docker Hub
+        repository: quay.io/prometheus/prometheus
+        pullPolicy: IfNotPresent
+        tag: v3.12.0
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+      # Controls StormForge self-optimization of the metrics-forwarder deployment
+      deploymentAnnotations:
+        live.stormforge.io/learning-period: P1D
+        live.stormforge.io/auto-deploy: Enabled
+      remoteWriteUrl: "https://in.stormforge.io/prometheus/write"
+      scrapeInterval: 30s
+      scrapeTimeout: 16s
+      honorTimestamps: true
+
+    # -----------------------------------------------------------------------------
+    # Proxy / network
+    # -----------------------------------------------------------------------------
+    # Set to a valid HTTPS_PROXY value if a proxy is required to reach *.stormforge.io
+    proxyUrl: ""
+    noProxy: "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+    # -----------------------------------------------------------------------------
+    # Cluster metadata
+    # -----------------------------------------------------------------------------
+    # Labels synced to the StormForge API at agent startup
+    clusterLabels: {}
+    #   env: production
+    #   region: us-east-1
+
+    # Cloud provider — auto-detected when empty (aws | gcp | azure | vsphere)
+    clusterProvider: ""
+
+    # -----------------------------------------------------------------------------
+    # Platform flags
+    # -----------------------------------------------------------------------------
+    openshift: false
+    gkeAutopilot: false
+    # Enables node affinity collection
+    clusterData: true
+    enableCostMetrics: false
+    nodeCPUPressureDetection: false
+
+    # Set to false when an external tool (Vault, ESO) manages the auth secret
+    manageAuthSecret: true
+    # authSecret: ""   # name of the externally managed secret (requires manageAuthSecret: false)
+
+    # -----------------------------------------------------------------------------
+    # RBAC
+    # -----------------------------------------------------------------------------
+    serviceAccount:
+      create: true
+      name: ""
+      annotations: {}
+
+    rbac:
+      create: true
+      useViewRole: true
+      # Extra RBAC rules appended to the generated ClusterRole
+      additional: |-
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheuses
+          - alertmanagers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - keda.sh
+          resources:
+          - scaledobjects
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - rollouts
+          verbs:
+          - get
+          - list
+          - watch
+
+    # -----------------------------------------------------------------------------
+    # Feature gates (disabled by default)
+    # -----------------------------------------------------------------------------
+    featureGates:
+      optimizeCronJobs: false
+      optimizeSparkOperator: false
+      optimizeGithubARC: false
+
+    # -----------------------------------------------------------------------------
+    # Scheduling
+    # -----------------------------------------------------------------------------
+    priorityClassName: ""
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+
+    # Persistent volume for Prometheus WAL
+    storageVolumeSize: 2G
+
+    # Network policies (enable on clusters with default-deny ingress)
+    networkPolicies:
+      create: false
+      additionalIngressRules: []
+      additionalEgressRules: []
+      # Example egress rules when create: true and cluster has default-deny egress:
+      # additionalEgressRules:
+      # - ports:
+      #   - protocol: TCP
+      #     port: 443
+      # - ports:
+      #   - protocol: TCP
+      #     port: 6443   # kube-apiserver
+
+    # StormForge API base address — override only in air-gap environments
+    stormforge:
+      address: "https://api.stormforge.io/"

@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 2.28.2
+description: Bundled StormForge Agent and Prometheus in Agent Mode capturing telemetry
+  for StormForge systems.
+home: https://www.stormforge.io/
+icon: https://app.stormforge.io/img/logo.png
+kubeVersion: '>= 1.16.x-0'
+maintainers:
+- name: grambot
+name: stormforge-agent
+type: application
+version: 2.28.2
