@@ -71,6 +71,6 @@ c9f6f8d1c46e6bcbde37938b891053075174f1bc:packs/nvidia-nvsentinel-v1.19.0/charts/
 8f96753560fe5c430a59971bb1161af69ec9bfcb:packs/nvidia-network-operator-26.7.0/charts/network-operator/charts/sriov-network-operator/values.yaml:private-key:94
 8f96753560fe5c430a59971bb1161af69ec9bfcb:packs/nvidia-network-operator-26.7.0/charts/network-operator/values.yaml:private-key:140
 8f96753560fe5c430a59971bb1161af69ec9bfcb:packs/nvidia-network-operator-26.7.0/values.yaml:private-key:179
-4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-v1.25.0/charts/nvsentinel/charts/mongodb-store/charts/psmdb-db/values.yaml:generic-api-key:896
-4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-v1.25.0/charts/nvsentinel/charts/mongodb-store/charts/psmdb-db/values.yaml:generic-api-key:899
-4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-v1.25.0/charts/nvsentinel/values-preflight-kube.yaml:generic-api-key:38
+4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-1.25.0/charts/nvsentinel/charts/mongodb-store/charts/psmdb-db/values.yaml:generic-api-key:896
+4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-1.25.0/charts/nvsentinel/charts/mongodb-store/charts/psmdb-db/values.yaml:generic-api-key:899
+4b60aa98584499bb2c374325ca7d2bca65a9e8fb:packs/nvidia-nvsentinel-1.25.0/charts/nvsentinel/values-preflight-kube.yaml:generic-api-key:38
