@@ -12,10 +12,12 @@ pack:
     k8sdatastore-crds: k8sdatastore-crds
     kubernetes-object-monitor: kubernetes-object-monitor
     labeler: labeler
+    lifecycle-manager: lifecycle-manager
     metadata-collector: metadata-collector
     mongodb-store: mongodb-store
     nic-health-monitor: nic-health-monitor
     node-drainer: node-drainer
+    nvcre-certification-monitor: nvcre-certification-monitor
     postgresql: postgresql
     preflight: preflight
     slurm-drain-monitor: slurm-drain-monitor
