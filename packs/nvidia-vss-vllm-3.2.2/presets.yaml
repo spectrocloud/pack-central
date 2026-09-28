@@ -1,0 +1,144 @@
+# VSS 3.x Platform profiles for the standalone vLLM LLM backend.
+#
+# ⚠️ OPERATOR CONTRACT: select the SAME "VSS Platform" preset here as in EVERY
+#    other VSS 3.x pack (data-infrastructure records the choice in the in-cluster
+#    vss-platform ConfigMap). In 3.x this vLLM pack is the LLM for ALL platforms
+#    (no NIM-LLM), so it is present in every profile — there is NO include/omit
+#    hazard, but the preset must still match across packs for a consistent cluster.
+#
+# DGX-SPARK is the default and the only migration target; all other rows are
+# authored from the 3.1.0 blueprint/compose and are UNVALIDATED — verify the
+# NGC/GHCR image tags, model ids, and tool-call-parser flags against an
+# authenticated registry before use.
+#
+# Per-pack note: the vLLM image is NOT a vss-core/* service with a -sbsa variant
+# (it is multiarch on the same nvcr.io/nvidia/vllm:25.12.post1-py3 tag for x86 and
+# SBSA/arm64), so the DGX-SPARK -sbsa imageTag flip done in the core/nims/ingress
+# packs does NOT apply here — DGX-SPARK simply sets the nemotron-nano-9b-v2-fp8
+# defaults. Only AGX-THOR/IGX-THOR change the image (to the Jetson Thor build).
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, arm64, sm_121) — nemotron-nano-9b-v2-fp8"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.5"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.5"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  - name: "H100"
+    displayName: "H100 (x86, dGPU) — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.8"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  - name: "L40S"
+    displayName: "L40S (x86, dGPU) — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.8"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell (sm_120) — nemotron-nano-9b-v2-fp8 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "nvcr.io/nvidia/vllm:25.12.post1-py3"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.5"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  # ── Jetson AGX/IGX Thor (arm64 Tegra/iGPU). UNVALIDATED. ─────────────────────
+  # Uses the Jetson-specific vLLM image; the host's NVIDIA container runtime
+  # injects the L4T/Tegra libs+devices (no manual hostPath mounts). A Thor cluster
+  # also needs runtimeClassName nvidia on the GPU pod — this manifest has no
+  # extraPodSpecs/runtimeClassName value path, so that lever lives in the
+  # cluster-profile (default nvidia containerd runtime) or a manifest edit, not in
+  # this preset. The floating jetson tag must be verified before use.
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (arm64, iGPU) — nano-9b-v2-fp8 jetson image (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.25"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU (arm64) — nano-9b-v2-fp8 jetson image (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      manifests:
+        llm-vllm:
+          replicas: 1
+          gpuCount: 1
+          image: "ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor"
+          hfModel: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+          tensorParallel: "1"
+          gpuMemUtil: "0.25"
+          mambaSsmCacheDtype: "float32"
+          toolCallParser: "nemotron_json"
+          extraArgs: []
