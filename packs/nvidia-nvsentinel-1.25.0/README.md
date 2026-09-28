@@ -325,3 +325,10 @@ Apache License 2.0. See [LICENSE](LICENSE).
 ---
 
 *Built with ❤️ by NVIDIA for GPU infrastructure reliability*
+
+---
+
+> **Note for Spectro Cloud pack maintainers:** this pack carries hand-applied
+> changes to the upstream chart. See
+> [LOCAL-MODIFICATIONS.md](LOCAL-MODIFICATIONS.md) — they must be re-applied when
+> the chart is updated to a new version.

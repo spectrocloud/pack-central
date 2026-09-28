@@ -501,6 +501,32 @@ nodeConditionCleanup:
 postgresql:
   enabled: false
 
+# MongoDB subchart image overrides.
+# The vendored Bitnami MongoDB chart still pins its externalAccess init containers
+# (autoDiscovery, dnsCheck) and volumePermissions to the free "bitnami/" namespace.
+# Bitnami removed the immutable tags from that namespace, leaving only ":latest", so
+# those references 404 at pull time. The reachable equivalents live under
+# "bitnamilegacy/", which is what the pack's image list mirrors. These overrides
+# repoint the render at them. The features themselves stay disabled by default.
+mongodb-store:
+  mongodb:
+    externalAccess:
+      autoDiscovery:
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/kubectl
+          tag: "1.31.2-debian-12-r3"
+      dnsCheck:
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/os-shell
+          tag: "12-debian-12-r32"
+    volumePermissions:
+      image:
+        registry: docker.io
+        repository: bitnamilegacy/os-shell
+        tag: "12-debian-12-r32"
+
 # PodMonitor configuration for Prometheus Operator
 # Disable this if using standard Prometheus with annotations instead
 podMonitor:
