@@ -1,0 +1,108 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS 3.x PLATFORM MATRIX (canonical — keep identical across all VSS 3.x packs) ─
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in every VSS 3.x pack. In 3.x ALL FIVE packs are in every profile
+# │ (data-infrastructure + nims + vllm + core + ingress) — the vLLM pack is the LLM
+# │ for all platforms (no NIM-LLM in 3.x), so there is no include/omit hazard.
+# │ 3.x decode is NATIVE (VIOS/rt-cv); there is NO --disable-decoding.
+# │
+# │ Platform          LLM (vLLM model)        VLM            decode   vss-core tags
+# │ DGX-SPARK         nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0-sbsa
+# │ OTHER             nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0
+# │ H100              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ L40S              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ RTXPRO6000BW      nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ AGX-THOR/IGX-THOR nano-9b-fp8 (jetson img) rt-vlm        Tegra*   3.1.0 + runtimeClassName
+# │ * Tegra: runtimeClassName nvidia via extraPodSpecs; NVIDIA container runtime injects L4T.
+# │ Only DGX-SPARK is the migration target; all rows UNVALIDATED (no hardware, unverified tags).
+# └──────────────────────────────────────────────────────────────────────────────
+#
+# NVIDIA VSS 3.x ingress / routing layer (manifest-only pack, install-priority 18).
+#
+# Four services, all multiarch nvcr.io/nvidia/vss-core/* @ 3.1.0 (NONE have a -sbsa
+# variant — so the DGX-SPARK preset does not flip any imageTag here; it merely keeps
+# the multiarch 3.1.0 tag):
+#   - envoy-proxy        :10000  xDS-driven stream router (reads streamid header)
+#   - sdr                :4003   envoy xDS control plane + Redis stream reconciler
+#   - vss-vios-ingress   :30888  nginx VST data-plane front door + baked VST UI
+#   - vss-proxy          :7777   single public front door (no_proxy-by-default)
+#
+# ✅ RESOLVED (sdr docker.sock -> k8s): the sdr binary /wdm/dist/sdr is a PyInstaller
+# Python app (WDM) that bundles BOTH the docker SDK and the full kubernetes client
+# (incluster_config, CoreV1/AppsV1, watch). lib/podprovisioner/kubernetes/cluster.py
+# picks the provisioner from env WDM_CLUSTER_TYPE (lowercased): "k8s" -> in-cluster
+# API client, "k8s-headless" -> DNS+nginx router, else docker. We set WDM_CLUSTER_TYPE=k8s
+# and give sdr a ServiceAccount with the exact RBAC its k8sclient uses (pods get/list/
+# watch; deployments+statefulsets get/list/patch; statefulsets/scale patch; configmaps
+# get/update). No docker.sock. See templates/sdr.yaml + the sdr.* values below.
+#
+# ⚠️ vss-proxy is no_proxy-by-default (BASE selects PROXY_MODE=no_proxy). The presets
+# leave it as-is on every platform; it only matters once a *_proxy profile is wired.
+#
+# The manifests are Go-templated against the flat value keys below
+# (namespace / envoyProxy.* / sdr.* / vssViosIngress.* / vssProxy.*).
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "18"
+  content:
+    images:
+      # BUILD-ON-DEPLOY (0/0): only public Chainguard images are pack content. The gated
+      # envoy-proxy + vss-vios-ingress rootfs are crane-fetched as runtime DATA at deploy
+      # and run on wolfi-base via the matched-ld swap (GB10-validated).
+      - image: cgr.dev/chainguard/wolfi-base:latest
+      - image: cgr.dev/chainguard/nginx:latest
+
+# ── Flat value tree consumed by the manifests ({{ .Values.<key> }}) ────────────
+namespace: nvidia-vss
+
+# Public 0/0 base that crane-fetches + runs the gated ingress binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+
+# envoy-proxy — gated rootfs fetched at deploy, run on baseImage.
+envoyProxy:
+  gatedImage: nvcr.io/nvidia/vss-core/envoy-proxy:3.1.0
+
+# sdr (WDM) — envoy xDS control plane + Redis stream reconciler, run in NATIVE k8s mode
+# (WDM_CLUSTER_TYPE=k8s) via an in-cluster ServiceAccount instead of docker.sock. Gated
+# rootfs crane-fetched at deploy; the PyInstaller binary /wdm/dist/sdr is run on baseImage.
+# enabled=false by default (search/multi-stream routing layer); a SEARCH preset flips it on.
+#   workloadKind/workloadObjectName -> the core pack streamprocessing workload sdr scales.
+#     The Service is "streamprocessing-ms"; the Deployment is "vss-vios-streamprocessing".
+#     WDM_WL_OBJECT_NAME doubles as the Redis hash key envoy's lua reads (hget <name> <id>).
+#   redisHost/redisPort -> the data-infra redis (shared with envoy's lua routing filter).
+#   xdsPort 4003 is what envoy's xds_cluster connects to (REST). Do not change without
+#     also updating the envoy bootstrap.
+sdr:
+  enabled: false
+  gatedImage: nvcr.io/nvidia/vss-core/sdr:3.1.0
+  workloadKind: Deployment
+  workloadObjectName: streamprocessing-ms
+  maxReplicas: "1"
+  xdsPort: 4003
+  workloadConfigPort: 30001
+  redisHost: redis
+  redisPort: "6379"
+
+# vss-vios-ingress — multiarch, 3.1.0 (no -sbsa variant).
+# hostIp/externalIp feed the nginx CORS-origin map (template __INTERNAL_IP__/__EXTERNAL_IP__
+# tokens are NOT yet substituted in the carried config — see manifest TODO; the CORS
+# allowlist will not match real client origins until these are wired). Defaults are
+# placeholders for the single-node DGX-SPARK case; set to the node's reachable address.
+# TODO(operator): set hostIp/externalIp to the node's cluster-internal / external
+# reachable IPs (or a DNS name) before exposing the VST UI to real browser clients.
+vssViosIngress:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-ingress:3.1.0
+  hostIp: ""
+  externalIp: ""
+
+# vss-proxy — single public front door. Standard public nginx image (literal).
+# no_proxy-by-default: subFilterHost/subFilterExternal feed only the /vst/ response-body
+# URL rewrite (sub_filter). Leave as "_DISABLED_" to no-op the rewrite (compose default).
+# TODO(operator): set subFilterHost/subFilterExternal to the host/external IPs if the
+# /vst/ absolute-URL rewrite is needed; otherwise leave _DISABLED_.
+vssProxy:
+  image: "cgr.dev/chainguard/nginx:latest"
+  subFilterHost: "_DISABLED_"
+  subFilterExternal: "_DISABLED_"
