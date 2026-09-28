@@ -22,13 +22,6 @@ charts:
 
     global:
 
-      # -- Internal settings used with `helm template` to generate install manifest
-      # @ignored
-      templating:
-        enabled: false
-        debug: false
-        version: ~
-
       image:
         # -- (string) Global value that allows to set a single image registry across all deployments.
         # When set, it will override any values set under `.image.registry` across the chart.
