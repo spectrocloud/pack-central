@@ -1,0 +1,45 @@
+# Pack value constraints for the VSS data-infrastructure pack.
+# Keys are full dotted paths into values.yaml. This pack is platform-invariant
+# (no "VSS Platform" presets); only the genuinely operator-tunable keys are
+# constrained here. The config-blob ConfigMaps (redis-config, postgres-config,
+# logstash-*, etc.) are populated out-of-band and are not schema keys.
+namespace:
+  schema: '{{ required | format "${string}" | hints "Kubernetes namespace for all VSS data stores (matches pack.namespace; nvidia-vss)." }}'
+
+# ── images ──────────────────────────────────────────────────────────────────────
+redis.image:
+  schema: '{{ required | format "${string}" | hints "Redis image (public, e.g. redis:8.2.2-alpine)." }}'
+postgres.image:
+  schema: '{{ required | format "${string}" | hints "Postgres image (public, e.g. postgres:17.6-alpine)." }}'
+phoenix.image:
+  schema: '{{ required | format "${string}" | hints "Arize Phoenix image (public, e.g. arizephoenix/phoenix:version-8.12.1)." }}'
+elasticsearch.image:
+  schema: '{{ format "${string}" | hints "Elasticsearch image (search/alerts only; BUILT ELK 9.x image — set to your published tag)." }}'
+kafka.image:
+  schema: '{{ format "${string}" | hints "Kafka image (search/alerts only, e.g. confluentinc/cp-kafka:8.1.1)." }}'
+kibana.image:
+  schema: '{{ format "${string}" | hints "Kibana image (search/alerts only, e.g. docker.elastic.co/kibana/kibana:9.3.0)." }}'
+logstash.image:
+  schema: '{{ format "${string}" | hints "Logstash image (search/alerts only, e.g. docker.elastic.co/logstash/logstash:9.3.0)." }}'
+
+# ── storage sizes ─────────────────────────────────────────────────────────────
+redis.dataStorageSize:
+  schema: '{{ format "${string}" | hints "Redis data PVC size (e.g. 10Gi)." }}'
+redis.logStorageSize:
+  schema: '{{ format "${string}" | hints "Redis log PVC size (e.g. 2Gi)." }}'
+postgres.dataStorageSize:
+  schema: '{{ format "${string}" | hints "Postgres data PVC size (e.g. 20Gi)." }}'
+phoenix.storageSize:
+  schema: '{{ format "${string}" | hints "Phoenix data PVC size (e.g. 5Gi)." }}'
+elasticsearch.dataStorageSize:
+  schema: '{{ format "${string}" | hints "Elasticsearch data PVC size (e.g. 30Gi)." }}'
+elasticsearch.logStorageSize:
+  schema: '{{ format "${string}" | hints "Elasticsearch log PVC size (e.g. 5Gi)." }}'
+kafka.dataStorageSize:
+  schema: '{{ format "${string}" | hints "Kafka log-dir PVC size (e.g. 20Gi)." }}'
+
+# ── misc tunables ─────────────────────────────────────────────────────────────
+kibana.publicBaseUrl:
+  schema: '{{ format "${string}" | hints "Kibana SERVER_PUBLICBASEURL (e.g. http://localhost:5601)." }}'
+logstash.streamType:
+  schema: '{{ format "${string}" | hints "Logstash STREAM_TYPE: kafka (3.x base search) or redis." }}'
