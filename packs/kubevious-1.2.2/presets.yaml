@@ -1,0 +1,20 @@
+presets:
+  - name: "disable-kubevious-ingress"
+    displayName: "Disable"
+    group: "Ingress"
+    remove: []
+    add: |
+      charts:
+        kubevious:
+          ingress:
+            enabled: false
+
+  - name: "enable-kubevious-ingress"
+    displayName: "Enable"
+    group: "Ingress"
+    remove: []
+    add: |
+      charts:
+        kubevious:
+          ingress:
+            enabled: true
