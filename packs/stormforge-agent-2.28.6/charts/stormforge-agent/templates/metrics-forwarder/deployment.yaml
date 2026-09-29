@@ -1,0 +1,223 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stormforge-agent.metricsForwarderName" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.prom.deploymentAnnotations }}
+  annotations: {{ toYaml .Values.prom.deploymentAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: {{ include "stormforge-agent.metricsForwarderComponent" . }}
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "stormforge-agent.metricsForwarderSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "stormforge-agent.metricsForwarderSelectorLabels" . | nindent 8 }}
+        {{- with .Values.commonMetaLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/metrics-forwarder/configmap.yaml") . | sha256sum | quote }}
+        checksum/env-secret: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum | quote }}
+        {{- if .Values.clusterDefaultConfig }}
+        checksum/cluster-defaults-configmap: {{ include (print $.Template.BasePath "/cluster-defaults-configmap.yaml") . | sha256sum | quote }}
+        {{- end }}
+        {{- if .Values.manageAuthSecret }}
+        checksum/auth-secret: {{ include (print $.Template.BasePath "/auth-secret.yaml") . | sha256sum | quote }}
+        {{- end }}
+        {{- if .Values.prom.podAnnotations }}
+        {{- toYaml .Values.prom.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "stormforge-agent.serviceAccountName" . }}
+      {{- with (coalesce .Values.prom.priorityClassName .Values.priorityClassName) }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      initContainers:
+      - name: init
+        image: "{{ .Values.prom.image.repository }}:{{ .Values.prom.image.tag }}"
+        imagePullPolicy: {{ .Values.prom.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        command: ["/bin/sh"]
+        args: ["-c", "sed -e 's/\\$STORMFORGE_CLIENT_ID/$(STORMFORGE_CLIENT_ID)/g' -e 's/\\$STORMFORGE_CLUSTER_NAME/$(STORMFORGE_CLUSTER_NAME)/g' /etc/config/prometheus.yml > /prometheus/data-agent/prometheus.yml"]
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+        - name: storage-volume
+          mountPath: /prometheus/data-agent
+        {{- with .Values.additionalVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources: {{- toYaml .Values.prom.initResources | nindent 10 }}
+      - name: init-license-check
+        image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag | default .Chart.Version }}"
+        imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        env:
+        - name: CHART_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if .Values.additionalEnvVars }}
+        {{- .Values.additionalEnvVars | toYaml | nindent 8 }}
+        {{- end }}
+        args:
+        - start
+        - --license-check
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.additionalVolumeMounts }}
+        volumeMounts:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources: {{- toYaml .Values.prom.initResources | nindent 10 }}
+      containers:
+      - name: agent-sidecar
+        image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag | default .Chart.Version }}"
+        imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        env:
+        - name: CHART_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['helm.sh/chart']
+        {{- if .Values.additionalEnvVars }}
+        {{- .Values.additionalEnvVars | toYaml | nindent 8 }}
+        {{- end }}
+        args:
+        - start
+        - --prometheus-sidecar=/prometheus/data-agent/prometheus.yml
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: storage-volume
+          mountPath: /prometheus/data-agent
+        {{- with .Values.additionalVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources: {{- toYaml .Values.prom.initResources | nindent 10 }}
+      - name: prometheus
+        image: "{{ .Values.prom.image.repository }}:{{ .Values.prom.image.tag }}"
+        imagePullPolicy: {{ .Values.prom.image.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "stormforge-agent.authSecret" . | quote }}
+        - secretRef:
+            name: {{ include "stormforge-agent.envSecret" . | quote }}
+        {{- if .Values.additionalEnvVars }}
+        env:
+        {{- .Values.additionalEnvVars | toYaml | nindent 8 }}
+        {{- end }}
+        args:
+        - --agent
+        - --config.file=/prometheus/data-agent/prometheus.yml
+        - --web.enable-lifecycle
+        {{- if or .Values.debug .Values.prom.debug .Values.trace }}
+        - --log.level=debug
+        {{- end }}
+        {{- with .Values.prom.retentionMaxTime }}
+        - --storage.agent.retention.max-time={{ . }}
+        {{- end }}
+        {{- with .Values.prom.retentionMinTime }}
+        - --storage.agent.retention.min-time={{ . }}
+        {{- end }}
+        {{- with .Values.commonContainerSecurityContext }}
+        securityContext: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        ports:
+        - name: agent
+          containerPort: 9090
+        resources: {{- toYaml .Values.prom.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 30
+          failureThreshold: 3
+          successThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 30
+          failureThreshold: 3
+          successThreshold: 1
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+        - name: storage-volume
+          mountPath: /prometheus/data-agent
+        - name: client-secret-volume
+          mountPath: /prometheus/client
+        {{- with .Values.additionalVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- if .Values.commonPodSecurityContext }}
+      securityContext: {{ .Values.commonPodSecurityContext | toYaml | nindent 8 }}
+      {{- else if not (kindIs "invalid" .Values.commonPodSecurityContext) }}
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      {{- end }}
+      terminationGracePeriodSeconds: 300
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "stormforge-agent.metricsForwarderName" . | quote }}
+          items:
+          - key: prometheus.yml
+            path: prometheus.yml
+      - name: storage-volume
+        emptyDir:
+          sizeLimit: "{{ .Values.storageVolumeSize }}"
+      - name: client-secret-volume
+        secret:
+          secretName: {{ include "stormforge-agent.authSecret" . | quote }}
+          items:
+          - key: STORMFORGE_CLIENT_SECRET
+            path: client_secret_file
+      {{- with .Values.additionalVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
