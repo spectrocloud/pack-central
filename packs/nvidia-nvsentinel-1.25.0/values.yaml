@@ -585,6 +585,9 @@ charts:
     # "bitnamilegacy/", which is what the pack's image list mirrors. These overrides
     # repoint the render at them. The features themselves stay disabled by default.
     mongodb-store:
+      # Prefer Percona over Bitnami entirely
+      useBitnami: false
+      usePerconaOperator: true
       mongodb:
         externalAccess:
           autoDiscovery:
