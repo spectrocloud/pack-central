@@ -1,0 +1,17 @@
+{
+    "addonType": "ai",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Nvidia Cluster Readiness Engine",
+    "charts": [
+      "charts/cluster-readiness-engine-v0.5.0.tgz"
+    ],
+    "layer":"addon",
+    "name": "nvidia-nvcre",
+    "version": "0.5.0"
+  }

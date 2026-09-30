@@ -1,0 +1,32 @@
+apiVersion: v2
+dependencies:
+- condition: jobset.install
+  name: jobset
+  repository: oci://registry.k8s.io/jobset/charts
+  version: 0.11.0
+- condition: dataCache.enabled,dataCache.lws.install
+  name: lws
+  repository: oci://registry.k8s.io/lws/charts
+  version: 0.8.0
+description: A Helm chart for deploying Kubeflow Trainer on Kubernetes.
+home: https://github.com/kubeflow/trainer
+keywords:
+- kubeflow trainer
+maintainers:
+- name: andreyvelich
+  url: https://github.com/andreyvelich
+- name: ChenYi015
+  url: https://github.com/ChenYi015
+- name: gaocegege
+  url: https://github.com/gaocegege
+- name: Jeffwan
+  url: https://github.com/Jeffwan
+- name: johnugeorge
+  url: https://github.com/johnugeorge
+- name: tenzen-y
+  url: https://github.com/tenzen-y
+- name: terrytangyuan
+  url: https://github.com/terrytangyuan
+name: kubeflow-trainer
+type: application
+version: 2.2.1

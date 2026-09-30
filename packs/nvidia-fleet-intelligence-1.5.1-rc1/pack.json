@@ -1,0 +1,17 @@
+{
+    "addonType": "ai",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "Nvidia Fleet Intelligence",
+    "charts": [
+      "charts/fleet-intelligence-agent-1.5.1-rc.1.tgz"
+    ],
+    "layer":"addon",
+    "name": "nvidia-fleet-intelligence",
+    "version": "1.5.1-rc1"
+  }
