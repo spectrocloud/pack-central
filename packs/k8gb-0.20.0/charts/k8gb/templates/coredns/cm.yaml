@@ -1,0 +1,44 @@
+{{- if and .Values.coredns.deployment.enabled .Values.coredns.corefile.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-coredns
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "chart.labels" . | indent 4  }}
+data:
+  Corefile: |-
+    (k8gbplugins) {
+        errors
+        health
+        {{- if $.Values.coredns.corefile.reload.enabled }}
+        reload {{ $.Values.coredns.corefile.reload.interval }} {{ $.Values.coredns.corefile.reload.jitter }}
+        {{- end }}
+        ready
+        prometheus 0.0.0.0:9153
+        forward . /etc/resolv.conf
+        k8s_crd {
+            filter k8gb.io/dnstype=local
+            negttl {{ .dnsZoneNegTTL | default 30 }}
+            loadbalance weight
+            {{- if .geoDataFilePath }}
+            geodatafilepath {{ .geoDataFilePath }}
+            {{- end }}
+            {{- if .geoDataField }}
+            geodatafield {{ .geoDataField }}
+            {{- end }}
+        }
+    }
+{{- with .extraServerBlocks -}}
+{{- tpl . $ | nindent 4 }}
+{{- end }}
+    import ../dynamic/*.conf
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8gb-zone-delegation
+  namespace: {{ .Release.Namespace }}
+data: {}
+
