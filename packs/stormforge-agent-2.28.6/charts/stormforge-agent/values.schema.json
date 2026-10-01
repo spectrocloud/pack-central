@@ -1,0 +1,684 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "required": [
+    "clusterName",
+    "stormforge",
+    "authorization"
+  ],
+  "properties": {
+    "clusterName": {
+      "type": "string",
+      "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$",
+      "maxLength": 63,
+      "description": "A uniquely identifying name for the Kubernetes cluster"
+    },
+    "clusterNameSeed": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A seed string to generate a valid cluster name from. Mutually exclusive with clusterName"
+    },
+    "clusterNameSuffix": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)$",
+      "maxLength": 50,
+      "description": "An optional suffix string to append to clusterName, joined with a '-'"
+    },
+    "stormforge": {
+      "type": "object",
+      "required": [
+        "address"
+      ],
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "pattern": "^[a-z0-9]+[a-z0-9-]*$",
+          "description": "DEPRECATED: use .clusterName instead",
+          "deprecated": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "enableOptimizationConfigurationCRDs": {
+      "type": "boolean",
+      "description": "Enable support for the OptimizationConfiguration CRDs. This is enabled by default. Setting this value to false will not remove the CRDs, but will make the agent ignore them.",
+      "default": true
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "pattern": "^[^\n]*$"
+        },
+        "clientSecret": {
+          "type": "string",
+          "pattern": "^[^\n]*$"
+        },
+        "issuer": {
+          "type": "string",
+          "pattern": "^[^\n]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "proxyUrl": {
+      "type": "string",
+      "description": "Configuration for HTTPS_PROXY environment variable"
+    },
+    "noProxy": {
+      "type": "string",
+      "description": "Configuration for NO_PROXY environment variable"
+    },
+    "openshift": {
+      "type": "boolean",
+      "description": "Whether or not target cluster is running on openshift"
+    },
+    "gkeAutopilot": {
+      "type": "boolean",
+      "description": "Whether or not target cluster is running on GKE Autopilot"
+    },
+    "clusterData": {
+      "type": "boolean",
+      "description": "Whether or not collect node data"
+    },
+    "clusterDefaultsAutoDeployExemptNamespaces": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Workloads in these namespaces will not inherit the auto-deploy setting from cluster-defaults",
+      "items": {
+        "type": "string"
+      }
+    },
+    "enableCostMetrics": {
+      "type": "boolean",
+      "description": "Whether or not collect k8s cost-related data"
+    },
+    "clusterLabels": {
+      "type": "object",
+      "description": "Key-value labels to associate with the cluster in the StormForge API",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "commonMetaLabels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "commonContainerSecurityContext": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "commonPodSecurityContext": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "manageAuthSecret": {
+      "type": "boolean",
+      "description": "Whether or not to create and manage the authorization secret"
+    },
+    "networkPolicies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "additionalIngressRules": {
+          "$ref": "#/$defs/networkPolicyRules"
+        },
+        "additionalEgressRules": {
+          "$ref": "#/$defs/networkPolicyRules"
+        }
+      }
+    },
+    "jvmWorkloadConfigs": {
+      "type": "array",
+      "description": "Configurations for identifying and scraping metrics for JVM workloads",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "labelSelector": {
+            "type": "string"
+          },
+          "metricsPort": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "scheme": {
+                "type": "string"
+              },
+              "matchName": {
+                "type": "string"
+              },
+              "matchNumber": {
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "pattern": "^[0-9][0-9|]*$"
+              }
+            }
+          },
+          "metricsPath": {
+            "type": "string"
+          },
+          "metricsOnly": {
+            "type": "boolean",
+            "description": "If true, this config will be used to configure JVM metric collection, but workloads matching the selector won't actually get JVM heap recommendations"
+          },
+          "authorization": {
+            "type": "object",
+            "description": "Prometheus scrape job authorization config"
+          },
+          "extraRelabelConfigs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "extraMetricRelabelConfigs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Image Pull Secrets required for pulling stormforge images",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "workload": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "$ref": "#/$defs/resources"
+        },
+        "initResources": {
+          "$ref": "#/$defs/resources"
+        },
+        "podAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "deploymentAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "configMapAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "serviceAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "workloadSyncInterval": {
+          "type": "string",
+          "description": "Interval the agent will update probeTime for each existent workload."
+        },
+        "collectLabels": {
+          "type": "boolean",
+          "description": "Collect labels of the cluster's workloads."
+        },
+        "inactiveWorkloadsGC": {
+          "type": "boolean",
+          "description": "Garbage collection of inactive workloads on StormForge API backend."
+        },
+        "denyNamespaces": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "A list of namespaces (regex) to ignore workloads and metrics from",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowNamespaces": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "A list of namespaces (regex) to include workloads and metrics from",
+          "items": {
+            "type": "string"
+          }
+        },
+        "priorityClassName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sets the given priorityClassName on the workload-controller pod"
+        }
+      }
+    },
+    "prom": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object"
+        },
+        "podAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "deploymentAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "configMapAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "proxy": {
+          "type": "object"
+        },
+        "remoteWriteUrl": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/$defs/resources"
+        },
+        "initResources": {
+          "$ref": "#/$defs/resources"
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "scrapeInterval": {
+          "type": "string"
+        },
+        "scrapeTimeout": {
+          "type": "string"
+        },
+        "remoteTimeout": {
+          "type": "string"
+        },
+        "retentionMaxTime": {
+          "type": "string"
+        },
+        "retentionMinTime": {
+          "type": "string"
+        },
+        "tokenUrl": {
+          "type": "string"
+        },
+        "remoteWriteQueueConfig": {
+          "type": "object"
+        },
+        "honorTimestamps": {
+          "type": "boolean"
+        },
+        "priorityClassName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sets the given priorityClassName on the metrics-forwarder pod"
+        },
+        "extraCAdvisorMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraWorkloadControllerMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraJVMMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraScrapeConfigs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "featureGates": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "optimizeCronJobs",
+          "optimizeSparkOperator",
+          "optimizeGithubARC"
+        ]
+      },
+      "patternProperties": {
+        "^.*$": {
+          "type": "boolean"
+        }
+      }
+    },
+    "workloadResourceTypes": {
+      "type": "array",
+      "description": "Configuration for workload resource types",
+      "items": {
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "conditional": {
+            "type": "boolean"
+          },
+          "patchTargetTypeDefaults": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "group",
+          "kind",
+          "resource"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "patchTargetTypes": {
+      "type": "array",
+      "description": "DEPRECATED: Configuration for patchTarget types",
+      "items": {
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "patchTargetTypeDefaults": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "group",
+          "kind",
+          "resource"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "ownerResourceTypes": {
+      "type": "array",
+      "description": "Configuration for workload owner resource types",
+      "items": {
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "stopTraversal": {
+            "type": "boolean"
+          },
+          "ignoreOwner": {
+            "type": "boolean"
+          },
+          "patchTargetTypeDefaults": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "group",
+          "kind",
+          "resource"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "clusterDefaultConfig": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "schedule",
+          "learningPeriod",
+          "metricsFrom",
+          "applyMethod",
+          "applyMaxPercentIncrease",
+          "applyMaxPercentDecrease",
+          "autoDeploy",
+          "autoDeployThresholdsCpuUnit",
+          "autoDeployThresholdsCpuPercent",
+          "autoDeployThresholdsMemoryUnit",
+          "autoDeployThresholdsMemoryPercent",
+          "reliabilityOomMemoryBumpUpPeriod",
+          "reliabilityOomMemoryBumpUpPercent",
+          "reliabilityOomMemoryBumpUpMin",
+          "reliabilityOomMemoryBumpUpMax",
+          "reliabilityOomMemoryBumpUpApplyImmediately",
+          "cpuOptimizationGoal",
+          "memoryOptimizationGoal",
+          "hpaCpuTargetUtilizationMin",
+          "hpaCpuTargetUtilizationMax",
+          "hpaCpuTargetUtilizationPatchPath",
+          "hpaMemoryTargetUtilizationMin",
+          "hpaMemoryTargetUtilizationMax",
+          "hpaMemoryTargetUtilizationPatchPath",
+          "containersCpuOptimizationPolicy",
+          "containersCpuRequestsMin",
+          "containersCpuRequestsMax",
+          "containersCpuRequestsPatchPath",
+          "containersCpuLimitsMin",
+          "containersCpuLimitsMax",
+          "containersCpuLimitsPatchPath",
+          "containersCpuLimitsLimitRequestRatio",
+          "containersMemoryOptimizationPolicy",
+          "containersMemoryRequestsMin",
+          "containersMemoryRequestsMax",
+          "containersMemoryRequestsPatchPath",
+          "containersMemoryLimitsMin",
+          "containersMemoryLimitsMax",
+          "containersMemoryLimitsLimitRequestRatio",
+          "containersMemoryLimitsPatchPath",
+          "containersJavaMaxHeapMin",
+          "containersJavaMaxHeapMax",
+          "containersJavaMaxHeapPatchPath",
+          "containersJavaMaxHeapPatchFormat"
+        ]
+      },
+      "properties": {
+        "schedule": {
+          "type": "string",
+          "pattern": "(^([-/(),\\*\\w]+ ){4,5}[-/(),\\*\\w]+$)|(^P\\w+$)|(^@\\w+$)"
+        },
+        "learningPeriod": {
+          "type": "string",
+          "pattern": "(^P\\w+$)"
+        },
+        "autoDeploy": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "enum": [
+            "true",
+            true,
+            "false",
+            false
+          ]
+        }
+      },
+      "patternProperties": {
+        "^(cpu|memory)OptimizationGoal$": {
+          "enum": [
+            "savings",
+            "Savings",
+            "balanced",
+            "Balanced",
+            "reliability",
+            "Reliability"
+          ]
+        },
+        "^containers(Cpu|Memory)OptimizationPolicy$": {
+          "pattern": "^(([a-z0-9-]+=)?(DoNotOptimize|RequestsOnly|RequestsAndLimits|RequestsRaiseLimitsIfNeeded),?)+$"
+        },
+        "^containers.*(Min|Max|Ratio)$": {
+          "pattern": "^([-.A-Za-z0-9]*[,=]?)+$"
+        }
+      }
+    },
+    "extraEnvVars": {
+      "type": "array",
+      "description": "Deprecated; please use additionalEnvVars instead",
+      "items": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "x-kubernetes-patch-merge-key": "name",
+      "x-kubernetes-patch-strategy": "merge"
+    },
+    "additionalEnvVars": {
+      "$ref": "#/$defs/listMap"
+    },
+    "additionalVolumes": {
+      "$ref": "#/$defs/listMap"
+    },
+    "additionalVolumeMounts": {
+      "$ref": "#/$defs/listMap"
+    },
+    "priorityClassName": {
+      "type": "string",
+      "description": "A priorityClassName value to configure on all pods"
+    },
+    "nodeSelector": {
+      "type": "object",
+      "description": "A nodeSelector value to configure on all pods"
+    },
+    "tolerations": {
+      "type": "array",
+      "description": "A tolerations value to configure on all pods"
+    },
+    "affinity": {
+      "type": "object",
+      "description": "An affinity value to configure on all pods"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "resources": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "$ref": "#/$defs/quantities"
+        },
+        "limits": {
+          "$ref": "#/$defs/quantities"
+        }
+      },
+      "additionalProperties": false
+    },
+    "quantities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "listMap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": true,
+        "x-kubernetes-patch-merge-key": "name",
+        "x-kubernetes-patch-strategy": "merge"
+      }
+    },
+    "networkPolicyRules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}
