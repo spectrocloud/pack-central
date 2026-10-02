@@ -1,0 +1,39 @@
+{{- /*
+Copyright Broadcom, Inc. All Rights Reserved.
+SPDX-License-Identifier: APACHE-2.0
+*/}}
+
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-metrics-init" (include "mariadb.primary.fullname" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/part-of: mariadb
+    app.kubernetes.io/component: primary
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+data:
+  create_exporter_user.sh: |
+    #!/bin/bash
+    # Create a dedicated MariaDB user for the metrics exporter with minimal privileges.
+    # Supports both env-var and password-file credential modes.
+    root_password="${MARIADB_ROOT_PASSWORD:-}"
+    if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
+        root_password=$(cat "${MARIADB_ROOT_PASSWORD_FILE}")
+    fi
+    metrics_password="${MARIADB_METRICS_PASSWORD:-}"
+    if [[ -f "${MARIADB_METRICS_PASSWORD_FILE:-}" ]]; then
+        metrics_password=$(cat "${MARIADB_METRICS_PASSWORD_FILE}")
+    fi
+    if [[ -n "${metrics_password:-}" ]]; then
+      mysql -uroot -p"${root_password}" <<-EOSQL
+        CREATE USER IF NOT EXISTS '{{ .Values.metrics.auth.username }}'@'localhost' IDENTIFIED BY '${metrics_password}';
+        GRANT PROCESS, REPLICATION CLIENT, SLAVE MONITOR ON *.* TO '{{ .Values.metrics.auth.username }}'@'localhost';
+        GRANT SELECT ON performance_schema.* TO '{{ .Values.metrics.auth.username }}'@'localhost';
+        FLUSH PRIVILEGES;
+    EOSQL
+    fi
+{{- end }}

@@ -1,0 +1,13 @@
+# relok8s image hints file
+# This file makes this Helm Chart relocatable by relok8s
+# More info here https://github.com/vmware-tanzu/asset-relocation-tool-for-kubernetes
+#
+# mariadb chart
+
+# mariadb image
+- "{{.image.registry}}/{{.image.repository}}:{{.image.tag}}"
+# mysqld-exporter image
+- "{{.metrics.image.registry}}/{{.metrics.image.repository}}:{{.metrics.image.tag}}"
+# os-shell image
+- "{{.volumePermissions.image.registry}}/{{.volumePermissions.image.repository}}:{{.volumePermissions.image.tag}}"
+

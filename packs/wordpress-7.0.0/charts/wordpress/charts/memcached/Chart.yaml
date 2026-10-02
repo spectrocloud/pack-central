@@ -1,0 +1,35 @@
+annotations:
+  fips: "true"
+  images: |
+    - name: memcached
+      version: 1.6.42
+      image: registry-1.docker.io/bitnami/memcached:latest
+    - name: memcached-exporter
+      version: 0.16.0
+      image: registry-1.docker.io/bitnami/memcached-exporter:latest
+    - name: os-shell
+      version: "5"
+      image: registry-1.docker.io/bitnami/os-shell:latest
+  licenses: Apache-2.0
+  tanzuCategory: service
+apiVersion: v2
+appVersion: 1.6.42
+dependencies:
+- name: common
+  repository: oci://registry-1.docker.io/bitnamicharts
+  tags:
+  - bitnami-common
+  version: 2.40.0
+description: "Memcached is an high-performance, distributed memory object caching system, generic in nature, but intended for use in speeding up dynamic web applications by alleviating database load."
+home: https://bitnami.com
+icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/memcached/img/memcached-stack-220x234.png
+keywords:
+- memcached
+- cache
+maintainers:
+- name: "Broadcom, Inc. All Rights Reserved."
+  url: https://github.com/bitnami/charts
+name: memcached
+sources:
+- https://github.com/bitnami/charts/tree/main/bitnami/memcached
+version: 8.6.0
