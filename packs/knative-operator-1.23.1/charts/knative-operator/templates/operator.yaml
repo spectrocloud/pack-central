@@ -1,0 +1,892 @@
+
+# Copyright 2022 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: operator-webhook-certs
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/component: operator-webhook
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+# The data is populated at install time.
+
+---
+# Copyright 2022 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator-webhook
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/component: operator-webhook
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+{{- if and .Values.knative_operator.operator_webhook.annotations }}
+  annotations:
+{{ toYaml .Values.knative_operator.operator_webhook.annotations | indent 4 }}
+{{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: operator-webhook
+      role: operator-webhook
+  template:
+    metadata:
+      labels:
+        app: operator-webhook
+        role: operator-webhook
+        app.kubernetes.io/component: operator-webhook
+        app.kubernetes.io/version: "{{ .Chart.Version }}"
+        app.kubernetes.io/name: knative-operator
+        sidecar.istio.io/inject: "false"
+{{- if and .Values.knative_operator.operator_webhook.podAnnotations }}
+      annotations:
+{{ toYaml .Values.knative_operator.operator_webhook.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.knative_operator.operator_webhook.affinity }}
+      affinity:
+{{ toYaml .Values.knative_operator.operator_webhook.affinity | indent 8 }}
+{{- end }}
+{{- with .Values.knative_operator.operator_webhook.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if and .Values.knative_operator.operator_webhook.securityContext }}
+      securityContext:
+{{ toYaml .Values.knative_operator.operator_webhook.securityContext | indent 8 }}
+{{- end }}
+      serviceAccountName: operator-webhook
+      containers:
+      - name: operator-webhook
+        # This is the Go import path for the binary that is containerized
+        # and substituted here.
+        image: "{{ .Values.knative_operator.operator_webhook.image }}:{{ .Values.knative_operator.operator_webhook.tag }}"
+
+        resources:
+          requests:
+            cpu: {{ .Values.knative_operator.operator_webhook.resources.requests.cpu }}
+            memory: {{ .Values.knative_operator.operator_webhook.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.knative_operator.operator_webhook.resources.limits.cpu }}
+            memory: {{ .Values.knative_operator.operator_webhook.resources.limits.memory }}
+
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONFIG_LOGGING_NAME
+          value: config-logging
+        - name: CONFIG_OBSERVABILITY_NAME
+          value: config-observability
+        - name: WEBHOOK_NAME
+          value: operator-webhook
+        - name: WEBHOOK_PORT
+          value: "8443"
+        - name: WEBHOOK_SECRET_NAME
+          value: operator-webhook-certs
+
+        - name: METRICS_DOMAIN
+          value: knative.dev/operator
+        - name: KUBERNETES_MIN_VERSION
+          value: "{{ .Values.knative_operator.kubernetes_min_version }}"
+        securityContext:
+          allowPrivilegeEscalation: {{ .Values.knative_operator.operator_webhook.containerSecurityContext.allowPrivilegeEscalation }}
+          readOnlyRootFilesystem: {{ .Values.knative_operator.operator_webhook.containerSecurityContext.readOnlyRootFilesystem }}
+          runAsNonRoot: {{ .Values.knative_operator.operator_webhook.containerSecurityContext.runAsNonRoot }}
+          capabilities:
+            drop:
+              - ALL
+
+        ports:
+        - name: metrics
+          containerPort: 9090
+        - name: profiling
+          containerPort: 8008
+        - name: https-webhook
+          containerPort: 8443
+
+        readinessProbe:
+          periodSeconds: 1
+          httpGet:
+            scheme: HTTPS
+            port: 8443
+            httpHeaders:
+            - name: k-kubelet-probe
+              value: "webhook"
+        livenessProbe:
+          periodSeconds: 1
+          httpGet:
+            scheme: HTTPS
+            port: 8443
+            httpHeaders:
+            - name: k-kubelet-probe
+              value: "webhook"
+          failureThreshold: 6
+          initialDelaySeconds: 120
+
+      # Our webhook should gracefully terminate by lame ducking first, set this to a sufficiently
+      # high value that we respect whatever value it has configured for the lame duck grace period.
+      terminationGracePeriodSeconds: 300
+
+---
+# Copyright 2022 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    role: operator-webhook
+    app.kubernetes.io/component: operator-webhook
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+  name: operator-webhook
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  ports:
+    # Define metrics and profiling for them to be accessible within service meshes.
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+    - name: http-profiling
+      port: 8008
+      targetPort: 8008
+    - name: https-webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    role: operator-webhook
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knative-serving-operator-aggregated
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+aggregationRule:
+  clusterRoleSelectors:
+# This (along with escalate below) allows the Operator to pick up any
+# roles that are provided to the admin of the cluster by knative serving
+# automatically.
+  - matchExpressions:
+      - {key: serving.knative.dev/release, operator: Exists}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knative-serving-operator-aggregated-stable
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+aggregationRule:
+  clusterRoleSelectors:
+    # This (along with escalate below) allows the Operator to pick up any
+    # roles that are provided to the admin of the cluster by knative serving
+    # automatically.
+    - matchExpressions:
+        - {key: app.kubernetes.io/name, operator: In, values: ["knative-serving"]}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knative-eventing-operator-aggregated
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+aggregationRule:
+  clusterRoleSelectors:
+    # This (along with escalate below) allows the Operator to pick up any
+    # roles that are provided to the admin of the cluster by knative eventing
+    # automatically.
+    - matchExpressions:
+        - {key: eventing.knative.dev/release, operator: Exists}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knative-eventing-operator-aggregated-stable
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+aggregationRule:
+  clusterRoleSelectors:
+    # This (along with escalate below) allows the Operator to pick up any
+    # roles that are provided to the admin of the cluster by knative eventing
+    # automatically.
+    - matchExpressions:
+        - {key: app.kubernetes.io/name, operator: In, values: ["knative-eventing"]}
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TODO: Consider restriction of non-aggregated role to knativeservings namespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-serving-operator
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-serving-operator
+subjects:
+- kind: ServiceAccount
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+---
+# TODO: Consider restriction of non-aggregated role to knativeeventing namespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-eventing-operator
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-eventing-operator
+subjects:
+- kind: ServiceAccount
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+
+---
+# Copyright 2022 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: "{{ .Release.Namespace }}"
+  name: knative-operator-webhook
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+rules:
+  # For manipulating certs into secrets.
+  - apiGroups:
+      - ""
+    resources:
+      - "secrets"
+    verbs:
+      - "get"
+      - "create"
+      - "update"
+      - "list"
+      - "watch"
+      - "patch"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: knative-operator-webhook
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+rules:
+  # For watching logging configuration and getting certs.
+  - apiGroups:
+      - ""
+    resources:
+      - "configmaps"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+
+  # For manipulating certs into secrets.
+  - apiGroups:
+      - ""
+    resources:
+      - "namespaces"
+    verbs:
+      - "get"
+      - "create"
+      - "update"
+      - "list"
+      - "watch"
+      - "patch"
+
+  # finalizers are needed for the owner reference of the webhook
+  - apiGroups:
+      - ""
+    resources:
+      - "namespaces/finalizers"
+    verbs:
+      - "update"
+
+  # For getting our Deployment so we can decorate with ownerref.
+  - apiGroups:
+      - "apps"
+    resources:
+      - "deployments"
+    verbs:
+      - "get"
+
+  - apiGroups:
+      - "apps"
+    resources:
+      - "deployments/finalizers"
+    verbs:
+      - update
+
+  # For actually registering our webhook.
+  - apiGroups:
+      - "admissionregistration.k8s.io"
+    resources:
+      - "mutatingwebhookconfigurations"
+      - "validatingwebhookconfigurations"
+    verbs: &everything
+      - "get"
+      - "list"
+      - "create"
+      - "update"
+      - "delete"
+      - "patch"
+      - "watch"
+
+  # For leader election
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - "leases"
+    verbs: *everything
+
+  # Necessary for conversion webhook. These are copied from the serving
+  # TODO: Do we really need all these permissions?
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator-webhook
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+
+---
+# Copyright 2022 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: "{{ .Release.Namespace }}"
+  name: operator-webhook
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+subjects:
+  - kind: ServiceAccount
+    name: operator-webhook
+    namespace: "{{ .Release.Namespace }}"
+roleRef:
+  kind: Role
+  name: knative-operator-webhook
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: operator-webhook
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-operator-webhook
+subjects:
+- kind: ServiceAccount
+  name: operator-webhook
+  namespace: "{{ .Release.Namespace }}"
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-serving-operator-aggregated
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-serving-operator-aggregated
+subjects:
+- kind: ServiceAccount
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-serving-operator-aggregated-stable
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-serving-operator-aggregated-stable
+subjects:
+  - kind: ServiceAccount
+    name: knative-operator
+    namespace: "{{ .Release.Namespace }}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-eventing-operator-aggregated
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-eventing-operator-aggregated
+subjects:
+- kind: ServiceAccount
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: knative-eventing-operator-aggregated-stable
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-eventing-operator-aggregated-stable
+subjects:
+  - kind: ServiceAccount
+    name: knative-operator
+    namespace: "{{ .Release.Namespace }}"
+
+---
+# Copyright 2019 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-logging
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+data:
+  _example: |
+    ################################
+    #                              #
+    #    EXAMPLE CONFIGURATION     #
+    #                              #
+    ################################
+
+    # This block is not actually functional configuration,
+    # but serves to illustrate the available configuration
+    # options and document them in a way that is accessible
+    # to users that `kubectl edit` this config map.
+    #
+    # These sample configuration options may be copied out of
+    # this example block and unindented to be in the data block
+    # to actually change the configuration.
+
+    # Common configuration for all Knative codebase
+    zap-logger-config: |
+      {
+        "level": "info",
+        "development": false,
+        "outputPaths": ["stdout"],
+        "errorOutputPaths": ["stderr"],
+        "encoding": "json",
+        "encoderConfig": {
+          "timeKey": "ts",
+          "levelKey": "level",
+          "nameKey": "logger",
+          "callerKey": "caller",
+          "messageKey": "msg",
+          "stacktraceKey": "stacktrace",
+          "lineEnding": "",
+          "levelEncoder": "",
+          "timeEncoder": "iso8601",
+          "durationEncoder": "",
+          "callerEncoder": ""
+        }
+      }
+
+---
+# Copyright 2019 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-observability
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+    app.kubernetes.io/name: knative-operator
+data:
+  _example: |
+    ################################
+    #                              #
+    #    EXAMPLE CONFIGURATION     #
+    #                              #
+    ################################
+
+    # This block is not actually functional configuration,
+    # but serves to illustrate the available configuration
+    # options and document them in a way that is accessible
+    # to users that `kubectl edit` this config map.
+    #
+    # These sample configuration options may be copied out of
+    # this example block and unindented to be in the data block
+    # to actually change the configuration.
+
+    # logging.enable-var-log-collection defaults to false.
+    # The fluentd daemon set will be set up to collect /var/log if
+    # this flag is true.
+    logging.enable-var-log-collection: false
+
+    # logging.revision-url-template provides a template to use for producing the
+    # logging URL that is injected into the status of each Revision.
+    # This value is what you might use the the Knative monitoring bundle, and provides
+    # access to Kibana after setting up kubectl proxy.
+    logging.revision-url-template: |
+      http://localhost:8001/api/v1/namespaces/knative-monitoring/services/kibana-logging/proxy/app/kibana#/discover?_a=(query:(match:(kubernetes.labels.serving-knative-dev%2FrevisionUID:(query:'${REVISION_UID}',type:phrase))))
+
+    # metrics.backend-destination field specifies the system metrics destination.
+    # It supports either prometheus (the default) or stackdriver.
+    # Note: Using stackdriver will incur additional charges
+    metrics.backend-destination: prometheus
+
+    # metrics.request-metrics-backend-destination specifies the request metrics
+    # destination. If non-empty, it enables queue proxy to send request metrics.
+    # Currently supported values: prometheus, stackdriver.
+    metrics.request-metrics-backend-destination: prometheus
+
+    # metrics.stackdriver-project-id field specifies the stackdriver project ID. This
+    # field is optional. When running on GCE, application default credentials will be
+    # used if this field is not provided.
+    metrics.stackdriver-project-id: "<your stackdriver project id>"
+
+    # metrics.allow-stackdriver-custom-metrics indicates whether it is allowed to send metrics to
+    # Stackdriver using "global" resource type and custom metric type if the
+    # metrics are not supported by "knative_revision" resource type. Setting this
+    # flag to "true" could cause extra Stackdriver charge.
+    # If metrics.backend-destination is not Stackdriver, this is ignored.
+    metrics.allow-stackdriver-custom-metrics: "false"
+
+---
+# Copyright 2020 The Knative Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knative-operator
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: knative-operator
+    app.kubernetes.io/version: "{{ .Chart.Version }}"
+{{- if and .Values.knative_operator.knative_operator.annotations }}
+  annotations:
+{{ toYaml .Values.knative_operator.knative_operator.annotations | indent 4 }}
+{{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: knative-operator
+  template:
+    metadata:
+      labels:
+        name: knative-operator
+        app.kubernetes.io/name: knative-operator
+        app.kubernetes.io/version: "{{ .Chart.Version }}"
+        sidecar.istio.io/inject: "false"
+{{- if and .Values.knative_operator.knative_operator.podAnnotations }}
+      annotations:
+{{ toYaml .Values.knative_operator.knative_operator.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.knative_operator.knative_operator.affinity }}
+      affinity:
+{{ toYaml .Values.knative_operator.knative_operator.affinity | indent 8 }}
+{{- end }}
+{{- with .Values.knative_operator.knative_operator.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      serviceAccountName: knative-operator
+{{- if and .Values.knative_operator.knative_operator.securityContext }}
+      securityContext:
+{{ toYaml .Values.knative_operator.knative_operator.securityContext | indent 8 }}
+{{- end }}
+      containers:
+        - name: knative-operator
+          image: "{{ .Values.knative_operator.knative_operator.image }}:{{ .Values.knative_operator.knative_operator.tag }}"
+          resources:
+            requests:
+              cpu: {{ .Values.knative_operator.knative_operator.resources.requests.cpu }}
+              memory: {{ .Values.knative_operator.knative_operator.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.knative_operator.knative_operator.resources.limits.cpu }}
+              memory: {{ .Values.knative_operator.knative_operator.resources.limits.memory }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: METRICS_DOMAIN
+              value: knative.dev/operator
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+            - name: KUBERNETES_MIN_VERSION
+              value: "{{ .Values.knative_operator.kubernetes_min_version }}"
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.knative_operator.knative_operator.containerSecurityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.knative_operator.knative_operator.containerSecurityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.knative_operator.knative_operator.containerSecurityContext.runAsNonRoot }}
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: metrics
+              containerPort: 9090
+{{- $mc := .Values.knative_operator.multicluster | default dict }}
+{{- $pollInterval := $mc.remoteDeploymentsPollInterval }}
+{{- if or $mc.enabled $pollInterval }}
+          args:
+{{- if $mc.enabled }}
+            - --clusterprofile-provider-file=/etc/cluster-inventory/config.json
+{{- end }}
+{{- if $pollInterval }}
+            - --remote-deployments-poll-interval={{ $pollInterval }}
+{{- end }}
+{{- end }}
+{{- if $mc.enabled }}
+          volumeMounts:
+            - name: access-config
+              mountPath: /etc/cluster-inventory
+              readOnly: true
+{{- range $index, $plugin := ($mc.plugins | default list) }}
+{{- $mountPath := $plugin.mountPath | default "" | toString | clean }}
+{{- if not (hasPrefix "/" $mountPath) }}
+{{-   fail (printf "knative_operator.multicluster.plugins[%d].mountPath must be an absolute path, got %q" $index ($plugin.mountPath | default "" | toString)) }}
+{{- end }}
+            - name: {{ .name }}
+              mountPath: {{ $mountPath }}
+              readOnly: true
+{{- end }}
+{{- end }}
+{{- if $mc.enabled }}
+      volumes:
+        - name: access-config
+          configMap:
+            name: clusterprofile-provider-file
+{{- range ($mc.plugins | default list) }}
+        - name: {{ .name }}
+          image:
+            reference: {{ .image }}
+{{- end }}
+{{- end }}
+
+---
