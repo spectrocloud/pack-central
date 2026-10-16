@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: 0.1.0
+description: NVSentinel monitor for NVIDIA Cluster Readiness Engine Certification
+  CRs
+name: nvcre-certification-monitor
+type: application
+version: 0.1.0
