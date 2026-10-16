@@ -1,0 +1,38 @@
+{
+  "addonType": "system app",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Apache Airflow",
+  "charts": [
+    "charts/airflow-1.22.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "airflow",
+  "version": "1.22.0",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 128
+      }
+    ]
+  }
+}
