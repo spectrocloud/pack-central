@@ -1,0 +1,39 @@
+{
+  "addonType": "monitoring",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Loki",
+  "charts": [
+    "charts/loki-18.11.7.tgz"
+  ],
+  "layer": "addon",
+  "name": "loki",
+  "version": "3.7.7",
+  "annotations": {
+    "airgap": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ],
+    "resources": [
+      {
+        "type": "cpu",
+        "minLimit": 100
+      },
+      {
+        "type": "memory",
+        "minLimit": 128
+      }
+    ]
+  }
+}
