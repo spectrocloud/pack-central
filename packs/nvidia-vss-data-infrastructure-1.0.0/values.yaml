@@ -1,0 +1,280 @@
+# NVIDIA VSS Data Infrastructure Pack Values
+# Version 2.4.3 - Data stores and supporting services for Video Search and Summarization
+#
+# ┌─ VSS PLATFORM MATRIX (canonical — keep identical across all VSS packs) ───────
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in EVERY VSS pack. Packs per profile: data-infra + core-nims +
+# │ application (always) + nvidia-vss-vllm (vLLM profiles only; H100/L40S omit it).
+# │
+# │ Platform          LLM backend   LLM model              VLM mem/len  decode    validated
+# │ DGX-SPARK         vLLM          llama-3.1-8b           0.28/10240   disabled  YES (GB10)
+# │ OTHER             vLLM          llama-3.1-8b           0.4 /16384   disabled  no
+# │ H100              nim (trtllm)  llama-3.1-70b (gpu 4)  0.8 /32768   dGPU      no
+# │ L40S              nim (trtllm)  llama-3.1-8b  (gpu 2)  0.8 /32768   dGPU      no
+# │ RTXPRO6000BW      vLLM          nemotron-nano-9b-fp8   0.4 /32768   dGPU      no
+# │ AGX-THOR/IGX-THOR vLLM (jetson) nemotron-nano-9b-fp8   0.4 /16384   Tegra*    no
+# │ "VLM mem/len" = the application vss-engine VLM; the vLLM LLM engine has its own
+# │   gpu-mem/max-len in the nvidia-vss-vllm presets (do not conflate the two).
+# │ * Tegra: runtimeClassName nvidia; the NVIDIA container runtime injects L4T libs.
+# │ data-infra itself is platform-INVARIANT; it ships the shared hf-token-secret +
+# │ the vss-platform ConfigMap (the VSS_PLATFORM source of truth) for all profiles.
+# └──────────────────────────────────────────────────────────────────────────────
+#
+# P1 note (PLATFORM-SUPPORT-PLAN.md §8): this layer is TOPOLOGY-INVARIANT — the
+# data stores (milvus/etcd/minio/neo4j/arango/elasticsearch) are identical on every
+# VSS_PLATFORM, so there is no "VSS Platform" preset group here. The only inputs are
+# the credential profile variables below (constrained in schema.yaml). Service names
+# MUST stay as-is — the application pack's egress config resolves to them.
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "5"
+  namespaceLabels:
+    "nvidia-vss": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: neo4j:5.26.27
+      - image: arangodb:3.12.9.1
+      - image: milvusdb/etcd:3.5.25-r1
+      - image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+      - image: elasticsearch:8.17.9
+      - image: busybox:1.37
+
+manifests:
+  hf-token-secret:
+    namespace: nvidia-vss
+    # spectro.var macros resolve HERE (values.yaml is macro-processed); the kubeManifest
+    # body references them via {{ .Values.hfToken }} (raw manifest bodies are NOT macro-processed).
+    hfToken: "{{.spectro.var.HF_TOKEN}}"
+  vss-platform:
+    namespace: nvidia-vss
+    vssPlatform: "{{.spectro.var.VSS_PLATFORM}}"
+
+charts:
+  nvidia-vss-data-infrastructure:
+    global:
+      namespace: nvidia-vss
+      storageClass: ""
+
+    # Database Credentials (mapped from Spectro Cloud variables)
+    credentials:
+      graphDb:
+        username: "{{.spectro.var.GRAPH_DB_USERNAME}}"
+        password: "{{.spectro.var.GRAPH_DB_PASSWORD}}"
+      minio:
+        accessKey: "{{.spectro.var.MINIO_ACCESS_KEY}}"
+        secretKey: "{{.spectro.var.MINIO_SECRET_KEY}}"
+      arangoDB:
+        username: "{{.spectro.var.ARANGO_DB_USERNAME}}"
+        password: "{{.spectro.var.ARANGO_DB_PASSWORD}}"
+
+    # etcd - Milvus metadata store
+    etcd:
+      enabled: true
+      applicationSpecs:
+        etcd-deployment:
+          securityContext:
+            fsGroup: 0
+          containers:
+            etcd-container:
+              image:
+                repository: milvusdb/etcd
+                tag: "3.5.25-r1"
+      image:
+        repository: milvusdb/etcd
+        tag: "3.5.25-r1"
+      persistence:
+        enabled: true
+        size: "20Gi"
+      service:
+        name: etcd-etcd-deployment-etcd-service
+        port: 2379
+
+    # MinIO for Milvus object storage (subchart: milvus-minio)
+    milvus-minio:
+      enabled: true
+      image:
+        repository: minio/minio
+        tag: "RELEASE.2025-09-07T16-13-09Z"
+      persistence:
+        enabled: true
+        size: "100Gi"
+      service:
+        name: milvus-minio-milvus-minio-deployment-milvus-minio-service
+        port: 9010
+        consolePort: 9011
+
+    # Milvus Vector Database
+    milvus:
+      enabled: true
+      applicationSpecs:
+        milvus-deployment:
+          containers:
+            milvus-container:
+              env:
+                - name: ETCD_ENDPOINTS
+                  value: etcd-etcd-deployment-etcd-service:2379
+                - name: MINIO_ADDRESS
+                  value: milvus-minio-milvus-minio-deployment-milvus-minio-service:9010
+                - name: KNOWHERE_GPU_MEM_POOL_SIZE
+                  value: "2048;4096"
+      egress:
+        etcd:
+          address: etcd-etcd-deployment-etcd-service
+          port: 2379
+        milvus-minio:
+          address: milvus-minio-milvus-minio-deployment-milvus-minio-service
+          port: 9010
+
+    # Neo4j Graph Database
+    neo4j:
+      enabled: true
+      applicationSpecs:
+        neo4j-deployment:
+          containers:
+            neo4j-container:
+              image:
+                repository: neo4j
+                tag: "5.26.27"
+      image:
+        repository: neo4j
+        tag: "5.26.27"
+      persistence:
+        enabled: true
+        size: "50Gi"
+      service:
+        name: neo-4-j-service
+        httpPort: 7474
+        boltPort: 7687
+      securityContext:
+        fsGroup: 7474
+        runAsUser: 7474
+        runAsGroup: 7474
+        runAsNonRoot: true
+      extraPodVolumes:
+        - name: secret-db-username-volume
+          secret:
+            secretName: graph-db-creds-secret
+            items:
+              - key: username
+                path: db-username
+        - name: secret-db-password-volume
+          secret:
+            secretName: graph-db-creds-secret
+            items:
+              - key: password
+                path: db-password
+      extraPodVolumeMounts:
+        - name: secret-db-username-volume
+          mountPath: /secrets/db-username
+          subPath: db-username
+          readOnly: true
+        - name: secret-db-password-volume
+          mountPath: /secrets/db-password
+          subPath: db-password
+          readOnly: true
+
+    # ArangoDB (subchart: arango-db)
+    arango-db:
+      enabled: true
+      applicationSpecs:
+        arango-db-deployment:
+          containers:
+            arango-db-container:
+              image:
+                repository: arangodb
+                tag: "3.12.9.1"
+      image:
+        repository: arangodb
+        tag: "3.12.9.1"
+      persistence:
+        enabled: true
+        size: "50Gi"
+      service:
+        name: arango-db-arango-db-deployment-arango-db-service
+        port: 8529
+      extraPodVolumes:
+        - name: secret-db-username-volume
+          secret:
+            secretName: arango-db-creds-secret
+            items:
+              - key: username
+                path: db-username
+        - name: secret-db-password-volume
+          secret:
+            secretName: arango-db-creds-secret
+            items:
+              - key: password
+                path: db-password
+      extraPodVolumeMounts:
+        - name: secret-db-username-volume
+          mountPath: /secrets/db-username
+          subPath: db-username
+          readOnly: true
+        - name: secret-db-password-volume
+          mountPath: /secrets/db-password
+          subPath: db-password
+          readOnly: true
+
+    # MinIO for VSS object storage
+    minio:
+      enabled: true
+      image:
+        repository: minio/minio
+        tag: "RELEASE.2025-09-07T16-13-09Z"
+      persistence:
+        enabled: true
+        size: "100Gi"
+      service:
+        name: minio-minio-deployment-minio-service
+        port: 9000
+        consolePort: 9001
+      extraPodVolumes:
+        - name: secret-access-key-volume
+          secret:
+            secretName: minio-creds-secret
+            items:
+              - key: access-key
+                path: access-key
+        - name: secret-secret-key-volume
+          secret:
+            secretName: minio-creds-secret
+            items:
+              - key: secret-key
+                path: secret-key
+      extraPodVolumeMounts:
+        - name: secret-access-key-volume
+          mountPath: /secrets/access-key
+          subPath: access-key
+          readOnly: true
+        - name: secret-secret-key-volume
+          mountPath: /secrets/secret-key
+          subPath: secret-key
+          readOnly: true
+
+    # Elasticsearch (optional search backend)
+    elasticsearch:
+      enabled: true
+      applicationSpecs:
+        elasticsearch-deployment:
+          containers:
+            elasticsearch-container:
+              image:
+                repository: elasticsearch
+                tag: "8.17.9"
+      image:
+        repository: elasticsearch
+        tag: "8.17.9"
+      persistence:
+        enabled: true
+        size: "50Gi"
+      resources:
+        requests:
+          memory: "16Gi"
+        limits:
+          memory: "16Gi"
+      javaOpts: "-Xms6g -Xmx6g"
+      service:
+        name: elasticsearch-elasticsearch-deployment-elasticsearch-service
+        httpPort: 9200
+        transportPort: 9300
