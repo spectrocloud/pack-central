@@ -6,8 +6,8 @@ pack:
     "fleet-intelligence": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
   content:
     images:
-      - image: ghcr.io/dsx-ai-factory/fleet-intelligence-agent:1.5.1-rc1
-      - image: ghcr.io/dsx-ai-factory/fleetint-otelcol:1.5.1-rc1
+      - image: ghcr.io/dsx-ai-factory/fleet-intelligence-agent:1.5.1-rc.1
+      - image: ghcr.io/dsx-ai-factory/fleetint-otelcol:1.5.1-rc.1
 
 charts:
   fleet-intelligence-agent:
