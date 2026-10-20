@@ -1,0 +1,457 @@
+pack:
+  namespace: "keda"
+  content:
+    images:
+      - image: ghcr.io/kedacore/keda:2.20.2
+      - image: ghcr.io/kedacore/keda-metrics-apiserver:2.20.2
+      - image: ghcr.io/kedacore/keda-admission-webhooks:2.20.2
+    charts:
+      - repo: https://kedacore.github.io/charts
+        name: keda
+        version: 2.20.2
+
+charts:
+  keda:
+    global:
+      image:
+        registry: null
+      dnsConfig: {}
+
+    image:
+      keda:
+        registry: ghcr.io
+        repository: kedacore/keda
+        tag: ""
+      metricsApiServer:
+        registry: ghcr.io
+        repository: kedacore/keda-metrics-apiserver
+        tag: ""
+      webhooks:
+        registry: ghcr.io
+        repository: kedacore/keda-admission-webhooks
+        tag: ""
+      pullPolicy: Always
+
+    clusterName: kubernetes-default
+    clusterDomain: cluster.local
+
+    crds:
+      install: true
+      additionalAnnotations: {}
+
+    watchNamespace: ""
+    imagePullSecrets: []
+
+    networkPolicy:
+      enabled: false
+      flavor: "cilium"
+      cilium:
+        operator:
+          extraEgressRules: []
+      kubernetes:
+        operator:
+          extraEgressRules: []
+        metricsServer:
+          extraEgressRules: []
+        webhooks:
+          extraEgressRules: []
+
+    operator:
+      name: keda-operator
+      revisionHistoryLimit: 10
+      replicaCount: 1
+      disableCompression: true
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      useHostNetwork: false
+      affinity: {}
+      extraContainers: []
+      extraInitContainers: []
+      livenessProbe:
+        initialDelaySeconds: 25
+        periodSeconds: 10
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      readinessProbe:
+        initialDelaySeconds: 20
+        periodSeconds: 3
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      nodeSelector: {}
+      tolerations: []
+
+    metricsServer:
+      enabled: true
+      revisionHistoryLimit: 10
+      replicaCount: 1
+      disableCompression: true
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      useHostNetwork: false
+      affinity: {}
+      livenessProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      readinessProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 3
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      nodeSelector: {}
+      tolerations: []
+
+    webhooks:
+      enabled: true
+      port: ""
+      healthProbePort: 8081
+      dnsConfig: {}
+      livenessProbe:
+        initialDelaySeconds: 25
+        periodSeconds: 10
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      readinessProbe:
+        initialDelaySeconds: 20
+        periodSeconds: 3
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      timeoutSeconds: 10
+      useHostNetwork: false
+      name: keda-admission-webhooks
+      revisionHistoryLimit: 10
+      replicaCount: 1
+      affinity: {}
+      failurePolicy: Ignore
+      nodeSelector: {}
+      tolerations: []
+
+    upgradeStrategy:
+      operator: {}
+      metricsApiServer: {}
+      webhooks: {}
+
+    podDisruptionBudget:
+      operator: {}
+      metricServer: {}
+      webhooks: {}
+
+    additionalLabels: {}
+    additionalAnnotations: {}
+
+    podAnnotations:
+      keda: {}
+      metricsAdapter: {}
+      webhooks: {}
+    podLabels:
+      keda: {}
+      metricsAdapter: {}
+      webhooks: {}
+
+    rbac:
+      create: true
+      aggregateToDefaultRoles: false
+      enabledCustomScaledRefKinds: true
+      controlPlaneServiceAccountsNamespace: kube-system
+      scaledRefKinds:
+        - apiGroup: "*"
+          kind: "*"
+
+    serviceAccount:
+      operator:
+        create: true
+        name: keda-operator
+        automountServiceAccountToken: true
+        annotations: {}
+      metricServer:
+        create: true
+        name: keda-metrics-server
+        automountServiceAccountToken: true
+        annotations: {}
+      webhooks:
+        create: true
+        name: keda-webhook
+        automountServiceAccountToken: true
+        annotations: {}
+
+    podIdentity:
+      azureWorkload:
+        enabled: false
+        clientId: ""
+        tenantId: ""
+        tokenExpiration: 3600
+      aws:
+        irsa:
+          enabled: false
+          audience: "sts.amazonaws.com"
+          roleArn: ""
+          stsRegionalEndpoints: "true"
+          tokenExpiration: 86400
+      gcp:
+        enabled: false
+        gcpIAMServiceAccount: ""
+
+    grpcTLSCertsSecret: ""
+    hashiCorpVaultTLS: ""
+
+    logging:
+      operator:
+        level: info
+        format: console
+        timeEncoding: rfc3339
+        stackTracesEnabled: false
+      metricServer:
+        level: 0
+        stderrthreshold: ERROR
+        zapLevel: info
+        zapEncoder: console
+        zapTimeEncoding: rfc3339
+      webhooks:
+        level: info
+        format: console
+        timeEncoding: rfc3339
+
+    securityContext:
+      operator:
+        capabilities:
+          drop:
+            - ALL
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+      metricServer:
+        capabilities:
+          drop:
+            - ALL
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+      webhooks:
+        capabilities:
+          drop:
+            - ALL
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+
+    podSecurityContext:
+      operator:
+        runAsNonRoot: true
+      metricServer:
+        runAsNonRoot: true
+      webhooks:
+        runAsNonRoot: true
+
+    service:
+      type: ClusterIP
+      portHttps: 443
+      portHttpsTarget: 6443
+      annotations: {}
+      minTlsVersion: "TLS13"
+      tlsCipherList: ""
+
+    resources:
+      operator:
+        limits:
+          cpu: 1
+          memory: 1000Mi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+      metricServer:
+        limits:
+          cpu: 1
+          memory: 1000Mi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+      webhooks:
+        limits:
+          cpu: 1
+          memory: 1000Mi
+        requests:
+          cpu: 100m
+          memory: 100Mi
+
+    nodeSelector: {}
+    tolerations: []
+    hostAliases: []
+
+    topologySpreadConstraints:
+      operator: []
+      metricsServer: []
+      webhooks: []
+
+    affinity: {}
+    priorityClassName: ""
+
+    http:
+      timeout: 3000
+      maxIdleConns: 0
+      maxIdleConnsPerHost: 1000
+      idleConnTimeout: 90s
+      keepAlive:
+        enabled: true
+      minTlsVersion: TLS12
+      tlsCipherList: ""
+
+    profiling:
+      operator:
+        enabled: false
+        port: 8082
+      metricsServer:
+        enabled: false
+        port: 8083
+      webhooks:
+        enabled: false
+        port: 8084
+
+    extraArgs:
+      keda: {}
+      metricsAdapter: {}
+
+    env: []
+
+    volumes:
+      keda:
+        extraVolumes: []
+        extraVolumeMounts: []
+      metricsApiServer:
+        extraVolumes: []
+        extraVolumeMounts: []
+      webhooks:
+        extraVolumes: []
+        extraVolumeMounts: []
+
+    prometheus:
+      metricServer:
+        enabled: false
+        port: 8080
+        portName: metrics
+        serviceMonitor:
+          enabled: false
+          jobLabel: ""
+          targetLabels: []
+          podTargetLabels: []
+          port: metrics
+          targetPort: ""
+          interval: ""
+          scrapeTimeout: ""
+          relabellings: []
+          relabelings: []
+          metricRelabelings: []
+          additionalLabels: {}
+          scheme: http
+          tlsConfig: {}
+        podMonitor:
+          enabled: false
+          interval: ""
+          scrapeTimeout: ""
+          namespace: ""
+          additionalLabels: {}
+          relabelings: []
+          metricRelabelings: []
+      operator:
+        enabled: false
+        port: 8080
+        serviceMonitor:
+          enabled: false
+          jobLabel: ""
+          targetLabels: []
+          podTargetLabels: []
+          port: metrics
+          targetPort: ""
+          interval: ""
+          scrapeTimeout: ""
+          relabellings: []
+          relabelings: []
+          metricRelabelings: []
+          additionalLabels: {}
+          scheme: http
+          tlsConfig: {}
+        podMonitor:
+          enabled: false
+          interval: ""
+          scrapeTimeout: ""
+          namespace: ""
+          additionalLabels: {}
+          relabelings: []
+          metricRelabelings: []
+        prometheusRules:
+          enabled: false
+          namespace: ""
+          additionalLabels: {}
+          alerts: []
+      webhooks:
+        enabled: false
+        port: 8080
+        serviceMonitor:
+          enabled: false
+          jobLabel: ""
+          targetLabels: []
+          podTargetLabels: []
+          port: metrics
+          targetPort: ""
+          interval: ""
+          scrapeTimeout: ""
+          relabellings: []
+          relabelings: []
+          metricRelabelings: []
+          additionalLabels: {}
+          scheme: http
+          tlsConfig: {}
+        prometheusRules:
+          enabled: false
+          namespace: ""
+          additionalLabels: {}
+          alerts: []
+
+    opentelemetry:
+      collector:
+        uri: ""
+      operator:
+        enabled: false
+
+    certificates:
+      autoGenerated: true
+      secretName: kedaorg-certs
+      mountPath: /certs
+      certManager:
+        enabled: false
+        duration: 8760h0m0s
+        renewBefore: 5840h0m0s
+        generateCA: true
+        caSecretName: "kedaorg-ca"
+        secretTemplate: {}
+        issuer:
+          generate: true
+          name: foo-org-ca
+          kind: ClusterIssuer
+          group: cert-manager.io
+      operator: {}
+
+    permissions:
+      metricServer:
+        restrict:
+          secret: false
+      operator:
+        restrict:
+          secret: false
+          namesAllowList: []
+          serviceAccountTokenCreationRoles: []
+          allowAllServiceAccountTokenCreation: false
+
+    extraObjects: []
+    asciiArt: true
+    customManagedBy: ""
+    enableServiceLinks: true
