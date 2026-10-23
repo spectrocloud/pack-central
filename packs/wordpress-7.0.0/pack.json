@@ -1,0 +1,29 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "ingressSupported": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "charts": [
+    "charts/wordpress-32.0.0.tgz"
+  ],
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "WordPress",
+  "layer": "addon",
+  "name": "wordpress-chart",
+  "version": "7.0.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
