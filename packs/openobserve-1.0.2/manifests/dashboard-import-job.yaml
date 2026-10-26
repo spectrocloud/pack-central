@@ -1,0 +1,278 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openobserve-dashboard-import-v2
+  namespace: openobserve
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "argocd.argoproj.io/sync-options": "Replace=true"
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: openobserve-dashboard-importer
+      containers:
+      - name: dashboard-importer
+        image: us-docker.pkg.dev/palette-images/packs/openobserve/1.0.2/curl:8.19.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+
+          OO_BASE_URL="${OO_BASE_URL:-http://openobserve-openobserve-router:5080}"
+          OO_ORG="${OO_ORG:-default}"
+          AUTH="${ZO_ROOT_USER_EMAIL}:${ZO_ROOT_USER_PASSWORD}"
+
+          urlencode() {
+            _s="$1"
+            _enc=""
+            while [ -n "$_s" ]; do
+              _c=$(printf '%.1s' "$_s")
+              _s=$(printf '%s' "$_s" | cut -c2-)
+              case "$_c" in
+                [a-zA-Z0-9.~_-]) _enc="${_enc}${_c}" ;;
+                *) _enc="${_enc}$(printf '%%%02X' "'$_c")" ;;
+              esac
+            done
+            printf '%s' "$_enc"
+          }
+
+          json_field() {
+            echo "$1" | grep -o "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"//;s/"$//'
+          }
+
+          find_dashboard_id_by_title() {
+            _folder="$1"
+            _title="$2"
+            _encoded_folder=""
+            _response=""
+            _chunk=""
+            _chunk_title=""
+            _dash_id=""
+
+            _encoded_folder=$(urlencode "$_folder")
+            _response=$(curl -fsS -u "$AUTH" \
+              "${OO_BASE_URL}/api/${OO_ORG}/dashboards?folder=${_encoded_folder}&pageSize=100" 2>/dev/null || echo "")
+
+            echo "$_response" | tr '{' '\n' | while IFS= read -r _chunk; do
+              _chunk_title=$(json_field "$_chunk" "title")
+              _dash_id=$(json_field "$_chunk" "dashboard_id")
+              if [ "$_chunk_title" = "$_title" ] && [ -n "$_dash_id" ]; then
+                echo "$_dash_id"
+              fi
+            done
+          }
+
+          wait_for_openobserve() {
+            echo "Waiting for OpenObserve to be ready..."
+            until curl -fsS -u "$AUTH" "${OO_BASE_URL}/healthz" >/dev/null; do
+              echo "OpenObserve not ready yet, waiting..."
+              sleep 10
+            done
+            echo "OpenObserve is ready!"
+          }
+
+          get_dashboard_metadata() {
+            dashboard_id="$1"
+            folder="$2"
+            encoded_folder=""
+            encoded_folder=$(urlencode "$folder")
+            curl -fsS -u "$AUTH" \
+              "${OO_BASE_URL}/api/${OO_ORG}/dashboards/${dashboard_id}?folder=${encoded_folder}"
+          }
+
+          delete_dashboard() {
+            dashboard_id="$1"
+            folder="$2"
+            encoded_folder=""
+            response=""
+            encoded_folder=$(urlencode "$folder")
+            response=$(curl -s -w "%{http_code}" -o /dev/null -X DELETE \
+              -u "$AUTH" \
+              "${OO_BASE_URL}/api/${OO_ORG}/dashboards/${dashboard_id}?folder=${encoded_folder}" || echo "000")
+            if [ "$response" = "200" ] || [ "$response" = "204" ]; then
+              echo "  removed duplicate dashboard id=${dashboard_id}"
+            else
+              echo "  warning: failed to remove duplicate dashboard id=${dashboard_id} (HTTP: ${response})"
+            fi
+          }
+
+          upsert_dashboard() {
+            dashboard_file="$1"
+            dashboard_name="$2"
+            dashboard_title=""
+            folder="default"
+            list_response=""
+            primary_id=""
+            dashboard_id=""
+            response=""
+            http_code=""
+            primary_hash=""
+
+            dashboard_title=$(json_field "$(cat "$dashboard_file")" "title")
+            if [ -z "$dashboard_title" ]; then
+              echo "✗ Could not read dashboard title from ${dashboard_file}"
+              return 1
+            fi
+
+            echo "Processing dashboard: ${dashboard_name} (title: ${dashboard_title}, folder: ${folder})"
+
+            primary_id=""
+            for dashboard_id in $(find_dashboard_id_by_title "$folder" "$dashboard_title"); do
+              if [ -z "$primary_id" ]; then
+                primary_id="$dashboard_id"
+                continue
+              fi
+              delete_dashboard "$dashboard_id" "$folder"
+            done
+
+            if [ -n "$primary_id" ]; then
+              list_response=$(get_dashboard_metadata "$primary_id" "$folder")
+              primary_hash=$(json_field "$list_response" "hash")
+              if [ -z "$primary_hash" ]; then
+                echo "✗ Could not read dashboard hash for ${dashboard_title} (id: ${primary_id})"
+                return 1
+              fi
+
+              response=$(curl -s -w "\n%{http_code}" -X PUT \
+                -H "Content-Type: application/json" \
+                -u "$AUTH" \
+                -d @"$dashboard_file" \
+                "${OO_BASE_URL}/api/${OO_ORG}/dashboards/${primary_id}?folder=$(urlencode "$folder")&hash=${primary_hash}" || printf '\n000')
+
+              http_code=$(echo "$response" | tail -1)
+              if [ "$http_code" = "200" ]; then
+                echo "✓ Updated existing dashboard: ${dashboard_title} (id: ${primary_id})"
+                return 0
+              fi
+
+              echo "✗ Failed to update dashboard: ${dashboard_title} (HTTP: ${http_code})"
+              echo "$response" | sed '$d'
+              return 1
+            fi
+
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "Content-Type: application/json" \
+              -u "$AUTH" \
+              -d @"$dashboard_file" \
+              "${OO_BASE_URL}/api/${OO_ORG}/dashboards?folder=$(urlencode "$folder")" || printf '\n000')
+
+            http_code=$(echo "$response" | tail -1)
+            if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
+              echo "✓ Created dashboard: ${dashboard_title}"
+              return 0
+            fi
+
+            echo "✗ Failed to create dashboard: ${dashboard_title} (HTTP: ${http_code})"
+            echo "$response" | sed '$d'
+            return 1
+          }
+
+          echo "Starting idempotent dashboard import..."
+          wait_for_openobserve
+
+          failures=0
+          for dashboard_file in /dashboards/*.json; do
+            if [ -f "$dashboard_file" ]; then
+              dashboard_name=$(basename "$dashboard_file" .json)
+              if ! upsert_dashboard "$dashboard_file" "$dashboard_name"; then
+                failures=$((failures + 1))
+              fi
+            fi
+          done
+
+          if [ "$failures" -gt 0 ]; then
+            echo "Dashboard import completed with ${failures} failure(s)"
+            exit 1
+          fi
+
+          echo "Dashboard import process completed successfully!"
+        env:
+        - name: ZO_ROOT_USER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: openobserve-openobserve
+              key: ZO_ROOT_USER_EMAIL
+        - name: ZO_ROOT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: openobserve-openobserve
+              key: ZO_ROOT_USER_PASSWORD
+        volumeMounts:
+        - name: cluster-level-dashboard
+          mountPath: /dashboards/cluster-level.json
+          subPath: cluster-level.json
+        - name: namespace-level-dashboard
+          mountPath: /dashboards/namespace-level.json
+          subPath: namespace-level.json
+        - name: pod-level-dashboard
+          mountPath: /dashboards/pod-level.json
+          subPath: pod-level.json
+        - name: pods-dashboard
+          mountPath: /dashboards/pods.json
+          subPath: pods.json
+        - name: objects-dashboard
+          mountPath: /dashboards/objects.json
+          subPath: objects.json
+        - name: spectro-clusters-dashboard
+          mountPath: /dashboards/spectro-clusters.json
+          subPath: spectro-clusters.json
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: cluster-level-dashboard
+        configMap:
+          name: kubernetes-cluster-level
+      - name: namespace-level-dashboard
+        configMap:
+          name: kubernetes-namespace-level
+      - name: pod-level-dashboard
+        configMap:
+          name: kubernetes-pod-level
+      - name: pods-dashboard
+        configMap:
+          name: kubernetes-pods
+      - name: objects-dashboard
+        configMap:
+          name: kubernetes-objects
+      - name: spectro-clusters-dashboard
+        configMap:
+          name: spectro-clusters
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openobserve-dashboard-importer
+  namespace: openobserve
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openobserve-dashboard-importer
+  namespace: openobserve
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openobserve-dashboard-importer
+  namespace: openobserve
+subjects:
+- kind: ServiceAccount
+  name: openobserve-dashboard-importer
+  namespace: openobserve
+roleRef:
+  kind: Role
+  name: openobserve-dashboard-importer
+  apiGroup: rbac.authorization.k8s.io
