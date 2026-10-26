@@ -1,0 +1,17 @@
+{
+    "addonType": "system app",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "garage",
+    "charts": [
+      "charts/garage-0.9.3.tgz"
+    ],
+    "layer":"addon",
+    "name": "garage",
+    "version": "0.9.3"
+  }
