@@ -1,0 +1,36 @@
+pack:
+  content:
+    # BUILD-ON-DEPLOY (0/0 scan surface): only the 0-CVE Chainguard wolfi-base is
+    # pack content. The VAST driver + the COSI objectstorage sidecar are crane-exported
+    # at deploy by the chart's fetch-runtime init container and run on wolfi-base (see
+    # the chart's templates/shared/_buildondeploy.tpl; upstream crane sources are
+    # .Values.image.*). Repoint via charts.vastcosi.image.<role>.
+    images:
+      - image: cgr.dev/chainguard/wolfi-base:latest
+      - image: vastdataorg/csi:v2.6.5
+      # central COSI controller (BucketClaim -> Bucket); v0.1.0 matches the v1alpha1
+      # API the VAST driver + sidecar speak. Static Go binary; direct image for now.
+      - image: gcr.io/k8s-staging-sig-storage/objectstorage-controller:v20220915-v0.1.0-8-g0e0ba7c
+  namespace: vast-cosi
+
+charts:
+  vastcosi:
+    endpoint: ""
+    verifySsl: false
+    secretName: "vast-mgmt"
+    # Name the COSI driver registers as (used in BucketClass/BucketClaim).
+    cosiDriverName: "csi.vastdata.com"
+
+    bucketClassDefaults:
+      # VIP pool buckets are served from -- MUST be set per env.
+      vipPool: ""
+      # S3 policy used when creating buckets -- MUST be set per env.
+      # s3Policy: ""
+      # http or https for the bucket endpoint scheme.
+      scheme: "https"
+
+    # Declare BucketClasses (COSI). Empty by default for a clean install.
+    bucketClasses: {}
+    #   vastdata-bucket:
+    #     vipPool: <tenant-vip-pool>
+    #     s3Policy: <tenant-s3-policy>
