@@ -1,0 +1,8 @@
+pack:
+  content:
+    images:
+      - image: ghcr.io/tektoncd/pipeline/controller-10a3e32792f33651396d02b6855a6e36:v1.17.0@sha256:33255ed915552016fa68d1eb4455d2d48699141e79f6c1a73bab2e983fe3637b
+      - image: ghcr.io/tektoncd/pipeline/events-a9042f7efb0cbade2a868a1ee5ddd52c:v1.17.0@sha256:fe7c89c5a06c83a107527543fa62164c0e037404a52e2c71ea2552803806875a
+      - image: ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v1.17.0@sha256:62e7933fa3697361496215c70b74380389cab9a86701d2e58455b7f9826f11c0
+      - image: ghcr.io/tektoncd/pipeline/webhook-d4749e605405422fd87700164e31b2d1:v1.17.0@sha256:198176fc8f38d240fb0cf5cce08b978de73f9e74c758feeb558d731bf6cf3e28
+  namespace: "tekton-pipelines"
