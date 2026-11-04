@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "lava-sensor.fullname" . }}
+  labels: {{- include "lava-sensor.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "lava-sensor.selectorLabels" . | nindent 6 }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.maxUnavailable | quote }}
+  template:
+    metadata:
+      labels: {{- include "lava-sensor.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/scripts: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.existingSecret }}
+        # A new key restarts the pods, which then hand it to every node.
+        checksum/enrollment-key: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      # hostPID: PID 1 is the node's init, so nsenter --target 1 reaches the node.
+      hostPID: true
+      # The pod never talks to the Kubernetes API.
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: node-installer
+          image: {{ include "lava-sensor.image" .Values.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/lava/node.sh"]
+          securityContext:
+            privileged: true
+          env:
+            - name: LAVA_MODE
+              value: install
+            - name: LAVA_SENSOR_API_URL
+              value: {{ include "lava-sensor.apiUrl" . | quote }}
+            - name: LAVA_ENROLLMENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lava-sensor.secretName" . }}
+                  key: {{ include "lava-sensor.secretKey" . }}
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "/lava/node.sh", "ready"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+          terminationMessagePolicy: FallbackToLogsOnError
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: scripts
+              mountPath: /lava
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "lava-sensor.fullname" . }}-scripts

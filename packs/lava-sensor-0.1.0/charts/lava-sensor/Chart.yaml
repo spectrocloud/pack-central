@@ -1,0 +1,11 @@
+apiVersion: v2
+name: lava-sensor
+description: >-
+  Installs the Lava sensor on every targeted node of a Kubernetes cluster. Each
+  node's pod runs Lava's install.sh on the node itself, so the sensor runs as a
+  systemd service on the node (lava@<sensor>.service), not in a container; the
+  pod installs it, reports readiness, and idles.
+type: application
+# sensor-api serves this chart from GET /v1/enroll/lava-sensor.tgz. The sensor's
+# own version is set from Lava, not here: bump this when the chart changes.
+version: 0.1.0
