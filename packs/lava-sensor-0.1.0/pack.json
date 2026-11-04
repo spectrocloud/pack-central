@@ -1,0 +1,31 @@
+{
+  "addonType": "security",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://lava.security",
+    "architecture": "amd64,arm64",
+    "airgap": "true"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/lava-sensor-0.1.0.tgz"
+  ],
+  "displayName": "Lava Sensor",
+  "layer": "addon",
+  "name": "lava-sensor",
+  "version": "0.1.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.24",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

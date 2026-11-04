@@ -1,0 +1,34 @@
+The Lava sensor is being installed on every targeted node, as a systemd service
+on the node itself.
+
+A pod is Ready once the sensor on its node has enrolled and has not failed:
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }} -o wide
+
+A pod that is not Ready says why in its log and its events:
+  kubectl -n {{ .Release.Namespace }} logs <pod>
+  kubectl -n {{ .Release.Namespace }} describe pod <pod>
+
+On a node:  systemctl status 'lava@*'   and   journalctl -u lava@compute
+
+Each node stays the same machine in Lava across reboots, even where /etc is reset
+at boot: the pods keep a copy of its machine id in /opt/lava. A node without a
+hardware UUID of its own (none, or a placeholder) comes back as a new machine.
+{{- if .Values.existingSecret }}
+
+After rotating the key in Secret {{ .Values.existingSecret }}, restart the pods so every node gets it:
+  kubectl -n {{ .Release.Namespace }} rollout restart daemonset/{{ include "lava-sensor.fullname" . }}
+{{- end }}
+{{- if .Values.uninstall.enabled }}
+
+helm uninstall removes the sensor from every node first, and waits up to {{ .Values.uninstall.timeout }} for them all.
+- A node that is down then makes it fail, with the release left behind; every node it
+  reached is already clean. Run helm uninstall again once the node is back.
+  (--no-hooks skips the removal, leaving the sensor on every node.)
+- A node this release stops targeting (a nodeSelector change, a new taint) keeps its sensor.
+- It also removes a sensor installed on a node by hand, with the default install.
+- The nodes' machine ids go with it, the copies in /opt/lava too, so installing again
+  adds them to Lava as new machines, and the old ones stay offline there.
+{{- else }}
+
+uninstall.enabled=false: helm uninstall leaves the sensor running on the nodes.
+{{- end }}
