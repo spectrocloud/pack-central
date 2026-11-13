@@ -1,0 +1,36 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://docs.nvidia.com/openshell/latest/",
+    "architecture": "amd64",
+    "airgap": "true"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/helm-chart-0.1.8.tgz"
+  ],
+  "displayName": "NVIDIA OpenShell",
+  "layer": "addon",
+  "name": "nvidia-openshell",
+  "version": "0.1.8",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.25",
+        "maxVersion": ""
+      },
+      {
+        "packName": "agent-sandbox",
+        "layer": "addon",
+        "minVersion": "1.0.10",
+        "maxVersion": ""
+      }
+    ]
+  }
+}
