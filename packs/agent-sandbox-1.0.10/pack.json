@@ -1,0 +1,30 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "docsURL": "https://agent-sandbox.sigs.k8s.io/",
+    "source": "community",
+    "contributor": "spectrocloud",
+    "architecture": "amd64,arm64",
+    "airgap": "true"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.25",
+        "maxVersion": ""
+      }
+    ]
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Agent Sandbox",
+  "charts": [
+    "charts/agent-sandbox-1.0.10.tgz"
+  ],
+  "layer": "addon",
+  "name": "agent-sandbox",
+  "version": "1.0.10"
+}

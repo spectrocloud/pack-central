@@ -1,0 +1,268 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+suite: certgen hook
+templates:
+  - templates/certgen.yaml
+release:
+  name: openshell
+  namespace: my-namespace
+
+tests:
+  - it: renders combined TLS and JWT certgen hook by default
+    template: templates/certgen.yaml
+    asserts:
+      - hasDocuments:
+          count: 4
+      - equal:
+          path: kind
+          value: Job
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--server-secret-name=openshell-server-tls"
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--client-secret-name=openshell-client-tls"
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-secret-name=openshell-jwt-keys"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-only"
+        documentIndex: 3
+
+  - it: renders a Restricted-compatible securityContext on the certgen container
+    template: templates/certgen.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+        documentIndex: 3
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
+        documentIndex: 3
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+        documentIndex: 3
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value:
+            - ALL
+        documentIndex: 3
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+        documentIndex: 3
+
+  - it: renders runAsNonRoot and a seccomp profile on the backend CA hook
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      grpcRoute.backendTLSPolicy.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: openshell-certgen-backend-ca
+        documentIndex: 4
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+        documentIndex: 4
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
+        documentIndex: 4
+
+  - it: renders JWT-only certgen hook when cert-manager owns TLS
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      pkiInitJob.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 4
+      - equal:
+          path: kind
+          value: Job
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-only"
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-secret-name=openshell-jwt-keys"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--server-secret-name=openshell-server-tls"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--client-secret-name=openshell-client-tls"
+        documentIndex: 3
+
+  - it: uses the configured sandbox JWT secret name
+    template: templates/certgen.yaml
+    set:
+      server.sandboxJwt.signingSecretName: custom-jwt-keys
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-secret-name=custom-jwt-keys"
+        documentIndex: 3
+
+  - it: renders JWT-only hook when cert-manager is enabled even if pkiInitJob remains enabled
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      pkiInitJob.enabled: true
+      pkiInitJob.serverDnsNames:
+        - extra.example.test
+      pkiInitJob.serverIpAddresses:
+        - 192.0.2.10
+    asserts:
+      - hasDocuments:
+          count: 4
+      - equal:
+          path: kind
+          value: Job
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-only"
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--jwt-secret-name=openshell-jwt-keys"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--server-secret-name=openshell-server-tls"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--client-secret-name=openshell-client-tls"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--server-san=extra.example.test"
+        documentIndex: 3
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--server-san=192.0.2.10"
+        documentIndex: 3
+
+  - it: labels hook pods so that gateway selectors do not match them
+    template: templates/certgen.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: openshell-certgen
+            app.kubernetes.io/instance: openshell
+            app.kubernetes.io/component: certgen
+        documentIndex: 3
+      - notEqual:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: openshell
+        documentIndex: 3
+
+  - it: labels the backend CA hook pod so that gateway selectors do not match it
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      grpcRoute.backendTLSPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 5
+      - equal:
+          path: metadata.name
+          value: openshell-certgen-backend-ca
+        documentIndex: 4
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: openshell-certgen
+            app.kubernetes.io/instance: openshell
+            app.kubernetes.io/component: certgen
+        documentIndex: 4
+
+  - it: adds configured metadata to both certificate hook Pod templates
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      grpcRoute.backendTLSPolicy.enabled: true
+      pkiInitJob.podLabels:
+        example.com/workload: certificate-bootstrap
+      pkiInitJob.podAnnotations:
+        sidecar.istio.io/inject: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["example.com/workload"]
+          value: certificate-bootstrap
+        documentIndex: 3
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+        documentIndex: 3
+      - notExists:
+          path: metadata.labels["example.com/workload"]
+        documentIndex: 3
+      - notExists:
+          path: metadata.annotations["sidecar.istio.io/inject"]
+        documentIndex: 3
+      - equal:
+          path: spec.template.metadata.labels["example.com/workload"]
+          value: certificate-bootstrap
+        documentIndex: 4
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+        documentIndex: 4
+      - notExists:
+          path: metadata.labels["example.com/workload"]
+        documentIndex: 4
+      - notExists:
+          path: metadata.annotations["sidecar.istio.io/inject"]
+        documentIndex: 4
+
+  - it: preserves chart-owned Pod labels when custom keys conflict
+    template: templates/certgen.yaml
+    set:
+      certManager.enabled: true
+      grpcRoute.backendTLSPolicy.enabled: true
+      pkiInitJob.podLabels:
+        app.kubernetes.io/name: openshell
+        app.kubernetes.io/instance: custom-release
+        app.kubernetes.io/component: gateway
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: openshell-certgen
+        documentIndex: 3
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: openshell
+        documentIndex: 3
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: certgen
+        documentIndex: 3
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: openshell-certgen
+        documentIndex: 4
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: openshell
+        documentIndex: 4
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: certgen
+        documentIndex: 4
