@@ -1,0 +1,78 @@
+pack:
+  releaseNameOverride:
+    lava-sensor: lava-sensor
+  namespace: "lava-system"
+  # The DaemonSet is privileged and uses hostPID; the chart's README says to
+  # allow Pod Security Admission privileged in the namespace.
+  namespaceLabels:
+    "lava-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: docker.io/library/busybox:1.37.0@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+      - image: registry.k8s.io/kubectl:v1.35.4@sha256:e8bc9c71a813d90d5f7689fa57516b2aacd7a02bb9d70d3ab6664ed6d202fc10
+
+charts:
+  lava-sensor:
+    # The Lava address every node installs from. sensor-api fills this in when it
+    # serves the chart; set it yourself only when installing from a copy of it.
+    sensorApiUrl: "https://api.lavalabs.io/sensor"
+
+    # The enrollment key (client_id:client_secret) from the Lava console. Either set
+    # it here, and the chart keeps it in a Secret (--set-file enrollmentKey=<file>,
+    # or /dev/stdin, keeps it off the command line), or create that Secret yourself
+    # and name it in existingSecret, which also keeps the key out of Helm's release
+    # history:
+    #   kubectl -n lava-system create secret generic lava-enrollment-key --from-file=enrollment-key=./key.txt
+    enrollmentKey: ""
+    existingSecret: ""
+    # The key inside existingSecret that holds the enrollment key.
+    existingSecretKey: enrollment-key
+
+    # The pod's own image: any small image with a POSIX sh, nsenter and tr (busybox
+    # has all three). Nothing from it runs on the node except nsenter itself. To pull
+    # from your own registry, point repository at your copy and keep the digest, or
+    # clear it if your copy has another one.
+    image:
+      repository: docker.io/library/busybox
+      tag: "1.37.0"
+      digest: sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+      pullPolicy: IfNotPresent
+
+    # For pulling either image from a registry that needs credentials.
+    imagePullSecrets: []
+
+    # Which nodes get the sensor. By default every node that takes ordinary pods,
+    # plus GPU nodes tainted nvidia.com/gpu. Narrow it with nodeSelector or affinity,
+    # or tolerate other taints here. With --set, give a nodeSelector value as a
+    # string (--set-string nodeSelector.lava=true), or a later upgrade fails.
+    nodeSelector: {}
+    affinity: {}
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        # install.sh's curl, bash and systemctl run inside this pod's cgroup while
+        # they install; the sensor itself does not (systemd starts it in its own).
+        memory: 256Mi
+
+    # How many pods an upgrade replaces at once. A pod being replaced costs nothing
+    # (the sensor runs on the node, not in the pod), and anything less than 100%
+    # lets one failing node hold every other node on the old version.
+    maxUnavailable: "100%"
+
+    # helm uninstall: a pre-delete hook switches every pod to "uninstall" mode and
+    # waits until each node reports its sensor removed. Pods never remove anything
+    # when they are stopped (a restart, an upgrade and a node drain stop them too).
+    uninstall:
+      enabled: true
+      timeout: 300s
+      image:
+        repository: registry.k8s.io/kubectl
+        tag: v1.35.4
+        digest: sha256:e8bc9c71a813d90d5f7689fa57516b2aacd7a02bb9d70d3ab6664ed6d202fc10
+        pullPolicy: IfNotPresent
