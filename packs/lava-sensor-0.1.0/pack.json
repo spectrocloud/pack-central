@@ -5,7 +5,7 @@
     "contributor": "spectrocloud",
     "docsURL": "https://lava.security",
     "architecture": "amd64,arm64",
-    "airgap": "true"
+    "airgap": "false"
   },
   "cloudTypes": [
     "all"
