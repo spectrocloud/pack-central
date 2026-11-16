@@ -13,7 +13,8 @@
         "packName": "kubernetes",
         "layer": "k8s",
         "minVersion": "1.25",
-        "maxVersion": ""
+        "maxVersion": "",
+        "type": "required"
       }
     ]
   },

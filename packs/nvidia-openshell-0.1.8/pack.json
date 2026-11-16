@@ -4,7 +4,7 @@
     "source": "community",
     "contributor": "spectrocloud",
     "docsURL": "https://docs.nvidia.com/openshell/latest/",
-    "architecture": "amd64",
+    "architecture": "amd64,arm64",
     "airgap": "true"
   },
   "cloudTypes": [
@@ -23,13 +23,15 @@
         "packName": "kubernetes",
         "layer": "k8s",
         "minVersion": "1.25",
-        "maxVersion": ""
+        "maxVersion": "",
+        "type": "required"
       },
       {
         "packName": "agent-sandbox",
         "layer": "addon",
         "minVersion": "1.0.10",
-        "maxVersion": ""
+        "maxVersion": "",
+        "type": "optional"
       }
     ]
   }
