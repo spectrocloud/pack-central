@@ -1,0 +1,17 @@
+# NodeSRIOVDevicePluginConfig (noderesources.dpu.nvidia.com/v1alpha1, DPF v26.8.0).
+# Host Trusted: tells DPF's node SR-IOV device plugin which host VFs to expose as
+# node resources (NVIDIA hbn-ovnk reference, 04-enable-accelerated-cni). A DPU
+# opts in through the annotation
+# noderesources.dpu.nvidia.com/nodesriovdevicepluginconfig: <name> (set it under
+# dpuDeployments[].dpus.dpuSets[].dpuAnnotations). Needs
+# DPFOperatorConfig.spec.nodeSRIOVDevicePluginController.disable: false
+# (nvidia-dpf-operator "Host Trusted" preset). Every key except name maps 1:1 to spec.
+{{- range $conf := .Values.nodeSRIOVDevicePluginConfigs }}
+---
+apiVersion: noderesources.dpu.nvidia.com/v1alpha1
+kind: NodeSRIOVDevicePluginConfig
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec: {{ omit $conf "name" | toYaml | nindent 2 }}
+{{- end }}

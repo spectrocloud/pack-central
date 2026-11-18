@@ -1,0 +1,24 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "prerequisitesRequired": "true",
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Nvidia DPF Prereqs",
+  "charts": [
+    "charts/dpf-prereqs-crds-26.8.0.tgz",
+    "charts/local-path-provisioner-0.0.34.tgz",
+    "charts/node-feature-discovery-0.18.3.tgz",
+    "charts/maintenance-operator-chart-0.3.0.tgz",
+    "charts/argo-cd-9.4.1.tgz",
+    "charts/kamaji-1.4.0.tgz",
+    "charts/dpf-monitoring-26.8.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "nvidia-dpf-prereqs",
+  "version": "26.8.0"
+}

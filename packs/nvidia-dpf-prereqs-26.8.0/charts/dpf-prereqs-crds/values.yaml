@@ -1,0 +1,45 @@
+# kubectl image for the CRD sync Job (needs kubectl + sh). alpine/k8s 1.34.x is
+# within one minor of the DPF 26.8 supported Kubernetes range (1.33-1.36).
+image:
+  repository: alpine/k8s
+  tag: "1.34.12"
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# kamaji < 1.4 shipped the validating webhooks vdatastore.kb.io and
+# vdatastoresecrets.kb.io; kamaji 1.4.0 removed them and no longer serves their
+# paths. On an in-place upgrade the old webhook config keeps routing DataStore
+# validation to a 404, and the agent's server-side apply cannot rewrite that
+# config, so every kamaji upgrade attempt fails (found live 2026-11-01). When
+# true, the Job deletes kamaji-validating-webhook-configuration ONLY if it still
+# lists vdatastore.kb.io; the kamaji chart re-creates the 1.4.0 version.
+migrateKamajiWebhooks: true
+
+# Job limits.
+activeDeadlineSeconds: 600
+backoffLimit: 3
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/master"
+              operator: Exists
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: Exists
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule

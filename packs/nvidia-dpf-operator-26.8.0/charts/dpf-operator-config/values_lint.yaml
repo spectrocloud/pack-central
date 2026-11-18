@@ -1,0 +1,20 @@
+# Lint example only (zero-trust, DPUDiscovery flow). Real values come from the
+# pack values.yaml / presets.
+deploymentMode: zero-trust
+dpuDetector:
+  disable: true
+overrides:
+  kubernetesAPIServerVIP: "auto"
+  kubernetesAPIServerPort: 6443
+provisioningController:
+  bfbPVCName: "bfb-pvc"
+  dmsTimeout: 900
+  installInterface:
+    installViaRedfish:
+      skipDPUNodeDiscovery: false
+      discoveredDPUDeviceBMCFactoryResetPolicy: Never
+kamajiClusterManager:
+  disable: false
+networking:
+  controlPlaneMTU: 1500
+  highSpeedMTU: 9000

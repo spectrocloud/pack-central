@@ -1,0 +1,13 @@
+# DPUServiceNAD (svc.dpu.nvidia.com/v1alpha1): a NetworkAttachmentDefinition for
+# DPUService pods on the DPU cluster (e.g. the HBN "mybrhbn" network). Added in the
+# 26.8.0 wrapper; every key except name maps 1:1 to spec (resourceType required:
+# vf | sf | veth).
+{{- range $conf := .Values.dpuServiceNADs }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUServiceNAD
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec: {{ omit $conf "name" | toYaml | nindent 2 }}
+{{- end }}

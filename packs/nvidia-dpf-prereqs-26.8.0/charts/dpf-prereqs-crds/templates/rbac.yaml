@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}
+rules:
+  # Read + create for any CRD (create cannot be limited by name; server-side
+  # apply of a CRD that does not exist yet needs it).
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch", "create"]
+  # Changes only to the CRDs shipped in files/. A CRD added by a future chart
+  # version fails the Job with "forbidden" until it is listed here.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    resourceNames:
+      - datastores.kamaji.clastix.io
+      - kubeconfiggenerators.kamaji.clastix.io
+      - tenantcontrolplanes.kamaji.clastix.io
+      - maintenanceoperatorconfigs.maintenance.nvidia.com
+      - nodemaintenances.maintenance.nvidia.com
+      - nodefeatures.nfd.k8s-sigs.io
+      - nodefeaturegroups.nfd.k8s-sigs.io
+      - nodefeaturerules.nfd.k8s-sigs.io
+    verbs: ["patch", "update"]
+  {{- if .Values.migrateKamajiWebhooks }}
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["kamaji-validating-webhook-configuration"]
+    verbs: ["get", "delete"]
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}
+    namespace: {{ .Release.Namespace }}

@@ -1,0 +1,22 @@
+# DPUServiceTemplate (svc.dpu.nvidia.com/v1alpha1, DPF v26.8.0). 26.8 adds
+# security {privileged, spiffe}. DPUDeployment-generated DPUServices default to
+# privileged: true when the template omits security, so this is optional here.
+{{- range $conf := .Values.dpuServiceTemplates }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUServiceTemplate
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  deploymentServiceName: {{ $conf.name | quote }}
+  {{- if $conf.helmChart }}
+  helmChart: {{ $conf.helmChart | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.resourceRequirements }}
+  resourceRequirements: {{ $conf.resourceRequirements | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.security }}
+  security: {{ $conf.security | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

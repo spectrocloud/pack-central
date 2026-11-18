@@ -1,0 +1,34 @@
+# DPUSet - defines a set of DPUs to provision. Required for BOTH ZT and HT.
+# spec.strategy {type: OnDelete|RollingUpdate} and spec.dpuTemplate are REQUIRED
+# (no defaults). dpuTemplate.spec needs nodeEffect (exactly one of noEffect/drain/
+# hold = true, taint, customLabel, customAction), exactly one of bfb.name /
+# blueFieldSoftware.name and of dpuFlavor / dpuFlavorTemplate (26.8).
+# Selection:
+#   dpuNodeSelector matches DPUNode labels. ZT DPUNodes (crawler dpu-node-<serial>
+#     and 26.8 hostless-<device>) carry feature.node.kubernetes.io/dpu-enabled=true.
+#   dpuDeviceSelector matches DPUDevice labels. dpuSelector is deprecated (26.8,
+#     removal v27.1.0) and mutually exclusive with dpuDeviceSelector.
+{{- range $conf := .Values.dpuSets }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUSet
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.dpuNodeSelector }}
+  dpuNodeSelector: {{ $conf.dpuNodeSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuDeviceSelector }}
+  dpuDeviceSelector: {{ $conf.dpuDeviceSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuSelector }}
+  dpuSelector: {{ $conf.dpuSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuTemplate }}
+  dpuTemplate: {{ $conf.dpuTemplate | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.strategy }}
+  strategy: {{ $conf.strategy | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

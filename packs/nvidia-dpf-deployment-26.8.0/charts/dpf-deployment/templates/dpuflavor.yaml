@@ -1,0 +1,63 @@
+# DPUFlavor (provisioning.dpu.nvidia.com/v1alpha1, DPF v26.8.0). The spec is
+# IMMUTABLE (CEL self == oldSelf): change it by creating a flavor with a new name.
+# Changes vs the 26.4.0 wrapper:
+#   - dpuMode is no longer rendered: deprecated and IGNORED in 26.8 (the mode comes
+#     from DPFOperatorConfig.spec.deploymentMode, shown in DPU.status.deploymentMode)
+#   + dma, ewNicConfigurations, packages, serviceReadiness, systemdServices (new in 26.8)
+#   configFiles[] is passed through, so the 26.8 fields type (cloud-init |
+#   agent-applied) and contentFrom.configMapKeyRef work; path is now required and
+#   exactly one of raw / contentFrom must be set.
+{{- range $conf := .Values.dpuFlavors }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUFlavor
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.bfcfgParameters }}
+  bfcfgParameters: {{ $conf.bfcfgParameters | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.configFiles }}
+  configFiles: {{ $conf.configFiles | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.containerdConfig }}
+  containerdConfig: {{ $conf.containerdConfig | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dma }}
+  dma: {{ $conf.dma | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuResources }}
+  dpuResources: {{ $conf.dpuResources | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.ewNicConfigurations }}
+  ewNicConfigurations: {{ $conf.ewNicConfigurations | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.grub }}
+  grub: {{ $conf.grub | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.hostNetworkInterfaceConfigs }}
+  hostNetworkInterfaceConfigs: {{ $conf.hostNetworkInterfaceConfigs | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.nvconfig }}
+  nvconfig: {{ $conf.nvconfig | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.ovs }}
+  ovs: {{ $conf.ovs | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.packages }}
+  packages: {{ $conf.packages | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.serviceReadiness }}
+  serviceReadiness: {{ $conf.serviceReadiness | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.sysctl }}
+  sysctl: {{ $conf.sysctl | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.systemReservedResources }}
+  systemReservedResources: {{ $conf.systemReservedResources | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.systemdServices }}
+  systemdServices: {{ $conf.systemdServices | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,645 @@
+# dpf-monitoring umbrella defaults.
+#
+# Component tuning below is a 1:1 port of NVIDIA's DPF v26.8.0 monitoring
+# helmfile values (dpf-operator chart, dev/helmfiles/values/
+# {kube-prometheus-stack,kube-state-metrics,loki,opentelemetry-collector}.yaml).
+# Do not edit the tuning here idly - resync it from the helmfile when the DPF
+# release is bumped.
+#
+# ALL COMPONENTS ARE DISABLED BY DEFAULT (enabled: false conditions in
+# Chart.yaml). Reasons this is not on by default:
+#   1. kube-state-metrics mounts the dpf-operator-customresourcestate-config
+#      ConfigMap that only exists AFTER the dpf-operator pack installs; until
+#      then its pod sits in ContainerCreating (self-heals once the operator
+#      lands, but the pack reports unhealthy on every fresh install).
+#   2. The otel-collector DaemonSet cannot become Ready on worker nodes until
+#      the CNI/DPU rollout completes (NVIDIA deploys it with wait: false for
+#      exactly this reason).
+#   3. The stack costs ~2 vCPU / ~4Gi plus 18Gi+ of local-path PVCs.
+# The stack is fully self-contained in-cluster (Prometheus + Grafana + Loki +
+# otel -> in-cluster Loki); no external/central monitoring endpoint is needed.
+#
+# fullnameOverride is pinned on every component so in-cluster URLs keep
+# NVIDIA's reference names (loki, kube-prometheus-stack-prometheus, ...)
+# no matter what the umbrella release is called.
+
+kube-prometheus-stack:
+  enabled: false
+  fullnameOverride: kube-prometheus-stack
+
+  kubeStateMetrics:
+    enabled: false
+
+  nodeExporter:
+    enabled: false
+
+  # Do not create the chart's built-in default alert and recording rules. The
+  # metric allowlists below drop many of their inputs (e.g. kube_pod_owner,
+  # apiserver_request_sli_duration_seconds, scheduler recording-rule inputs), so
+  # they would evaluate over empty vectors and never fire. DPF ships its own
+  # curated alert and recording rules instead (templates/prometheus-rules.yaml).
+  defaultRules:
+    create: false
+
+  alertmanager:
+    enabled: false
+
+  crds:
+    enabled: true
+    upgradeJob:
+      enabled: false
+
+  coreDns:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeProxy:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeEtcd:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeApiServer:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+      # Keep only the metrics consumed by the DPF dashboards and alert/recording
+      # rules, mirroring the allowlist applied to the DPU cluster control planes
+      # in the kamaji cluster manager (getServiceMonitorResource).
+      # Note: setting metricRelabelings replaces the chart default, so the chart
+      # default histogram bucket drop rule is re-applied after the keep rule,
+      # restricted to the histogram families the keep rule lets through.
+      metricRelabelings:
+        - action: keep
+          regex: apiserver_request_total|apiserver_request_duration_seconds_(bucket|sum|count)|apiserver_current_inflight_requests|apiserver_longrunning_requests|apiserver_storage_size_bytes|apiserver_storage_objects|etcd_requests_total|etcd_request_errors_total|etcd_request_duration_seconds_(bucket|sum|count)|process_cpu_seconds_total|process_resident_memory_bytes|process_start_time_seconds
+          sourceLabels:
+            - __name__
+        - action: drop
+          regex: (etcd_request|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|25|30|50)(\.0)?
+          sourceLabels:
+            - __name__
+            - le
+  kubeControllerManager:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+      # Keep only the metrics consumed by the DPF dashboards and alert/recording
+      # rules, mirroring the allowlist applied to the DPU cluster control planes.
+      metricRelabelings:
+        - action: keep
+          regex: workqueue_(depth|adds_total|retries_total|queue_duration_seconds_(bucket|sum|count)|work_duration_seconds_(bucket|sum|count))|rest_client_requests_total|leader_election_master_status|process_cpu_seconds_total|process_resident_memory_bytes|process_start_time_seconds
+          sourceLabels:
+            - __name__
+  kubeScheduler:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+      # Keep only the metrics consumed by the DPF dashboards and alert/recording
+      # rules, mirroring the allowlist applied to the DPU cluster control planes.
+      metricRelabelings:
+        - action: keep
+          regex: scheduler_pending_pods|scheduler_schedule_attempts_total|scheduler_scheduling_attempt_duration_seconds_(bucket|sum|count)|process_cpu_seconds_total|process_resident_memory_bytes|process_start_time_seconds
+          sourceLabels:
+            - __name__
+  kubelet:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+
+  prometheus:
+    prometheusSpec:
+      externalLabels:
+        cluster: management
+      # Enable the remote-write receiver (--web.enable-remote-write-receiver) so the
+      # OpenTelemetry Collector can push DPU cluster metrics into Prometheus via its
+      # prometheusremotewrite exporter.
+      enableRemoteWriteReceiver: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/master"
+                    operator: Exists
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 8Gi
+      serviceAccountName: kube-prometheus-stack-prometheus
+      additionalScrapeConfigs:
+        - job_name: 'doca-platform-framework'
+          scrape_interval: 15s
+          metrics_path: /metrics
+          scheme: https
+          authorization:
+            type: Bearer
+            credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_dpu_nvidia_com_component]
+              action: keep
+              regex: ".*-controller-manager"
+            - source_labels: [__meta_kubernetes_pod_container_port_name]
+              action: keep
+              regex: metrics
+            - source_labels: [__meta_kubernetes_namespace]
+              action: replace
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+          metric_relabel_configs:
+            # Keep only the metrics consumed by the DPF dashboards and alert/recording
+            # rules. The DPF controllers expose the standard controller-runtime metric
+            # set; DPF resource state metrics come from kube-state-metrics instead.
+            # The go_* and process_* runtime gauges are kept wholesale for the debug
+            # dashboards; they are a handful of series per controller pod.
+            - source_labels: [__name__]
+              action: keep
+              regex: (controller_runtime_.+|workqueue_.+|rest_client_requests_total|leader_election_master_status|certwatcher_read_certificate_errors_total|process_.+|go_.+)
+            # Prefix all kept metrics with dpf_ so the DPF controller metrics are
+            # namespaced as DPF metrics, consistent with the kube-state-metrics and
+            # DPU cluster control-plane (Kamaji) metrics.
+            - source_labels: [__name__]
+              action: replace
+              regex: (.+)
+              target_label: __name__
+              replacement: dpf_${1}
+            - action: replace
+              target_label: cluster
+              replacement: management
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+      # Load PrometheusRule resources from all namespaces regardless of labels
+      # (the DPF alert/recording rules rendered by templates/prometheus-rules.yaml)
+      ruleSelectorNilUsesHelmValues: false
+      ruleSelector: {}
+      ruleNamespaceSelector: {}
+
+  grafana:
+    enabled: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    persistence:
+      enabled: true
+      storageClassName: local-path
+    initChownData:
+      enabled: false
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        uid: loki
+        access: proxy
+        url: http://loki.dpf-operator-system.svc.cluster.local:3100
+        isDefault: false
+        editable: true
+        jsonData:
+          maxLines: 1000
+          derivedFields:
+            - datasourceName: Tempo
+              matcherRegex: "traceID=(\\w+)"
+              name: TraceID
+              # $$ escapes Grafana's provisioning env-var expansion (NVIDIA original;
+              # the 26.4.0 umbrella had a single $, which Grafana expands to "").
+              url: "$${__value.raw}"
+    sidecar:
+      datasources:
+        enabled: true
+        defaultDatasourceEnabled: true
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: dpf-operator-system
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: true
+        multicluster:
+          global:
+            enabled: true
+
+  prometheusOperator:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    admissionWebhooks:
+      patch:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "node-role.kubernetes.io/master"
+                      operator: Exists
+                - matchExpressions:
+                    - key: "node-role.kubernetes.io/control-plane"
+                      operator: Exists
+        tolerations:
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+    createCustomResource: true
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+kube-state-metrics:
+  enabled: false
+  fullnameOverride: kube-state-metrics
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: Exists
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  extraArgs:
+    - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+    - --metric-labels-allowlist=pods=[svc.dpu.nvidia.com/service],daemonsets=[svc.dpu.nvidia.com/service],deployments=[svc.dpu.nvidia.com/service]
+  # Only run the collectors for resources that are relevant for observing DPF.
+  # These are all low-cardinality; the pod metrics are the main cardinality
+  # driver and are further filtered in the ServiceMonitor. The DPF resource
+  # state metrics come from the custom resource state config and are not
+  # affected by this list.
+  collectors:
+    - cronjobs
+    - daemonsets
+    - deployments
+    - endpoints
+    - jobs
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - pods
+    - replicasets
+    - resourcequotas
+    - services
+    - statefulsets
+  # This ConfigMap is created by the dpf-operator pack (kubeStateMetricsCRDMetrics.enabled).
+  # The pod stays in ContainerCreating until that pack installs - expected on fresh deploys.
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: dpf-operator-customresourcestate-config
+      name: customresourcestate-config
+  volumeMounts:
+    - mountPath: /etc/customresourcestate
+      name: customresourcestate-config
+      readOnly: true
+  prometheus:
+    monitor:
+      enabled: true
+      http:
+        honorLabels: true
+        # Keep the DPF custom resource state metrics and the kube_* metrics of
+        # the low-cardinality resources. Pod metrics are the main cardinality
+        # driver and are limited to the ones consumed by the DPF dashboards and
+        # alert/recording rules.
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            action: keep
+            regex: dpf_(bfb|dpfoperatorconfig|dpu[a-z]*)_.+|kube_pod_info|kube_pod_labels|kube_pod_status_phase|kube_pod_status_ready|kube_pod_container_info|kube_pod_container_status_restarts_total|kube_pod_container_status_waiting_reason|kube_(cronjob|daemonset|deployment|endpoint|job|namespace|node|persistentvolumeclaim|persistentvolume|replicaset|resourcequota|service|statefulset)(_.+)?
+  rbac:
+    extraRules:
+      - apiGroups:
+          - svc.dpu.nvidia.com
+          - operator.dpu.nvidia.com
+          - provisioning.dpu.nvidia.com
+          - storage.dpu.nvidia.com
+          - vpc.dpu.nvidia.com
+        resources:
+          - '*'
+        verbs: ["list", "watch"]
+      - apiGroups: ["apiextensions.k8s.io"]
+        resources: ["customresourcedefinitions"]
+        verbs: ["list", "watch"]
+
+loki:
+  enabled: false
+  fullnameOverride: loki
+  deploymentMode: SingleBinary
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: info
+    storage:
+      type: 'filesystem'
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      retention_period: 168h
+      max_query_series: 10000
+      max_query_lookback: 720h
+      ingestion_rate_mb: 50
+      ingestion_burst_size_mb: 100
+      per_stream_rate_limit: 10MB
+      per_stream_rate_limit_burst: 20MB
+      allow_structured_metadata: true
+      otlp_config:
+        resource_attributes:
+          attributes_config:
+            - action: index_label
+              attributes:
+                - k8s.namespace.name
+                - k8s.pod.name
+                - k8s.container.name
+                - cluster
+  singleBinary:
+    replicas: 1
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 10Gi
+  gateway:
+    enabled: false
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  backend:
+    replicas: 0
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  monitoring:
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+  test:
+    enabled: false
+  lokiCanary:
+    enabled: false
+
+opentelemetry-collector:
+  enabled: false
+  fullnameOverride: opentelemetry-collector
+  mode: daemonset
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: ""
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  presets:
+    logsCollection:
+      enabled: true
+      includeCollectorLogs: true
+    kubernetesAttributes:
+      enabled: true
+      extractAllPodLabels: true
+      extractAllPodAnnotations: false
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 1024
+        spike_limit_mib: 256
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
+            - k8s.cronjob.name
+            - k8s.job.name
+            - k8s.node.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.pod.start_time
+      resource:
+        attributes:
+          - key: cluster
+            value: "management"
+            action: insert
+      # Kamaji control plane pods run here but belong to the DPU cluster named by
+      # their kamaji.clastix.io/name label. Runs before the resource processor
+      # below, whose insert action then leaves the cluster attribute untouched.
+      transform/kamaji:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              - set(resource.attributes["cluster"], resource.attributes["kamaji.clastix.io/name"])
+                  where resource.attributes["kamaji.clastix.io/name"] != nil
+              # Audit events share the kube-apiserver stdout with its klog output.
+              # Tag them for `| log_type="k8s-audit"`.
+              - set(log.attributes["log.type"], "k8s-audit")
+                  where IsMatch(log.body, "\"apiVersion\":\"audit\\.k8s\\.io/")
+    exporters:
+      otlphttp/loki:
+        endpoint: http://loki:3100/otlp
+        tls:
+          insecure: true
+      prometheusremotewrite:
+        endpoint: http://kube-prometheus-stack-prometheus.dpf-operator-system.svc.cluster.local:9090/api/v1/write
+        resource_to_telemetry_conversion:
+          enabled: true
+      debug:
+        verbosity: basic
+        sampling_initial: 5
+        sampling_thereafter: 200
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp, filelog]
+          processors: [memory_limiter, k8sattributes, transform/kamaji, resource, batch]
+          exporters: [otlphttp/loki, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, k8sattributes, resource, batch]
+          exporters: [prometheusremotewrite, debug]
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  service:
+    enabled: true
+    type: NodePort
+  ports:
+    otlp:
+      enabled: true
+      containerPort: 4317
+      servicePort: 4317
+      protocol: TCP
+    otlp-http:
+      enabled: true
+      containerPort: 4318
+      servicePort: 4318
+      nodePort: 30050
+      protocol: TCP
+    metrics:
+      enabled: true
+      containerPort: 8888
+      servicePort: 8888
+      protocol: TCP
+  serviceAccount:
+    create: true
+    name: opentelemetry-collector
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups: [""]
+        resources: ["pods", "namespaces", "nodes"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["apps"]
+        resources: ["replicasets", "deployments", "daemonsets", "statefulsets"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["batch"]
+        resources: ["jobs", "cronjobs"]
+        verbs: ["get", "list", "watch"]
+  serviceMonitor:
+    enabled: true
+    metricsEndpoints:
+      - port: metrics
+        # Keep only the collector self-observability metrics (pipeline throughput,
+        # queue state, resource usage) and the Prometheus handler error counter.
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            action: keep
+            regex: otelcol_.+|promhttp_metric_handler_errors_total

@@ -1,0 +1,57 @@
+pack:
+  releaseNameOverride:
+      dpf-deployment: dpf-deployment
+  namespace: dpf-operator-system
+  content:
+    images: []
+    # DPU-side DPUService images (arm64-only, pulled by the DPUs through their
+    # registry mirror). For airgapped installs add the ones your preset uses so
+    # the content bundle mirrors them, and mirror their Helm charts too
+    # (helm.ngc.nvidia.com/nvidia/doca: doca-hbn 3.5.0, doca-telemetry 1.26.5,
+    # doca-blueman 1.0.8; oci://ghcr.io/mellanox/charts: ovn-kubernetes-chart
+    # v26.8.0), then point the DPUServiceTemplate repoURLs at the mirror.
+    #images:
+    #  - image: nvcr.io/nvidia/doca/doca_hbn:3.5.0-doca3.5.0
+
+# This pack creates the DPF custom resources. The skeleton below is empty on
+# purpose - select a "Mode" preset (Host Trusted, Zero Trust - Passthrough,
+# Zero Trust - HBN or Zero Trust - Hostless) to populate a 26.8.0 starting
+# configuration taken from NVIDIA's reference manifests, then adjust the lines
+# marked SET for your site. With the skeleton as-is the chart renders nothing.
+#
+# Zero Trust (ZT) vs Host Trusted (HT) - what differs in this pack:
+#   - The mode itself is NOT set here: DPF 26.8 reads it from
+#     DPFOperatorConfig.spec.deploymentMode (nvidia-dpf-operator pack).
+#     DPUFlavor.spec.dpuMode is deprecated and ignored, so no preset sets it.
+#   - DPUSet/DPUDeployment selection: HT selects the worker that carries the DPU
+#     (dpuNodeSelector); ZT selects the DPUNodes DPF creates for each DPUDevice
+#     (crawler dpu-node-<serial> or hostless-<device>, both labelled
+#     feature.node.kubernetes.io/dpu-enabled=true). Optional dpuDeviceSelector
+#     narrows by DPUDevice labels (dpuSelector is deprecated).
+#   - DPUServices: the HT preset deploys OVN + HBN + DTS + Blueman, a full
+#     service chain and a NodeSRIOVDevicePluginConfig for host VFs; ZT HBN
+#     deploys DOCA HBN routing; ZT Passthrough/Hostless deploy no service
+#     offload and chain the physical ports to the host PFs.
+#   - Hostless ZT additionally declares the DPUDevices (dpuDevices[]).
+#   - BFB and DPUFlavor CRs are required in all modes.
+#
+# BFB object name: bf-bundle-v26.8.0 (bfbName overrides it). Every DPUSet /
+# DPUDeployment, including ones created outside this pack, must reference it.
+charts:
+  dpf-deployment:
+    #bfbName: bf-bundle-v26.8.0
+    bfb: {}
+    dpuFlavors: []
+    dpuFlavorTemplates: []
+    dpuDevices: []
+    dpuSets: []
+    dpuServices: []
+    dpuServiceChains: []
+    dpuServiceConfigurations: []
+    dpuDeployments: []
+    dpuServiceTemplates: []
+    dpuServiceInterfaces: []
+    dpuServiceCredentialRequests: []
+    dpuServiceIPAMs: []
+    dpuServiceNADs: []
+    nodeSRIOVDevicePluginConfigs: []

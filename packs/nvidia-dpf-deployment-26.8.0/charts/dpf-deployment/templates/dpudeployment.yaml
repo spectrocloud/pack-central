@@ -1,0 +1,35 @@
+# DPUDeployment (svc.dpu.nvidia.com/v1alpha1, DPF v26.8.0).
+# spec.dpus requires dpuSetStrategy + nodeEffect, and exactly one of bfb /
+# blueFieldSoftware and of flavor / flavorTemplate (all passed through from
+# values). nodeEffect counts noEffect/drain/hold only when TRUE in 26.8.
+# dpus.dpuSets[]: dpuSelector -> dpuDeviceSelector and nodeSelector ->
+# dpuNodeSelector (the old names are deprecated, removal v27.1.0).
+# Optional metadata.annotations, e.g. the (undocumented, present since 26.4.0)
+#   svc.dpu.nvidia.com/dpudeployment-skip-chain-requestor: "true"
+# which stops DPF from adding the DPUServiceChain requestor to DPUNodeMaintenance
+# (the requestor that never releases in ZT when host-created VFs keep the chain
+# unready, see internal/dpuservice/controllers/dpudeployment_controller.go).
+{{- range $conf := .Values.dpuDeployments }}
+---
+apiVersion: svc.dpu.nvidia.com/v1alpha1
+kind: DPUDeployment
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+  {{- if $conf.annotations }}
+  annotations: {{ $conf.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $conf.dpus }}
+  dpus: {{ $conf.dpus | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.services }}
+  services: {{ $conf.services | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.serviceChains }}
+  serviceChains: {{ $conf.serviceChains | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ $conf.revisionHistoryLimit | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

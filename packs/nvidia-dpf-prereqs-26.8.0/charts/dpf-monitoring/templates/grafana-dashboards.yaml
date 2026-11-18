@@ -1,0 +1,20 @@
+{{- /*
+DPF 26.8 monitoring-stack dashboards. Upstream applies these with the helmfile
+postsync hook dev/helmfiles/hooks/apply-dashboards.sh (kubectl create configmap
+dpf-monitoring-grafana-dashboards --from-file=dashboards/*.json, label
+grafana_dashboard=1, annotation grafana_folder). Here the same ConfigMap is a
+chart object, rendered only when kube-prometheus-stack (Grafana) is enabled.
+*/}}
+{{- if (index .Values "kube-prometheus-stack" "enabled") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dpf-monitoring-grafana-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "DOCA Platform Framework"
+data:
+{{ (.Files.Glob "files/dashboards/*.json").AsConfig | indent 2 }}
+{{- end }}

@@ -1,0 +1,87 @@
+presets:
+  # ===========================================================================
+  # Monitoring - the optional DPF observability stack (kube-prometheus-stack,
+  # kube-state-metrics, loki, opentelemetry-collector) shipped in this pack as
+  # the dpf-monitoring umbrella chart. Fully self-contained in-cluster; no
+  # external monitoring endpoint required.
+  #
+  # Disabled is the default: on a fresh install kube-state-metrics stays in
+  # ContainerCreating until the dpf-operator pack creates its
+  # customresourcestate ConfigMap, and the otel DaemonSet stays not-Ready until
+  # the CNI/DPU rollout - both self-heal, but the pack reports degraded until
+  # then. For airgapped installs with monitoring enabled, also uncomment the
+  # dpf-monitoring image block in pack.content.images.
+  # ===========================================================================
+  - name: "monitoring-disabled"
+    displayName: "Monitoring disabled"
+    group: "Monitoring"
+    remove:
+    - "charts.dpf-monitoring"
+    add: |
+      charts:
+        dpf-monitoring:
+          kube-prometheus-stack:
+            enabled: false
+          kube-state-metrics:
+            enabled: false
+          loki:
+            enabled: false
+          opentelemetry-collector:
+            enabled: false
+
+  - name: "monitoring-enabled"
+    displayName: "Monitoring enabled"
+    group: "Monitoring"
+    remove:
+    - "charts.dpf-monitoring"
+    add: |
+      charts:
+        dpf-monitoring:
+          kube-prometheus-stack:
+            enabled: true
+          kube-state-metrics:
+            enabled: true
+          loki:
+            enabled: true
+          opentelemetry-collector:
+            enabled: true
+
+  # ===========================================================================
+  # Deployment type - two parameters in the node-feature-discovery.worker
+  # section need adjustment when deploying on CAPI MAAS instead of Edge native:
+  # .dnsPolicy and the KUBERNETES_SERVICE_HOST env value in .extraEnvs.
+  #
+  # The capi-maas preset sets .dnsPolicy=Default and
+  # KUBERNETES_SERVICE_HOST="auto"
+  # The edge-native preset sets .dnsPolicy=ClusterFirstWithHostNet and 
+  # KUBERNETES_SERVICE_HOST="{{ .spectro.system.cluster.kubevip }}"
+  # ===========================================================================
+  - name: "capi-maas"
+    displayName: "Deploy on CAPI MAAS"
+    group: "Target cluster type"
+    remove: []
+    add: |
+      charts:
+        node-feature-discovery:
+          worker:
+            dnsPolicy: Default
+            extraEnvs:
+              - name: "KUBERNETES_SERVICE_HOST"
+                value: "auto"
+              - name: "KUBERNETES_SERVICE_PORT"
+                value: "6443"
+
+  - name: "edge-native"
+    displayName: "Deploy on Edge"
+    group: "Target cluster type"
+    remove: []
+    add: |
+      charts:
+        node-feature-discovery:
+          worker:
+            dnsPolicy: ClusterFirstWithHostNet
+            extraEnvs:
+              - name: "KUBERNETES_SERVICE_HOST"
+                value: "{{ .spectro.system.cluster.kubevip }}"
+              - name: "KUBERNETES_SERVICE_PORT"
+                value: "6443"

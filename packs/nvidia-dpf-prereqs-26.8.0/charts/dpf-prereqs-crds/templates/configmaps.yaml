@@ -1,0 +1,14 @@
+# One ConfigMap per source chart: the kamaji CRDs alone are ~760 KB, close to the
+# 1 MiB ConfigMap limit, so they cannot share one. Files are copied verbatim from
+# each chart's crds/ folder (kamaji 1.4.0, maintenance-operator-chart 0.3.0,
+# node-feature-discovery 0.18.3); refresh them whenever a chart version changes.
+{{- range $src := list "kamaji" "maintenance-operator" "node-feature-discovery" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $src }}
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ ($.Files.Glob (printf "files/%s/*.yaml" $src)).AsConfig | indent 2 }}
+{{- end }}
