@@ -1,0 +1,104 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS 3.x PLATFORM MATRIX (canonical — keep identical across all VSS 3.x packs) ─
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in every VSS 3.x pack. In 3.x ALL FIVE packs are in every profile
+# │ (data-infrastructure + nims + vllm + core + ingress) — the vLLM pack is the LLM
+# │ for all platforms (no NIM-LLM in 3.x), so there is no include/omit hazard.
+# │ 3.x decode is NATIVE (VIOS/rt-cv); there is NO --disable-decoding.
+# │
+# │ Platform          LLM (vLLM model)        VLM            decode   vss-core tags
+# │ DGX-SPARK         nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0-sbsa
+# │ OTHER             nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0
+# │ H100              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ L40S              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ RTXPRO6000BW      nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ AGX-THOR/IGX-THOR nano-9b-fp8 (jetson img) rt-vlm        Tegra*   3.1.0 + runtimeClassName
+# │ * Tegra: runtimeClassName nvidia via extraPodSpecs; NVIDIA container runtime injects L4T.
+# │ Only DGX-SPARK is the migration target; all rows UNVALIDATED (no hardware, unverified tags).
+# └──────────────────────────────────────────────────────────────────────────────
+#
+# NVIDIA VSS 3.x NIMs pack (manifest-only). Two services:
+#   - cosmos-reason2-8b: the BASE Vision-Language Model NIM (/nim/ image, NO -sbsa
+#     variant — same multiarch tag on every platform; only env values differ).
+#   - rtvi-embed: the embedding microservice (vss-core/* image, HAS a -sbsa variant).
+#     Gated by the SEARCH profile only — disabled by default (rtviEmbed.enabled: false).
+#
+# Secrets: this pack REFERENCES (does not create) ngc-pull-secret (imagePullSecret),
+# ngc-api-secret (NGC_CLI_API_KEY) and hf-token-secret (HF_TOKEN) — all created by the
+# data-infrastructure pack (install-priority 5, before this pack's 10).
+#
+# DGX-SPARK is the default preset and the only migration target; it flips the rtvi-embed
+# imageTag to 3.1.0-sbsa (cosmos has no -sbsa, so its tag is unchanged). All other
+# platforms are UNVALIDATED.
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "10"
+  content:
+    images:
+      # BUILD-ON-DEPLOY (0/0): only public wolfi-base is pack content. The gated cosmos +
+      # vss-rt-embed NIM rootfs are crane-fetched as runtime DATA at deploy and run on
+      # wolfi-base via the matched-ld + CUDA block validated for the vLLM pack (live GPU
+      # NIM validation pending a free GPU slot).
+      - image: cgr.dev/chainguard/wolfi-base:latest
+
+# Top-level namespace consumed by every manifest ({{ .Values.namespace }}).
+namespace: nvidia-vss
+
+# Public 0/0 base that crane-fetches + runs the gated NIM binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+
+# ── cosmos-reason2-8b VLM NIM (in BASE; rendered on every platform) ──────────────
+# DGX-SPARK defaults from the shared-gpu compose service + hw-DGX-SPARK-shared.env.
+cosmos:
+  enabled: true
+  gatedImage: nvcr.io/nim/nvidia/cosmos-reason2-8b:1.6.0
+  image: "nvcr.io/nim/nvidia/cosmos-reason2-8b"
+  # /nim/ image has NO -sbsa variant — same tag on every platform.
+  # Tag from the compose source (deployments/nim/cosmos-reason2-8b/compose.yml).
+  # TODO(verify): confirm 1.6.0 against an authenticated NGC registry.
+  imageTag: "1.6.0"
+  # compose user: "${UID:-1000}:${GID:-1000}"
+  runAsUser: 1000
+  runAsGroup: 1000
+  gpuCount: 1
+  servicePort: 30082
+  # compose: NIM_MODEL_NAME = ${VLM_CUSTOM_WEIGHTS:-} (empty in BASE).
+  nimModelName: ""
+  # env_file hw-DGX-SPARK-shared.env defaults (verbatim from source).
+  nimKvcachePercent: "0.4"
+  nimMaxModelLen: "16384"
+  nimMaxNumSeqs: "4"
+  nimDisableCudaGraph: "1"
+  # compose shm_size: 32gb.
+  shmSize: "32Gi"
+  cacheSize: "80Gi"
+  # Empty -> omit storageClassName (cluster default StorageClass).
+  storageClass: ""
+
+# ── vss-rt-embed embedding microservice (SEARCH profile only; off by default) ────
+# vss-core/* image, multiarch 3.1.0 — NO -sbsa variant (per BASE-SPEC: only the VIOS
+# services + rtvi-vlm have -sbsa), so the DGX-SPARK preset does NOT flip this tag.
+rtviEmbed:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-rt-embed:3.1.0
+  enabled: false
+  decodeBackend: "nvdec"
+  image: "nvcr.io/nvidia/vss-core/vss-rt-embed"
+  imageTag: "3.1.0"
+  # compose user: "1001:1001"
+  runAsUser: 1001
+  runAsGroup: 1001
+  gpuCount: 1
+  servicePort: 8017
+  # compose: MODEL_PATH default (deployments/rtvi/rtvi-embed/rtvi-embed-docker-compose.yml).
+  modelPath: "git:https://huggingface.co/nvidia/Cosmos-Embed1-448p"
+  # compose: KAFKA_BOOTSTRAP_SERVERS = ${HOST_IP}:9092 -> kafka Service (data-infra, search only).
+  kafkaBootstrapServers: "kafka:9092"
+  # compose: REDIS_HOST = ${REDIS_HOST:-redis} -> redis Service (data-infra).
+  redisHost: "redis"
+  ngcCacheSize: "80Gi"
+  hfCacheSize: "40Gi"
+  tritonRepoSize: "40Gi"
+  # Empty -> omit storageClassName (cluster default StorageClass).
+  storageClass: ""
