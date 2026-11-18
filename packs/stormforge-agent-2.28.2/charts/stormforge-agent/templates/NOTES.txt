@@ -1,0 +1,35 @@
+---
+                         █████████████████████████        ████████████████████
+█████████████████████████████████████████████████       ██████████████████████
+ ██████████████████████████████████████████████       ████████████████████████
+   ██████████████████████████████████████████        ████████████████████
+      ██████████████████████████████████████             █████████████
+          █████████████████████████████████████████    █████████████
+                █████████████████████████████████    █████████████
+                             ██████████████████   ████████████████
+                               ███████████████ ███████████████████
+                                ██████████████████████████████████
+                                 ███████████████████████████████████
+                                ██████████████████████████████████████
+                             █████████████████████████████████████████████
+                         █████████████████████████████████████████████████████
+                         ███████████████████████        ██████████████████████
+                         █████████████████████           █████████████████████
+
+StormForge Optimize Live has been installed!
+
+When your recommendations are ready, you'll be able to see them at:
+
+  https://app.stormforge.io/
+
+Having installation issues? View our Troubleshooting Guide at:
+
+  https://docs.stormforge.io/docs/reference/troubleshooting/
+
+---
+{{- if .Values.patchTargetTypes }}
+
+DEPRECATION WARNING: `patchTargetTypes` is deprecated and will be removed in a
+future release. Please use `workloadResourceTypes` and `ownerResourceTypes` to
+configure patchTargetTypeDefaults instead.
+{{- end }}

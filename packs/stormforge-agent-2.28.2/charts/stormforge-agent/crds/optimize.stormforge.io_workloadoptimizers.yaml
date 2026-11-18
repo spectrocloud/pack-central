@@ -1,0 +1,700 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: workloadoptimizers.optimize.stormforge.io
+spec:
+  group: optimize.stormforge.io
+  names:
+    kind: WorkloadOptimizer
+    listKind: WorkloadOptimizerList
+    plural: workloadoptimizers
+    shortNames:
+    - wo
+    singular: workloadoptimizer
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: WorkloadOptimizer state
+      jsonPath: .status.state
+      name: State
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: WorkloadOptimizer is the Schema for the WorkloadOptimizer API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              apply:
+                description: |-
+                  Apply Method is used to configure how Optimize Live deploys the complete recommendations
+                  that are generated when the workload’s learning period is over.
+                properties:
+                  maxPercentDecrease:
+                    description: MaxPercentDecrease limits the maximum percent decrease
+                      applied per deploy.
+                    type: string
+                  maxPercentIncrease:
+                    description: MaxPercentIncrease limits the maximum percent increase
+                      applied per deploy.
+                    type: string
+                  method:
+                    enum:
+                    - patchworkloadresources
+                    - PatchWorkloadResources
+                    - dynamicadmissionwebhook
+                    - DynamicAdmissionWebhook
+                    - inplacepodresizing
+                    - InPlacePodResizing
+                    type: string
+                type: object
+              autoDeploy:
+                type: boolean
+              containerSettings:
+                items:
+                  description: |-
+                    Container is used to configure the workload container settings.
+                    This should allow for the ability to set container specific resource bounds.
+                  properties:
+                    cpu:
+                      description: ResourceSettings configures the specific requests
+                        and limits for the container.
+                      properties:
+                        limits:
+                          description: LimitsSettings configures the container limits.
+                          properties:
+                            limitRequestRatio:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            max:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Max specifies the upper bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            min:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Min specifies the lower bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            patchFormat:
+                              description: PatchFormat specifies a Go template used
+                                to format the value for the patched resource.
+                              type: string
+                            patchPath:
+                              description: |-
+                                PatchPath controls where the recommendation should be applied/patched.
+                                The format for patchPath is yamlPath format.
+                              type: string
+                          type: object
+                        optimizationPolicy:
+                          description: Policy dictates the OptimizationPolicy that
+                            should be used.
+                          enum:
+                          - requestsandlimits
+                          - RequestsAndLimits
+                          - requestsonly
+                          - RequestsOnly
+                          - donotoptimize
+                          - DoNotOptimize
+                          - requestsraiselimitsifneeded
+                          - RequestsRaiseLimitsIfNeeded
+                          type: string
+                        requests:
+                          description: RequestsSettings configures the container requests.
+                          properties:
+                            max:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Max specifies the upper bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            min:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Min specifies the lower bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            patchFormat:
+                              description: PatchFormat specifies a Go template used
+                                to format the value for the patched resource.
+                              type: string
+                            patchPath:
+                              description: |-
+                                PatchPath controls where the recommendation should be applied/patched.
+                                The format for patchPath is yamlPath format.
+                              type: string
+                          type: object
+                      type: object
+                    memory:
+                      description: ResourceSettings configures the specific requests
+                        and limits for the container.
+                      properties:
+                        limits:
+                          description: LimitsSettings configures the container limits.
+                          properties:
+                            limitRequestRatio:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            max:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Max specifies the upper bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            min:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Min specifies the lower bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            patchFormat:
+                              description: PatchFormat specifies a Go template used
+                                to format the value for the patched resource.
+                              type: string
+                            patchPath:
+                              description: |-
+                                PatchPath controls where the recommendation should be applied/patched.
+                                The format for patchPath is yamlPath format.
+                              type: string
+                          type: object
+                        optimizationPolicy:
+                          description: Policy dictates the OptimizationPolicy that
+                            should be used.
+                          enum:
+                          - requestsandlimits
+                          - RequestsAndLimits
+                          - requestsonly
+                          - RequestsOnly
+                          - donotoptimize
+                          - DoNotOptimize
+                          - requestsraiselimitsifneeded
+                          - RequestsRaiseLimitsIfNeeded
+                          type: string
+                        requests:
+                          description: RequestsSettings configures the container requests.
+                          properties:
+                            max:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Max specifies the upper bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            min:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                Min specifies the lower bound of the recommendation.
+                                If a recommendation is produced outside of the defined bound it will be clipped.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            patchFormat:
+                              description: PatchFormat specifies a Go template used
+                                to format the value for the patched resource.
+                              type: string
+                            patchPath:
+                              description: |-
+                                PatchPath controls where the recommendation should be applied/patched.
+                                The format for patchPath is yamlPath format.
+                              type: string
+                          type: object
+                      type: object
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              hpaSettings:
+                description: Autoscaler handles the configuration for the HPA configured
+                  for the workload.
+                properties:
+                  metrics:
+                    description: Metrics configures the HPA metrics the workload scales
+                      on.
+                    items:
+                      description: AutoscalerMetrics holds the configuration for HPA
+                        metrics.
+                      properties:
+                        containerResource:
+                          description: Configuration for a Container metric based
+                            HPA metric type.
+                          properties:
+                            container:
+                              type: string
+                            name:
+                              type: string
+                          type: object
+                        external:
+                          description: Configuration for an External metric based
+                            HPA metric type.
+                          properties:
+                            name:
+                              description: name is the name of the given metric
+                              type: string
+                            selector:
+                              description: |-
+                                selector is the string-encoded form of a standard kubernetes label selector for the given metric
+                                When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+                                When unset, just the metricName will be used to gather metrics.
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: |-
+                                      A label selector requirement is a selector that contains values, a key, and an operator that
+                                      relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the
+                                          selector applies to.
+                                        type: string
+                                      operator:
+                                        description: |-
+                                          operator represents a key's relationship to a set of values.
+                                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: |-
+                                          values is an array of string values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                          the values array must be empty. This array is replaced during a strategic
+                                          merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                        x-kubernetes-list-type: atomic
+                                    required:
+                                    - key
+                                    - operator
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: |-
+                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          required:
+                          - name
+                          type: object
+                        object:
+                          description: Configuration for an Object metric based HPA
+                            metric type.
+                          properties:
+                            describedObject:
+                              description: TargetRef specifies the kind and name of
+                                the workload object.
+                              properties:
+                                apiVersion:
+                                  description: API version of the referent
+                                  type: string
+                                kind:
+                                  description: |-
+                                    Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                                    Restricted to [deployments|statefulsets|daemonsets|rollouts] for initial release
+                                  enum:
+                                  - deployments
+                                  - statefulsets
+                                  - daemonsets
+                                  - rollouts
+                                  type: string
+                                name:
+                                  description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                                  type: string
+                              required:
+                              - kind
+                              - name
+                              type: object
+                            name:
+                              description: name is the name of the given metric
+                              type: string
+                            selector:
+                              description: |-
+                                selector is the string-encoded form of a standard kubernetes label selector for the given metric
+                                When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+                                When unset, just the metricName will be used to gather metrics.
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: |-
+                                      A label selector requirement is a selector that contains values, a key, and an operator that
+                                      relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the
+                                          selector applies to.
+                                        type: string
+                                      operator:
+                                        description: |-
+                                          operator represents a key's relationship to a set of values.
+                                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: |-
+                                          values is an array of string values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                          the values array must be empty. This array is replaced during a strategic
+                                          merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                        x-kubernetes-list-type: atomic
+                                    required:
+                                    - key
+                                    - operator
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: |-
+                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          required:
+                          - name
+                          type: object
+                        pods:
+                          description: Configuration for a Pod metric based HPA metric
+                            type.
+                          properties:
+                            name:
+                              description: name is the name of the given metric
+                              type: string
+                            selector:
+                              description: |-
+                                selector is the string-encoded form of a standard kubernetes label selector for the given metric
+                                When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+                                When unset, just the metricName will be used to gather metrics.
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: |-
+                                      A label selector requirement is a selector that contains values, a key, and an operator that
+                                      relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the
+                                          selector applies to.
+                                        type: string
+                                      operator:
+                                        description: |-
+                                          operator represents a key's relationship to a set of values.
+                                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: |-
+                                          values is an array of string values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                          the values array must be empty. This array is replaced during a strategic
+                                          merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                        x-kubernetes-list-type: atomic
+                                    required:
+                                    - key
+                                    - operator
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: |-
+                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          required:
+                          - name
+                          type: object
+                        resource:
+                          description: Configuration for a Resource metric based HPA
+                            metric type.
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        target:
+                          description: Target defines the bounds for the recommended
+                            value.
+                          properties:
+                            max:
+                              type: integer
+                            min:
+                              type: integer
+                            patchPath:
+                              type: string
+                            type:
+                              description: |-
+                                MetricTargetType specifies the type of metric being targeted, and should be either
+                                "Value", "AverageValue", or "Utilization"
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                  patchTargetRef:
+                    description: |-
+                      PatchTargetRef allows specifiying the object that should be patched
+                      with HPA settings.
+                      This is most useful in situations where a CRD is used to configure a HPA.
+                    properties:
+                      apiVersion:
+                        type: string
+                      kind:
+                        description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                      name:
+                        description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                        type: string
+                    required:
+                    - kind
+                    - name
+                    type: object
+                type: object
+              learningPeriod:
+                type: string
+              patchTargetRef:
+                description: PatchTargetRef specifies the kind and name of the object
+                  that should be patched.
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              podScheduling:
+                description: PodScheduling handles the configuration for the behavior
+                  of optimizing pod scheduling.
+                properties:
+                  instanceCategories:
+                    description: SchedulingInstanceCategories describes optimization
+                      for instance category affinities.
+                    properties:
+                      nodeAffinity:
+                        properties:
+                          type:
+                            enum:
+                            - soft
+                            - Soft
+                            - preferred
+                            - Preferred
+                            - preferredDuringSchedulingIgnoredDuringExecution
+                            - preferredduringschedulingignoredduringexecution
+                            - hard
+                            - Hard
+                            - required
+                            - Required
+                            - requiredDuringSchedulingIgnoredDuringExecution
+                            - requiredduringschedulingignoredduringexecution
+                            type: string
+                          weight:
+                            type: integer
+                        type: object
+                      patchFormat:
+                        type: string
+                      patchPath:
+                        type: string
+                    type: object
+                  schedulingOptimizationPolicy:
+                    description: PodSchedulingOptimizationPolicy is used to configure
+                      whether to optimize NodeAffinity.
+                    enum:
+                    - instancecategories
+                    - InstanceCategories
+                    - donotoptimize
+                    - DoNotOptimize
+                    type: string
+                type: object
+              reliability:
+                properties:
+                  oom:
+                    properties:
+                      memoryBumpUp:
+                        properties:
+                          applyImmediately:
+                            enum:
+                            - IfAutoDeployEnabled
+                            - ifautodeployenabled
+                            - Always
+                            - always
+                            - Never
+                            - never
+                            type: string
+                          max:
+                            type: string
+                          min:
+                            type: string
+                          percent:
+                            type: string
+                          period:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              schedule:
+                description: |-
+                  Schedule dictates the frequency of the recommendations.
+                  This can be done using one of the following syntaxes:
+                  - Cron; 10 min
+                  A schedule for every 10 minutes would look like: `schedule: */10 * * * *`.
+                  - ISO-8601 Duration ( https://en.wikipedia.org/wiki/ISO_8601#Durations )
+                  A schedule for every 1 hour would look like `schedule: PT1H`.\
+                  this overrides the schedule under Schedules.
+                  we will set this field as optional until we completely deprecate Schedules
+                type: string
+              thresholds:
+                additionalProperties:
+                  properties:
+                    minPercentChange:
+                      minimum: 0
+                      type: integer
+                    minUnitChange:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: object
+              workloadSettings:
+                additionalProperties:
+                  description: WorkloadSettings provides a way to configure settings
+                    for the entire workload.
+                  properties:
+                    optimizationGoal:
+                      description: Goal is used to configure the aggressiveness of
+                        the recommendations.
+                      enum:
+                      - savings
+                      - Savings
+                      - balanced
+                      - Balanced
+                      - reliability
+                      - Reliability
+                      type: string
+                  type: object
+                description: Workload allows configuring workload settings.
+                type: object
+              workloadTargetRef:
+                description: TargetRef specifies the kind and name of the workload
+                  object.
+                properties:
+                  apiVersion:
+                    description: API version of the referent
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      Restricted to [deployments|statefulsets|daemonsets|rollouts] for initial release
+                    enum:
+                    - deployments
+                    - statefulsets
+                    - daemonsets
+                    - rollouts
+                    type: string
+                  name:
+                    description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+            type: object
+          status:
+            description: WorkloadOptimizerStatus defines the observed state of Optimizer.
+            properties:
+              state:
+                description: |-
+                  WorkloadOptimizerState communicates the current state of the WorkloadOptimizer.
+                  **NotSynchronized** configuration has not been sent to StormForge.
+                  **Synchronized** configuration has been sent to StormForge.
+                  **Ignored** configuration will not be sent to StormForge.
+                enum:
+                - NotSynchronized
+                - Synchronized
+                - Ignored
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
