@@ -1,0 +1,106 @@
+pack:
+  releaseNameOverride:
+      dpf-operator: dpf-operator
+      dpf-operator-config: dpf-operator-config
+  namespace: dpf-operator-system
+  namespaceLabels:
+    "dpf-operator-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      - image: nvcr.io/nvidia/doca/dpf-system:v26.4.0
+      - image: ghcr.io/ahrtr/etcd-defrag:v0.22.0
+
+charts:
+  # ---------------------------------------------------------------------------
+  # dpf-operator-config  (Spectro wrapper -> DPFOperatorConfig CR, v1alpha1)
+  # Every key here maps 1:1 to a DPFOperatorConfig.spec field in DPF v26.4.0.
+  # ---------------------------------------------------------------------------
+  dpf-operator-config:
+    #imagePullSecrets:
+    #  - dockerio-secret
+    overrides:
+      # "auto" looks up the API server VIP from the kube-public/cluster-info
+      # ConfigMap. Use "auto" for CAPI; use "{{ .spectro.system.cluster.kubevip }}"
+      # for Palette agent/appliance (edge) mode.
+      kubernetesAPIServerVIP: "auto"
+      kubernetesAPIServerPort: 6443
+    provisioningController:
+      bfbPVCName: "bfb-pvc"
+      dmsTimeout: 900
+      # -------------------------------------------------------------------
+      # ZERO TRUST (ZT) ONLY: uncomment the installInterface block below.
+      # In ZT the DPU host is NOT a Kubernetes worker, so the BFB is flashed
+      # over the BMC via Redfish (host-less provisioning). For HOST TRUSTED
+      # (HT) leave this block commented - the BFB is pushed from the host
+      # over rshim / PCIe and no Redfish interface is needed.
+      # -------------------------------------------------------------------
+      #installInterface:
+      #  installViaRedfish:
+      #    # "auto" for CAPI, "{{ .spectro.system.cluster.kubevip }}:8080" for agent/appliance mode.
+      #    bfbRegistryAddress: "auto"
+    kamajiClusterManager:
+      disable: false
+    networking:
+      controlPlaneMTU: 9000
+      highSpeedMTU: 9000
+    # New DPFOperatorConfig.spec fields available in v26.4.0 (set only if needed):
+    #cniInstaller: {}
+    #monitoring: {}
+    #nodeSRIOVDevicePluginController: {}
+
+  # ---------------------------------------------------------------------------
+  # dpf-operator  (upstream NVIDIA chart, v26.4.0)
+  # ---------------------------------------------------------------------------
+  dpf-operator:
+    controllerManager:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      image:
+        repository: "nvcr.io/nvidia/doca/dpf-system"
+        tag: "v26.4.0"
+      replicas: 1
+      serviceAccount:
+        annotations: {}
+    imagePullSecrets: []
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    ## enableNodeFeatureRules decides whether additional NodeFeatureRules for DPF will be created.
+    ## Note: NFD must be installed (see nvidia-dpf-prereqs pack) to support this.
+    enableNodeFeatureRules: true
+    ## IsOpenShift templates OpenShift-only resources (e.g. SCC ClusterRoleBindings).
+    isOpenshift: false
+    ## kube-state-metrics custom-resource-state metrics for DPF CRs.
+    kubeStateMetricsCRDMetrics:
+      enabled: true
+    ## Grafana dashboards for the DPF Operator.
+    grafanaDashboards:
+      enabled: true
+    ## Secure metrics endpoint for Prometheus scraping.
+    prometheusSecureMetrics:
+      enabled: true
+    ## etcd-defrag CronJob for the Kamaji-hosted DPUCluster etcd.
+    kamajiEtcdDefrag:
+      enabled: true
+      releaseName: kamaji-etcd
+      replicas: 3
+      clientPort: 2379
+      schedule: 0 0 * * *
+      image: ghcr.io/ahrtr/etcd-defrag:v0.22.0
+      defragRule: "dbQuotaUsage > 0.8 || dbSize - dbSizeInUse > 200*1024*1024"
+      successfulJobsHistoryLimit: 3
+      backoffLimit: 6

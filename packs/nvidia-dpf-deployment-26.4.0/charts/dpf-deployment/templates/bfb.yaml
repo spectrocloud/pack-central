@@ -1,0 +1,9 @@
+# BFB - the BlueField bitstream to flash onto the DPU. Required for BOTH ZT and HT.
+# The actual bitstream is selected by the spec (.Values.bfb), e.g. for 26.4.0:
+#   url: https://.../bf-bundle-3.4.0-92_26.04_ubuntu-24.04_64k_prod.bfb
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: BFB
+metadata:
+  name: bf-bundle-v26.4.0
+  namespace: dpf-operator-system
+spec: {{ .Values.bfb | toYaml | nindent 2 }}

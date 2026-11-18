@@ -1,0 +1,71 @@
+# Kamaji configuration
+# Number of Kamaji controller replicas for High Availability
+replicas: 2
+resources: null
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/master"
+              operator: Exists
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: Exists
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+kamaji-etcd:
+  persistentVolumeClaim:
+    storageClassName: local-path
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: Exists
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  jobs:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+  datastore:
+    enabled: true
+    annotations:
+      helm.sh/resource-policy: keep
+    name: default
+image:
+  repository: ghcr.io/nvidia/kamaji
+  tag: v1.34.0-25.9.3
+  pullPolicy: Always
+cfssl:
+  image:
+    tag: v1.6.5
