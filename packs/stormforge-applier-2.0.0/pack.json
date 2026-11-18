@@ -1,0 +1,14 @@
+{
+    "name": "stormforge-applier",
+    "displayName": "Stormforge Optimize Live Applier",
+    "layer": "addon",
+    "version": "2.0.0-beta.9",
+    "cloudTypes": [
+        "all"
+    ],
+    "charts": [
+        "charts/stormforge-applier-2.0.0-beta.9.tgz"
+    ],
+    "addonType": "monitoring",
+    "annotations": {}
+}
