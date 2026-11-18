@@ -1,0 +1,172 @@
+{{- if .Values.backgroundController.enabled -}}
+{{- if .Values.backgroundController.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kyverno.background-controller.roleName" . }}
+  labels:
+    {{- include "kyverno.background-controller.labels" . | nindent 4 }}
+aggregationRule:
+  clusterRoleSelectors:
+    - matchLabels:
+        rbac.kyverno.io/aggregate-to-background-controller: "true"
+    - matchLabels:
+        {{- include "kyverno.background-controller.matchLabels" . | nindent 8 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kyverno.background-controller.roleName" . }}:core
+  labels:
+    {{- include "kyverno.background-controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      {{- $crdWatcher := .Values.global.crdWatcher }}
+      {{- if hasKey .Values.backgroundController "crdWatcher" }}
+      {{- $crdWatcher = .Values.backgroundController.crdWatcher }}
+      {{- end }}
+      {{- if $crdWatcher }}
+      - list
+      - watch
+      {{- end }}
+  - apiGroups:
+      - kyverno.io
+    resources:
+      - updaterequests
+      - updaterequests/status
+      - globalcontextentries
+      - globalcontextentries/status
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - deletecollection
+  - apiGroups:
+      - policies.kyverno.io
+    resources:
+      - generatingpolicies
+      - namespacedgeneratingpolicies
+      - mutatingpolicies
+      - namespacedmutatingpolicies
+      - policyexceptions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - deletecollection
+  - apiGroups:
+      - policies.kyverno.io
+    resources:
+      - policyexceptions
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  {{- $aggregatedVerbs := list }}
+  {{- if .Values.rbac.roles.aggregate.admin }}
+  {{- $aggregatedVerbs = list "create" "delete" "get" "list" "patch" "update" "watch" }}
+  {{- else if .Values.rbac.roles.aggregate.view }}
+  {{- $aggregatedVerbs = list "get" "list" "watch" }}
+  {{- end }}
+  {{- if $aggregatedVerbs }}
+  # Everything else the chart aggregates into the admin and view roles (see
+  # templates/rbac/). Generate rules that create a RoleBinding to those roles
+  # are rejected by the RBAC escalation check unless the background controller
+  # holds every permission they grant.
+  # Includes the legacy policies/clusterpolicies rows of admin:policies and view:policies
+  # until those roles drop them in 1.21.
+  - apiGroups:
+      - kyverno.io
+    resources:
+      - cleanuppolicies
+      - clustercleanuppolicies
+      - policies
+      - clusterpolicies
+    verbs:
+      {{- toYaml $aggregatedVerbs | nindent 6 }}
+  - apiGroups:
+      - policies.kyverno.io
+    resources:
+      - deletingpolicies
+      - imagevalidatingpolicies
+      - namespaceddeletingpolicies
+      - namespacedimagevalidatingpolicies
+      - namespacedvalidatingpolicies
+      - validatingpolicies
+    verbs:
+      {{- toYaml $aggregatedVerbs | nindent 6 }}
+  - apiGroups:
+      - wgpolicyk8s.io
+    resources:
+      - policyreports
+      - clusterpolicyreports
+    verbs:
+      {{- toYaml $aggregatedVerbs | nindent 6 }}
+  {{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - namespaces
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ''
+      - events.k8s.io
+    resources:
+      - events
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - reports.kyverno.io
+    resources:
+      - ephemeralreports
+      - clusterephemeralreports
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - deletecollection
+{{- with .Values.backgroundController.rbac.coreClusterRole.extraResources }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.backgroundController.rbac.clusterRole.extraResources }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kyverno.background-controller.roleName" $ }}:additional
+  labels:
+    {{- include "kyverno.background-controller.labels" $ | nindent 4 }}
+rules:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
