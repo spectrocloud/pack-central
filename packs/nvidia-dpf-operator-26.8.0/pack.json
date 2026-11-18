@@ -1,0 +1,18 @@
+{
+  "addonType": "system app",
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Nvidia DPF Operator",
+  "charts": [
+    "charts/dpf-operator-v26.8.0.tgz",
+    "charts/dpf-operator-config-1.3.0.tgz"
+  ],
+  "layer": "addon",
+  "name": "dpf-operator",
+  "version": "26.8.0"
+}

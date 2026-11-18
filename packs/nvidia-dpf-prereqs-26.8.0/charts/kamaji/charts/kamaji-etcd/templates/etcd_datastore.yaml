@@ -1,0 +1,68 @@
+{{- if .Values.datastore.enabled }}
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: {{ .Values.datastore.name | default (include "etcd.fullname" .) }}
+  {{- if .Values.datastore.annotations }}
+  annotations:
+      {{- toYaml .Values.datastore.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "etcd.labels" . | nindent 4 }}
+spec:
+  driver: etcd
+  endpoints:
+  {{- if or (not (hasKey .Values.datastore "headless")) .Values.datastore.headless }}
+    {{- include "etcd.endpointsYAML" . | nindent 4 }}
+  {{- else }}
+    {{- include "client.endpointsYAML" . | nindent 4 }}
+  {{- end }}
+  tlsConfig:
+  {{- if .Values.certManager.enabled }}
+    certificateAuthority:
+      certificate:
+        secretReference:
+          keyPath: tls.crt
+          name: {{ include "etcd.certManager.ca" . }}
+          namespace: {{ .Release.Namespace }}
+      privateKey:
+        secretReference:
+          keyPath: tls.key
+          name: {{ include "etcd.certManager.ca" . }}
+          namespace: {{ .Release.Namespace }}
+    clientCertificate:
+      certificate:
+        secretReference:
+          keyPath: tls.crt
+          name: {{ include "etcd.certManager.clientCert" . }}
+          namespace: {{ .Release.Namespace }}
+      privateKey:
+        secretReference:
+          keyPath: tls.key
+          name: {{ include "etcd.certManager.clientCert" . }}
+          namespace: {{ .Release.Namespace }}
+  {{- else }}
+    certificateAuthority:
+      certificate:
+        secretReference:
+          keyPath: ca.crt
+          name: {{ include "etcd.caSecretName" . }}
+          namespace: {{ .Release.Namespace }}
+      privateKey:
+        secretReference:
+          keyPath: ca.key
+          name: {{ include "etcd.caSecretName" . }}
+          namespace: {{ .Release.Namespace }}
+    clientCertificate:
+      certificate:
+        secretReference:
+          keyPath: tls.crt
+          name: {{ include "etcd.clientSecretName" . }}
+          namespace: {{ .Release.Namespace }}
+      privateKey:
+        secretReference:
+          keyPath: tls.key
+          name: {{ include "etcd.clientSecretName" . }}
+          namespace: {{ .Release.Namespace }}
+  {{- end }}
+{{ end }}

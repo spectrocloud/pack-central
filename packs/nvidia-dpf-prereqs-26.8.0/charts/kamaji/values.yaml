@@ -1,0 +1,90 @@
+affinity: {}
+defaultDatastoreName: default
+extraArgs: []
+fullnameOverride: ""
+healthProbeBindAddress: :8081
+image:
+    pullPolicy: Always
+    repository: ghcr.io/clastix/kamaji
+    tag: null
+imagePullSecrets: []
+kamaji-etcd:
+    certManager:
+        enabled: true
+        issuerRef:
+            group: cert-manager.io
+            kind: Issuer
+            name: kamaji-selfsigned-issuer
+    clusterDomain: cluster.local
+    datastore:
+        enabled: true
+        name: default
+    deploy: true
+    fullnameOverride: kamaji-etcd
+    selfSignedCertificates:
+        enabled: false
+kubeconfigGenerator:
+    affinity: {}
+    enableLeaderElect: true
+    enabled: false
+    extraArgs: []
+    fullnameOverride: ""
+    healthProbeBindAddress: :8081
+    loggingDevel:
+        enable: false
+    nodeSelector: {}
+    podAnnotations: {}
+    podSecurityContext:
+        runAsNonRoot: true
+    replicaCount: 2
+    resources:
+        limits:
+            cpu: 200m
+            memory: 512Mi
+        requests:
+            cpu: 200m
+            memory: 512Mi
+    securityContext:
+        allowPrivilegeEscalation: false
+    serviceAccountOverride: ""
+    tolerations: []
+livenessProbe:
+    httpGet:
+        path: /healthz
+        port: healthcheck
+    initialDelaySeconds: 15
+    periodSeconds: 20
+loggingDevel:
+    enable: false
+metricsBindAddress: :8080
+nameOverride: ""
+nodeSelector: {}
+podAnnotations: {}
+podSecurityContext:
+    runAsNonRoot: true
+readinessProbe:
+    httpGet:
+        path: /readyz
+        port: healthcheck
+    initialDelaySeconds: 5
+    periodSeconds: 10
+replicaCount: 1
+resources:
+    limits:
+        cpu: 200m
+        memory: 100Mi
+    requests:
+        cpu: 100m
+        memory: 20Mi
+securityContext:
+    allowPrivilegeEscalation: false
+serviceAccount:
+    annotations: {}
+    create: true
+    name: kamaji-controller-manager
+serviceMonitor:
+    enabled: false
+telemetry:
+    disabled: false
+temporaryDirectoryPath: /tmp/kamaji
+tolerations: []

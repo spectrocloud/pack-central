@@ -1,0 +1,107 @@
+# DPFOperatorConfig is the top-level CR that tells the DPF Operator which
+# subsystems to enable. Every field below except deploymentMode is OPTIONAL and
+# is only rendered when the corresponding key is set in values, so this wrapper
+# stays generic.
+#
+# Spec fields match the DPF v26.8.0 CRD (operator.dpu.nvidia.com/v1alpha1,
+# templates/crds/apiextensions.k8s.io_v1_customresourcedefinition_dpfoperatorconfigs
+# .operator.dpu.nvidia.com.yaml in the dpf-operator v26.8.0 chart).
+# Changes vs the 1.2.0 wrapper (DPF v26.4.0):
+#   + deploymentMode   REQUIRED in 26.8 (enum zero-trust | host-trusted) and
+#                      IMMUTABLE once set (changing it = delete/recreate the CR and
+#                      reprovision every DPU). The template fails when it is unset.
+#   + coreDNS, security (new in 26.8)
+#   - ovsCNI           deprecated in 26.8 (removal v27.1.0), no longer templated
+#   - the "auto" lookup for provisioningController.installInterface.installViaRedfish
+#     .bfbRegistryAddress: that field has been ignored since 26.4 and is deprecated in
+#     26.8; provisioningController is now passed through verbatim.
+# CEL rules the CRD enforces (render-time checks below mirror the first three):
+#   - zero-trust requires provisioningController.installInterface.installViaRedfish
+#   - host-trusted forbids installViaRedfish
+#   - zero-trust: networking.controlPlaneMTU <= 1500 (DPU OOB is 1 GbE, no jumbo)
+#   - networking.dpuNodeOOBBridgeName only in host-trusted; security.spiffe only in zero-trust
+{{- $mode := required "dpf-operator-config: deploymentMode is required by DPF 26.8 (zero-trust or host-trusted)" .Values.deploymentMode }}
+{{- if not (has $mode (list "zero-trust" "host-trusted")) }}
+{{- fail (printf "dpf-operator-config: deploymentMode must be zero-trust or host-trusted, got %q" $mode) }}
+{{- end }}
+{{- $redfish := dig "installInterface" "installViaRedfish" "" (.Values.provisioningController | default dict) }}
+{{- if and (eq $mode "zero-trust") (kindIs "string" $redfish) }}
+{{- fail "dpf-operator-config: deploymentMode zero-trust requires provisioningController.installInterface.installViaRedfish" }}
+{{- end }}
+{{- if and (eq $mode "host-trusted") (not (kindIs "string" $redfish)) }}
+{{- fail "dpf-operator-config: deploymentMode host-trusted must not set provisioningController.installInterface.installViaRedfish" }}
+{{- end }}
+apiVersion: operator.dpu.nvidia.com/v1alpha1
+kind: DPFOperatorConfig
+metadata:
+  name: dpfoperatorconfig
+  namespace: {{ .Release.Namespace }}
+spec:
+  deploymentMode: {{ $mode }}
+{{- if .Values.cniInstaller }}
+  cniInstaller: {{ .Values.cniInstaller | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.coreDNS }}
+  coreDNS: {{ .Values.coreDNS | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.dpuDetector }}
+  dpuDetector: {{ .Values.dpuDetector | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.dpuServiceController }}
+  dpuServiceController: {{ .Values.dpuServiceController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.flannel }}
+  flannel: {{ .Values.flannel | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+  imagePullSecrets: {{ .Values.imagePullSecrets | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.kamajiClusterManager }}
+  kamajiClusterManager: {{ .Values.kamajiClusterManager | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.monitoring }}
+  monitoring: {{ .Values.monitoring | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.multus }}
+  multus: {{ .Values.multus | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.networking }}
+  {{- if and (eq $mode "zero-trust") (hasKey .Values.networking "controlPlaneMTU") }}
+  {{- if gt (int .Values.networking.controlPlaneMTU) 1500 }}
+  {{- fail (printf "dpf-operator-config: zero-trust requires networking.controlPlaneMTU <= 1500 (DPF 26.8 CEL), got %v" .Values.networking.controlPlaneMTU) }}
+  {{- end }}
+  {{- end }}
+  networking: {{ .Values.networking | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.nodeSRIOVDevicePluginController }}
+  nodeSRIOVDevicePluginController: {{ .Values.nodeSRIOVDevicePluginController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.nvipam }}
+  nvipam: {{ .Values.nvipam | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.overrides }}
+  {{- if eq .Values.overrides.kubernetesAPIServerVIP "auto" }}
+  overrides: {{ omit .Values.overrides "kubernetesAPIServerVIP" | toYaml | nindent 4 }}
+    kubernetesAPIServerVIP: {{ include "k8sServiceHost" . }}
+  {{- else }}
+  overrides: {{ .Values.overrides | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.provisioningController }}
+  provisioningController: {{ .Values.provisioningController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.security }}
+  security: {{ .Values.security | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.serviceSetController }}
+  serviceSetController: {{ .Values.serviceSetController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.sfcController }}
+  sfcController: {{ .Values.sfcController | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.sriovDevicePlugin }}
+  sriovDevicePlugin: {{ .Values.sriovDevicePlugin | toYaml | nindent 4 }}
+{{- end }}
+{{- if .Values.staticClusterManager }}
+  staticClusterManager: {{ .Values.staticClusterManager | toYaml | nindent 4 }}
+{{- end }}

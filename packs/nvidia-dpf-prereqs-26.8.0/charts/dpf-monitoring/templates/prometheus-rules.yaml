@@ -1,0 +1,14 @@
+{{- /*
+DPF 26.8 alert and recording rules. Upstream applies these with the helmfile
+postsync hook dev/helmfiles/hooks/apply-prometheus-rules.sh (kubectl apply -f
+prometheus-rules/). The files are emitted verbatim with .Files.Get, so the
+Prometheus {{ $labels }} templating inside them is NOT evaluated by Helm.
+Rendered only when kube-prometheus-stack (which brings the PrometheusRule CRD)
+is enabled. The files carry namespace dpf-operator-system (the pack namespace).
+*/}}
+{{- if (index .Values "kube-prometheus-stack" "enabled") }}
+{{- range $path, $_ := .Files.Glob "files/prometheus-rules/*.yaml" }}
+---
+{{ $.Files.Get $path }}
+{{- end }}
+{{- end }}

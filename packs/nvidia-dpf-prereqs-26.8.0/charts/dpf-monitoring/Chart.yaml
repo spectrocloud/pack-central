@@ -1,0 +1,23 @@
+apiVersion: v2
+name: dpf-monitoring
+description: Optional DPF observability stack (kube-prometheus-stack, kube-state-metrics, loki, opentelemetry-collector) as one condition-gated umbrella. Mirrors the DPF v26.8.0 monitoring helmfile (dev/helmfiles/monitoring.yaml) incl. the DPF alert dashboard and PrometheusRules its hooks apply. All components disabled by default - enable via the pack's Monitoring preset.
+type: application
+version: 26.8.0
+appVersion: v26.8.0
+dependencies:
+  - name: kube-prometheus-stack
+    version: 80.4.1
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: kube-prometheus-stack.enabled
+  - name: kube-state-metrics
+    version: 5.25.1
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: kube-state-metrics.enabled
+  - name: loki
+    version: 6.53.0
+    repository: https://grafana.github.io/helm-charts
+    condition: loki.enabled
+  - name: opentelemetry-collector
+    version: 0.146.0
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    condition: opentelemetry-collector.enabled

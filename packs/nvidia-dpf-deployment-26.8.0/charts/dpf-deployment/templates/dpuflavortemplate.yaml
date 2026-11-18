@@ -1,0 +1,23 @@
+# DPUFlavorTemplate (new in DPF v26.8.0): a DPUFlavor spec as a Go template string
+# that DPF renders per DPU from DPUDevice.spec.values (render failures surface on
+# the DPU as DPUFlavorRendered=False). Referenced by DPUSet
+# spec.dpuTemplate.spec.dpuFlavorTemplate or DPUDeployment spec.dpus.flavorTemplate
+# (exactly one of flavor / flavorTemplate). Use it for per-DPU values such as a
+# static oob_net0 address. `template` is passed verbatim, so keep any Go template
+# braces in it inside a YAML block string in the pack values.
+{{- range $conf := .Values.dpuFlavorTemplates }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUFlavorTemplate
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  template: {{ required "dpuFlavorTemplates[].template is required" $conf.template | toYaml | nindent 4 }}
+  {{- if $conf.dpuResources }}
+  dpuResources: {{ $conf.dpuResources | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.systemReservedResources }}
+  systemReservedResources: {{ $conf.systemReservedResources | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,181 @@
+presets:
+  # ===========================================================================
+  # Deployment Mode (DPF 26.8). deploymentMode is REQUIRED and IMMUTABLE: pick
+  # it before the first install. Each preset replaces the mode-dependent keys
+  # wholesale (deploymentMode, dpuDetector, provisioningController, networking,
+  # nodeSRIOVDevicePluginController and dpf-operator.enableNodeFeatureRules);
+  # everything else keeps its value. Values follow NVIDIA's DPF v26.8.0
+  # reference DPFOperatorConfigs (docs/public/user-guides/.../manifests/
+  # *operatorconfig.yaml); deviations are marked "DEVIATION" with the reason.
+  #
+  # Not set on purpose:
+  #   provisioningController.bfbPVCName - NVIDIA leaves it unset (BFBs go to
+  #     host storage). Set it only to a PVC you create yourself; it keeps BFBs
+  #     across provisioning-controller leader moves (26.8 known issue #4957820).
+  #   provisioningController.registry.loadBalancerAddress - only when you front
+  #     the bfb-registry with your own Service; it is HTTPS-only in 26.8 (8443),
+  #     so the address must start with https://.
+  # ===========================================================================
+  # NVIDIA host-trusted hbn-ovnk reference (03-dpf-system-installation/
+  # operatorconfig.yaml): host is a cluster worker, BFB pushed over the host
+  # rshim (DMS), DPF's own SR-IOV device plugin exposes the host VFs.
+  - name: "host-trusted"
+    displayName: "Host Trusted"
+    group: "Deployment Mode"
+    remove:
+    - "charts.dpf-operator-config.deploymentMode"
+    - "charts.dpf-operator-config.dpuDetector"
+    - "charts.dpf-operator-config.provisioningController"
+    - "charts.dpf-operator-config.networking"
+    - "charts.dpf-operator-config.nodeSRIOVDevicePluginController"
+    - "charts.dpf-operator.enableNodeFeatureRules"
+    add: |
+      charts:
+        dpf-operator-config:
+          deploymentMode: host-trusted
+          dpuDetector:
+            disable: false
+          provisioningController:
+            dmsTimeout: 900
+          # Exposes host VFs as node resources (replaces the SR-IOV Network
+          # Operator for DPF). Pair with a NodeSRIOVDevicePluginConfig and the
+          # DPU annotation noderesources.dpu.nvidia.com/nodesriovdevicepluginconfig
+          # (both in the dpf-deployment pack's Host Trusted preset).
+          nodeSRIOVDevicePluginController:
+            disable: false
+          networking:
+            # CRD defaults, which NVIDIA's reference keeps. Raise only if the
+            # host management / high-speed networks carry jumbo frames end to end.
+            controlPlaneMTU: 1500
+            highSpeedMTU: 1500
+        dpf-operator:
+          enableNodeFeatureRules: true
+
+  # NVIDIA zero-trust passthrough / hbn references (02-dpf-system-installation/
+  # operatorconfig.yaml): DPUDiscovery scans the BMC range and the crawler
+  # creates one DPUNode per DPUDevice (skipDPUNodeDiscovery: false).
+  - name: "zero-trust"
+    displayName: "Zero Trust (DPUDiscovery)"
+    group: "Deployment Mode"
+    remove:
+    - "charts.dpf-operator-config.deploymentMode"
+    - "charts.dpf-operator-config.dpuDetector"
+    - "charts.dpf-operator-config.provisioningController"
+    - "charts.dpf-operator-config.networking"
+    - "charts.dpf-operator-config.nodeSRIOVDevicePluginController"
+    - "charts.dpf-operator.enableNodeFeatureRules"
+    add: |
+      charts:
+        dpf-operator-config:
+          deploymentMode: zero-trust
+          # The host rshim/DMS pod must never run in ZT: it re-steals rshim from the
+          # DPU BMC on every boot (Redfish BFB push then 404s on /dev/rshim0/boot).
+          dpuDetector:
+            disable: true
+          provisioningController:
+            dmsTimeout: 900
+            installInterface:
+              installViaRedfish:
+                skipDPUNodeDiscovery: false
+                # DEVIATION (NVIDIA default OnInitialization): one Redfish factory
+                # reset of every newly onboarded DPU BMC. That WIPES the BMC network
+                # config, so a BMC with a static IP drops off the network and never
+                # comes back to the address DPUDiscovery found it on. Never = keep the
+                # BMC as-is. Use OnInitialization only when every BMC gets its IP from
+                # a DHCP reservation.
+                discoveredDPUDeviceBMCFactoryResetPolicy: Never
+          networking:
+            # 26.8 CEL: controlPlaneMTU must be <= 1500 in zero-trust (OOB is 1 GbE).
+            controlPlaneMTU: 1500
+            highSpeedMTU: 1500
+        dpf-operator:
+          # DEVIATION (chart default true): with a DPU host that is also a cluster
+          # worker, the dpu-detection-rule re-labels it dpu-enabled, DPF resurrects
+          # the host rshim/DMS pod and ZT installs fail (field-proven 2026-07).
+          # The crawler labels its own DPUNodes, so ZT does not need the rule.
+          enableNodeFeatureRules: false
+
+  # DPF 26.8 hostless flow (docs/public/advanced-configuration/
+  # hostless-dpu-provisioning.md): no DPUDiscovery; DPUDevices are created by hand
+  # with label provisioning.dpu.nvidia.com/hostless: "true" and DPF creates a
+  # synthetic hostless-<device> DPUNode (nodeRebootMethod none) and reboots the
+  # DPU itself via Redfish. Use nodeEffect noEffect on the DPUSet/DPUDeployment.
+  - name: "zero-trust-hostless"
+    displayName: "Zero Trust - Hostless"
+    group: "Deployment Mode"
+    remove:
+    - "charts.dpf-operator-config.deploymentMode"
+    - "charts.dpf-operator-config.dpuDetector"
+    - "charts.dpf-operator-config.provisioningController"
+    - "charts.dpf-operator-config.networking"
+    - "charts.dpf-operator-config.nodeSRIOVDevicePluginController"
+    - "charts.dpf-operator.enableNodeFeatureRules"
+    add: |
+      charts:
+        dpf-operator-config:
+          deploymentMode: zero-trust
+          dpuDetector:
+            disable: true
+          provisioningController:
+            dmsTimeout: 900
+            installInterface:
+              installViaRedfish:
+                skipDPUNodeDiscovery: true
+                # DEVIATION (see the Zero Trust preset). Applies only to DPUDevices
+                # created by a DPUDiscovery; hand-made DPUDevices carry their own
+                # spec.bmcFactoryResetPolicy (the dpf-deployment wrapper renders Never).
+                discoveredDPUDeviceBMCFactoryResetPolicy: Never
+          networking:
+            controlPlaneMTU: 1500
+            highSpeedMTU: 1500
+        dpf-operator:
+          enableNodeFeatureRules: false
+
+  # ===========================================================================
+  # DPU Cluster Monitoring (DPFOperatorConfig.spec.monitoring, DPF 26.8):
+  # docs/public/operational-readiness/observability/deployment/
+  # operator-managed-components.md. DPF deploys kube-state-metrics and
+  # node-problem-detector to every DPU cluster by default; the OpenTelemetry
+  # Collector is off until an endpoint is set.
+  # ===========================================================================
+  - name: "dpu-monitoring-default"
+    displayName: "Default (KSM + node-problem-detector)"
+    group: "DPU Cluster Monitoring"
+    remove:
+    - "charts.dpf-operator-config.monitoring"
+    add: |
+      charts:
+        dpf-operator-config:
+          monitoring: {}
+
+  # Streams DPU-cluster logs and workload metrics over OTLP to the management
+  # cluster's OpenTelemetry Collector (NodePort 30050), which writes them to
+  # Loki and Prometheus. Requires the nvidia-dpf-prereqs "Monitoring enabled"
+  # preset (it deploys that collector and turns on the Prometheus remote-write
+  # receiver). The kubevip macro resolves on Palette Edge (agent/appliance)
+  # clusters; elsewhere use the IP of any management-cluster node.
+  - name: "dpu-monitoring-stream"
+    displayName: "Stream DPU logs + metrics to management monitoring"
+    group: "DPU Cluster Monitoring"
+    remove:
+    - "charts.dpf-operator-config.monitoring"
+    add: |
+      charts:
+        dpf-operator-config:
+          monitoring:
+            openTelemetryCollector:
+              logging:
+                endpoint: "http://{{ .spectro.system.cluster.kubevip }}:30050"
+              metrics:
+                endpoint: "http://{{ .spectro.system.cluster.kubevip }}:30050"
+
+  - name: "dpu-monitoring-disabled"
+    displayName: "Disabled"
+    group: "DPU Cluster Monitoring"
+    remove:
+    - "charts.dpf-operator-config.monitoring"
+    add: |
+      charts:
+        dpf-operator-config:
+          monitoring:
+            disable: true

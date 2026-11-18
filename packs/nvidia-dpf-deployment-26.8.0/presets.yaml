@@ -1,0 +1,1220 @@
+presets:
+  # ===========================================================================
+  # Mode presets for DPF v26.8.0. Pair each with the matching nvidia-dpf-operator
+  # "Deployment Mode" preset (deploymentMode lives in DPFOperatorConfig). All
+  # presets except Hostless are GENERATED from NVIDIA's v26.8.0 reference
+  # manifests (docs/public/user-guides/.../manifests) with the guide's own
+  # example values; lines marked DEVIATION or SET differ on purpose.
+  # BFB: bf-bundle-3.5.0-89_26.07_ubuntu-24.04_64k_prod.bfb, the build NVIDIA's
+  # 26.8 guides use (a 4K-page build of the same release also exists:
+  # ..._ubuntu-24.04_prod.bfb).
+  # ===========================================================================
+
+  # NVIDIA host-trusted/use-cases/hbn-ovnk (05-dpudeployment-installation +
+  # 04-enable-accelerated-cni): OVN-Kubernetes + HBN + DTS + Blueman DPUServices,
+  # the HBN service chain, and DPF's SR-IOV device plugin config for host VFs.
+  # Host Trusted also needs OVN-Kubernetes v26.8.0 as the host cluster's primary
+  # CNI (oci://ghcr.io/mellanox/charts/ovn-kubernetes-chart, plus its resource
+  # injector), installed outside this pack.
+  - name: "host-trusted"
+    displayName: "Host Trusted"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            url: https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.5.0-89_26.07_ubuntu-24.04_64k_prod.bfb
+          dpuDeployments:
+          - name: ovn-hbn
+            dpus:
+              bfb: bf-bundle-v26.8.0
+              flavor: hbn-ovnk-v26.8.0
+              nodeEffect:
+                drain: true
+              dpuSets:
+              - nameSuffix: dpuset1
+                dpuNodeSelector:
+                  matchLabels:
+                    feature.node.kubernetes.io/dpu-enabled: 'true'
+                dpuAnnotations:
+                  # Opts the DPUs into the NodeSRIOVDevicePluginConfig below (host VFs as node
+                  # resources). Needs the nvidia-dpf-operator "Host Trusted" preset.
+                  noderesources.dpu.nvidia.com/nodesriovdevicepluginconfig: bf3-p0-vfs
+              dpuSetStrategy:
+                type: RollingUpdate
+            services:
+              ovn:
+                serviceTemplate: ovn
+                serviceConfiguration: ovn
+              hbn:
+                serviceTemplate: hbn
+                serviceConfiguration: hbn
+              dts:
+                serviceTemplate: dts
+                serviceConfiguration: dts
+              blueman:
+                serviceTemplate: blueman
+                serviceConfiguration: blueman
+            serviceChains:
+              switches:
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      uplink: p0
+                - service:
+                    name: hbn
+                    interface: p0_if
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      uplink: p1
+                - service:
+                    name: hbn
+                    interface: p1_if
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      port: ovn
+                - service:
+                    name: hbn
+                    interface: pf2dpu2_if
+          dpuFlavors:
+          - name: hbn-ovnk-v26.8.0
+            grub:
+              kernelParameters:
+              - console=hvc0
+              - console=ttyAMA0
+              - earlycon=pl011,0x13010000
+              - net.ifnames=0
+              - biosdevname=0
+              - iommu.passthrough=1
+              - cgroup_no_v1=net_prio,net_cls
+              - hugepagesz=2048kB
+              - hugepages=250
+            nvconfig:
+            - device: '*'
+              parameters:
+              - PF_BAR2_ENABLE=0
+              - PER_PF_NUM_SF=1
+              - PF_TOTAL_SF=20
+              - PF_SF_BAR_SIZE=10
+              - NUM_PF_MSIX_VALID=0
+              - PF_NUM_PF_MSIX_VALID=1
+              - PF_NUM_PF_MSIX=228
+              - INTERNAL_CPU_MODEL=1
+              - INTERNAL_CPU_OFFLOAD_ENGINE=0
+              - SRIOV_EN=1
+              - NUM_OF_VFS=46
+              - LAG_RESOURCE_ALLOCATION=1
+              - LINK_TYPE_P1=ETH
+              - LINK_TYPE_P2=ETH
+            ovs:
+              rawConfigScript: |
+                _ovs-vsctl() {
+                  ovs-vsctl --timeout 15 "$@"
+                }
+
+                # Remove default OVS configuration on the DPU and ensure no leftovers on the OVS kernel side
+                _ovs-vsctl --if-exists del-br ovsbr1
+                _ovs-vsctl --if-exists del-br ovsbr2
+                ovs-appctl --timeout 15 dpctl/del-dp system@ovs-system || true
+
+                _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                _ovs-vsctl set Open_vSwitch . other_config:doca-congestion-threshold=60
+                _ovs-vsctl set Open_vSwitch . other_config:flow-limit=500000
+                _ovs-vsctl set Open_vSwitch . other_config:hw-offload-ct-unidir-udp-enabled=true
+                _ovs-vsctl remove Open_vSwitch . other_config default-datapath-type || true
+
+                if systemctl list-unit-files openvswitch-switch.service &>/dev/null; then
+                  systemctl restart openvswitch-switch
+                elif systemctl list-unit-files openvswitch.service &>/dev/null; then
+                  systemctl restart openvswitch
+                fi
+                _ovs-vsctl --may-exist add-br br-sfc
+                _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                _ovs-vsctl set bridge br-sfc fail_mode=secure
+                _ovs-vsctl --if-exists del-br br-hbn
+                _ovs-vsctl --may-exist add-br br-hbn
+                _ovs-vsctl set bridge br-hbn datapath_type=netdev
+                _ovs-vsctl set bridge br-hbn fail_mode=secure
+                _ovs-vsctl --may-exist add-port br-sfc p0
+                _ovs-vsctl set Interface p0 type=dpdk
+                _ovs-vsctl set Interface p0 mtu_request=9216
+                _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+                _ovs-vsctl set Interface p0 external_ids:hbn_uplink=p0_if
+
+                # Activate DOCA for OVNK
+                _ovs-vsctl set Open_vSwitch . external-ids:ovn-bridge-datapath-type=netdev
+                # setup ovnkube managed bridge, br-dpu (this corresponds to br-ex on ovnk docs)
+                _ovs-vsctl --may-exist add-br br-dpu
+                _ovs-vsctl br-set-external-id br-dpu bridge-id br-dpu
+                _ovs-vsctl br-set-external-id br-dpu bridge-uplink pbrdputobrovn
+                _ovs-vsctl set bridge br-dpu datapath_type=netdev
+                _ovs-vsctl --may-exist add-port br-dpu pf0hpf
+                _ovs-vsctl set Interface pf0hpf mtu_request=9216
+                _ovs-vsctl set Interface pf0hpf type=dpdk
+
+                # Create OVS bridge (br-ovn) in between the SC managed bridge and OVNK
+                _ovs-vsctl --may-exist add-br br-ovn
+                _ovs-vsctl set bridge br-ovn datapath_type=netdev
+                _ovs-vsctl --may-exist add-port br-ovn pbrovntobrdpu
+                _ovs-vsctl --may-exist add-port br-dpu pbrdputobrovn
+
+                # Patch br-ovn and br-dpu together
+                _ovs-vsctl set Interface pbrovntobrdpu type=patch options:peer=pbrdputobrovn
+                _ovs-vsctl set Interface pbrdputobrovn type=patch options:peer=pbrovntobrdpu
+            bfcfgParameters:
+            - UPDATE_ATF_UEFI=yes
+            - UPDATE_DPU_OS=yes
+            - WITH_NIC_FW_UPDATE=yes
+            hostNetworkInterfaceConfigs:
+            - portNumber: 0
+              dhcp: true
+              mtu: 1500
+            configFiles:
+            - path: /etc/mellanox/mlnx-bf.conf
+              operation: override
+              raw: |
+                ALLOW_SHARED_RQ="no"
+                IPSEC_FULL_OFFLOAD="no"
+                ENABLE_ESWITCH_MULTIPORT="yes"
+              permissions: '0644'
+            - path: /etc/mellanox/mlnx-ovs.conf
+              operation: override
+              raw: |
+                CREATE_OVS_BRIDGES="no"
+                OVS_DOCA="yes"
+              permissions: '0644'
+            - path: /etc/mellanox/mlnx-sf.conf
+              operation: override
+              raw: ''
+              permissions: '0644'
+            - path: /etc/apparmor.d/local/usr.sbin.rsyslogd
+              operation: override
+              permissions: '0644'
+              raw: |
+                signal (receive) peer=runc,
+                capability chown,
+                /usr/{bin,sbin}/* ixr,
+                /etc/logrotate.d/* r,
+                /var/lib/logrotate/{,**} rwk,
+            - path: /etc/apparmor.d/local/usr.bin.tcpdump
+              operation: override
+              permissions: '0644'
+              raw: |
+                signal (receive) peer=runc,
+          dpuServiceConfigurations:
+          - name: blueman
+          - name: dts
+          - name: hbn
+            serviceConfiguration:
+              serviceDaemonSet:
+                annotations:
+                  k8s.v1.cni.cncf.io/networks: |-
+                    [
+                    {"name": "iprequest", "interface": "ip_lo", "cni-args": {"poolNames": ["loopback"], "poolType": "cidrpool"}},
+                    {"name": "iprequest", "interface": "ip_pf2dpu2", "cni-args": {"poolNames": ["pool1"], "poolType": "cidrpool", "allocateDefaultGateway": true}}
+                    ]
+              helmChart:
+                values:
+                  configuration:
+                    # Per-DPU BGP ASNs keyed on the DPU node hostname (NVIDIA example
+                    # workers worker1*/worker2*): adjust to your host names.
+                    perDPUValuesYAML: |
+                      - hostnamePattern: "*"
+                        values:
+                          bgp_peer_group: hbn
+                      - hostnamePattern: "worker1*"
+                        values:
+                          bgp_autonomous_system: 65101
+                      - hostnamePattern: "worker2*"
+                        values:
+                          bgp_autonomous_system: 65201
+                    startupYAMLJ2: |
+                      - header:
+                          model: BLUEFIELD
+                          nvue-api-version: nvue_v1
+                          rev-id: 1.0
+                          version: HBN 2.4.0
+                      - set:
+                          interface:
+                            lo:
+                              ip:
+                                address:
+                                  {{ ipaddresses.ip_lo.ip }}/32: {}
+                              type: loopback
+                            p0_if,p1_if:
+                              type: swp
+                              link:
+                                mtu: 9000
+                            pf2dpu2_if:
+                              ip:
+                                address:
+                                  {{ ipaddresses.ip_pf2dpu2.cidr }}: {}
+                              type: swp
+                              link:
+                                mtu: 9000
+                          router:
+                            bgp:
+                              autonomous-system: {{ config.bgp_autonomous_system }}
+                              enable: on
+                              graceful-restart:
+                                mode: full
+                              router-id: {{ ipaddresses.ip_lo.ip }}
+                          vrf:
+                            default:
+                              router:
+                                bgp:
+                                  address-family:
+                                    ipv4-unicast:
+                                      enable: on
+                                      redistribute:
+                                        connected:
+                                          enable: on
+                                    ipv6-unicast:
+                                      enable: on
+                                      redistribute:
+                                        connected:
+                                          enable: on
+                                  enable: on
+                                  neighbor:
+                                    p0_if:
+                                      peer-group: {{ config.bgp_peer_group }}
+                                      type: unnumbered
+                                    p1_if:
+                                      peer-group: {{ config.bgp_peer_group }}
+                                      type: unnumbered
+                                  path-selection:
+                                    multipath:
+                                      aspath-ignore: on
+                                  peer-group:
+                                    {{ config.bgp_peer_group }}:
+                                      remote-as: external
+            interfaces:
+            - name: p0_if
+              network: mybrhbn
+            - name: p1_if
+              network: mybrhbn
+            - name: pf2dpu2_if
+              network: mybrhbn
+          - name: ovn
+            serviceConfiguration:
+              helmChart:
+                values:
+                  # "auto" = API server URL from kube-public/cluster-info (kubeadm/CAPI).
+                  # RKE2 edge clusters have no cluster-info: use
+                  # https://{{ .spectro.system.cluster.kubevip }}:6443 there.
+                  k8sAPIServer: auto
+                  # NVIDIA example values (POD_CIDR 10.233.64.0/18 with /24 per node,
+                  # SERVICE_CIDR 10.233.0.0/18): MUST match the host cluster's pod/service CIDRs.
+                  podNetwork: 10.233.64.0/18/24
+                  serviceNetwork: 10.233.0.0/18
+                  dpuManifests:
+                    kubernetesSecretName: ovn-dpu
+                    vtepCIDR: 10.0.120.0/22
+                    # SET to the host nodes' CIDR (NVIDIA TARGETCLUSTER_NODE_CIDR). Left as
+                    # NVIDIA's placeholder on purpose so a missed edit fails loudly.
+                    hostCIDR: $TARGETCLUSTER_NODE_CIDR
+                    ipamPool: pool1
+                    ipamPoolType: cidrpool
+                    ipamVTEPIPIndex: 0
+                    ipamPFIPIndex: 1
+          dpuServiceTemplates:
+          - name: blueman
+            helmChart:
+              source:
+                repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                version: 1.0.8
+                chart: doca-blueman
+          - name: dts
+            helmChart:
+              source:
+                repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                version: 1.26.5
+                chart: doca-telemetry
+          - name: hbn
+            helmChart:
+              source:
+                repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                version: 3.5.0
+                chart: doca-hbn
+              values:
+                image:
+                  repository: nvcr.io/nvidia/doca/doca_hbn
+                  tag: 3.5.0-doca3.5.0
+                resources:
+                  memory: 6Gi
+                  nvidia.com/bf_sf: 3
+          - name: ovn
+            helmChart:
+              source:
+                repoURL: oci://ghcr.io/mellanox/charts
+                chart: ovn-kubernetes-chart
+                version: v26.8.0
+              values:
+                commonManifests:
+                  enabled: true
+                dpuManifests:
+                  enabled: true
+                leaseNamespace: ovn-kubernetes
+                gatewayOpts: --gateway-interface=br-dpu
+          dpuServiceIPAMs:
+          - name: loopback
+            ipv4Network:
+              network: 11.0.0.0/24
+              prefixSize: 32
+          - name: pool1
+            ipv4Network:
+              network: 10.0.120.0/22
+              gatewayIndex: 3
+              prefixSize: 29
+          dpuServiceCredentialRequests:
+          - name: ovn-dpu
+            serviceAccount:
+              name: ovn-dpu
+              namespace: dpf-operator-system
+            duration: 24h
+            type: tokenFile
+            secret:
+              name: ovn-dpu
+              namespace: dpf-operator-system
+            metadata:
+              labels:
+                dpu.nvidia.com/image-pull-secret: ''
+          dpuServiceInterfaces:
+          - name: ovn
+            template:
+              metadata:
+                labels:
+                  port: ovn
+              spec:
+                interfaceType: patch
+                patch:
+                  peerBridge: br-ovn
+          - name: p0
+            template:
+              metadata:
+                labels:
+                  uplink: p0
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p0
+          - name: p1
+            template:
+              metadata:
+                labels:
+                  uplink: p1
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p1
+          nodeSRIOVDevicePluginConfigs:
+          - name: bf3-p0-vfs
+            devicePluginResources:
+            - name: ovnk-mgmt-vf
+              type: vf
+              ranges:
+              - pfIndex: 0
+                start: 1
+                end: 1
+            - name: bf3-p0-vfs
+              type: vf
+              options:
+                isRdma: true
+              ranges:
+              - pfIndex: 0
+                start: 2
+                end: 45
+
+  # NVIDIA zero-trust/use-cases/passthrough (03-dpf-object-installation): no
+  # service offload, the physical ports p0/p1 are chained to the host PFs. Pair
+  # with the operator's "Zero Trust (DPUDiscovery)" preset.
+  - name: "zero-trust-pt"
+    displayName: "Zero Trust - Passthrough"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            url: https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.5.0-89_26.07_ubuntu-24.04_64k_prod.bfb
+          dpuFlavors:
+          - name: passthrough-v26.8.0
+            grub:
+              kernelParameters:
+              - console=hvc0
+              - console=ttyAMA0
+              - earlycon=pl011,0x13010000
+              - net.ifnames=0
+              - biosdevname=0
+              - iommu.passthrough=1
+              - cgroup_no_v1=net_prio,net_cls
+              - hugepagesz=2048kB
+              - hugepages=250
+            nvconfig:
+            - device: '*'
+              parameters:
+              - PF_BAR2_ENABLE=0
+              - PER_PF_NUM_SF=1
+              - PF_TOTAL_SF=20
+              - PF_SF_BAR_SIZE=10
+              - NUM_PF_MSIX_VALID=0
+              - PF_NUM_PF_MSIX_VALID=1
+              - PF_NUM_PF_MSIX=228
+              - INTERNAL_CPU_MODEL=1
+              - INTERNAL_CPU_OFFLOAD_ENGINE=0
+              - SRIOV_EN=1
+              - NUM_OF_VFS=46
+              - LAG_RESOURCE_ALLOCATION=1
+              - LINK_TYPE_P1=ETH
+              - LINK_TYPE_P2=ETH
+            ovs:
+              rawConfigScript: |
+                _ovs-vsctl() {
+                  ovs-vsctl --timeout 15 "$@"
+                }
+
+                # Remove default OVS configuration on the DPU and ensure no leftovers on the OVS kernel side
+                _ovs-vsctl --if-exists del-br ovsbr1
+                _ovs-vsctl --if-exists del-br ovsbr2
+                ovs-appctl --timeout 15 dpctl/del-dp system@ovs-system || true
+
+                _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                _ovs-vsctl set Open_vSwitch . other_config:doca-congestion-threshold=60
+                _ovs-vsctl set Open_vSwitch . other_config:flow-limit=500000
+                _ovs-vsctl set Open_vSwitch . other_config:hw-offload-ct-unidir-udp-enabled=true
+                _ovs-vsctl remove Open_vSwitch . other_config default-datapath-type || true
+
+                if systemctl list-unit-files openvswitch-switch.service &>/dev/null; then
+                  systemctl restart openvswitch-switch
+                elif systemctl list-unit-files openvswitch.service &>/dev/null; then
+                  systemctl restart openvswitch
+                fi
+                _ovs-vsctl --may-exist add-br br-sfc
+                _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                _ovs-vsctl set bridge br-sfc fail_mode=secure
+                _ovs-vsctl --may-exist add-port br-sfc p0
+                _ovs-vsctl set Interface p0 type=dpdk
+                _ovs-vsctl set Interface p0 mtu_request=9216
+                _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+            bfcfgParameters:
+            - UPDATE_ATF_UEFI=yes
+            - UPDATE_DPU_OS=yes
+            - WITH_NIC_FW_UPDATE=yes
+            configFiles:
+            - path: /etc/mellanox/mlnx-bf.conf
+              operation: override
+              raw: |
+                ALLOW_SHARED_RQ="no"
+                IPSEC_FULL_OFFLOAD="no"
+                ENABLE_ESWITCH_MULTIPORT="yes"
+              permissions: '0644'
+            - path: /etc/mellanox/mlnx-ovs.conf
+              operation: override
+              raw: |
+                CREATE_OVS_BRIDGES="no"
+                OVS_DOCA="yes"
+              permissions: '0644'
+            - path: /etc/mellanox/mlnx-sf.conf
+              operation: override
+              raw: ''
+              permissions: '0644'
+          dpuServiceChains:
+          - name: passthrough
+            template:
+              spec:
+                switches:
+                - ports:
+                  - serviceInterface:
+                      matchLabels:
+                        interface: p0
+                  - serviceInterface:
+                      matchLabels:
+                        interface: pf0hpf
+                - ports:
+                  - serviceInterface:
+                      matchLabels:
+                        interface: p1
+                  - serviceInterface:
+                      matchLabels:
+                        interface: pf1hpf
+          dpuSets:
+          - name: passthrough
+            strategy:
+              type: OnDelete
+            dpuNodeSelector:
+              matchLabels:
+                feature.node.kubernetes.io/dpu-enabled: 'true'
+            dpuTemplate:
+              spec:
+                dpuFlavor: passthrough-v26.8.0
+                bfb:
+                  name: bf-bundle-v26.8.0
+                nodeEffect:
+                  # DEVIATION (NVIDIA reference: hold: true): noEffect is the zero-trust choice
+                  # validated live over many reprovision cycles (2026-07) and what NVIDIA's
+                  # hostless doc recommends; the DPU host is not drained or held.
+                  noEffect: true
+          dpuServiceInterfaces:
+          - name: p0
+            template:
+              metadata:
+                labels:
+                  interface: p0
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p0
+          - name: p1
+            template:
+              metadata:
+                labels:
+                  interface: p1
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p1
+          - name: pf0hpf
+            template:
+              metadata:
+                labels:
+                  interface: pf0hpf
+              spec:
+                interfaceType: pf
+                pf:
+                  pfID: 0
+          - name: pf1hpf
+            template:
+              metadata:
+                labels:
+                  interface: pf1hpf
+              spec:
+                interfaceType: pf
+                pf:
+                  pfID: 1
+
+  # NVIDIA zero-trust/use-cases/hbn, PF variant (03.1-dpudeployment-installation-pf):
+  # DOCA HBN routes (BGP EVPN, VRFs RED/BLUE) between the uplinks and the host PFs.
+  # Pair with the operator's "Zero Trust (DPUDiscovery)" preset; per-DPU values key
+  # on the crawler's dpu-node-<serial> names.
+  - name: "zero-trust-hbn"
+    displayName: "Zero Trust - HBN"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            url: https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.5.0-89_26.07_ubuntu-24.04_64k_prod.bfb
+          dpuDeployments:
+          - name: hbn
+            dpus:
+              bfb: bf-bundle-v26.8.0
+              flavor: hbn-v26.8.0
+              nodeEffect:
+                # DEVIATION (NVIDIA reference: hold: true): noEffect is the zero-trust choice
+                # validated live over many reprovision cycles (2026-07) and what NVIDIA's
+                # hostless doc recommends; the DPU host is not drained or held.
+                noEffect: true
+              dpuSetStrategy:
+                type: OnDelete
+              dpuSets:
+              - nameSuffix: dpuset1
+                dpuNodeSelector:
+                  matchLabels:
+                    feature.node.kubernetes.io/dpu-enabled: 'true'
+            services:
+              doca-hbn:
+                serviceTemplate: doca-hbn
+                serviceConfiguration: doca-hbn
+            serviceChains:
+              switches:
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      interface: p0
+                - service:
+                    name: doca-hbn
+                    interface: p0_if
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      interface: p1
+                - service:
+                    name: doca-hbn
+                    interface: p1_if
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      interface: pf0hpf
+                - service:
+                    name: doca-hbn
+                    interface: pf0hpf_if
+              - ports:
+                - serviceInterface:
+                    matchLabels:
+                      interface: pf1hpf
+                - service:
+                    name: doca-hbn
+                    interface: pf1hpf_if
+          dpuFlavors:
+          - name: hbn-v26.8.0
+            bfcfgParameters:
+            - UPDATE_ATF_UEFI=yes
+            - UPDATE_DPU_OS=yes
+            - WITH_NIC_FW_UPDATE=yes
+            configFiles:
+            - operation: override
+              path: /etc/mellanox/mlnx-bf.conf
+              permissions: '0644'
+              raw: |
+                ALLOW_SHARED_RQ="no"
+                IPSEC_FULL_OFFLOAD="no"
+                ENABLE_ESWITCH_MULTIPORT="yes"
+            - operation: override
+              path: /etc/mellanox/mlnx-ovs.conf
+              permissions: '0644'
+              raw: |
+                CREATE_OVS_BRIDGES="no"
+                OVS_DOCA="yes"
+            - operation: override
+              path: /etc/mellanox/mlnx-sf.conf
+              permissions: '0644'
+              raw: ''
+            - operation: override
+              path: /etc/apparmor.d/local/usr.sbin.rsyslogd
+              permissions: '0644'
+              raw: |
+                signal (receive) peer=runc,
+                capability chown,
+                /usr/{bin,sbin}/* ixr,
+                /etc/logrotate.d/* r,
+                /var/lib/logrotate/{,**} rwk,
+            - operation: override
+              path: /etc/apparmor.d/local/usr.bin.tcpdump
+              permissions: '0644'
+              raw: |
+                signal (receive) peer=runc,
+            grub:
+              kernelParameters:
+              - console=hvc0
+              - console=ttyAMA0
+              - earlycon=pl011,0x13010000
+              - net.ifnames=0
+              - biosdevname=0
+              - iommu.passthrough=1
+              - cgroup_no_v1=net_prio,net_cls
+              - hugepagesz=2048kB
+              - hugepages=250
+            nvconfig:
+            - device: '*'
+              parameters:
+              - PF_BAR2_ENABLE=0
+              - PER_PF_NUM_SF=1
+              - PF_TOTAL_SF=20
+              - PF_SF_BAR_SIZE=10
+              - NUM_PF_MSIX_VALID=0
+              - PF_NUM_PF_MSIX_VALID=1
+              - PF_NUM_PF_MSIX=228
+              - INTERNAL_CPU_MODEL=1
+              - INTERNAL_CPU_OFFLOAD_ENGINE=0
+              - SRIOV_EN=1
+              - NUM_OF_VFS=46
+              - LAG_RESOURCE_ALLOCATION=1
+              - LINK_TYPE_P1=ETH
+              - LINK_TYPE_P2=ETH
+            ovs:
+              rawConfigScript: |
+                _ovs-vsctl() {
+                  ovs-vsctl --timeout 15 "$@"
+                }
+
+                # Remove default OVS configuration on the DPU and ensure no leftovers on the OVS kernel side
+                _ovs-vsctl --if-exists del-br ovsbr1
+                _ovs-vsctl --if-exists del-br ovsbr2
+                ovs-appctl --timeout 15 dpctl/del-dp system@ovs-system || true
+
+                _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                _ovs-vsctl remove Open_vSwitch . other_config default-datapath-type || true
+
+                if systemctl list-unit-files openvswitch-switch.service &>/dev/null; then
+                  systemctl restart openvswitch-switch
+                elif systemctl list-unit-files openvswitch.service &>/dev/null; then
+                  systemctl restart openvswitch
+                fi
+                _ovs-vsctl --may-exist add-br br-sfc
+                _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                _ovs-vsctl set bridge br-sfc fail_mode=secure
+                _ovs-vsctl --may-exist add-port br-sfc p0
+                _ovs-vsctl set Interface p0 type=dpdk
+                _ovs-vsctl set Interface p0 mtu_request=9216
+                _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+                _ovs-vsctl set Interface p0 external_ids:hbn_uplink=p0_if
+                _ovs-vsctl --if-exists del-br br-hbn
+                _ovs-vsctl --may-exist add-br br-hbn
+                _ovs-vsctl set bridge br-hbn datapath_type=netdev
+                _ovs-vsctl set bridge br-hbn fail_mode=secure
+          dpuServiceConfigurations:
+          - name: doca-hbn
+            serviceConfiguration:
+              serviceDaemonSet:
+                annotations:
+                  k8s.v1.cni.cncf.io/networks: |-
+                    [
+                    {"name": "iprequest", "interface": "ip_lo", "cni-args": {"poolNames": ["loopback"], "poolType": "cidrpool"}},
+                    {"name": "iprequest", "interface": "ip_pf0hpf", "cni-args": {"poolNames": ["pool1"], "poolType": "cidrpool", "allocateDefaultGateway": true}},
+                    {"name": "iprequest", "interface": "ip_pf1hpf", "cni-args": {"poolNames": ["pool2"], "poolType": "cidrpool", "allocateDefaultGateway": true}}
+                    ]
+              helmChart:
+                values:
+                  configuration:
+                    # Per-DPU BGP ASNs keyed on the DPUNode name dpu-node-<serial> (DPUDiscovery
+                    # crawler naming): replace ${DPU1_SERIAL} / ${DPU2_SERIAL} with your DPU
+                    # serials (lowercase), here and in the hbn pool allocations below.
+                    perDPUValuesYAML: |
+                      - hostnamePattern: "*"
+                        values:
+                          bgp_peer_group: hbn
+                          vrf1: RED
+                          vrf2: BLUE
+                          l3vni1: 100001
+                          l3vni2: 100002
+                      - hostnamePattern: "dpu-node-${DPU1_SERIAL}*"
+                        values:
+                          bgp_autonomous_system: 65101
+                      - hostnamePattern: "dpu-node-${DPU2_SERIAL}*"
+                        values:
+                          bgp_autonomous_system: 65201
+                    startupYAMLJ2: |
+                      - header:
+                          model: bluefield
+                          nvue-api-version: nvue_v1
+                          rev-id: 1.0
+                          version: HBN 2.4.0
+                      - set:
+                          evpn:
+                            enable: on
+                            route-advertise: {}
+                          interface:
+                            lo:
+                              ip:
+                                address:
+                                  {{ ipaddresses.ip_lo.ip }}/32: {}
+                              type: loopback
+                            p0_if,p1_if,pf0hpf_if,pf1hpf_if:
+                              type: swp
+                              link:
+                                mtu: 9000
+                            pf0hpf_if:
+                              ip:
+                                address:
+                                  {{ ipaddresses.ip_pf0hpf.cidr }}: {}
+                                vrf: {{ config.vrf1 }}
+                            pf1hpf_if:
+                              ip:
+                                address:
+                                  {{ ipaddresses.ip_pf1hpf.cidr }}: {}
+                                vrf: {{ config.vrf2 }}
+                          nve:
+                            vxlan:
+                              arp-nd-suppress: on
+                              enable: on
+                              source:
+                                address: {{ ipaddresses.ip_lo.ip }}
+                          router:
+                            bgp:
+                              enable: on
+                              graceful-restart:
+                                mode: full
+                          vrf:
+                            default:
+                              router:
+                                bgp:
+                                  address-family:
+                                    ipv4-unicast:
+                                      enable: on
+                                      redistribute:
+                                        connected:
+                                          enable: on
+                                      multipaths:
+                                        ebgp: 16
+                                    l2vpn-evpn:
+                                      enable: on
+                                  autonomous-system: {{ config.bgp_autonomous_system }}
+                                  enable: on
+                                  neighbor:
+                                    p0_if:
+                                      peer-group: {{ config.bgp_peer_group }}
+                                      type: unnumbered
+                                      address-family:
+                                        l2vpn-evpn:
+                                          enable: on
+                                          add-path-tx: off
+                                    p1_if:
+                                      peer-group: {{ config.bgp_peer_group }}
+                                      type: unnumbered
+                                      address-family:
+                                        l2vpn-evpn:
+                                          enable: on
+                                          add-path-tx: off
+                                  path-selection:
+                                    multipath:
+                                      aspath-ignore: on
+                                  peer-group:
+                                    {{ config.bgp_peer_group }}:
+                                      address-family:
+                                        ipv4-unicast:
+                                          enable: on
+                                        l2vpn-evpn:
+                                          enable: on
+                                      remote-as: external
+                                  router-id: {{ ipaddresses.ip_lo.ip }}
+                            {{ config.vrf1 }}:
+                              evpn:
+                                enable: on
+                                vni:
+                                  {{ config.l3vni1 }}: {}
+                              router:
+                                bgp:
+                                  address-family:
+                                    ipv4-unicast:
+                                      enable: on
+                                      redistribute:
+                                        connected:
+                                          enable: on
+                                      route-export:
+                                        to-evpn:
+                                          enable: on
+                                  autonomous-system: {{ config.bgp_autonomous_system }}
+                                  enable: on
+                            {{ config.vrf2 }}:
+                              evpn:
+                                enable: on
+                                vni:
+                                  {{ config.l3vni2 }}: {}
+                              router:
+                                bgp:
+                                  address-family:
+                                    ipv4-unicast:
+                                      enable: on
+                                      redistribute:
+                                        connected:
+                                          enable: on
+                                      route-export:
+                                        to-evpn:
+                                          enable: on
+                                  autonomous-system: {{ config.bgp_autonomous_system }}
+                                  enable: on
+            interfaces:
+            - name: p0_if
+              network: mybrhbn
+            - name: p1_if
+              network: mybrhbn
+            - name: pf0hpf_if
+              network: mybrhbn
+            - name: pf1hpf_if
+              network: mybrhbn
+          dpuServiceTemplates:
+          - name: doca-hbn
+            helmChart:
+              source:
+                repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                version: 3.5.0
+                chart: doca-hbn
+              values:
+                image:
+                  repository: nvcr.io/nvidia/doca/doca_hbn
+                  tag: 3.5.0-doca3.5.0
+                resources:
+                  memory: 6Gi
+                  nvidia.com/bf_sf: 4
+          dpuServiceIPAMs:
+          - name: pool1
+            ipv4Network:
+              network: 10.0.121.0/24
+              gatewayIndex: 2
+              prefixSize: 29
+              allocations:
+                dpu-node-${DPU1_SERIAL}-${DPU1_SERIAL}: 10.0.121.0/29
+                dpu-node-${DPU2_SERIAL}-${DPU2_SERIAL}: 10.0.121.8/29
+          - name: pool2
+            ipv4Network:
+              network: 10.0.122.0/24
+              gatewayIndex: 2
+              prefixSize: 29
+          - name: loopback
+            ipv4Network:
+              network: 11.0.0.0/24
+              prefixSize: 32
+          dpuServiceInterfaces:
+          - name: p0
+            template:
+              metadata:
+                labels:
+                  interface: p0
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p0
+          - name: p1
+            template:
+              metadata:
+                labels:
+                  interface: p1
+              spec:
+                interfaceType: physical
+                physical:
+                  interfaceName: p1
+          - name: pf0hpf
+            template:
+              metadata:
+                labels:
+                  interface: pf0hpf
+              spec:
+                interfaceType: pf
+                pf:
+                  pfID: 0
+          - name: pf1hpf
+            template:
+              metadata:
+                labels:
+                  interface: pf1hpf
+              spec:
+                interfaceType: pf
+                pf:
+                  pfID: 1
+
+  # Zero Trust - Hostless: built from docs/public/advanced-configuration/
+  # hostless-dpu-provisioning.md (NVIDIA ships no manifests for it). Pair with the
+  # operator's "Zero Trust - Hostless" preset.
+  - name: "zero-trust-hostless"
+    displayName: "Zero Trust - Hostless"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            # 4K-page prod build of the DOCA 3.5.0 bundle NVIDIA pairs with DPF 26.8
+            # (NVIDIA's guides use the _64k_ variant; see SOURCES-26.8.0.md).
+            url: "https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.5.0-89_26.07_ubuntu-24.04_64k_prod.bfb"
+
+          # NVIDIA 26.8 zero-trust passthrough flavor verbatim (no dpuMode: deprecated
+          # and ignored, the mode comes from DPFOperatorConfig; no fixrttc;
+          # hugepages=250). Site plumbing (NTP, oob netplan, containerd registry
+          # mirrors as certs.d hosts.toml) is added by DPU Manager's flavor builder,
+          # NOT here. Never set containerdConfig.registryEndpoint together with a
+          # hosts.toml mirror: on a containerd 1.x BFB the dpu-agent then rewrites
+          # config-mlnx.toml inline and drops registry.config_path.
+          dpuFlavors:
+            - name: passthrough-v26.8.0
+              grub:
+                kernelParameters:
+                - console=hvc0
+                - console=ttyAMA0
+                - earlycon=pl011,0x13010000
+                - net.ifnames=0
+                - biosdevname=0
+                - iommu.passthrough=1
+                - cgroup_no_v1=net_prio,net_cls
+                - hugepagesz=2048kB
+                - hugepages=250
+              nvconfig:
+              - device: "*"
+                parameters:
+                - PF_BAR2_ENABLE=0
+                - PER_PF_NUM_SF=1
+                - PF_TOTAL_SF=20
+                - PF_SF_BAR_SIZE=10
+                - NUM_PF_MSIX_VALID=0
+                - PF_NUM_PF_MSIX_VALID=1
+                - PF_NUM_PF_MSIX=228
+                - INTERNAL_CPU_MODEL=1
+                - INTERNAL_CPU_OFFLOAD_ENGINE=0
+                - SRIOV_EN=1
+                - NUM_OF_VFS=46
+                - LAG_RESOURCE_ALLOCATION=1
+                - LINK_TYPE_P1=ETH
+                - LINK_TYPE_P2=ETH
+              ovs:
+                rawConfigScript: |
+                  _ovs-vsctl() {
+                    ovs-vsctl --timeout 15 "$@"
+                  }
+
+                  # Remove default OVS configuration on the DPU and ensure no leftovers on the OVS kernel side
+                  _ovs-vsctl --if-exists del-br ovsbr1
+                  _ovs-vsctl --if-exists del-br ovsbr2
+                  ovs-appctl --timeout 15 dpctl/del-dp system@ovs-system || true
+
+                  _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                  _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                  _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                  _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                  _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                  _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                  _ovs-vsctl set Open_vSwitch . other_config:doca-congestion-threshold=60
+                  _ovs-vsctl set Open_vSwitch . other_config:flow-limit=500000
+                  _ovs-vsctl set Open_vSwitch . other_config:hw-offload-ct-unidir-udp-enabled=true
+                  _ovs-vsctl remove Open_vSwitch . other_config default-datapath-type || true
+
+                  if systemctl list-unit-files openvswitch-switch.service &>/dev/null; then
+                    systemctl restart openvswitch-switch
+                  elif systemctl list-unit-files openvswitch.service &>/dev/null; then
+                    systemctl restart openvswitch
+                  fi
+                  _ovs-vsctl --may-exist add-br br-sfc
+                  _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                  _ovs-vsctl set bridge br-sfc fail_mode=secure
+                  _ovs-vsctl --may-exist add-port br-sfc p0
+                  _ovs-vsctl set Interface p0 type=dpdk
+                  _ovs-vsctl set Interface p0 mtu_request=9216
+                  _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+
+              bfcfgParameters:
+              - UPDATE_ATF_UEFI=yes
+              - UPDATE_DPU_OS=yes
+              - WITH_NIC_FW_UPDATE=yes
+
+              configFiles:
+              - path: /etc/mellanox/mlnx-bf.conf
+                operation: override
+                raw: |
+                    ALLOW_SHARED_RQ="no"
+                    IPSEC_FULL_OFFLOAD="no"
+                    ENABLE_ESWITCH_MULTIPORT="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-ovs.conf
+                operation: override
+                raw: |
+                    CREATE_OVS_BRIDGES="no"
+                    OVS_DOCA="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-sf.conf
+                operation: override
+                raw: ""
+                permissions: "0644"
+
+          # One entry per DPU (replace the example). The wrapper renders
+          # bmcFactoryResetPolicy: Never unless set: the 26.8 default
+          # OnInitialization factory-resets the BMC, which wipes a static BMC IP.
+          dpuDevices: []
+          #dpuDevices:
+          #  - name: dpu-mt2507xz047q
+          #    labels:
+          #      provisioning.dpu.nvidia.com/hostless: "true"
+          #    serialNumber: MT2507XZ047Q
+          #    bmcIp: 192.0.2.10
+          #    bmcPort: 443
+          #    numberOfPFs: 2
+
+          dpuSets:
+            - name: passthrough-hostless
+              strategy:
+                type: OnDelete
+              dpuNodeSelector:
+                matchLabels:
+                  feature.node.kubernetes.io/dpu-enabled: "true"
+                  provisioning.dpu.nvidia.com/hostless: "true"
+              dpuTemplate:
+                spec:
+                  dpuFlavor: passthrough-v26.8.0
+                  bfb:
+                    name: bf-bundle-v26.8.0
+                  # NVIDIA's hostless doc recommends noEffect (no host to drain,
+                  # taint or reboot).
+                  nodeEffect:
+                    noEffect: true
+
+          dpuServices: []
+
+          dpuServiceConfigurations: []
+
+          dpuDeployments: []
+
+          dpuServiceTemplates: []
+
+          dpuServiceChains:
+            - name: passthrough
+              template:
+                spec:
+                  switches:
+                    - ports:
+                      - serviceInterface:
+                          matchLabels:
+                            interface: p0
+                      - serviceInterface:
+                          matchLabels:
+                            interface: pf0hpf
+                    - ports:
+                      - serviceInterface:
+                          matchLabels:
+                            interface: p1
+                      - serviceInterface:
+                          matchLabels:
+                            interface: pf1hpf
+
+          dpuServiceInterfaces:
+            - name: p0
+              template:
+                metadata:
+                  labels:
+                    interface: "p0"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p0
+            - name: p1
+              template:
+                metadata:
+                  labels:
+                    interface: "p1"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p1
+            - name: pf0hpf
+              template:
+                metadata:
+                  labels:
+                    interface: "pf0hpf"
+                spec:
+                  interfaceType: pf
+                  pf:
+                    pfID: 0
+            - name: pf1hpf
+              template:
+                metadata:
+                  labels:
+                    interface: "pf1hpf"
+                spec:
+                  interfaceType: pf
+                  pf:
+                    pfID: 1
+
+          dpuServiceCredentialRequests: []
+
+          dpuServiceIPAMs: []
+
+          dpuServiceNADs: []

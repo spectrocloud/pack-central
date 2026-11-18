@@ -1,0 +1,88 @@
+# Runs after this chart's own install/upgrade and BEFORE the next charts in the
+# pack (pack.json order), so kamaji, maintenance-operator and NFD always find
+# their current CRDs. Mirrors NVIDIA's dev/helmfiles/hooks/apply-crds.sh:
+# server-side apply (the TenantControlPlane CRD is too large for client-side
+# apply's last-applied annotation), then wait for Established.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-sync
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+  template:
+    metadata:
+      annotations:
+        checksum/crds: {{ $.Files.Glob "files/**.yaml" | toString | sha256sum | trunc 16 }}
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sync
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: HOME
+              value: /tmp
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              for f in /crds/*/*.yaml; do
+                echo "server-side apply $f"
+                kubectl apply --server-side --force-conflicts --field-manager={{ .Release.Name }} -f "$f"
+              done
+              for f in /crds/*/*.yaml; do
+                kubectl wait --for=condition=Established -f "$f" --timeout=120s
+              done
+              {{- if .Values.migrateKamajiWebhooks }}
+              W=kamaji-validating-webhook-configuration
+              if kubectl get validatingwebhookconfiguration "$W" -o jsonpath='{.webhooks[*].name}' 2>/dev/null | grep -q 'vdatastore.kb.io'; then
+                echo "deleting $W: still has the kamaji < 1.4 datastore webhooks (kamaji 1.4.0 re-creates it)"
+                kubectl delete validatingwebhookconfiguration "$W" --ignore-not-found
+              else
+                echo "$W: no kamaji < 1.4 datastore webhooks, nothing to migrate"
+              fi
+              {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- range $src := list "kamaji" "maintenance-operator" "node-feature-discovery" }}
+            - name: crds-{{ $src }}
+              mountPath: /crds/{{ $src }}
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- range $src := list "kamaji" "maintenance-operator" "node-feature-discovery" }}
+        - name: crds-{{ $src }}
+          configMap:
+            name: {{ $.Release.Name }}-{{ $src }}
+        {{- end }}

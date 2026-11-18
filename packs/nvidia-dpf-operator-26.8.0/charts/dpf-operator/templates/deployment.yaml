@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dpf-operator-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: dpf-operator
+    app.kubernetes.io/part-of: dpf-operator
+    control-plane: controller-manager
+    dpu.nvidia.com/component: dpf-operator-controller-manager
+  {{- include "dpf-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controllerManager.replicas }}
+  # RollingUpdate relies on a stable leader-election ID: the brief old/new pod overlap
+  # on upgrade contends the same Lease, so only one acts as leader. If the ID ever
+  # changes again (as it did in 26.4), use Recreate for that upgrade to avoid split-brain.
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      dpu.nvidia.com/component: dpf-operator-controller-manager
+    {{- include "dpf-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        dpu.nvidia.com/component: dpf-operator-controller-manager
+      {{- include "dpf-operator.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      containers:
+      - command:
+        - /operator
+        args:
+          - --leader-elect=true
+          {{- if .Values.controllerManager.featureGates }}
+          - --feature-gates={{ range $i, $key := keys .Values.controllerManager.featureGates }}{{- if $i }},{{ end }}{{ $key }}={{ index $.Values.controllerManager.featureGates $key }}{{ end }}
+          {{- end }}
+        image: {{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag
+          | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.controllerManager.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.controllerManager.resources | nindent 10 }}
+        securityContext: {{- toYaml .Values.controllerManager.containerSecurityContext
+          | nindent 10 }}
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      imagePullSecrets: {{ .Values.imagePullSecrets | default list | toJson }}
+      securityContext: {{- toYaml .Values.controllerManager.podSecurityContext
+        | nindent 8 }}
+      serviceAccountName: dpf-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+
