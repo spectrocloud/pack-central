@@ -1,0 +1,31 @@
+# DPUSet - defines a set of DPUs to provision. Required for BOTH ZT and HT.
+# ZT vs HT selection:
+#   HOST TRUSTED (HT): the DPU host IS a Kubernetes worker, so set
+#     `dpuNodeSelector` to match the worker nodes that carry DPUs.
+#   ZERO TRUST (ZT): the host is NOT a worker, so node selection does not apply.
+#     Use `dpuDeviceSelector` (new in 26.4.0) to match DPUDevice objects
+#     discovered via BMC/Redfish, and leave `dpuNodeSelector` unset.
+{{- range $conf := .Values.dpuSets }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUSet
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if $conf.dpuNodeSelector }}
+  dpuNodeSelector: {{ $conf.dpuNodeSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuDeviceSelector }}
+  dpuDeviceSelector: {{ $conf.dpuDeviceSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuSelector }}
+  dpuSelector: {{ $conf.dpuSelector | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.dpuTemplate }}
+  dpuTemplate: {{ $conf.dpuTemplate | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if $conf.strategy }}
+  strategy: {{ $conf.strategy | toYaml | nindent 4 }}
+  {{- end }}
+{{- end }}

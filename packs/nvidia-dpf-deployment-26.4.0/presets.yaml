@@ -1,0 +1,576 @@
+presets:
+  # ===========================================================================
+  # HOST TRUSTED (HT) - full HBN + OVN-Kubernetes offload deployment.
+  # In HT the DPU host IS a Kubernetes worker. DPUs are selected by NODE
+  # (dpuNodeSelector / nodeSelector matching the worker that carries the DPU).
+  # This preset deploys the OVN, HBN, DTS and Blueman DPUServices and wires the
+  # service chain. All chart versions are pinned to the DPF 26.4.0 release.
+  # ===========================================================================
+  - name: "host-trusted"
+    displayName: "Host Trusted"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            url: "https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.4.0-92_26.04_ubuntu-24.04_64k_prod.bfb"
+
+          dpuFlavors:
+            - name: hbn-ovnk-v26.4.0
+              grub:
+                kernelParameters:
+                  - console=hvc0
+                  - console=ttyAMA0
+                  - earlycon=pl011,0x13010000
+                  - fixrttc
+                  - net.ifnames=0
+                  - biosdevname=0
+                  - iommu.passthrough=1
+                  - cgroup_no_v1=net_prio,net_cls
+                  - hugepagesz=2048kB
+                  - hugepages=3072
+              nvconfig:
+                - device: "*"
+                  parameters:
+                    - PF_BAR2_ENABLE=0
+                    - PER_PF_NUM_SF=1
+                    - PF_TOTAL_SF=20
+                    - PF_SF_BAR_SIZE=10
+                    - NUM_PF_MSIX_VALID=0
+                    - PF_NUM_PF_MSIX_VALID=1
+                    - PF_NUM_PF_MSIX=228
+                    - INTERNAL_CPU_MODEL=1
+                    - INTERNAL_CPU_OFFLOAD_ENGINE=0
+                    - SRIOV_EN=1
+                    - NUM_OF_VFS=46
+                    - LAG_RESOURCE_ALLOCATION=1
+                    - LINK_TYPE_P1=ETH
+                    - LINK_TYPE_P2=ETH
+              ovs:
+                rawConfigScript: |
+                  _ovs-vsctl() {
+                    ovs-vsctl --no-wait --timeout 15 "$@"
+                  }
+
+                  _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                  _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                  _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                  _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                  _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                  _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                  _ovs-vsctl set Open_vSwitch . other_config:ctl-pipe-size=1024
+                  _ovs-vsctl --if-exists del-br ovsbr1
+                  _ovs-vsctl --if-exists del-br ovsbr2
+                  _ovs-vsctl --may-exist add-br br-sfc
+                  _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                  _ovs-vsctl set bridge br-sfc fail_mode=secure
+                  _ovs-vsctl --may-exist add-br br-hbn
+                  _ovs-vsctl set bridge br-hbn datapath_type=netdev
+                  _ovs-vsctl set bridge br-hbn fail_mode=secure
+                  _ovs-vsctl --may-exist add-port br-sfc p0
+                  _ovs-vsctl set Interface p0 type=dpdk
+                  _ovs-vsctl set Interface p0 mtu_request=9216
+                  _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+
+                  _ovs-vsctl set Open_vSwitch . external-ids:ovn-bridge-datapath-type=netdev
+                  _ovs-vsctl --may-exist add-br br-ovn
+                  _ovs-vsctl set bridge br-ovn datapath_type=netdev
+                  _ovs-vsctl br-set-external-id br-ovn bridge-id br-ovn
+                  _ovs-vsctl br-set-external-id br-ovn bridge-uplink puplinkbrovntobrsfc
+                  _ovs-vsctl --may-exist add-port br-ovn pf0hpf
+                  _ovs-vsctl set Interface pf0hpf type=dpdk
+                  _ovs-vsctl set Interface pf0hpf mtu_request=9216
+
+              bfcfgParameters:
+                - UPDATE_ATF_UEFI=yes
+                - UPDATE_DPU_OS=yes
+                - WITH_NIC_FW_UPDATE=yes
+
+              hostNetworkInterfaceConfigs:
+                - portNumber: 0
+                  dhcp: true
+                  mtu: 1500
+
+              configFiles:
+              - path: /etc/mellanox/mlnx-bf.conf
+                operation: override
+                raw: |
+                    ALLOW_SHARED_RQ="no"
+                    IPSEC_FULL_OFFLOAD="no"
+                    ENABLE_ESWITCH_MULTIPORT="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-ovs.conf
+                operation: override
+                raw: |
+                    CREATE_OVS_BRIDGES="no"
+                    OVS_DOCA="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-sf.conf
+                operation: override
+                raw: ""
+                permissions: "0644"
+
+          dpuServices: []
+
+          dpuServiceConfigurations:
+            - name: blueman
+            - name: dts
+            - name: ovn
+              serviceConfiguration:
+                helmChart:
+                  values:
+                    # Use "auto" for CAPI and "https://{{ .spectro.system.cluster.kubevip }}:6443" for agent/appliance mode.
+                    k8sAPIServer: "https://172.25.0.2:6443"
+                    podNetwork: "10.233.64.0/18/24"
+                    serviceNetwork: "10.233.0.0/18"
+                    mtu: 8940
+                    dpuManifests:
+                      kubernetesSecretName: "ovn-dpu"
+                      vtepCIDR:  "10.0.120.0/22"
+                      hostCIDR: "10.0.110.0/24"
+                      ipamPool: "pool1"
+                      ipamPoolType: "cidrpool"
+                      ipamVTEPIPIndex: 0
+                      ipamPFIPIndex: 1
+            - name: hbn
+              interfaces:
+                  ## NOTE: Interfaces inside the HBN pod must have the `_if` suffix due to a naming convention in HBN.
+                - name: p0_if
+                  network: mybrhbn
+                - name: p1_if
+                  network: mybrhbn
+                - name: pf2dpu2_if
+                  network: mybrhbn
+              serviceConfiguration:
+                serviceDaemonSet:
+                  annotations:
+                    k8s.v1.cni.cncf.io/networks: |-
+                      [
+                      {"name": "iprequest", "interface": "ip_lo", "cni-args": {"poolNames": ["loopback"], "poolType": "cidrpool"}},
+                      {"name": "iprequest", "interface": "ip_pf2dpu2", "cni-args": {"poolNames": ["pool1"], "poolType": "cidrpool", "allocateDefaultGateway": true}},
+                      {"name": "iprequest", "interface": "ip_asn", "cni-args": {"poolNames": ["asn"], "poolType": "ippool"}}
+                      ]
+                helmChart:
+                  values:
+                    configuration:
+                      perDPUValuesYAML: |
+                        - hostnamePattern: "*"
+                          values:
+                            bgp_peer_group: hbn
+                            starting_asn: 65101
+                      startupYAMLJ2: |
+                        - header:
+                            model: BLUEFIELD
+                            nvue-api-version: nvue_v1
+                            rev-id: 1.0
+                            version: HBN 2.4.0
+                        - set:
+                            interface:
+                              lo:
+                                ip:
+                                  address:
+                                    {{ ipaddresses.ip_lo.ip.split(".")[0] }}.{{ ipaddresses.ip_lo.ip.split(".")[1] }}.{{ ipaddresses.ip_lo.ip.split(".")[2] }}.{{ (ipaddresses.ip_lo.ip.split(".")[3] | int) + 1 }}/32: {}
+                                type: loopback
+                              p0_if,p1_if:
+                                type: swp
+                                link:
+                                  mtu: 9000
+                              pf2dpu2_if:
+                                ip:
+                                  address:
+                                    {{ ipaddresses.ip_pf2dpu2.cidr }}: {}
+                                type: swp
+                                link:
+                                  mtu: 9000
+                            router:
+                              bgp:
+                                autonomous-system: {{ ( ipaddresses.ip_asn.ip.split(".")[2] | int ) * 256 + ( ipaddresses.ip_asn.ip.split(".")[3] | int ) + ( config.starting_asn | int ) - 1 }}
+                                enable: on
+                                graceful-restart:
+                                  mode: full
+                                router-id: {{ ipaddresses.ip_lo.ip }}
+                            vrf:
+                              default:
+                                router:
+                                  bgp:
+                                    address-family:
+                                      ipv4-unicast:
+                                        enable: on
+                                        redistribute:
+                                          connected:
+                                            enable: on
+                                      ipv6-unicast:
+                                        enable: on
+                                        redistribute:
+                                          connected:
+                                            enable: on
+                                    enable: on
+                                    neighbor:
+                                      p0_if:
+                                        peer-group: {{ config.bgp_peer_group }}
+                                        type: unnumbered
+                                      p1_if:
+                                        peer-group: {{ config.bgp_peer_group }}
+                                        type: unnumbered
+                                    path-selection:
+                                      multipath:
+                                        aspath-ignore: on
+                                    peer-group:
+                                      {{ config.bgp_peer_group }}:
+                                        remote-as: external
+
+          dpuDeployments:
+            - name: ovn-hbn
+              dpus:
+                bfb: bf-bundle-v26.4.0
+                flavor: hbn-ovnk-v26.4.0
+                # dpuSetStrategy and nodeEffect are REQUIRED in 26.4.0 (the CRD
+                # requires spec.dpus.{bfb,flavor,dpuSetStrategy,nodeEffect} with
+                # no defaults). Values below match NVIDIA's hbn-ovnk reference
+                # (docs/public/user-guides/host-trusted/use-cases/hbn-ovnk,
+                # branch public-release-v26.4). Use OnDelete instead of
+                # RollingUpdate to only reprovision DPUs when their DPU CR is
+                # deleted manually.
+                dpuSetStrategy:
+                  type: RollingUpdate
+                nodeEffect:
+                  drain: true
+                dpuSets:
+                - nameSuffix: "dpuset1"
+                  # dpuNodeSelector replaces the deprecated nodeSelector in 26.4.0
+                  dpuNodeSelector:
+                    matchLabels:
+                      feature.node.kubernetes.io/dpu-enabled: "true"
+                  dpuSelector:
+                    provisioning.dpu.nvidia.com/dpudevice-pf0-name: $DPU_P0  # Set to cluster profile variable
+              services:
+                ovn:
+                  serviceTemplate: ovn
+                  serviceConfiguration: ovn
+                hbn:
+                  serviceTemplate: hbn
+                  serviceConfiguration: hbn
+                dts:
+                  serviceTemplate: dts
+                  serviceConfiguration: dts
+                blueman:
+                  serviceTemplate: blueman
+                  serviceConfiguration: blueman
+              serviceChains:
+                switches:
+                  - ports:
+                    - serviceInterface:
+                        matchLabels:
+                          uplink: p0
+                    - service:
+                        name: hbn
+                        interface: p0_if
+                  - ports:
+                    - serviceInterface:
+                        matchLabels:
+                          uplink: p1
+                    - service:
+                        name: hbn
+                        interface: p1_if
+                  - ports:
+                    - serviceInterface:
+                        matchLabels:
+                          port: ovn
+                    - service:
+                        name: hbn
+                        interface: pf2dpu2_if
+
+          dpuServiceTemplates:
+            # OVN-Kubernetes moved to oci://ghcr.io/mellanox/charts in 26.4.0
+            # (was oci://ghcr.io/nvidia / ovn-kubernetes-chart in 25.10.1).
+            - name: ovn
+              helmChart:
+                source:
+                  repoURL: oci://ghcr.io/mellanox/charts
+                  chart: ovn-kubernetes-chart
+                  version: v26.4.0
+                values:
+                  commonManifests:
+                    enabled: true
+                  dpuManifests:
+                    enabled: true
+                  leaseNamespace: "ovn-kubernetes"
+                  gatewayOpts: "--gateway-interface=br-ovn"
+            - name: hbn
+              helmChart:
+                source:
+                  repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                  version: 3.4.0
+                  chart: doca-hbn
+                values:
+                  image:
+                    repository: nvcr.io/nvidia/doca/doca_hbn
+                    tag: 3.4.0-doca3.4.0
+                  resources:
+                    memory: 6Gi
+                    nvidia.com/bf_sf: 3
+            - name: dts
+              helmChart:
+                source:
+                  repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                  version: 1.25.5
+                  chart: doca-telemetry
+            - name: blueman
+              helmChart:
+                source:
+                  repoURL: https://helm.ngc.nvidia.com/nvidia/doca
+                  version: 1.0.8
+                  chart: doca-blueman
+
+          dpuServiceInterfaces:
+            - name: p0
+              template:
+                metadata:
+                  labels:
+                    uplink: "p0"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p0
+            - name: p1
+              template:
+                metadata:
+                  labels:
+                    uplink: "p1"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p1
+            - name: ovn
+              template:
+                metadata:
+                  labels:
+                    port: ovn
+                spec:
+                  interfaceType: ovn
+
+          dpuServiceCredentialRequests:
+            - name: ovn-dpu
+              duration: 24h
+              metadata:
+                labels:
+                  dpu.nvidia.com/image-pull-secret: ""
+              secret:
+                name: ovn-dpu
+                namespace: dpf-operator-system
+              serviceAccount:
+                name: ovn-dpu
+                namespace: dpf-operator-system
+              type: tokenFile
+
+          dpuServiceIPAMs:
+            - name: asn
+              ipv4Subnet:
+                subnet: 0.0.0.0/16
+                perNodeIPCount: 1
+                gateway: 0.0.255.255
+            - name: loopback
+              ipv4Network:
+                network: "11.0.0.0/24"
+                prefixSize: 32
+            - name: pool1
+              ipv4Network:
+                network: "10.0.120.0/22"
+                gatewayIndex: 3
+                prefixSize: 29
+
+  # ===========================================================================
+  # ZERO TRUST - Passthrough (ZT-PT).
+  # In ZT the DPU host is NOT a Kubernetes worker. The DPUFlavor sets
+  # `dpuMode: zero-trust`. DPUs are still selected here via dpuNodeSelector in
+  # the example, but in a true host-less ZT setup you would instead select the
+  # discovered DPUDevice via DPUSet.dpuDeviceSelector (see chart template
+  # comments). This preset provisions the DPU in passthrough and chains the
+  # physical ports straight to the host PFs - no OVN/HBN service offload.
+  # ===========================================================================
+  - name: "zero-trust-pt"
+    displayName: "Zero Trust - Passthrough"
+    group: "Mode"
+    remove:
+    - "charts.dpf-deployment"
+    add: |
+      charts:
+        dpf-deployment:
+          bfb:
+            url: "https://content.mellanox.com/BlueField/BFBs/Ubuntu24.04/bf-bundle-3.4.0-92_26.04_ubuntu-24.04_64k_prod.bfb"
+
+          dpuFlavors:
+            - name: passthrough-v26.4.0
+              dpuMode: zero-trust
+              grub:
+                kernelParameters:
+                - console=hvc0
+                - console=ttyAMA0
+                - earlycon=pl011,0x13010000
+                - fixrttc
+                - net.ifnames=0
+                - biosdevname=0
+                - iommu.passthrough=1
+                - cgroup_no_v1=net_prio,net_cls
+                - hugepagesz=2048kB
+                - hugepages=3072
+              nvconfig:
+              - device: "*"
+                parameters:
+                - PF_BAR2_ENABLE=0
+                - PER_PF_NUM_SF=1
+                - PF_TOTAL_SF=20
+                - PF_SF_BAR_SIZE=10
+                - NUM_PF_MSIX_VALID=0
+                - PF_NUM_PF_MSIX_VALID=1
+                - PF_NUM_PF_MSIX=228
+                - INTERNAL_CPU_MODEL=1
+                - INTERNAL_CPU_OFFLOAD_ENGINE=0
+                - SRIOV_EN=1
+                - NUM_OF_VFS=46
+                - LAG_RESOURCE_ALLOCATION=1
+                - LINK_TYPE_P1=ETH
+                - LINK_TYPE_P2=ETH
+              ovs:
+                rawConfigScript: |
+                  _ovs-vsctl() {
+                    ovs-vsctl --no-wait --timeout 15 "$@"
+                  }
+
+                  _ovs-vsctl set Open_vSwitch . other_config:doca-init=true
+                  _ovs-vsctl set Open_vSwitch . other_config:dpdk-max-memzones=50000
+                  _ovs-vsctl set Open_vSwitch . other_config:hw-offload=true
+                  _ovs-vsctl set Open_vSwitch . other_config:pmd-quiet-idle=true
+                  _ovs-vsctl set Open_vSwitch . other_config:max-idle=20000
+                  _ovs-vsctl set Open_vSwitch . other_config:max-revalidator=5000
+                  _ovs-vsctl set Open_vSwitch . other_config:ctl-pipe-size=1024
+                  _ovs-vsctl --if-exists del-br ovsbr1
+                  _ovs-vsctl --if-exists del-br ovsbr2
+                  _ovs-vsctl --may-exist add-br br-sfc
+                  _ovs-vsctl set bridge br-sfc datapath_type=netdev
+                  _ovs-vsctl set bridge br-sfc fail_mode=secure
+                  _ovs-vsctl --may-exist add-port br-sfc p0
+                  _ovs-vsctl set Interface p0 type=dpdk
+                  _ovs-vsctl set Interface p0 mtu_request=9216
+                  _ovs-vsctl set Port p0 external_ids:dpf-type=physical
+
+              bfcfgParameters:
+              - UPDATE_ATF_UEFI=yes
+              - UPDATE_DPU_OS=yes
+              - WITH_NIC_FW_UPDATE=yes
+
+              configFiles:
+              - path: /etc/mellanox/mlnx-bf.conf
+                operation: override
+                raw: |
+                    ALLOW_SHARED_RQ="no"
+                    IPSEC_FULL_OFFLOAD="no"
+                    ENABLE_ESWITCH_MULTIPORT="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-ovs.conf
+                operation: override
+                raw: |
+                    CREATE_OVS_BRIDGES="no"
+                    OVS_DOCA="yes"
+                permissions: "0644"
+              - path: /etc/mellanox/mlnx-sf.conf
+                operation: override
+                raw: ""
+                permissions: "0644"
+
+          dpuSets:
+            - name: passthrough
+              # strategy is REQUIRED in 26.4.0 (DPUSet CRD requires
+              # spec.{dpuTemplate,strategy}, no default). OnDelete matches
+              # NVIDIA's zero-trust passthrough reference (docs/public/
+              # user-guides/zero-trust/use-cases/passthrough, branch
+              # public-release-v26.4): DPUs are only reprovisioned when their
+              # DPU CR is deleted, never rolled automatically.
+              strategy:
+                type: OnDelete
+              dpuNodeSelector:
+                matchLabels:
+                  feature.node.kubernetes.io/dpu-enabled: "true"
+              dpuTemplate:
+                spec:
+                  dpuFlavor: passthrough-v26.4.0
+                  bfb:
+                    name: bf-bundle-v26.4.0
+                  # NVIDIA's ZT reference uses `hold: true`; noEffect is kept
+                  # here because it is what the live host-as-worker ZT flow was
+                  # validated with (avoids taint/drain on the worker that
+                  # carries the DPU).
+                  nodeEffect:
+                    noEffect: true
+
+          dpuServices: []
+
+          dpuServiceConfigurations: []
+
+          dpuDeployments: []
+
+          dpuServiceTemplates: []
+
+          dpuServiceChains:
+            - name: passthrough
+              template:
+                spec:
+                  switches:
+                    - ports:
+                      - serviceInterface:
+                          matchLabels:
+                            interface: p0
+                      - serviceInterface:
+                          matchLabels:
+                            interface: pf0hpf
+                    - ports:
+                      - serviceInterface:
+                          matchLabels:
+                            interface: p1
+                      - serviceInterface:
+                          matchLabels:
+                            interface: pf1hpf
+
+          dpuServiceInterfaces:
+            - name: p0
+              template:
+                metadata:
+                  labels:
+                    interface: "p0"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p0
+            - name: p1
+              template:
+                metadata:
+                  labels:
+                    interface: "p1"
+                spec:
+                  interfaceType: physical
+                  physical:
+                    interfaceName: p1
+            - name: pf0hpf
+              template:
+                metadata:
+                  labels:
+                    interface: "pf0hpf"
+                spec:
+                  interfaceType: pf
+                  pf:
+                    pfID: 0
+            - name: pf1hpf
+              template:
+                metadata:
+                  labels:
+                    interface: "pf1hpf"
+                spec:
+                  interfaceType: pf
+                  pf:
+                    pfID: 1
+
+          dpuServiceCredentialRequests: []
+
+          dpuServiceIPAMs: []

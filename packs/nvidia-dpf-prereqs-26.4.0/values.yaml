@@ -1,0 +1,321 @@
+# spectrocloud.com/enabled-presets: Monitoring:monitoring-disabled,Target cluster type:edge-native
+pack:
+  namespace: dpf-operator-system
+  namespaceLabels:
+    "dpf-operator-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  releaseNameOverride:
+    local-path-provisioner: local-path-provisioner
+    node-feature-discovery: node-feature-discovery
+    maintenance-operator-chart: maintenance-operator
+    argo-cd: argo-cd
+    kamaji: kamaji
+    dpf-monitoring: dpf-monitoring
+  content:
+    images:
+      # local-path-provisioner v0.0.34
+      - image: rancher/local-path-provisioner:v0.0.34
+      - image: busybox:latest
+      # node-feature-discovery 0.18.3
+      - image: registry.k8s.io/nfd/node-feature-discovery:v0.18.3
+      # maintenance-operator 0.3.0
+      - image: ghcr.io/mellanox/maintenance-operator:v0.3.0
+      # argo-cd 9.4.1
+      - image: quay.io/argoproj/argocd:v3.3.0
+      - image: mirror.gcr.io/redis:8.2.3-alpine
+      # kamaji 1.2.0 (NVIDIA build) + etcd + tooling
+      - image: ghcr.io/nvidia/kamaji:v1.34.0-25.9.3
+      - image: quay.io/coreos/etcd:v3.5.17
+      - image: clastix/kubectl:v1.35
+      - image: cfssl/cfssl:latest
+      # ----------------------------------------------------------------------
+      # dpf-monitoring images - ONLY needed when the "Monitoring enabled"
+      # preset is selected. Uncomment for airgapped installs with monitoring.
+      # ----------------------------------------------------------------------
+      #- image: quay.io/prometheus-operator/prometheus-operator:v0.87.1
+      #- image: quay.io/prometheus-operator/prometheus-config-reloader:v0.87.1
+      #- image: quay.io/prometheus/prometheus:v3.8.0
+      #- image: docker.io/grafana/grafana:12.3.0
+      #- image: docker.io/kiwigrid/k8s-sidecar:1.30.9
+      #- image: quay.io/kiwigrid/k8s-sidecar:2.1.2
+      #- image: ghcr.io/jkroepke/kube-webhook-certgen:1.7.3
+      #- image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
+      #- image: docker.io/grafana/loki:3.6.5
+      #- image: otel/opentelemetry-collector-contrib:0.146.1
+
+charts:
+  # ---------------------------------------------------------------------------
+  # NOTE: cert-manager is NOT shipped by this pack (removed 2026-07-28).
+  # It is still a hard DPF 26.4.0 prerequisite (v1.19.3 upstream): kamaji and
+  # maintenance-operator below create cert-manager Certificates, and the DPF
+  # operator webhooks depend on the CA injector. The environment must provide
+  # it - in this implementation Palette installs cert-manager itself. If a
+  # target cluster has no cert-manager, add it as its own profile layer BEFORE
+  # this pack (upstream values: dpf-operator chart dev/helmfiles/values/
+  # cert-manager.yaml).
+  # ---------------------------------------------------------------------------
+
+  # ---------------------------------------------------------------------------
+  # local-path-provisioner v0.0.34
+  #   (git+https://github.com/rancher/local-path-provisioner@deploy/chart?ref=v0.0.34)
+  # NEW core prerequisite in 26.4.0. Provides the "local-path" StorageClass
+  # used by kamaji-etcd below - MUST install first (charts install in
+  # pack.json order; kamaji-etcd PVCs stay Pending without this StorageClass).
+  # ---------------------------------------------------------------------------
+  local-path-provisioner:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+      - operator: Exists
+        effect: NoSchedule
+        key: node-role.kubernetes.io/master
+
+  # ---------------------------------------------------------------------------
+  # node-feature-discovery 0.18.3
+  #   (https://kubernetes-sigs.github.io/node-feature-discovery/charts)
+  # Labels nodes by PCI device class so DPF/DPU NodeFeatureRules can match.
+  # ---------------------------------------------------------------------------
+  node-feature-discovery:
+    master:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      # Note: from v0.18.3 the master toleration was dropped from the chart defaults.
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Equal"
+          value: ""
+          effect: "NoSchedule"
+    worker:
+      enable: true
+      hostNetwork: true
+      # Change dnsPolicy to "Default" when deploying on MAAS
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+      extraEnvs:
+        - name: "KUBERNETES_SERVICE_HOST"
+          # Use "auto" for CAPI and "{{ .spectro.system.cluster.kubevip }}" for agent/appliance mode.
+          value: "{{ .spectro.system.cluster.kubevip }}"
+        - name: "KUBERNETES_SERVICE_PORT"
+          value: "6443"
+      config:
+        sources:
+          pci:
+            deviceClassWhitelist:
+              - "0200"
+            deviceLabelFields:
+              - "class"
+              - "vendor"
+              - "device"
+    gc:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+
+  # ---------------------------------------------------------------------------
+  # maintenance-operator 0.3.0  (oci://ghcr.io/mellanox/maintenance-operator-chart)
+  # ---------------------------------------------------------------------------
+  maintenance-operator-chart:
+    operatorConfig:
+      deploy: true
+      maxParallelOperations: 60%
+    operator:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+
+  # ---------------------------------------------------------------------------
+  # argo-cd 9.4.1  (https://argoproj.github.io/argo-helm)
+  # DPF pulls several DPUService Helm charts via Argo CD.
+  # ---------------------------------------------------------------------------
+  argo-cd:
+    applicationSet:
+      replicas: 0
+    dex:
+      enabled: false
+    notifications:
+      enabled: false
+    global:
+      podLabels:
+        ovn.dpu.nvidia.com/skip-injection: ""
+      affinity:
+        nodeAffinity:
+          type: hard
+          matchExpressions:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+    redis:
+      image:
+        repository: mirror.gcr.io/redis
+    configs:
+      params:
+        # Argo CD reconciles Applications in the dpf-operator-system namespace.
+        application.namespaces: dpf-operator-system
+
+  # ---------------------------------------------------------------------------
+  # kamaji 1.2.0  (oci://ghcr.io/nvidia/charts/kamaji)
+  # Hosts the DPUCluster control planes. etcd PVC uses the local-path
+  # StorageClass provided by local-path-provisioner below.
+  # ---------------------------------------------------------------------------
+  kamaji:
+    # DIVERGES from NVIDIA's reference values (replicas: 2, resources: null) on
+    # purpose: with resources null the chart default 200m CPU limit applies and
+    # 26.4 kamaji pegs it, starving leader-election lease renewal ("leader
+    # election lost" crashloop; the tenant control plane never reconciles).
+    # Fix validated live on the 26.4 PAN ZT cluster 2026-07-06: single replica,
+    # real CPU headroom, relaxed probes.
+    replicas: 1
+    resources:
+      limits:
+        cpu: "2"
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: healthcheck
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 10
+      failureThreshold: 6
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: healthcheck
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 6
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    kamaji-etcd:
+      persistentVolumeClaim:
+        storageClassName: local-path
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      jobs:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "node-role.kubernetes.io/control-plane"
+                      operator: Exists
+        tolerations:
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+      datastore:
+        enabled: true
+        annotations:
+          helm.sh/resource-policy: keep
+        name: default
+    image:
+      repository: ghcr.io/nvidia/kamaji
+      tag: v1.34.0-25.9.3
+      pullPolicy: Always
+    cfssl:
+      image:
+        tag: v1.6.5
+
+  # ---------------------------------------------------------------------------
+  # dpf-monitoring (umbrella wrapper, all components OFF by default)
+  # Mirrors NVIDIA's optional post-install monitoring helmfile for DPF 26.4.0:
+  # kube-prometheus-stack 80.4.1, kube-state-metrics 5.25.1, loki 6.53.0,
+  # opentelemetry-collector 0.146.0. Use the "Monitoring" preset to toggle,
+  # or flip the four enabled flags here. All tuning (control-plane pinning,
+  # local-path PVCs, DPF scrape config, Grafana dashboard sidecar, Loki/otel
+  # wiring) lives in the wrapper chart's values and matches the DPF v26.4.0
+  # reference; the stack is fully self-contained in-cluster.
+  #
+  # Disabled by default because on a FRESH install two components cannot be
+  # healthy until later layers land: kube-state-metrics waits for the
+  # dpf-operator-customresourcestate-config ConfigMap (created by the
+  # dpf-operator pack), and the otel-collector DaemonSet waits for the
+  # CNI/DPU rollout. Both self-heal; expect the pack to report degraded in
+  # between if you enable this before the first dpf-operator install.
+  # ---------------------------------------------------------------------------
+  dpf-monitoring:
+    kube-prometheus-stack:
+      enabled: false
+    kube-state-metrics:
+      enabled: false
+    loki:
+      enabled: false
+    opentelemetry-collector:
+      enabled: false

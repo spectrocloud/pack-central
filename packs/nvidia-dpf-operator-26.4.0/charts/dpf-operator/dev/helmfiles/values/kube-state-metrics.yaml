@@ -1,0 +1,49 @@
+# Kube State Metrics configuration
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/master"
+              operator: Exists
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: Exists
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+extraArgs:
+  - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+  - --metric-labels-allowlist=pods=[svc.dpu.nvidia.com/service],daemonsets=[svc.dpu.nvidia.com/service],deployments=[svc.dpu.nvidia.com/service]
+volumes:
+  - configMap:
+      defaultMode: 420
+      name: dpf-operator-customresourcestate-config
+    name: customresourcestate-config
+volumeMounts:
+  - mountPath: /etc/customresourcestate
+    name: customresourcestate-config
+    readOnly: true
+prometheus:
+  monitor:
+    enabled: true
+    http:
+      honorLabels: true
+rbac:
+  extraRules:
+    - apiGroups:
+        - svc.dpu.nvidia.com
+        - operator.dpu.nvidia.com
+        - provisioning.dpu.nvidia.com
+        - storage.dpu.nvidia.com
+        - vpc.dpu.nvidia.com
+      resources:
+        - '*'
+      verbs: ["list", "watch"]
+    - apiGroups: ["apiextensions.k8s.io"]
+      resources: ["customresourcedefinitions"]
+      verbs: ["list", "watch"]

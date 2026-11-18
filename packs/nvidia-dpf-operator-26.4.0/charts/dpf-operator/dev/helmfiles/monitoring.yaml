@@ -1,0 +1,68 @@
+repositories:
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: open-telemetry
+    url: https://open-telemetry.github.io/opentelemetry-helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+
+helmDefaults:
+  skipDeps: false
+  wait: true
+  cleanupOnFail: true
+
+releases:
+  - name: kube-prometheus-stack
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: prometheus-community/kube-prometheus-stack
+    version: 80.4.1
+    labels:
+      app: kube-prometheus-stack
+      type: monitoring
+    values:
+      - values/kube-prometheus-stack.yaml
+
+  - name: kube-state-metrics
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: prometheus-community/kube-state-metrics
+    version: 5.25.1
+    labels:
+      app: kube-state-metrics
+      type: monitoring
+    values:
+      - values/kube-state-metrics.yaml
+    needs:
+      - dpf-operator-system/kube-prometheus-stack
+
+  - name: loki
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: grafana/loki
+    version: 6.53.0
+    labels:
+      app: loki
+      type: logging
+    values:
+      - values/loki.yaml
+    needs:
+      - dpf-operator-system/kube-prometheus-stack
+
+  - name: opentelemetry-collector
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: open-telemetry/opentelemetry-collector
+    version: 0.146.0
+    labels:
+      app: opentelemetry-collector
+      type: logging
+    values:
+      - values/opentelemetry-collector.yaml
+    # Worker nodes using OVNK CNI have it deployed later (e.g., alongside DPU rollout).
+    # In these cases, Otel pods on workers cannot become ready during monitoring
+    # deployment, causing Helm to time out while waiting for the DaemonSet.
+    wait: false
+    needs:
+      - dpf-operator-system/kube-prometheus-stack
+      - dpf-operator-system/loki

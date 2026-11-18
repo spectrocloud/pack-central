@@ -1,0 +1,140 @@
+environments:
+  default: {}
+  # Environment for shared file system configuration.
+  # Used by local-path-provisioner to configure shared storage instead of local node storage.
+  shared-fs:
+    values:
+      - envs/shared-fs.yaml
+---
+repositories:
+  - name: argoproj
+    url: https://argoproj.github.io/argo-helm
+  - name: node-feature-discovery
+    url: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+  - name: clastix
+    url: https://clastix.github.io/charts
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: local-storage
+    url: git+https://github.com/rancher/local-path-provisioner@deploy/chart?ref=v0.0.34
+
+helmDefaults:
+  skipDeps: false
+  wait: true
+  cleanupOnFail: true
+
+releases:
+  - name: cert-manager
+    namespace: cert-manager
+    createNamespace: true
+    chart: jetstack/cert-manager
+    version: v1.19.3
+    labels:
+      app: cert-manager
+    values:
+      - values/cert-manager.yaml
+    hooks:
+      - events: [ "postsync" ]
+        command: "kubectl"
+        args: ["wait", "--for=jsonpath={.webhooks[0].clientConfig.caBundle}", "--timeout=300s", "validatingwebhookconfiguration", "cert-manager-webhook"]
+        showlogs: true
+      - events: [ "postsync" ]
+        command: "kubectl"
+        args: ["wait", "--for=jsonpath={.webhooks[0].clientConfig.caBundle}", "--timeout=300s", "mutatingwebhookconfiguration", "cert-manager-webhook"]
+        showlogs: true
+
+  - name: kamaji
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: oci://ghcr.io/nvidia/charts/kamaji
+    version: 1.2.0
+    labels:
+      app: kamaji
+    values:
+      - values/kamaji.yaml
+    needs:
+      - cert-manager/cert-manager
+    hooks:
+      - events: [ "preapply" ]
+        command: "./apply-crds.sh"
+        args: ["oci://ghcr.io/nvidia/charts/kamaji", "1.2.0"]
+        showlogs: true
+
+  - name: maintenance-operator
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: oci://ghcr.io/mellanox/maintenance-operator-chart
+    version: 0.3.0
+    labels:
+      app: maintenance-operator
+    values:
+      - values/maintenance-operator-chart.yaml
+    needs:
+      - cert-manager/cert-manager
+    hooks:
+      - events: [ "preapply" ]
+        command: "./apply-crds.sh"
+        args: ["oci://ghcr.io/mellanox/maintenance-operator-chart", "0.3.0"]
+        showlogs: true
+
+  - name: argo-cd
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: argoproj/argo-cd
+    version: 9.4.1
+    timeout: 600
+    labels:
+      app: argo-cd
+    values:
+      - values/argo-cd.yaml
+    hooks:
+      - events: [ "postsync" ]
+        command: "kubectl"
+        args: ["rollout", "status", "-n", "dpf-operator-system", "--timeout=300s", "deployment", "-l", "app.kubernetes.io/name=argocd-server"]
+        showlogs: true
+      - events: [ "postsync" ]
+        command: "kubectl"
+        args: ["rollout", "status", "-n", "dpf-operator-system", "--timeout=300s", "statefulset", "-l", "app.kubernetes.io/name=argocd-application-controller"]
+        showlogs: true
+      # Ensure a sync is done of all applications. This is e.g. required when upgrading ArgoCD from v2 to v3 which includes changing the tracking strategy (if not configured otherwise).
+      # Without a sync, ArgoCD may not delete resources because of the missing tracking information.
+      # TODO: delete after v26.4.0 is released
+      - events: [ "postsync" ]
+        command: "/bin/bash"
+        args:
+        - -c
+        - |
+          FOUND_APPLICATIONS=0
+          for app in $(kubectl get application -n dpf-operator-system -o name); do
+            kubectl patch $app -n dpf-operator-system --type=merge -p '{"operation":{"initiatedBy":{"username":"helmfile"},"sync":{"syncStrategy":{"hook":{}}}}}'
+            FOUND_APPLICATIONS=1
+          done
+          if [ $FOUND_APPLICATIONS -eq 1 ]; then
+            kubectl wait application --all -n dpf-operator-system --for=jsonpath='{.status.operationState.phase}'=Succeeded --timeout=300s
+          fi
+        showlogs: true
+
+  - name: node-feature-discovery
+    namespace: dpf-operator-system
+    createNamespace: true
+    chart: node-feature-discovery/node-feature-discovery
+    version: 0.18.3
+    labels:
+      app: node-feature-discovery
+    values:
+      - values/node-feature-discovery.yaml
+    hooks:
+      - events: [ "preapply" ]
+        command: "./apply-crds.sh"
+        args: ["node-feature-discovery/node-feature-discovery", "0.18.3"]
+        showlogs: true
+
+  - name: local-path-provisioner
+    namespace: local-path-provisioner
+    createNamespace: true
+    chart: local-storage/local-path-provisioner
+    labels:
+      app: local-path-provisioner
+    values:
+      - values/local-path-provisioner.yaml
+      - values/local-path-provisioner.yaml.gotmpl

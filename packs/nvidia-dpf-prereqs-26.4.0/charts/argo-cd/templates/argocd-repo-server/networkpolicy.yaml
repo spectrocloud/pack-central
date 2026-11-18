@@ -1,0 +1,38 @@
+{{- if or .Values.repoServer.networkPolicy.create .Values.global.networkPolicy.create }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    {{- include "argo-cd.labels" (dict "context" . "component" .Values.repoServer.name "name" .Values.repoServer.name) | nindent 4 }}
+  name: {{ template "argo-cd.repoServer.fullname" . }}
+  namespace: {{ include  "argo-cd.namespace" . }}
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          {{- include "argo-cd.selectorLabels" (dict "context" . "name" .Values.server.name) | nindent 10 }}
+    - podSelector:
+        matchLabels:
+          {{- include "argo-cd.selectorLabels" (dict "context" . "name" .Values.controller.name) | nindent 10 }}
+    {{- if .Values.notifications.enabled }}
+    - podSelector:
+        matchLabels:
+          {{- include "argo-cd.selectorLabels" (dict "context" . "name" .Values.notifications.name) | nindent 10 }}
+    {{- end }}
+    - podSelector:
+        matchLabels:
+          {{- include "argo-cd.selectorLabels" (dict "context" . "name" .Values.applicationSet.name) | nindent 10 }}
+    ports:
+    - port: repo-server
+      protocol: TCP
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - port: metrics
+  podSelector:
+    matchLabels:
+      {{- include "argo-cd.selectorLabels" (dict "context" . "name" .Values.repoServer.name) | nindent 6 }}
+  policyTypes:
+  - Ingress
+{{- end }}

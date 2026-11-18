@@ -1,0 +1,30 @@
+annotations:
+  artifacthub.io/changes: |
+    - kind: fixed
+      description: affinity and tolerations for ancillary jobs.
+  artifacthub.io/links: |
+    - name: CLASTIX
+      url: https://clastix.io
+    - name: Kamaji
+      url: https://kamaji.clastix.io
+    - name: support
+      url: https://clastix.io/support
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Full Lifecycle
+apiVersion: v2
+appVersion: 3.5.17
+description: Helm chart for deploying a multi-tenant `etcd` cluster.
+home: https://github.com/clastix/kamaji-etcd
+kubeVersion: '>=1.22.0-0'
+maintainers:
+- email: adriano@clastix.io
+  name: Adriano Pezzuto
+  url: https://clastix.io
+- email: dario@clastix.io
+  name: Dario Tranchitella
+  url: https://clastix.io
+name: kamaji-etcd
+sources:
+- https://github.com/clastix/kamaji-etcd
+type: application
+version: 0.11.0
