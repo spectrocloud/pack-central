@@ -1,0 +1,20 @@
+{{ template "chart.header" . }}
+-----------------------
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+This Helm chart deploys OVN-Kubernetes, an OVN-based CNI plugin for Kubernetes that provides network virtualization, network policy, services, and overlay networking for pods.
+
+For installation instructions, see:
+
+- [Launching OVN-Kubernetes with Helm](../../docs/installation/launching-ovn-kubernetes-with-helm.md) — Kind quickstart and step-by-step install.
+- [Launching OVN-Kubernetes with kubeadm](../../docs/installation/INSTALL.KUBEADM.md) — multi-VM walkthrough on a `kubeadm`-bootstrapped cluster.
+
+The rest of this README documents the chart values.
+{{ template "chart.valuesSectionHtml" . }}
