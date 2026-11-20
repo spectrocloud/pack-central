@@ -1,0 +1,24 @@
+logLevel: 4
+logFileMaxSize: 100
+logFileMaxBackups: 5
+logFileMaxAge: 5
+ovnControllerLogLevel: 4
+
+# Optional gateway options override for the dpu-host daemonset.
+# When set, takes precedence over global.gatewayOpts.
+gatewayOpts: ""
+
+# The netdevice or deviceplugin resourcename that specifies pool of devices
+# that can be used for management ports has to be specified.
+# mgmtPortVFResourceName will override nodeMgmtPortNetdev if both are specified
+
+# The net device to be used for management port
+nodeMgmtPortNetdev: ""
+
+# The device plugin resource name that has allocated interfaces to be used for management ports
+# This field must be set when using hardware offloading for primary UDNs.
+mgmtPortVFResourceName: ""
+
+# If using hardware offloading for primary UDNs,the number of VFs required to handle management ports,
+# which depends on the number of primary UDNs required must also be specified.
+mgmtPortVFsCount: 1
