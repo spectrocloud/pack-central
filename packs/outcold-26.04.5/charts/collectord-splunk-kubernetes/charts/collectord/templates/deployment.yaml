@@ -1,0 +1,127 @@
+{{- if .Values.deployment.create -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-addon
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "collectord.labels" . | nindent 4 }}
+    {{- with .Values.deployment.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "collectord.deployment.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}-addon
+      {{- with .Values.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "collectord.deployment.selectorLabels" . | nindent 8 }}
+        {{- with .Values.deployment.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      priorityClassName: {{ .Values.priorityClass.name | default (printf "%s-critical" .Release.Name) }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- with .Values.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.deployment.ports }}
+        ports:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.deployment.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.deployment.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        resources:
+          {{- toYaml .Values.deployment.resources | nindent 10 }}
+        env:
+        - name: KUBERNETES_NODENAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: {{ .Release.Name }}-state
+          mountPath: /data
+        - name: {{ .Release.Name }}-config
+          mountPath: /config/
+          readOnly: true
+        {{- range $value := .Values.secrets }}
+        - name: {{ $value.name }}
+          mountPath: {{ $value.mountPath | default (printf "/config/%s" $value.name) }}
+          readOnly: true
+        {{- end }}
+        {{- if .Values.mountLocalTime }}
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+        {{- end }}
+        {{- include "collectord.volumeMounts" (dict "workloadType" "deployment" "values" .Values) | nindent 8 }}
+      volumes:
+      - name: {{ .Release.Name }}-state
+        hostPath:
+          path: /var/lib/{{ .Release.Name }}/data/
+          type: Directory
+      {{- if .Values.mountLocalTime }}
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      {{- end }}
+      - name: {{ .Release.Name }}-config
+        configMap:
+          name: {{ .Release.Name }}
+          items:
+          - key: 001-general.conf
+            path: 001-general.conf
+          - key: 004-addon.conf
+            path: 004-addon.conf
+          {{- range $filename, $content := .Values.configMap.allAdditionalFiles }}
+          - key: {{ $filename }}
+            path: {{ $filename }}
+          {{- end }}
+          {{- range $filename, $content := .Values.configMap.deploymentAdditionalFiles }}
+          - key: {{ $filename }}
+            path: {{ $filename }}
+          {{- end }}
+      {{- range $value := .Values.secrets }}
+      - name: {{ $value.name }}
+        secret:
+          secretName: {{ $value.name }}
+      {{- end }}
+      {{- include "collectord.volumes" (dict "workloadType" "deployment" "values" .Values) | nindent 6 }}
+{{- end -}}

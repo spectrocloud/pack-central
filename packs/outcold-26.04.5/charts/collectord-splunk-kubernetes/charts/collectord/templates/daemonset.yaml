@@ -1,0 +1,137 @@
+{{- if .Values.daemonset.create -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.daemonset.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "collectord.labels" . | nindent 4 }}
+    {{- with .Values.daemonset.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "collectord.daemonset.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      {{- with .Values.daemonset.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "collectord.daemonset.selectorLabels" . | nindent 8 }}
+        {{- with .Values.daemonset.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      priorityClassName: {{ .Values.priorityClass.name | default (printf "%s-critical" .Release.Name) }}
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- with .Values.daemonset.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.daemonset.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.daemonset.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.daemonset.ports }}
+        ports:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.daemonset.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.daemonset.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        resources:
+          {{- toYaml .Values.daemonset.resources | nindent 10 }}
+        env:
+        - name: KUBERNETES_NODENAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: {{ .Release.Name }}-state
+          mountPath: /data
+        - name: {{ .Release.Name }}-config
+          mountPath: /config/
+          readOnly: true
+        {{- range $value := .Values.secrets }}
+        - name: {{ $value.name }}
+          mountPath: {{ $value.mountPath | default (printf "/config/%s" $value.name) }}
+          readOnly: true
+        {{- end }}
+        - name: rootfs
+          mountPath: /rootfs/
+          readOnly: {{ .Values.mountRootfsAsReadOnly }}
+          mountPropagation: HostToContainer
+        {{- if .Values.mountLocalTime }}
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+        {{- end }}
+        {{- include "collectord.volumeMounts" (dict "workloadType" "daemonset" "values" .Values) | nindent 8 }}
+      volumes:
+      - name: {{ .Release.Name }}-state
+        hostPath:
+          path: /var/lib/{{ .Release.Name }}/data/
+          type: DirectoryOrCreate
+      - name: rootfs
+        hostPath:
+          path: /
+      {{- if .Values.mountLocalTime }}
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      {{- end }}
+      - name: {{ .Release.Name }}-config
+        configMap:
+          name: {{ .Release.Name }}
+          items:
+          - key: 001-general.conf
+            path: 001-general.conf
+          - key: 002-daemonset.conf
+            path: 002-daemonset.conf
+          {{- range $filename, $content := .Values.configMap.allAdditionalFiles }}
+          - key: {{ $filename }}
+            path: {{ $filename }}
+          {{- end }}
+          {{- range $filename, $content := .Values.configMap.daemonsetAdditionalFiles }}
+          - key: {{ $filename }}
+            path: {{ $filename }}
+          {{- end }}
+      {{- range $value := .Values.secrets }}
+      - name: {{ $value.name }}
+        secret:
+          secretName: {{ $value.name }}
+      {{- end }}
+      {{- include "collectord.volumes" (dict "workloadType" "daemonset" "values" .Values) | nindent 6 }}
+{{- end -}}
