@@ -1,0 +1,88 @@
+{{- if .Values.uninstall.enabled }}
+{{- $name := include "lava-sensor.fullname" . }}
+# Used only by the pre-delete hook Job below. They are ordinary release
+# resources, so they still exist while pre-delete hooks run, and helm uninstall
+# deletes them afterwards.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}-uninstall
+  labels: {{- include "lava-sensor.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-uninstall
+  labels: {{- include "lava-sensor.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    resourceNames: [{{ $name | quote }}]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-uninstall
+  labels: {{- include "lava-sensor.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-uninstall
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}-uninstall
+    namespace: {{ .Release.Namespace }}
+---
+# helm uninstall, step 1 (before anything is deleted): switch every pod to
+# uninstall mode at once and wait until each one reports its node clean. If a
+# node cannot report (down, unreachable) the Job times out, helm uninstall fails
+# and the release stays; the README says what to do then.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-uninstall
+  labels: {{- include "lava-sensor.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: {{- include "lava-sensor.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $name }}-uninstall
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # The same tolerations as the sensor pods, so the Job can still run on a
+      # cluster whose every node is tainted (a GPU-only one).
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: switch-to-uninstall
+          image: {{ include "lava-sensor.image" .Values.uninstall.image }}
+          imagePullPolicy: {{ .Values.uninstall.image.pullPolicy }}
+          args:
+            - patch
+            - daemonset/{{ $name }}
+            - --namespace={{ .Release.Namespace }}
+            - --type=strategic
+            - '--patch={"spec":{"updateStrategy":{"rollingUpdate":{"maxUnavailable":"100%"}},"template":{"spec":{"containers":[{"name":"node-installer","env":[{"name":"LAVA_MODE","value":"uninstall"}]}]}}}}'
+      containers:
+        - name: wait-for-nodes
+          image: {{ include "lava-sensor.image" .Values.uninstall.image }}
+          imagePullPolicy: {{ .Values.uninstall.image.pullPolicy }}
+          args:
+            - rollout
+            - status
+            - daemonset/{{ $name }}
+            - --namespace={{ .Release.Namespace }}
+            - --timeout={{ .Values.uninstall.timeout }}
+{{- end }}
