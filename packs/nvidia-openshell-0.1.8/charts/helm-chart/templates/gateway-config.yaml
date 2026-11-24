@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+{{/*
+ConfigMap holding the gateway TOML config file (RFC 0003).
+
+The gateway reads `/etc/openshell/gateway.toml` (mounted from this ConfigMap)
+at startup. CLI flags and OPENSHELL_* env vars on the gateway workload container
+still override anything in this file.
+
+gatewayConfig is the complete non-secret application configuration boundary.
+Database URLs and other credentials remain injected through Secret-backed
+environment variables, files, or volumes outside this ConfigMap.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openshell.fullname" . }}-config
+  labels:
+    {{- include "openshell.labels" . | nindent 4 }}
+data:
+  gateway.toml: |
+{{ include "openshell.gatewayConfigToml" . | nindent 4 }}
