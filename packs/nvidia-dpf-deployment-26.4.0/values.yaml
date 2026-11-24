@@ -1,0 +1,34 @@
+pack:
+  releaseNameOverride:
+      dpf-deployment: dpf-deployment
+  namespace: dpf-operator-system
+  content:
+    images: []
+
+# This pack creates the DPF custom resources. The skeleton below is empty on
+# purpose - select a preset ("Host Trusted" or "Zero Trust - Passthrough") to
+# populate a working 26.4.0 starting configuration, then adjust for your site.
+#
+# Zero Trust (ZT) vs Host Trusted (HT) - what differs in this pack:
+#   - DPUFlavor: ZT sets `dpuMode: zero-trust`; HT omits it.
+#   - DPUSet/DPUDeployment selection: HT selects DPUs by node
+#     (dpuNodeSelector / nodeSelector on the worker that carries the DPU);
+#     a host-less ZT setup selects the discovered device via
+#     DPUSet.dpuDeviceSelector (new in 26.4.0) instead.
+#   - DPUServices: the HT preset deploys OVN + HBN + DTS + Blueman and a full
+#     service chain; the ZT passthrough preset deploys no service offload and
+#     just chains the physical ports to the host PFs.
+#   - BFB and DPUFlavor CRs are required in BOTH modes.
+charts:
+  dpf-deployment:
+    bfb: {}
+    dpuFlavors: []
+    dpuSets: []
+    dpuServices: []
+    dpuServiceChains: []
+    dpuServiceConfigurations: []
+    dpuDeployments: []
+    dpuServiceTemplates: []
+    dpuServiceInterfaces: []
+    dpuServiceCredentialRequests: []
+    dpuServiceIPAMs: []

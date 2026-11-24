@@ -1,0 +1,26 @@
+{{ if .Values.grafanaDashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dpf-operator-grafana-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: {{ include "dpf-operator.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+{{ (.Files.Glob "dashboards/*.json").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dpf-operator-grafana-debug-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: "1"
+    grafana_folder: "debug"
+    app.kubernetes.io/name: {{ include "dpf-operator.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+{{ (.Files.Glob "dashboards/debug/*.json").AsConfig | indent 2 }}
+{{- end }}

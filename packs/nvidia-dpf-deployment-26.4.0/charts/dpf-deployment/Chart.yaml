@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 26.4.0
+description: DPF Deployment creates the DPF custom resources (BFB, DPUFlavor, DPUSet, DPUDeployment, DPUServices). Supports both Zero Trust and Host Trusted modes.
+name: dpf-deployment
+type: application
+version: 26.4.0

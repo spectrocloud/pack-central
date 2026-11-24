@@ -1,0 +1,532 @@
+# dpf-monitoring umbrella defaults.
+#
+# Component tuning below is a 1:1 port of NVIDIA's DPF v26.4.0 monitoring
+# helmfile values (dpf-operator chart, dev/helmfiles/values/
+# {kube-prometheus-stack,kube-state-metrics,loki,opentelemetry-collector}.yaml).
+# Do not edit the tuning here idly - resync it from the helmfile when the DPF
+# release is bumped.
+#
+# ALL COMPONENTS ARE DISABLED BY DEFAULT (enabled: false conditions in
+# Chart.yaml). Reasons this is not on by default:
+#   1. kube-state-metrics mounts the dpf-operator-customresourcestate-config
+#      ConfigMap that only exists AFTER the dpf-operator pack installs; until
+#      then its pod sits in ContainerCreating (self-heals once the operator
+#      lands, but the pack reports unhealthy on every fresh install).
+#   2. The otel-collector DaemonSet cannot become Ready on worker nodes until
+#      the CNI/DPU rollout completes (NVIDIA deploys it with wait: false for
+#      exactly this reason).
+#   3. The stack costs ~2 vCPU / ~4Gi plus 18Gi+ of local-path PVCs.
+# The stack is fully self-contained in-cluster (Prometheus + Grafana + Loki +
+# otel -> in-cluster Loki); no external/central monitoring endpoint is needed.
+#
+# fullnameOverride is pinned on every component so in-cluster URLs keep
+# NVIDIA's reference names (loki, kube-prometheus-stack-prometheus, ...)
+# no matter what the umbrella release is called.
+
+kube-prometheus-stack:
+  enabled: false
+  fullnameOverride: kube-prometheus-stack
+
+  kubeStateMetrics:
+    enabled: false
+
+  nodeExporter:
+    enabled: false
+
+  alertmanager:
+    enabled: false
+
+  crds:
+    enabled: true
+    upgradeJob:
+      enabled: false
+
+  coreDns:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeProxy:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeEtcd:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeApiServer:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeControllerManager:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubeScheduler:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+  kubelet:
+    serviceMonitor:
+      relabelings:
+        - action: replace
+          targetLabel: cluster
+          replacement: management
+
+  prometheus:
+    prometheusSpec:
+      externalLabels:
+        cluster: management
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/master"
+                    operator: Exists
+              - matchExpressions:
+                  - key: "node-role.kubernetes.io/control-plane"
+                    operator: Exists
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 8Gi
+      serviceAccountName: kube-prometheus-stack-prometheus
+      additionalScrapeConfigs:
+        - job_name: 'doca-platform-framework'
+          scrape_interval: 15s
+          metrics_path: /metrics
+          scheme: https
+          authorization:
+            type: Bearer
+            credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_dpu_nvidia_com_component]
+              action: keep
+              regex: ".*-controller-manager"
+            - source_labels: [__meta_kubernetes_pod_container_port_name]
+              action: keep
+              regex: metrics
+            - source_labels: [__meta_kubernetes_namespace]
+              action: replace
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+          metric_relabel_configs:
+            - action: replace
+              target_label: cluster
+              replacement: management
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+
+  grafana:
+    enabled: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    persistence:
+      enabled: true
+      storageClassName: local-path
+    initChownData:
+      enabled: false
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        uid: loki
+        access: proxy
+        url: http://loki.dpf-operator-system.svc.cluster.local:3100
+        isDefault: false
+        editable: true
+        jsonData:
+          maxLines: 1000
+          derivedFields:
+            - datasourceName: Tempo
+              matcherRegex: "traceID=(\\w+)"
+              name: TraceID
+              url: "${__value.raw}"
+    sidecar:
+      datasources:
+        enabled: true
+        defaultDatasourceEnabled: true
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: dpf-operator-system
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: true
+        multicluster:
+          global:
+            enabled: true
+
+  prometheusOperator:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    admissionWebhooks:
+      patch:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "node-role.kubernetes.io/master"
+                      operator: Exists
+                - matchExpressions:
+                    - key: "node-role.kubernetes.io/control-plane"
+                      operator: Exists
+        tolerations:
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+    createCustomResource: true
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+kube-state-metrics:
+  enabled: false
+  fullnameOverride: kube-state-metrics
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: Exists
+          - matchExpressions:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  extraArgs:
+    - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+    - --metric-labels-allowlist=pods=[svc.dpu.nvidia.com/service],daemonsets=[svc.dpu.nvidia.com/service],deployments=[svc.dpu.nvidia.com/service]
+  # This ConfigMap is created by the dpf-operator pack (kubeStateMetricsCRDMetrics.enabled).
+  # The pod stays in ContainerCreating until that pack installs - expected on fresh deploys.
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: dpf-operator-customresourcestate-config
+      name: customresourcestate-config
+  volumeMounts:
+    - mountPath: /etc/customresourcestate
+      name: customresourcestate-config
+      readOnly: true
+  prometheus:
+    monitor:
+      enabled: true
+      http:
+        honorLabels: true
+  rbac:
+    extraRules:
+      - apiGroups:
+          - svc.dpu.nvidia.com
+          - operator.dpu.nvidia.com
+          - provisioning.dpu.nvidia.com
+          - storage.dpu.nvidia.com
+          - vpc.dpu.nvidia.com
+        resources:
+          - '*'
+        verbs: ["list", "watch"]
+      - apiGroups: ["apiextensions.k8s.io"]
+        resources: ["customresourcedefinitions"]
+        verbs: ["list", "watch"]
+
+loki:
+  enabled: false
+  fullnameOverride: loki
+  deploymentMode: SingleBinary
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+      log_level: info
+    storage:
+      type: 'filesystem'
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      retention_period: 168h
+      max_query_series: 10000
+      max_query_lookback: 720h
+      ingestion_rate_mb: 50
+      ingestion_burst_size_mb: 100
+      per_stream_rate_limit: 10MB
+      per_stream_rate_limit_burst: 20MB
+      allow_structured_metadata: true
+      otlp_config:
+        resource_attributes:
+          attributes_config:
+            - action: index_label
+              attributes:
+                - k8s.namespace.name
+                - k8s.pod.name
+                - k8s.container.name
+                - cluster
+  singleBinary:
+    replicas: 1
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/master"
+                  operator: Exists
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 10Gi
+  gateway:
+    enabled: false
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  backend:
+    replicas: 0
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  monitoring:
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+  test:
+    enabled: false
+  lokiCanary:
+    enabled: false
+
+opentelemetry-collector:
+  enabled: false
+  fullnameOverride: opentelemetry-collector
+  mode: daemonset
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: ""
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  presets:
+    logsCollection:
+      enabled: true
+      includeCollectorLogs: true
+    kubernetesAttributes:
+      enabled: true
+      extractAllPodLabels: true
+      extractAllPodAnnotations: false
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 1024
+        spike_limit_mib: 256
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
+            - k8s.cronjob.name
+            - k8s.job.name
+            - k8s.node.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.pod.start_time
+      resource:
+        attributes:
+          - key: cluster
+            value: "management"
+            action: insert
+    exporters:
+      otlphttp/loki:
+        endpoint: http://loki:3100/otlp
+        tls:
+          insecure: true
+      prometheusremotewrite:
+        endpoint: http://kube-prometheus-stack-prometheus.dpf-operator-system.svc.cluster.local:9090/api/v1/write
+        resource_to_telemetry_conversion:
+          enabled: true
+      debug:
+        verbosity: basic
+        sampling_initial: 5
+        sampling_thereafter: 200
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp, filelog]
+          processors: [memory_limiter, k8sattributes, resource, batch]
+          exporters: [otlphttp/loki, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, k8sattributes, resource, batch]
+          exporters: [prometheusremotewrite, debug]
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  service:
+    enabled: true
+    type: NodePort
+  ports:
+    otlp:
+      enabled: true
+      containerPort: 4317
+      servicePort: 4317
+      protocol: TCP
+    otlp-http:
+      enabled: true
+      containerPort: 4318
+      servicePort: 4318
+      nodePort: 30050
+      protocol: TCP
+    metrics:
+      enabled: true
+      containerPort: 8888
+      servicePort: 8888
+      protocol: TCP
+  serviceAccount:
+    create: true
+    name: opentelemetry-collector
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups: [""]
+        resources: ["pods", "namespaces", "nodes"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["apps"]
+        resources: ["replicasets", "deployments", "daemonsets", "statefulsets"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["batch"]
+        resources: ["jobs", "cronjobs"]
+        verbs: ["get", "list", "watch"]
+  serviceMonitor:
+    enabled: true
+    metricsEndpoints:
+      - port: metrics
