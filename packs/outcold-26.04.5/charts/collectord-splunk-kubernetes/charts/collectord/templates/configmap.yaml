@@ -1,0 +1,1627 @@
+{{- if .Values.configMap.create -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "collectord.labels" . | nindent 4 }}
+data:
+  001-general.conf: |
+    # The general configuration is used for all deployments
+    #
+    # Run collectord with the flag -conf and specify location of the configuration files.
+    #
+    # You can override all the values using environment variables with the format like
+    #   COLLECTOR__<ANYNAME>=<section>__<key>=<value>
+    # As an example you can set dataPath in [general] section as
+    #   COLLECTOR__DATAPATH=general__dataPath=C:\\some\\path\\data.db
+    # This parameter can be configured using -env-override, set it to empty string to disable this feature
+    {{ with .Values.configuration.general }}
+    [general]
+
+    # Please review license https://www.outcoldsolutions.com/legal/license-agreement/
+    # and accept license by changing the value to *true*
+    acceptLicense = {{ .acceptLicense }}
+
+    # Location for the database
+    # Collectord stores positions of the files and internal state
+    dataPath = {{ .dataPath }}
+
+    # log level (accepted values are trace, debug, info, warn, error, fatal)
+    logLevel = {{ .logLevel }}
+
+    # Internal http server - serves the liveness (/healthz) and readiness (/readyz)
+    # probes. DaemonSets run on the host network, so bind to loopback (127.0.0.1:11888)
+    # to keep the endpoints off the node IP; the kubelet still reaches them via
+    # httpGet.host 127.0.0.1. The addon runs off the host network and overrides the
+    # bind to 0.0.0.0 in 004-addon.conf so the kubelet can reach it on the pod IP.
+    # httpServerBinding = 0.0.0.0:11888
+    httpServerBinding = {{ .httpServerBinding }}
+    {{- if hasKey . "httpServerEndpoints.health" }}
+    httpServerEndpoints.health = {{ index . "httpServerEndpoints.health" }}
+    {{- end }}
+    {{- if hasKey . "httpServerEndpoints.ready" }}
+    httpServerEndpoints.ready = {{ index . "httpServerEndpoints.ready" }}
+    {{- end }}
+    {{- if hasKey . "httpServerEndpoints.metrics" }}
+    httpServerEndpoints.metrics = {{ index . "httpServerEndpoints.metrics" }}
+    {{- end }}
+    {{- if hasKey . "httpServerEndpoints.pprof" }}
+    httpServerEndpoints.pprof = {{ index . "httpServerEndpoints.pprof" }}
+    {{- end }}
+
+    # log requests to the http server
+    httpServerLog = {{ .httpServerLog }}
+
+    # telemetry report endpoint, set it to empty string to disable telemetry
+    telemetryEndpoint = {{ .telemetryEndpoint }}
+
+    # license check endpoint
+    licenseEndpoint = {{ .licenseEndpoint }}
+
+    # license server through proxy
+    # This configuration is used only for the Outcold Solutions License Server
+    # For license server running on-premises, use configuration under [license.client]
+    licenseServerProxyUrl = {{ .licenseServerProxyUrl }}
+
+    # authentication with basic authorization (user:password)
+    # This configuration is used only for the Outcold Solutions License Server
+    # For license server running on-premises, use configuration under [license.client]
+    licenseServerProxyBasicAuth = {{ .licenseServerProxyBasicAuth }}
+
+    # license key
+    license = {{ .license }}
+
+    # Environment variable $KUBERNETES_NODENAME is used by default to setup hostname
+    # Use value below to override specific name
+    hostname = {{ .hostname }}
+
+    # Default output for events, logs and metrics
+    # valid values: splunk and devnull
+    # Use devnull by default if you don't want to redirect data
+    defaultOutput = {{ .defaultOutput }}
+
+    # Buffer size for file reads. 8k matches the common filesystem block size and
+    # cuts the number of read syscalls substantially versus the historical 256b.
+    fileInputBufferSize = {{ .fileInputBufferSize }}
+
+    # Maximum size of one line the file reader can read
+    fileInputLineMaxSize = {{ .fileInputLineMaxSize }}
+
+    # Include custom fields to attach to every event, in example below every event sent to Splunk will hav
+    # indexed field my_environment=dev. Fields names should match to ^[a-z][_a-z0-9]*$
+    # Better way to configure that is to specify labels for Kubernetes Nodes.
+    # ; fields.my_environment = dev
+    # Identify the cluster if you are planning to monitor multiple clusters
+    {{- range $key, $value := .fields }}
+    fields.{{ $key }} = {{ $value }}
+    {{- end }}
+
+    # Include EC2 Metadata (see list of possible fields https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+    # Should be in format ec2Metadata.{desired_field_name} = {url path to read the value}
+    # ec2Metadata.ec2_instance_id = /latest/meta-data/instance-id
+    # ec2Metadata.ec2_instance_type = /latest/meta-data/instance-type
+    {{- range $key, $value := .ec2Metadata }}
+    ec2Metadata.{{ $key }} = {{ $value }}
+    {{- end }}
+
+    # subdomain for the annotations added to the pods, workloads, namespaces or containers, like splunk.collectord.io/..
+    annotationsSubdomain = {{ .annotationsSubdomain }}
+
+    # configure global thruput per second for forwarded logs (metrics are not included)
+    # for example if you set `thruputPerSecond = 512Kb`, that will limit amount of logs forwarded
+    # from the single Collectord instance to 512Kb per second.
+    # You can configure thruput individually for the logs (including specific for container logs) below
+    thruputPerSecond = {{ .thruputPerSecond }}
+
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+
+    # For input.files::X and application logs, when glob or match are configured, Collectord can automatically
+    # detect gzipped files and skip them (based on the extensions or magic numbers)
+    autoSkipGzipFiles = {{ .autoSkipGzipFiles }}
+
+    # Multi-output async publishing. When enabled (default), events routed to
+    # non-default outputs are published asynchronously so that a slow or down
+    # output does not block events destined for other outputs.
+    multioutput.async = {{ index . "multioutput.async" }}
+
+    # Buffer size for the async proxy (default 100). Absorbs transient bursts.
+    # When this buffer and the output's own queue are both full, events are
+    # dropped immediately without blocking the pipeline.
+    multioutput.asyncBufferSize = {{ index . "multioutput.asyncBufferSize" }}
+    {{- end }}
+    
+    {{ with .Values.configuration.licenseClient -}}
+    [license.client]
+    # point to the license located on the HTTP web server, or a hosted by the Collectord running as license server
+    url = {{ .url }}
+    # basic authentication for the HTTP server
+    basicAuth = {{ .basicAuth }}
+    # if SSL, ignore the certificate verification
+    insecure = {{ .insecure }}
+    # CA Path for the Server certificate
+    capath = {{ .capath }}
+    # CA Name fot the Server certificate
+    caname = {{ .caname }}
+    # license server through proxy
+    proxyUrl = {{ .proxyUrl }}
+    # authentication with basic authorization (user:password)
+    proxyBasicAuth = {{ .proxyBasicAuth }}
+    {{- end }}
+
+    {{- if .Values.configuration.inputs.collectordMetrics }}
+    {{ with .Values.configuration.inputs.collectordMetrics -}}
+    # forward internal collectord metrics
+    [input.collectord_metrics]
+
+    # disable collectord internal metrics
+    disabled = {{ .disabled }}
+
+    # override type
+    type = {{ .type }}
+
+    # how often to collect internal metrics
+    interval = {{ .interval }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # whitelist or blacklist the metrics
+    {{- range $i, $val := .whitelist }}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- range $i, $val := .blacklist }}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
+    {{ with .Values.configuration.general.kubernetes -}}
+    # connection to kubernetes api
+    [general.kubernetes]
+
+    # Override service URL for Kubernetes (default is ${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT})
+    serviceURL = {{ .serviceURL }}
+
+    # Environment variable $KUBERNETES_NODENAME is used by default to setup nodeName
+    # Use it only when you need to override it
+    nodeName = {{ .nodeName }}
+
+    # Configuration to access the API server,
+    # see https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/#accessing-the-api-from-a-pod
+    # for details
+    tokenPath = {{ .tokenPath }}
+    certPath = {{ .certPath }}
+
+    # Default timeout for http responses. The streaming/watch requests depend on this timeout.
+    timeout = {{ .timeout }}
+
+    # How long to keep the cache for the recent calls to API server (to limit number of calls when collectord discovers new pods)
+    metadataTTL = {{ .metadataTTL }}
+
+    # regex to find pods
+    podsCgroupFilter = ^/([^/\s]+/)*kubepods(\.slice)?/((kubepods-)?(burstable|besteffort)(\.slice)?/)?([^/]*)pod([0-9a-f]{32}|[0-9a-f\-_]{36})(\.slice)?$
+
+    # regex to find containers in the pods
+    containersCgroupFilter = ^/([^/\s]+/)*kubepods(\.slice)?/((kubepods-)?(burstable|besteffort)(\.slice)?/)?([^/]*)pod([0-9a-f]{32}|[0-9a-f\-_]{36})(\.slice)?/(docker-|crio-|cri-\w+-)?[0-9a-f]{64}(\.scope)?(\/.+)?$
+
+    # path to the kubelet root location (use it to discover application logs for emptyDir)
+    # the expected format is `pods/{pod-id}/volumes/kubernetes.io~empty-dir/{volume-name}/_data/`
+    volumesRootDir = {{ .volumesRootDir }}
+
+    # You can attach annotations as a metadata, using the format
+    #   includeAnnotations.{key} = {regexp}
+    # For example if you want to include all annotations that starts with `prometheus.io` or `example.com` you can include
+    # the following format:
+    #   includeAnnotations.1 = ^prometheus\.io.*
+    #   includeAnnotations.2 = ^example\.com.*
+    {{- range $i, $val := .includeAnnotations }}
+    includeAnnotations.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+
+    # You can exclude labels from metadata, using the format
+    #   excludeLabels.{key} = {regexp}
+    # For example if you want to exclude all labels that starts with `prometheus.io` or `example.com` you can include
+    # the following format:
+    #   excludeLabels.1 = ^prometheus\.io.*
+    #   excludeLabels.2 = ^example\.com.*
+    {{- range $i, $val := .excludeLabels }}
+    excludeLabels.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+
+    # watch for changes (annotations) in the objects
+    {{- if .watch }}
+    {{- range $i, $value := .watch }}
+    watch.{{ add1 $i }} = {{ $value }}
+    {{- end }}
+    {{- end }}
+    
+    # Collectord can review the assigned ClusterRole and traverse metadata for the Pods only for the Owner objects
+    # that are defined in the ClusterRole, ignoring anything else, it does not have access to.
+    # This way Collectord does not generate 403 requests on API Server
+    clusterRole = {{ $.Values.clusterRole.name | default $.Release.Name }}
+
+    # Alternative of telling Collectord about the ClusterRole is to manually list the objects.
+    # You can define which objects Collectord should traverse when it sees Owners.
+    ; traverseOwnership.namespaces = v1/namespace
+    {{- range $key, $value := .traverseOwnership }}
+    traverseOwnership.{{ $key }} = {{ $value }}
+    {{- end }}
+    
+    # Implementation of the watch protocol.
+    # 0 - use the default implementation (2)
+    # 1 - use the watch implementation that is optimized for the small number of objects (just issue one watch for all objects)
+    # 2 - use the watch implementation that is optimized for the large number of objects (paginate through the list of objects and issue watch for the last resource version)
+    watchImplementation = {{ .watchImplementation }}
+    {{- end }}
+    
+    {{- if .Values.configuration.inputs.prometheusAuto}}
+    {{ with .Values.configuration.inputs.prometheusAuto -}}
+    # watch for pods annotations, setup prometheus collection
+    # for these pods
+    # Addon listens on Pod Network
+    # DaemonSets listen on Host Network
+    [input.prometheus_auto]
+
+    # disable prometheus auto discovery for pods
+    disabled = {{ .disabled }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # how often to collect prometheus metrics
+    interval = {{ .interval }}
+
+    # include metrics help with the events
+    includeHelp = {{ .includeHelp }}
+
+    # http client timeout
+    timeout = {{ .timeout }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # Include an Authorization header for the prometheus scrapper
+    # When configuring scrapping with collectord using annotations use prometheus.1-AuthorizationKey=key1
+    # authorization.key1 = Bearer FOO
+    {{- range $key, $value := .authorization }}
+    authorization.{{ $key }} = {{ $value }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
+    {{ range $key, $val := .Values.configuration.outputs.splunk }}
+    # Splunk output
+    [output.splunk{{ if ne $key "default" }}::{{ $key }}{{ end }}]
+    {{ with $val }}
+    {{- if .url }}
+    # Splunk HTTP Event Collector url
+    url = {{ .url }}
+    {{- end }}
+    {{- if .urls }}
+    # You can specify muiltiple splunk URls with
+    #
+    # urls.0 = https://server1:8088/services/collector/event/1.0
+    # urls.1 = https://server1:8088/services/collector/event/1.0
+    # urls.2 = https://server1:8088/services/collector/event/1.0
+    #
+    # Limitations:
+    # * The urls cannot have different path.
+    {{- range $i, $val := .urls }}
+    urls.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- if .urlSelection }}
+    # Specify how URL should be picked up (in case if multiple is used)
+    # urlSelection = random|round-robin|random-with-round-robin
+    # where:
+    # * random - choose random url on first selection and after each failure (connection or HTTP status code >= 500)
+    # * round-robin - choose url starting from first one and bump on each failure (connection or HTTP status code >= 500)
+    # * random-with-round-robin - choose random url on first selection and after that in round-robin on each
+    #                             failure (connection or HTTP status code >= 500)
+    urlSelection = {{ .urlSelection }}
+    {{- end }}
+    {{- if .token }}
+    # Splunk HTTP Event Collector Token
+    token = {{ .token }}
+    {{- end }}
+    {{- if hasKey . "insecure" }}
+    # Allow invalid SSL server certificate
+    insecure = {{ .insecure }}
+    {{- end }}
+    {{- if .minTLSVersion }}
+    minTLSVersion = {{ .minTLSVersion }}
+    {{- end }}
+    {{- if .maxTLSVersion }}
+    maxTLSVersion = {{ .maxTLSVersion }}
+    {{- end }}
+    {{- if .caPath }}
+    # Path to CA cerificate
+    caPath = {{ .caPath }}
+    {{- end }}
+    {{- if .caName }}
+    # CA Name to verify
+    caName = {{ .caName }}
+    {{- end }}
+    {{- if .clientCertPath }}
+    # path for client certificate (if required)
+    clientCertPath = {{ .clientCertPath }}
+    {{- end }}
+    {{- if .clientKeyPath }}
+    # path for client key (if required)
+    clientKeyPath = {{ .clientKeyPath }}
+    {{- end }}
+    {{- if .frequency }}
+    # Events are batched with the maximum size set by batchSize and staying in pipeline for not longer
+    # than set by frequency
+    frequency = {{ .frequency }}
+    {{- end }}
+    {{- if .batchSize }}
+    batchSize = {{ .batchSize }}
+    {{- end }}
+    {{- if .events }}
+    # limit by the number of events (0 value has no limit on the number of events)
+    events = {{ .events }}
+    {{- end }}
+    {{- if .proxyUrl }}
+    # Splunk through proxy
+    proxyUrl = {{ .proxyUrl }}
+    {{- end }}
+    {{- if .proxyBasicAuth }}
+    # authentication with basic authorization (user:password)
+    proxyBasicAuth = {{ .proxyBasicAuth }}
+    {{- end }}
+    {{- if .ackUrl }}
+    # Splunk acknowledgement url (.../services/collector/ack)
+    ackUrl = {{ .ackUrl }}
+    {{- end }}
+    {{- if .ackUrls }}
+    # You can specify muiltiple splunk URls for ackUrl
+    #
+    # ackUrls.0 = https://server1:8088/services/collector/ack
+    # ackUrls.1 = https://server1:8088/services/collector/ack
+    # ackUrls.2 = https://server1:8088/services/collector/ack
+    #
+    # Make sure that they in the same order as urls for url, to make sure that this Splunk instance will be
+    # able to acknowledge the payload.
+    #
+    # Limitations:
+    # * The urls cannot have different path.
+    {{- range $i, $val := .ackUrls }}
+    ackUrls.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- if hasKey . "ackEnabled" }}
+    # Enable index acknowledgment
+    ackEnabled = {{ .ackEnabled }}
+    {{- end }}
+    {{- if .ackTimeout }}
+    # Index acknowledgment timeout
+    ackTimeout = {{ .ackTimeout }}
+    {{- end }}
+    {{- if .timeout }}
+    # Timeout specifies a time limit for requests made by collectord.
+    # The timeout includes connection time, any
+    # redirects, and reading the response body.
+    timeout = {{ .timeout }}
+    {{- end }}
+    {{- if hasKey . "dedicatedClientPerIndex" }}
+    # in case when pipeline can post to multiple indexes, we want to avoid posibility of blocking
+    # all pipelines, because just some events have incorrect index
+    dedicatedClientPerIndex = {{ .dedicatedClientPerIndex }}
+    {{- end }}
+    {{- if .incorrectIndexBehavior }}
+    # possible values: RedirectToDefault, Drop, Retry
+    incorrectIndexBehavior = {{ .incorrectIndexBehavior }}
+    {{- end }}
+    {{- if .compressionLevel }}
+    # gzip compression level (nocompression, default, 1...9)
+    compressionLevel = {{ .compressionLevel }}
+    {{- end }}
+    {{- if .threads }}
+    # number of dedicated splunk output threads (to increase throughput above 4k events per second)
+    threads = {{ .threads }}
+    {{- end }}
+    {{- if .threadsAlgorithm }}
+    # Default algorithm between threads is roundrobin, but you can change it to weighted
+    ; threadsAlgorithm = weighted
+    threadsAlgorithm = {{ .threadsAlgorithm }}
+    {{- end }}
+    {{- if .excludeFields }}
+    # if you want to exclude some preindexed fields from events
+    # excludeFields.kubernetes_pod_ip = true
+    {{ range .excludeFields }}
+    excludeFields.{{ . }} = true
+    {{- end }}
+    {{- end }}
+    {{- if hasKey . "requireExplicitIndex" }}
+    # By default if there are no indexes defined on the message, Collectord sends the event without the index, and
+    # Splunk HTTP Event Collector going to use the default index for the Token. You can change that, and tell Collectord
+    # to ignore all events that don't have index defined explicitly
+    ; requireExplicitIndex = true
+    requireExplicitIndex = {{ .requireExplicitIndex }}
+    {{- end }}
+    {{- if .maximumMessageLength }}
+    # You can define if you want to truncate messages that are larger than 1M in length (or define your own size, like 256K)
+    ; maximumMessageLength = 1M
+    maximumMessageLength = {{ .maximumMessageLength }}
+    {{- end }}
+    {{- if hasKey . "includeEventID" }}
+    # For messages generated from logs, include unique `event_id` in the event
+    ; includeEventID = false
+    includeEventID = {{ .includeEventID }}
+    {{- end }}
+    {{- if .queueSize }}
+    # Dedicated queue size for the output, default is 1024, larger queue sizes will require more memory,
+    # but will allow to handle more events in case of network issues
+    queueSize = {{ .queueSize }}
+    {{- end }}
+    {{- if .timestampPrecision }}
+    # How many digits after the decimal point to keep for timestamps (0-9)
+    # Defaults to 3 (milliseconds)
+    # Change to 6 for microseconds
+    # Change to 9 for nanoseconds
+    ; timestampPrecision = 3
+    timestampPrecision = {{ .timestampPrecision }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{ range $key, $val := .Values.configuration.outputs.elasticsearch }}
+    # ElasticSearch output
+    [output.elasticsearch{{ if ne $key "default" }}::{{ $key }}{{ end }}]
+    {{ with $val }}
+    {{- if .dataStream }}
+    # Default data stream name
+    dataStream = {{ .dataStream }}
+    {{- end }}
+    {{- if .dataStreamFailedEvents }}
+    # Default data stream name for failed events
+    dataStreamFailedEvents = {{ .dataStreamFailedEvents }}
+    {{- end }}
+    {{- if .host }}
+    # ElasticSearch Scheme Host and Port
+    host = {{ .host }}
+    {{- end }}
+    {{- if .hosts }}
+    # You can specify muiltiple hosts with
+    #
+    # hosts.0 = https://es0:9200
+    # hosts.1 = https://es1:9200
+    # hosts.2 = https://es2:9200
+    {{- range $i, $val := .hosts }}
+    hosts.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- if .hostSelection }}
+    # Specify how Hosts should be picked up (in case if multiple is used)
+    # * random - choose random url on first selection and after each failure (connection or HTTP status code >= 500)
+    # * round-robin - choose url starting from first one and bump on each failure (connection or HTTP status code >= 500)
+    # * random-with-round-robin - choose random url on first selection and after that in round-robin on each
+    #                             failure (connection or HTTP status code >= 500)
+    hostSelection = {{ .hostSelection }}
+    {{- end }}
+    {{- if .authorizationBasicUsername }}
+    # Configuration for basic authorization
+    authorizationBasicUsername = {{ .authorizationBasicUsername }}
+    {{- end }}
+    {{- if .authorizationBasicPassword }}
+    authorizationBasicPassword = {{ .authorizationBasicPassword }}
+    {{- end }}
+    {{- if .headers }}
+    # additional headers
+    {{- range $key, $val := .headers }}
+    headers.{{ $key }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- if hasKey . "insecure" }}
+    # Allow invalid SSL server certificate
+    insecure = {{ .insecure }}
+    {{- end }}
+    {{- if .caPath }}
+    # Path to CA certificate
+    caPath = {{ .caPath }}
+    {{- end }}
+    {{- if .caName }}
+    # CA Name to verify
+    caName = {{ .caName }}
+    {{- end }}
+    {{- if .clientCertPath }}
+    # path for client certificate (if required)
+    clientCertPath = {{ .clientCertPath }}
+    {{- end }}
+    {{- if .clientKeyPath }}
+    # path for a client key (if required)
+    clientKeyPath = {{ .clientKeyPath }}
+    {{- end }}
+    {{- if .frequency }}
+    # Events are batched with the maximum size set by batchSize and staying in a pipeline for not longer
+    # than set by frequency
+    frequency = {{ .frequency }}
+    {{- end }}
+    {{- if .batchSize }}
+    batchSize = {{ .batchSize }}
+    {{- end }}
+    {{- if .events }}
+    # limit by the number of events (0 value has no limit on the number of events)
+    events = {{ .events }}
+    {{- end }}
+    {{- if .proxyUrl }}
+    # elasticsearch through proxy
+    proxyUrl = {{ .proxyUrl }}
+    {{- end }}
+    {{- if .proxyBasicAuth }}
+    # authentication with basic authorization (user:password)
+    proxyBasicAuth = {{ .proxyBasicAuth }}
+    {{- end }}
+    {{- if .timeout }}
+    # Timeout specifies a time limit for requests made by collectord.
+    # The timeout includes connection time, any
+    # redirects, and reading the response body.
+    timeout = {{ .timeout }}
+    {{- end }}
+    {{- if .compressionLevel }}
+    # gzip compression level (nocompression, default, 1...9)
+    compressionLevel = {{ .compressionLevel }}
+    {{- end }}
+    {{- if .threads }}
+    # number of dedicated elasticsearch output threads (to increase throughput above 4k events per second)
+    threads = {{ .threads }}
+    {{- end }}
+    {{- if .threadsAlgorithm }}
+    # Default algorithm between threads is roundrobin, but you can change it to weighted
+    threadsAlgorithm = {{ .threadsAlgorithm }}
+    {{- end }}
+    {{- if .put }}
+    # Submit objects to elasticsearch
+    {{- range $key, $val := .put }}
+    put.{{ $key }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- if .queueSize }}
+    # Dedicated queue size for the output, default is 1024, larger queue sizes will require more memory,
+    # but will allow to handle more events in case of network issues
+    queueSize = {{ .queueSize }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{ range $key, $val := .Values.configuration.outputs.syslog }}
+    # Syslog output
+    [output.syslog{{ if ne $key "default" }}::{{ $key }}{{ end }}]
+    {{ with $val }}
+    {{- if .network }}
+    # tcp or udp
+    network = {{ .network }}
+    {{- end }}
+    {{- if .address }}
+    # syslog destination
+    address = {{ .address }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{ if or .Values.daemonset.create .Values.daemonsetMaster.create }}
+  002-daemonset.conf: |
+    # DaemonSet configuration is used for Nodes and Masters.
+
+    {{ if .Values.configuration.general.crio -}}
+    {{- with .Values.configuration.general.crio -}}
+    // connection to CRIO
+    [general.cri-o]
+
+    # url for CRIO API, only unix socket is supported
+    url = {{ .url }}
+
+    # Timeout for http responses to docker client. The streaming requests depend on this timeout.
+    timeout = {{ .timeout }}
+    {{- end }}
+    {{- end }}
+
+    {{ if .Values.configuration.general.containerd -}}
+    {{- with .Values.configuration.general.containerd -}}
+    [general.containerd]
+    # Runtime can be on /rootfs/run/containerd (depends on the Linux distribution)
+    runtimePath = {{ .runtimePath }}
+    namespace = {{ .namespace }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.configuration.inputs.systemStats }}
+    {{ with .Values.configuration.inputs.systemStats -}}
+    # cgroup input
+    [input.system_stats]
+
+    # disable system level stats
+    disabled.host = {{ .disabled.host }}
+    disabled.cgroup = {{ .disabled.cgroup }}
+
+    # cgroups fs location
+    pathCgroups = {{ .pathCgroups }}
+
+    # proc location
+    pathProc = {{ .pathProc }}
+
+    # how often to collect cgroup stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type.host = {{ .type.host }}
+    type.cgroup = {{ .type.cgroup }}
+
+    # specify Splunk index
+    index.host = {{ .index.host }}
+    index.cgroup = {{ .index.cgroup }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output.host = {{ .output.host }}
+    output.cgroup = {{ .output.cgroup }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.configuration.inputs.procStats }}
+    {{ with .Values.configuration.inputs.procStats -}}
+    # proc input
+    [input.proc_stats]
+
+    # disable proc level stats
+    disabled = {{ .disabled }}
+
+    # proc location
+    pathProc = {{ .pathProc }}
+
+    # how often to collect proc stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type = {{ .type }}
+    
+    # specify Splunk index
+    index.host = {{ .index.host }}
+    index.cgroup = {{ .index.cgroup }}
+
+    # proc filesystem includes by default system threads (there can be over 100 of them)
+    # these stats do not help with the observability
+    # excluding them can reduce the size of the index, performance of the searches and usage of the collector
+    includeSystemThreads = {{ .includeSystemThreads }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output.host = {{ .output.host }}
+    output.cgroup = {{ .output.cgroup }}
+
+    # Hide arguments for the processes, replacing with HIDDEN_ARGS(NUMBER)
+    hideArgs = {{ .hideArgs }}
+    {{- end }}
+    {{- end }}
+    
+    {{- if .Values.configuration.inputs.netStats }}
+    {{ with .Values.configuration.inputs.netStats -}}
+    # network stats
+    [input.net_stats]
+
+    # disable net stats
+    disabled = {{ .disabled }}
+
+    # proc path location
+    pathProc = {{ .pathProc }}
+
+    # how often to collect net stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type = {{.type }}
+
+    # specify Splunk index
+    index.host = {{ .index.host }}
+    index.cgroup = {{ .index.cgroup }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output.host = {{ .output.host }}
+    output.cgroup = {{ .output.cgroup }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.configuration.inputs.netSocketTable }}
+    {{ with .Values.configuration.inputs.netSocketTable -}}
+    # network socket table
+    [input.net_socket_table]
+
+    # disable net stats
+    disabled = {{ .disabled }}
+
+    # proc path location
+    pathProc = {{ .pathProc }}
+
+    # how often to collect net stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type = {{ .type }}
+
+    # specify Splunk index
+    index.host = {{ .index.host }}
+    index.cgroup = {{ .index.cgroup }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output.host = {{ .output.host }}
+    output.cgroup = {{ .output.cgroup }}
+
+    # group connections by tcp_state, localAddr, remoteAddr (if localPort is not the port it is listening on)
+    # that can significally reduces the amount of events
+    group = {{ .group }}
+
+    # Collectord can watch for services, node, and pod IP addresses, and lookup the names
+    # for the IP addresses. Keeping this enabled can add a significant load on the API Server, with large number of pods.
+    disableLookup = {{ .disableLookup }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.configuration.inputs.mountStats }}
+    {{ with .Values.configuration.inputs.mountStats -}}
+    # mount input (collects mount stats where kubelet runtime is stored)
+    [input.mount_stats]
+
+    # disable system level stats
+    disabled = {{ .disabled }}
+
+    # how often to collect mount stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    {{- end }}
+
+    {{ with .Values.configuration.inputs.diskStats -}}
+    # diskstats input (collects /proc/diskstats)
+    [input.disk_stats]
+
+    # disable system level stats
+    disabled = {{ .disabled }}
+
+    # how often to collect mount stats
+    statsInterval = {{ .statsInterval }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    {{- end }}
+    {{- end }}
+    
+    {{ with .Values.configuration.inputs.containerLogs -}}
+    # Input reading container/host logs from the files
+    [input.files]
+
+    # disable container logs
+    disabled = {{ .disabled }}
+
+    # root location of docker log files
+    # logs are expected in standard docker format like {containerID}/{containerID}-json.log
+    # rotated files
+    path = {{ .path }}
+    # root location of CRI-O files
+    # logs are expected in Kubernetes format, like {podID}/{containerName}/0.log
+    crioPath = {{ .crioPath }}
+
+    # files are read using polling schema, when reach the EOF how often to check if files got updated
+    pollingInterval = {{ .pollingInterval }}
+
+    # how often to look for the new files under logs path
+    walkingInterval = {{ .walkingInterval }}
+
+    # include verbose fields in events (file offset)
+    verboseFields = {{ .verboseFields }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # docker splits events when they are larger than 10-100k (depends on the docker version)
+    # we join them together by default and forward to Splunk as one event
+    joinPartialEvents = {{ .joinPartialEvents  }}
+
+    # In case if your containers report messages with terminal colors or other escape sequences
+    # you can enable strip for all the containers in one place.
+    # Better is to enable it only for required container with the label collectord.io/strip-terminal-escape-sequences=true
+    stripTerminalEscapeSequences = {{ .stripTerminalEscapeSequences }}
+    # Regexp used for stripping terminal colors, it does not stip all the escape sequences
+    # Read http://man7.org/linux/man-pages/man4/console_codes.4.html for more information
+    stripTerminalEscapeSequencesRegex = {{ .stripTerminalEscapeSequencesRegex }}
+
+    # sample output (-1 does not sample, 20 - only 20% of the logs should be forwarded)
+    samplingPercent = {{ .samplingPercent }}
+
+    # sampling key for hash based sampling (should be regexp with the named match pattern `key`)
+    samplingKey = {{ .samplingKey }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # configure default thruput per second for for each container log
+    # for example if you set `thruputPerSecond = 128Kb`, that will limit amount of logs forwarded
+    # from the single container to 128Kb per second.
+    thruputPerSecond = {{ .thruputPerSecond }}
+
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+    {{- end }}
+
+    {{ with .Values.configuration.inputs.applicationLogs -}}
+    # Application Logs
+    [input.app_logs]
+
+    # disable container application logs monitoring
+    disabled = {{ .disabled }}
+
+    # root location of mounts (applies to hostPath mounts only), if the hostPath differs inside container from the path on host
+    root = {{ .root }}
+
+    # how often to review list of available volumes
+    syncInterval = {{ .syncInterval }}
+
+    # glob matching pattern for log files
+    glob = {{ .glob }}
+
+    # files are read using polling schema, when reach the EOF how often to check if files got updated
+    pollingInterval = {{ .pollingInterval }}
+
+    # how often to look for the new files under logs path
+    walkingInterval = {{ .walkingInterval }}
+
+    # include verbose fields in events (file offset)
+    verboseFields = {{ .verboseFields }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # we split files using new line character, with this configuration you can specify what defines the new event
+    # after new line
+    eventPatternRegex = {{ .eventPatternRegex }}
+    # Maximum interval of messages in pipeline
+    eventPatternMaxInterval = {{ .eventPatternMaxInterval }}
+    # Maximum time to wait for the messages in pipeline
+    eventPatternMaxWait = {{ .eventPatternMaxWait }}
+    # Maximum message size
+    eventPatternMaxSize = {{ .eventPatternMaxSize }}
+
+    # sample output (-1 does not sample, 20 - only 20% of the logs should be forwarded)
+    samplingPercent = {{ .samplingPercent }}
+
+    # sampling key for hash based sampling (should be regexp with the named match pattern `key`)
+    samplingKey = {{ .samplingKey }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # configure default thruput per second for for each container log
+    # for example if you set `thruputPerSecond = 128Kb`, that will limit amount of logs forwarded
+    # from the single container to 128Kb per second.
+    thruputPerSecond = {{ .thruputPerSecond }}
+
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+
+    # Configure how long Collectord should keep the file descriptors open for files, that has not been forwarded yet
+    # When using PVC, and if pipeline is lagging behind, Collectord holding open fd for files, can cause long termination
+    # of pods, as kubelet cannot unmount the PVC volume from the system
+    maxHoldAfterClose = {{ .maxHoldAfterClose }}    
+    {{- end }}
+    
+    {{ range $key, $value := .Values.configuration.inputs.hostLogs -}}
+    {{ if not $value.controlPlaneOnly -}}
+    [input.files::{{ $key }}]
+    {{ with $value }}
+    # disable host level logs
+    disabled = {{ .disabled }}
+    
+    # root location of for audit logs
+    path = {{ .path }}
+    
+    # glob matching files
+    glob = {{ .glob }}
+    
+    # regex matching pattern
+    match = {{ .match }}
+    
+    # limit search only on one level
+    recursive = {{ .recursive }}
+    
+    # files are read using polling schema, when reach the EOF how often to check if files got updated
+    pollingInterval = {{ .pollingInterval }}
+    
+    # how often o look for the new files under logs path
+    walkingInterval = {{ .walkingInterval }}
+    
+    # include verbose fields in events (file offset)
+    verboseFields = {{ .verboseFields }}
+    
+    # override type
+    type = {{ .type }}
+    
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+    
+    # field extraction
+    extraction = {{ .extraction}}
+    extractionMessageField = {{ .extractionMessageField }}
+    
+    # timestamp field
+    timestampField = {{ .timestampField }}
+    
+    # format for timestamp
+    # the layout defines the format by showing how the reference time, defined to be `Mon Jan 2 15:04:05 -0700 MST 2006`
+    timestampFormat = {{ .timestampFormat }}
+    
+    # Adjust date, if month/day aren't set in format
+    timestampSetMonth = {{ .timestampSetMonth }}
+    timestampSetDay = {{ .timestampSetDay }}
+    
+    # timestamp location (if not defined by format)
+    timestampLocation = {{ .timestampLocation }}
+    
+    # sample output (-1 does not sample, 20 - only 20% of the logs should be forwarded)
+    samplingPercent = {{ .samplingPercent }}
+    
+    # sampling key for hash based sampling (should be regexp with the named match pattern `key`)
+    samplingKey = {{ .samplingKey }}
+    
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    
+    # configure default thruput per second for this files group
+    # for example if you set `thruputPerSecond = 128Kb`, that will limit amount of logs forwarded
+    # from the files in this group to 128Kb per second.
+    thruputPerSecond = {{ .thruputPerSecond }}
+    
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+    
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+    
+    # by default every new event should start from not space symbol
+    eventPattern = {{ .eventPattern }}
+    
+    # Blacklisting and whitelisting the logs
+    # whitelist.0 = ^regexp$
+    # blacklist.0 = ^regexp$
+    {{ range $i, $val := .blacklist -}}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{ end }}
+    {{ range $i, $val := .whitelist -}}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{ end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    
+    {{ with .Values.configuration.inputs.journald -}}
+    [input.journald]
+
+    # disable host level logs
+    disabled = {{ .disabled }}
+
+    # root location of log files
+    {{ range $key, $value := .path -}}
+    path.{{ $key }} = {{ $value }}
+    {{ end }}
+
+    # when reach end of journald, how often to pull
+    pollingInterval = {{ .pollingInterval }}
+
+    # if you don't want to forward journald from the beginning,
+    # set the oldest event in relative value, like -14h or -30m or -30s (h/m/s supported)
+    startFromRel = {{ .startFromRel }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # sample output (-1 does not sample, 20 - only 20% of the logs should be forwarded)
+    samplingPercent = {{ .samplingPercent }}
+
+    # sampling key (should be regexp with the named match pattern `key`)
+    samplingKey = {{ .samplingKey }}
+
+    # how often to reopen the journald to free old files
+    reopenInterval = {{ .reopenInterval }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # configure default thruput per second for journald
+    # for example if you set `thruputPerSecond = 128Kb`, that will limit amount of logs forwarded
+    # from the journald to 128Kb per second.
+    thruputPerSecond = {{ .thruputPerSecond }}
+
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+
+    # by default every new event should start from not space symbol
+    eventPattern = {{ .eventPattern }}
+
+    # By default ignoring verbose hyperkube logs (all INFO messages)
+    {{ range $i, $val := .blacklist -}}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{ range $i, $val := .whitelist -}}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+
+    # Move Journald logs reader to a separate process, to prevent process from crashing in case of corrupted log files
+    spawnExternalProcess = {{ .spawnExternalProcess }}
+    {{- end }}
+
+    {{ with .Values.configuration.pipeJoin -}}
+    # Pipe to join events (container logs only)
+    [pipe.join]
+
+    # disable joining event
+    disabled = {{ .disabled }}
+
+    # Maximum interval of messages in pipeline
+    maxInterval = {{ .maxInterval }}
+
+    # Maximum time to wait for the messages in pipeline
+    maxWait = {{ .maxWait }}
+
+    # Maximum message size
+    maxSize = {{ .maxSize }}
+
+    # Default pattern to indicate new message (should start not from space)
+    patternRegex = {{ .patternRegex }}
+    {{- end }}
+
+
+    # You can configure global replace rules for the events, which can help to remove sensitive data
+    # from logs before they are sent to outputs. Those rules will be applied to all pipelines for container logs, host logs,
+    # application logs and events.
+    # In the following example we replace password=TEST with password=********
+    ; [pipe.replace::name]
+    ; patternRegex = (password=)([^\s]+)
+    ; replace = $1********
+    {{- range .Values.configuration.pipeReplace }}
+    [pipe.replace::{{ .name }}]
+    disabled = {{ .disabled }}
+    patternRegex = {{ .patternRegex }}
+    replace = {{ .replace }}
+    {{- end }}
+    
+    # You can configure global hash rules for the events, which can help to hide sensitive data
+    # from logs before they are sent to outputs. Those rules will be applied to all pipelines for container logs, host logs,
+    # application logs and events.
+    # In the following example we hash IP addresses with fnv-1a-64
+    ; [pipe.hash::name]
+    ; match = (\d{1,3}\.){3}\d{1,3}'
+    ; function = fnv-1a-64
+    {{- range .Values.configuration.pipeHash }}
+    [pipe.hash::{{ .name }}]
+    disabled = {{ .disabled }}
+    match = {{ .match }}
+    function = {{ .function }}
+    {{- end }}
+
+    {{ range $key, $value := .Values.configuration.inputs.prometheus -}}
+    {{ if not .controlPlaneOnly -}}
+    [input.prometheus::{{ $key }}]
+    {{ with $value }}
+    # disable prometheus kubelet metrics
+    disabled = {{ .disabled }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # Override host (environment variables are supported)
+    host = {{ .host }}
+
+    # Override source
+    source = {{ .source }}
+
+    # how often to collect prometheus metrics
+    interval = {{ .interval }}
+
+    # request timeout
+    timeout = {{ .timeout }}
+
+    # === WHERE: pick exactly one of endpointSlice, service, or endpoint(s) ===
+    # endpointSlice / service: <name>.<namespace>. Omit the namespace to aggregate cluster-wide.
+    {{ if .endpointSlice -}}
+    endpointSlice = {{ .endpointSlice }}
+    {{- end }}
+    {{ if .service -}}
+    service = {{ .service }}
+    {{- end }}
+    {{ if .endpoint -}}
+    endpoint = {{ .endpoint }}
+    {{- end }}
+    {{ if .endpoints -}}
+    {{ range $i, $val := .endpoints }}
+    endpoint.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+
+    # === HOW: port (number) or portName, plus scheme and path ===
+    {{ if .port -}}
+    port = {{ .port }}
+    {{- end }}
+    {{ if .portName -}}
+    portName = {{ .portName }}
+    {{- end }}
+    {{ if .scheme -}}
+    scheme = {{ .scheme }}
+    {{- end }}
+    {{ if .path -}}
+    path = {{ .path }}
+    {{- end }}
+
+    # token for "Authorization: Bearer $(cat tokenPath)"
+    tokenPath = {{ .tokenPath }}
+
+    # server certificate for certificate validation
+    certPath = {{ .certPath }}
+
+    # client certificate for authentication
+    clientCertPath = {{ .clientCertPath }}
+    {{ if .clientKeyPath -}}
+    clientKeyPath = {{ .clientKeyPath }}
+    {{- end }}
+
+    # Allow invalid SSL server certificate
+    insecure = {{ .insecure }}
+
+    # include metrics help with the events
+    # can be useful to explore prometheus metrics
+    includeHelp = {{ .includeHelp }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # whitelist or blacklist the metrics
+    {{ range $i, $val := .whitelist }}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{ range $i, $val := .blacklist }}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    
+    {{ range $key, $value := .Values.configuration.inputs.diagnostics }}
+    {{ if $value -}}
+    [diagnostics::{{ $key }}]
+    {{ range $key, $value := $value -}}
+    settings.{{ $key }} = {{ $value }}
+    {{ end }}
+    {{- end }}
+    {{ end }}
+  {{- end }}
+  {{ if .Values.daemonsetMaster.create }}
+  003-daemonset-master.conf: |
+    {{ range $key, $value := .Values.configuration.inputs.prometheus }}
+    {{ if .controlPlaneOnly }}
+    [input.prometheus::{{ $key }}]
+    {{ with $value }}
+    # disable prometheus kubelet metrics
+    disabled = {{ .disabled }}
+
+    # override type
+    type = {{ .type }}
+
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+
+    # Override host (environment variables are supported)
+    host = {{ .host }}
+
+    # Override source
+    source = {{ .source }}
+
+    # how often to collect prometheus metrics
+    interval = {{ .interval }}
+
+    # request timeout
+    timeout = {{ .timeout }}
+
+    # === WHERE: pick exactly one of endpointSlice, service, or endpoint(s) ===
+    # endpointSlice / service: <name>.<namespace>. Omit the namespace to aggregate cluster-wide.
+    # endpoint.N preserves the localhost-then-proxy fallback idiom.
+    {{ if .endpointSlice -}}
+    endpointSlice = {{ .endpointSlice }}
+    {{- end }}
+    {{ if .service -}}
+    service = {{ .service }}
+    {{- end }}
+    {{ if .endpoint -}}
+    endpoint = {{ .endpoint }}
+    {{- end }}
+    {{ if .endpoints -}}
+    {{ range $i, $val := .endpoints }}
+    endpoint.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+
+    # === HOW: port (number) or portName, plus scheme and path ===
+    {{ if .port -}}
+    port = {{ .port }}
+    {{- end }}
+    {{ if .portName -}}
+    portName = {{ .portName }}
+    {{- end }}
+    {{ if .scheme -}}
+    scheme = {{ .scheme }}
+    {{- end }}
+    {{ if .path -}}
+    path = {{ .path }}
+    {{- end }}
+
+    # token for "Authorization: Bearer $(cat tokenPath)"
+    tokenPath = {{ .tokenPath }}
+
+    # server certificate for certificate validation
+    certPath = {{ .certPath }}
+
+    # client certificate for authentication
+    clientCertPath = {{ .clientCertPath }}
+    clientKeyPath = {{ .clientKeyPath }}
+
+    # Allow invalid SSL server certificate
+    insecure = {{ .insecure }}
+
+    # include metrics help with the events
+    # can be useful to explore prometheus metrics
+    includeHelp = {{ .includeHelp }}
+
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+
+    # whitelist or blacklist the metrics
+    {{ range $i, $val := .whitelist }}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{ range $i, $val := .blacklist }}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    
+    {{ range $key, $value := .Values.configuration.inputs.hostLogs }}
+    {{ if $value.controlPlaneOnly -}}
+    [input.files::{{ $key }}]
+    {{ with $value }}
+    # disable host level logs
+    disabled = {{ .disabled }}
+    
+    # root location of for audit logs
+    path = {{ .path }}
+    
+    # glob matching files
+    glob = {{ .glob }}
+    
+    # files are read using polling schema, when reach the EOF how often to check if files got updated
+    pollingInterval = {{ .pollingInterval }}
+    
+    # how often o look for the new files under logs path
+    walkingInterval = {{ .walkingInterval }}
+    
+    # include verbose fields in events (file offset)
+    verboseFields = {{ .verboseFields }}
+    
+    # override type
+    type = {{ .type }}
+    
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+    
+    # field extraction
+    extraction = {{ .extraction}}
+    extractionMessageField = {{ .extractionMessageField }}
+    
+    # timestamp field
+    timestampField = {{ .timestampField }}
+    
+    # format for timestamp
+    # the layout defines the format by showing how the reference time, defined to be `Mon Jan 2 15:04:05 -0700 MST 2006`
+    timestampFormat = {{ .timestampFormat }}
+    
+    # timestamp location (if not defined by format)
+    timestampLocation = {{ .timestampLocation }}
+    
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    
+    # configure default thruput per second for this files group
+    # for example if you set `thruputPerSecond = 128Kb`, that will limit amount of logs forwarded
+    # from the files in this group to 128Kb per second.
+    thruputPerSecond = {{ .thruputPerSecond }}
+    
+    # Configure events that are too old to be forwarded, for example 168h (7 days) - that will drop all events
+    # older than 7 days
+    tooOldEvents = {{ .tooOldEvents }}
+    
+    # Configure events that are too new to be forwarded, for example 1h - that will drop all events that are 1h in future
+    tooNewEvents = {{ .tooNewEvents }}
+    
+    # Blacklisting and whitelisting the logs
+    # whitelist.0 = ^regexp$
+    # blacklist.0 = ^regexp$
+    {{ range $i, $val := .blacklist }}
+    blacklist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{ range $i, $val := .whitelist }}
+    whitelist.{{ add1 $i }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.deployment.create }}
+  004-addon.conf: |
+    [general]
+    # addons can be run in parallel with agents
+    addon = true
+    {{- if .Values.configuration.general.httpServerBinding }}
+
+    # The addon runs off the host network, so the kubelet probes /healthz and /readyz
+    # on the pod IP - bind 0.0.0.0 here (overrides the loopback default in 001-general.conf).
+    httpServerBinding = 0.0.0.0:11888
+    {{- end }}
+    
+    {{ with .Values.configuration.inputs.kubernetesEvents }}
+    [input.kubernetes_events]
+    
+    # disable collecting kubernetes events
+    disabled = {{ .disabled }}
+    
+    # override type
+    type = {{ .type }}
+    
+    # specify Splunk index
+    index = {{ index . "index"}}
+    
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    
+    # exclude managed fields from the metadata
+    excludeManagedFields = {{ .excludeManagedFields }}
+    {{ end }}
+    
+    {{ range $key, $value := .Values.configuration.inputs.kubernetesWatch }}
+    {{ if not $value.disabled -}}
+    [input.kubernetes_watch::{{ $key }}]
+    {{ with $value -}}
+    # disable events
+    disabled = {{ .disabled }}
+    
+    # Set the timeout for how often watch request should refresh the whole list
+    refresh = {{ .refresh }}
+    
+    apiVersion = {{ .apiVersion }}
+    kind = {{ .kind }}
+    namespace = {{ .namespace }}
+    
+    # override type
+    type = {{ .type }}
+    
+    {{ if (index . "index") -}}
+    # specify Splunk index
+    index = {{ index . "index" }}
+    {{ else if (index . "elasticsearch.datastream") }}
+    elasticsearch.datastream = {{ index . "elasticsearch.datastream" }}
+    {{- end }}
+    
+    {{ if .source -}}
+    # specify Splunk source
+    source = {{ .source }}
+    {{ else if (index . "syslog.format") }}
+    syslog.format = {{ index . "syslog.format" }}
+    {{- end }}
+    
+    # set output (splunk or devnull, default is [general]defaultOutput)
+    output = {{ .output }}
+    
+    # exclude managed fields from the metadata
+    excludeManagedFields = {{ .excludeManagedFields }}
+    
+    # you can remove or hash some values in the events (after modifyValues you can define path in the JSON object,
+    # and the value can be hash:{hashFunction}, or remove to remove the object )
+    ; modifyValues.object.data.* = hash:sha256
+    ; modifyValues.object.metadata.annotations.* = remove
+    {{ range .modifyValues }}
+    modifyValues.{{ .path }} = {{ .value }}
+    {{- end }}
+    
+    # You can exclude events by namespace with blacklist or whitelist only required namespaces
+    # blacklist.kubernetes_namespace = ^namespace0$
+    # whitelist.kubernetes_namespace = ^((namespace1)|(namespace2))$
+    {{ range $key, $val := .blacklist }}
+    blacklist.{{ $key }} = {{ $val }}
+    {{- end }}
+    {{ range $key, $val := .whitelist }}
+    whitelist.{{ $key }} = {{ $val }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{ end }}
+  {{- end }}
+{{- range $filename, $content := .Values.configMap.allAdditionalFiles }}
+  {{ $filename }}: |
+{{ $content | indent 4 }}
+{{- end }}
+{{- range $filename, $content := .Values.configMap.daemonsetAdditionalFiles }}
+  {{ $filename }}: |
+{{ $content | indent 4 }}
+{{- end }}
+{{- range $filename, $content := .Values.configMap.daemonsetMasterAdditionalFiles }}
+  {{ $filename }}: |
+{{ $content | indent 4 }}
+{{- end }}
+{{- range $filename, $content := .Values.configMap.deploymentAdditionalFiles }}
+  {{ $filename }}: |
+{{ $content | indent 4 }}
+{{- end }}
+{{- end -}}

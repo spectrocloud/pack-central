@@ -1,0 +1,337 @@
+# Default values for collectord.
+# This is a YAML-formatted file.
+# Declare variables to be substituted into your templates.
+
+# Common labels applied to all resources
+commonLabels: {}
+  # Example:
+  # environment: production
+  # team: platform
+  # cost-center: engineering
+
+# Image settings
+image:
+  # OpenShift: docker.io/outcoldsolutions/collectorforopenshift
+  # Kubernetes: docker.io/outcoldsolutions/collectorforkubernetes
+  # To use RHEL Certified Image for OpenShift, specify registry.connect.redhat.com/outcoldsolutions/collectorforopenshift
+  repository: docker.io/outcoldsolutions/collectorforkubernetes
+  tag: "26.04.5"
+  pullPolicy: Always
+
+# Service Account
+serviceAccount:
+  name: ""
+  create: true
+
+# Priority Class
+priorityClass:
+  name: ""
+  create: true
+  value: 1000000000
+
+# RBAC settings
+clusterRole:
+  name: ""
+  create: true
+  rules:
+  # - apiGroups:
+    #   - ''
+    #   resources:
+    #   - 'pods'
+    #   - 'nodes'
+    #   verbs:
+    #   - 'get'
+    #   - 'list'
+    #   - 'watch'
+
+# ConfigMap settings
+configMap:
+  create: true
+  # Additional files to be added to the ConfigMap
+  # Example:
+  # daemonsetAdditionalFiles:
+  #   "my-template.json": |
+  #     {
+  #       "key": "value"
+  #     }
+  daemonsetAdditionalFiles: {}
+  daemonsetMasterAdditionalFiles: {}
+  deploymentAdditionalFiles: {}
+
+# Volume mounts for CA certificates and other files
+volumeMounts:
+  # Example for CA certificates:
+  # - name: ca-certificates
+  #   mountPath: /etc/ssl/certs/ca-bundle.crt
+  #   subPath: ca-bundle.crt
+  #   configMap:
+  #     name: ca-certificates
+  #   secret: {}  # Use either configMap or secret, not both
+  # - name: custom-config
+  #   mountPath: /config/custom
+  #   secret:
+  #     secretName: custom-config
+  daemonset: []
+  daemonsetMaster: []
+  deployment: []
+
+# Projected volumes for advanced configuration scenarios
+projectedVolumes:
+  # Example:
+  # - name: combined-config
+  #   mountPath: /config/projected
+  #   sources:
+  #     - configMap:
+  #         name: config1
+  #         items:
+  #           - key: config.yaml
+  #             path: config1.yaml
+  #     - secret:
+  #         name: secret1
+  #         items:
+  #           - key: password
+  #             path: password.txt
+  daemonset: []
+  daemonsetMaster: []
+  deployment: []
+    
+mountLocalTime: true
+mountRootfsAsReadOnly: false
+    
+# DaemonSet configuration for worker nodes
+daemonset:
+  create: true
+
+  # Liveness/readiness probes for the /healthz and /readyz endpoints (Collectord 26.04.4+).
+  # Empty by default; the Splunk charts set them. Requires the internal http server enabled
+  # via configuration.general (httpServerBinding + httpServerEndpoints.health/ready).
+  livenessProbe: {}
+  readinessProbe: {}
+
+  # Workload-level annotations and labels (applied to DaemonSet resource)
+  annotations: {}
+    # Example:
+    # deployment.kubernetes.io/revision: "1"
+  
+  labels: {}
+    # Example:
+    # component: "collector"
+    # tier: "monitoring"
+
+  # Pod selector labels (used for matchLabels in selector)
+  # These labels will be automatically applied to pods as well
+  selectorLabels: {}
+    # Example:
+    # app.kubernetes.io/component: worker
+    # app.kubernetes.io/part-of: collectord
+
+  # Pod-level annotations and labels (applied to pod template)
+  podAnnotations: {}
+    # Example:
+    # prometheus.io/scrape: "true"
+    # prometheus.io/port: "9090"
+  
+  podLabels: {}
+    # Example:
+    # version: "v1.0.0"
+    # environment: "production"
+  
+  ports: []
+    # Example:
+    # - name: metrics
+    #   containerPort: 11888
+    #   protocol: TCP
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 1024Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+
+  # Node selector for daemonset pods
+  nodeSelector: {}
+    # Example:
+    # kubernetes.io/os: linux
+
+  # Affinity for daemonset pods
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: DoesNotExist
+
+  # Tolerations for daemonset pods
+  tolerations:
+  - operator: "Exists"
+    effect: "NoSchedule"
+  - operator: "Exists"
+    effect: "NoExecute"
+
+# DaemonSet configuration for master nodes
+daemonsetMaster:
+  create: true
+
+  # Liveness/readiness probes for the /healthz and /readyz endpoints (Collectord 26.04.4+).
+  # Empty by default; the Splunk charts set them. Requires the internal http server enabled
+  # via configuration.general (httpServerBinding + httpServerEndpoints.health/ready).
+  livenessProbe: {}
+  readinessProbe: {}
+
+  # Workload-level annotations and labels (applied to DaemonSet resource)
+  annotations: {}
+    # Example:
+    # deployment.kubernetes.io/revision: "1"
+  
+  labels: {}
+    # Example:
+    # component: "collector-master"
+    # tier: "monitoring"
+
+  # Pod selector labels (used for matchLabels in selector)
+  # These labels will be automatically applied to pods as well
+  selectorLabels: {}
+    # Example:
+    # app.kubernetes.io/component: master
+    # app.kubernetes.io/part-of: collectord
+
+  # Pod-level annotations and labels (applied to pod template)
+  podAnnotations: {}
+    # Example:
+    # prometheus.io/scrape: "true"
+    # prometheus.io/port: "9090"
+  
+  podLabels: {}
+    # Example:
+    # version: "v1.0.0"
+    # environment: "production"
+  
+  ports: []
+    # Example:
+    # - name: metrics
+    #   containerPort: 11888
+    #   protocol: TCP
+
+  # Resources
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 1024Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+
+  # Node selector for daemonset-master pods
+  nodeSelector: {}
+    # Example:
+    # kubernetes.io/os: linux
+
+  # Affinity for daemonset-master pods
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+
+  # Tolerations for daemonset-master pods
+  tolerations:
+  - operator: "Exists"
+    effect: "NoSchedule"
+  - operator: "Exists"
+    effect: "NoExecute"
+
+# Deployment configuration for addon
+deployment:
+  create: true
+
+  # Liveness/readiness probes for the /healthz and /readyz endpoints (Collectord 26.04.4+).
+  # Empty by default; the Splunk charts set them. The addon runs off the host network, so
+  # its probes use the pod IP (no httpGet.host) and 004-addon.conf binds 0.0.0.0:11888.
+  livenessProbe: {}
+  readinessProbe: {}
+
+  # Workload-level annotations and labels (applied to Deployment resource)
+  annotations: {}
+    # Example:
+    # deployment.kubernetes.io/revision: "1"
+  
+  labels: {}
+    # Example:
+    # component: "collector-addon"
+    # tier: "monitoring"
+
+  # Pod selector labels (used for matchLabels in selector)
+  # These labels will be automatically applied to pods as well
+  selectorLabels: {}
+    # Example:
+    # app.kubernetes.io/component: addon
+    # app.kubernetes.io/part-of: collectord
+
+  # Pod-level annotations and labels (applied to pod template)
+  podAnnotations: {}
+    # Example:
+    # prometheus.io/scrape: "true"
+    # prometheus.io/port: "9090"
+  
+  podLabels: {}
+    # Example:
+    # version: "v1.0.0"
+    # environment: "production"
+  
+  # Container ports to declare on the collectord container. Empty by default -
+  # Collectord does not need a declared port to work, but Prometheus pod discovery
+  # builds one target per declared port, and scrape configurations that match the
+  # prometheus.io/port annotation against the pod's declared ports drop a pod that
+  # declares none. Declare the internal http server port here when you scrape
+  # /metrics/prometheus - and enable it in configuration.general
+  # (httpServerEndpoints.metrics = true). The addon runs off the host network, so
+  # 004-addon.conf already binds 0.0.0.0:11888 and no hostPort is claimed.
+  ports: []
+    # Example:
+    # - name: metrics
+    #   containerPort: 11888
+    #   protocol: TCP
+
+  # Resources
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 64Mi
+
+  # Node selector for addon pod
+  nodeSelector: {}
+    # Example:
+    # kubernetes.io/os: linux
+
+  # Affinity for addon pod
+  affinity: {}
+    # Example (prefer scheduling on the AKS system node pool):
+    # nodeAffinity:
+    #   preferredDuringSchedulingIgnoredDuringExecution:
+    #   - weight: 100
+    #     preference:
+    #       matchExpressions:
+    #       - key: kubernetes.azure.com/mode
+    #         operator: In
+    #         values:
+    #         - system
+
+  # Tolerations for addon pod
+  tolerations: []
+    # Example (allow scheduling on a tainted system node pool):
+    # - key: "CriticalAddonsOnly"
+    #   operator: "Exists"
+    #   effect: "NoSchedule"
+
+configuration:
+  general: {}
+  inputs: {}
+  outputs: {}

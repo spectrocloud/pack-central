@@ -1,0 +1,42 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: splunkoutputs.collectord.io
+spec:
+  group: collectord.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                insecure:
+                  type: boolean
+                token:
+                  type: string
+                  description: "Plain token"
+                tokenFromSecret:
+                  type: object
+                  description: "Reference to a Kubernetes Secret"
+                  properties:
+                    secret:
+                      type: string
+                    key:
+                      type: string
+              oneOf:
+                - required: ["token"]
+                - required: ["tokenFromSecret"]
+  scope: Namespaced
+  names:
+    listKind: SplunkOutputList
+    plural: splunkoutputs
+    singular: splunkoutput
+    kind: SplunkOutput
