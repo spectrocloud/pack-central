@@ -1,0 +1,99 @@
+annotations:
+  artifacthub.io/crds: |
+    - kind: Gslb
+      version: v1beta1
+      name: gslbs.k8gb.io
+      displayName: Gslb
+      description: Gslb resource for global load balancing strategy configuration
+    - kind: Gslb
+      version: v1beta1
+      name: gslbs.k8gb.absa.oss
+      displayName: Gslb
+      description: Legacy Gslb resource (k8gb.absa.oss)
+    - kind: DNSEndpoint
+      name: dnsendpoints.externaldns.k8s.io
+      version: v1alpha1
+      displayName: DNSEndpoint
+      description: Using ExternalDNS it synchronizes exposed Kubernetes Services and Ingresses with DNS providers
+    - kind: ZoneDelegation
+      version: v1beta1
+      name: zonedelegations.k8gb.io
+      displayName: ZoneDelegation
+      description: ZoneDelegation enables dynamic activation of DNS zones via the ZoneDelegation resource to prevent premature NXDOMAIN responses in multi-tenant or shared clusters.
+  artifacthub.io/crdsExamples: |
+    - apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata:
+        name: test-gslb-failover
+        namespace: test-gslb
+      spec:
+        ingress:
+          rules:
+            - host: failover.test.k8gb.io # Desired GSLB enabled FQDN
+              http:
+                paths:
+                - path: /
+                  backend:
+                    service:
+                      name: frontend-podinfo # Service name to enable GSLB for
+                      port:
+                        name: http
+        strategy:
+          type: failover # Global load balancing strategy
+          primaryGeoTag: eu-west-1 # Primary cluster geo tag
+    - apiVersion: k8gb.io/v1beta1
+      kind: ZoneDelegation
+      metadata:
+        name: test-zone
+      spec:
+        loadBalancedZone: test-zone.cloud.example.com
+        parentZone: cloud.example.com
+        dnsZoneNegTTL: 30
+      status:
+        dnsServers:
+          - name: gslb-ns-eu-cloud.example.com
+            address: 172.18.0.6
+          - name: gslb-ns-us-cloud.example.com
+            address: 172.18.0.10
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Seamless Upgrades
+apiVersion: v2
+appVersion: v0.19.0
+dependencies:
+- name: coredns
+  repository: https://coredns.github.io/helm
+  version: 1.45.2
+- alias: extdns
+  condition: extdns.enabled
+  name: external-dns
+  repository: https://kubernetes-sigs.github.io/external-dns
+  version: 1.20.0
+description: A Helm chart for Kubernetes Global Balancer
+home: https://www.k8gb.io/
+icon: https://www.k8gb.io/images/k8gb-icon-color.svg
+keywords:
+- gslb
+- dns-lb
+- kuberneters-global-balancer
+- kubernetes-operator
+- balancer
+- multi-cluster
+kubeVersion: '>= 1.21.0-0'
+maintainers:
+- email: andre.aguas@protonmail.com
+  name: Andre Baptista Aguas
+- email: bradley@0ttl.ai
+  name: Bradley Andersen
+- email: dinar.valeev@absa.africa
+  name: Dinar Valeev
+- email: jiri.kremser@gmail.com
+  name: Jiri Kremser
+- email: kuritka@gmail.com
+  name: Michal Kuritka
+- email: yury@upbound.io
+  name: Yury Tsarev
+name: k8gb
+sources:
+- https://github.com/k8gb-io/k8gb
+type: application
+version: v0.19.0
