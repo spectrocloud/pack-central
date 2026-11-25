@@ -1,0 +1,105 @@
+# VSS Platform profiles for the VSS 3.x ingress / routing layer.
+#
+# ⚠️ OPERATOR CONTRACT: VSS 3.x ships ALL FIVE packs in EVERY profile
+#    (data-infrastructure + nims + vllm + core + ingress). Set ONE profile variable
+#    VSS_PLATFORM and select the SAME "VSS Platform" preset HERE as in every other
+#    VSS 3.x pack. Palette does NOT coordinate presets across packs — a mismatch is
+#    an operator error. See P1-P5-IMPLEMENTATION.md.
+#
+# Pack-specific note: NONE of this pack's services (envoy-proxy / sdr /
+# vss-vios-ingress / vss-proxy) have a -sbsa image variant — they are all multiarch
+# 3.1.0. So the DGX-SPARK preset does NOT flip any imageTag (it keeps the multiarch
+# 3.1.0 tag, same as every other platform). These are CPU/nginx/envoy services with
+# no GPU pod, so the Thor presets add no runtimeClassName here either. As a result
+# every platform's "add:" block is effectively identical for this pack; the presets
+# exist only so the operator selects the SAME platform name across all five packs.
+#
+# DGX-SPARK is the active default and the only migration target; all rows are
+# UNVALIDATED (no hardware; image tags unverified against an authenticated registry).
+presets:
+  - name: "DGX-SPARK"
+    displayName: "DGX Spark (GB10, arm64, sm_121) — multiarch 3.1.0 (no -sbsa here)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  - name: "OTHER"
+    displayName: "Other / generic single GPU — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  - name: "H100"
+    displayName: "H100 (x86 dGPU) — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  - name: "L40S"
+    displayName: "L40S (x86 dGPU) — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  - name: "RTXPRO6000BW"
+    displayName: "RTX PRO 6000 Blackwell (sm_120) — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  # ── Jetson AGX/IGX Thor (arm64 Tegra/iGPU). UNVALIDATED. ─────────────────────
+  # No GPU pod in this ingress layer, so there is nothing to set runtimeClassName on;
+  # the multiarch 3.1.0 images run on arm64 as-is.
+  - name: "AGX-THOR"
+    displayName: "Jetson AGX Thor (arm64, iGPU) — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
+
+  - name: "IGX-THOR"
+    displayName: "IGX + Thor iGPU (arm64) — multiarch 3.1.0 (unvalidated)"
+    group: "VSS Platform"
+    remove: []
+    add: |
+      envoyProxy:
+        imageTag: "3.1.0"
+      sdr:
+        imageTag: "3.1.0"
+      vssViosIngress:
+        imageTag: "3.1.0"
