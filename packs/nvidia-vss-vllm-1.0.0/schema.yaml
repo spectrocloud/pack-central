@@ -1,0 +1,16 @@
+# Pack value constraints for the vLLM LLM backend.
+# Keys are full dotted paths into values.yaml (the manifests.llm-vllm.* sub-tree).
+manifests.llm-vllm.image:
+  schema: '{{ required | format "${string}" | hints "vLLM container image (nvcr.io/nvidia/vllm:* on x86/SBSA; ghcr.io/nvidia-ai-iot/vllm:*-jetson-thor on Tegra)." }}'
+manifests.llm-vllm.hfModel:
+  schema: '{{ required | format "${string}" | hints "HF model id vLLM loads (e.g. NousResearch/Meta-Llama-3.1-8B-Instruct)." }}'
+manifests.llm-vllm.servedModelName:
+  schema: '{{ required | format "${string}" | hints "OpenAI served-model name the application pack references via llmModel." }}'
+manifests.llm-vllm.gpuMemUtil:
+  schema: '{{ format "${number}" | hints "vLLM --gpu-memory-utilization (LLM share of the GPU pool, e.g. 0.35 on GB10)." }}'
+manifests.llm-vllm.maxModelLen:
+  schema: '{{ format "${number}" | hints "vLLM --max-model-len." }}'
+manifests.llm-vllm.maxNumSeqs:
+  schema: '{{ format "${number}" | hints "vLLM --max-num-seqs." }}'
+manifests.llm-vllm.replicas:
+  schema: '{{ format "${number}" | hints "vLLM Deployment replicas (1)." }}'
