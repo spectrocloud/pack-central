@@ -1,0 +1,18 @@
+project:
+  name: Emissary Ingress CRDs
+  shortName: Emissary CRDs
+  url: https://github.com/datawire/ambassador
+  description: Emissary Ingress is a self-service, comprehensive API gateway that is Kubernetes-native and built on [Envoy Proxy](https://www.envoyproxy.io/).
+  app: Emissary Ingress
+repository:
+  url: oci://ghcr.io/emissary-ingress
+  name: emissary-crds-chart
+chart:
+  name: emissary-crds-chart
+  values: "-- generate from values file --"
+  valuesExample: "-- generate from values file --"
+prerequisites:
+- "Kubernetes v1.25+"
+release:
+  name: emissary-crds-chart
+  namespace: emissary

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if .Values.service.nameOverride }}
+  name: {{ .Values.service.nameOverride }}
+  {{- else }}
+  name: {{ include "ambassador.fullname" . }}
+  {{- end }}
+  namespace: {{ include "ambassador.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "ambassador.name" . }}
+    {{- include "ambassador.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ambassador-service
+    product: aes
+{{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: "{{ .Values.service.loadBalancerIP }}"
+  {{- end }}
+  {{- if .Values.service.loadBalancerClass }}
+  loadBalancerClass: "{{ .Values.service.loadBalancerClass }}"
+  {{- end }}
+  {{- if .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: "{{ .Values.service.externalTrafficPolicy }}"
+  {{- end }}
+  {{- if .Values.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}
+  {{- end }}
+  {{- if .Values.service.sessionAffinityConfig }}
+  sessionAffinityConfig:
+    {{- toYaml .Values.service.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
+  ports:
+    {{- range .Values.service.ports }}
+    - name: {{ .name }}
+      port: {{ int .port }}
+      {{- if .targetPort }}
+      targetPort: {{ int .targetPort }}
+      {{- end }}
+      {{- if .nodePort }}
+      nodePort: {{ int .nodePort }}
+      {{- end }}
+      {{- if .protocol }}
+      protocol: {{ .protocol }}
+      {{- end }}
+    {{- end}}
+    {{- if ne .Values.service.portsRaw "" }}
+    {{ .Values.service.portsRaw }}
+    {{- end }}
+  selector:
+    {{- with .Values.service.selector }}
+      {{- toYaml . | nindent 4 }}
+    {{- else }}
+    app.kubernetes.io/name: {{ include "ambassador.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- end }}
+    {{- if and .Values.canary (or (not (hasKey .Values.canary "mixPods")) (eq .Values.canary.mixPods false)) }}
+    profile: main
+    {{- end }}
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.service.externalIPs }}
+  externalIPs:
+    {{- toYaml .Values.service.externalIPs | nindent 4 }}
+  {{- end }}
+  {{- if .Values.service.ipFamilies }}
+  ipFamilies:
+    {{- toYaml .Values.service.ipFamilies | nindent 4 }}
+  {{- end }}
