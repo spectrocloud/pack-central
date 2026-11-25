@@ -1,0 +1,15 @@
+# Pack value constraints for the Data Infrastructure layer.
+# Keys are full dotted paths into values.yaml. All inputs are credentials
+# (platform-invariant); secrets use the password format so the UI masks them.
+charts.nvidia-vss-data-infrastructure.credentials.graphDb.username:
+  schema: '{{ required | format "${string}" | hints "Neo4j username." }}'
+charts.nvidia-vss-data-infrastructure.credentials.graphDb.password:
+  schema: '{{ required | format "${password}" | hints "Neo4j password." }}'
+charts.nvidia-vss-data-infrastructure.credentials.minio.accessKey:
+  schema: '{{ required | format "${string}" | hints "MinIO access key." }}'
+charts.nvidia-vss-data-infrastructure.credentials.minio.secretKey:
+  schema: '{{ required | format "${password}" | hints "MinIO secret key." }}'
+charts.nvidia-vss-data-infrastructure.credentials.arangoDB.username:
+  schema: '{{ required | format "${string}" | hints "ArangoDB username." }}'
+charts.nvidia-vss-data-infrastructure.credentials.arangoDB.password:
+  schema: '{{ required | format "${password}" | hints "ArangoDB password." }}'
