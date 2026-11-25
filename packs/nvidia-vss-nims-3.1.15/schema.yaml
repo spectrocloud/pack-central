@@ -1,0 +1,24 @@
+# Value constraints for the VSS 3.x NIMs pack (full dotted paths into values.yaml).
+# Image tags are driven by the VSS Platform presets, not constrained here.
+cosmos.imageTag:
+  schema: '{{ format "${string}" | hints "cosmos-reason2-8b NIM image tag (multiarch /nim/ image; no -sbsa variant)." }}'
+cosmos.gpuCount:
+  schema: '{{ format "${number}" | hints "GPUs reserved for the cosmos VLM NIM (1 on a single-GPU node)." }}'
+cosmos.servicePort:
+  schema: '{{ format "${number}" | hints "ClusterIP port the cosmos VLM NIM publishes (agent VLM_BASE_URL); compose default 30082." }}'
+cosmos.nimKvcachePercent:
+  schema: '{{ format "${string}" | hints "NIM_KVCACHE_PERCENT for the cosmos NIM (hw-DGX-SPARK-shared.env default 0.5)." }}'
+cosmos.nimMaxModelLen:
+  schema: '{{ format "${string}" | hints "NIM_MAX_MODEL_LEN for the cosmos NIM." }}'
+cosmos.nimMaxNumSeqs:
+  schema: '{{ format "${string}" | hints "NIM_MAX_NUM_SEQS for the cosmos NIM." }}'
+cosmos.cacheSize:
+  schema: '{{ format "${string}" | hints "PVC size for the cosmos NIM model cache (e.g. 80Gi)." }}'
+rtviEmbed.enabled:
+  schema: '{{ format "${boolean}" | hints "Render the rtvi-embed embedding microservice. SEARCH profile only; false in BASE." }}'
+rtviEmbed.imageTag:
+  schema: '{{ format "${string}" | hints "rtvi-embed image tag (vss-core/* image; 3.1.0-sbsa on DGX-SPARK, 3.1.0 elsewhere — set by preset)." }}'
+rtviEmbed.gpuCount:
+  schema: '{{ format "${number}" | hints "GPUs reserved for rtvi-embed (1)." }}'
+rtviEmbed.servicePort:
+  schema: '{{ format "${number}" | hints "ClusterIP port rtvi-embed publishes (container port 8000)." }}'
