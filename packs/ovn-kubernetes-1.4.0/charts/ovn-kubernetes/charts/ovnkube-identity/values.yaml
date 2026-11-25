@@ -1,0 +1,4 @@
+logLevel: 4
+logFileMaxSize: 100
+logFileMaxBackups: 5
+logFileMaxAge: 5

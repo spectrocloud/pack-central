@@ -1,0 +1,30 @@
+{
+  "annotations": {
+    "source": "community",
+    "contributor": "spectrocloud",
+    "docsURL": "https://ovn-kubernetes.io/",
+    "airgap": "true",
+    "architecture": "amd64,arm64"
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "charts": [
+    "charts/ovn-kubernetes-1.4.0.tgz"
+  ],
+  "displayName": "OVN-Kubernetes",
+  "layer": "cni",
+  "name": "ovn-kubernetes",
+  "version": "1.4.0",
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.33",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}
