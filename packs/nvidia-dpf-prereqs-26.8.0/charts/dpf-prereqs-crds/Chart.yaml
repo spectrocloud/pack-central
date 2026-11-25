@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dpf-prereqs-crds
+description: Applies the CRDs of the DPF 26.8.0 prerequisite charts (kamaji 1.4.0, maintenance-operator 0.3.0, node-feature-discovery 0.18.3) server-side on every install and upgrade - the Palette equivalent of NVIDIA's helmfile preapply hook apply-crds.sh, which Helm itself never does for a chart's crds/ folder. Also removes the kamaji < 1.4 validating webhook config that otherwise deadlocks the kamaji 1.4.0 upgrade.
+type: application
+version: 26.8.0
+appVersion: v26.8.0

@@ -1,0 +1,33 @@
+# DPUDevice (provisioning.dpu.nvidia.com/v1alpha1, DPF v26.8.0). Added in the
+# 26.8.0 wrapper for the HOSTLESS zero-trust flow
+# (docs/public/advanced-configuration/hostless-dpu-provisioning.md): hostless DPUs
+# are declared by hand (no DPUDiscovery) with the label
+# provisioning.dpu.nvidia.com/hostless: "true"; DPF then creates a synthetic
+# hostless-<device> DPUNode (nodeRebootMethod none, labels copied from the device
+# plus feature.node.kubernetes.io/dpu-enabled=true) and reboots the DPU itself
+# over Redfish. Needs DPFOperatorConfig deploymentMode zero-trust +
+# installViaRedfish.skipDPUNodeDiscovery true.
+#
+# bmcFactoryResetPolicy: the 26.8 CRD default is OnInitialization (one Redfish
+# factory reset when the device is onboarded). A factory reset WIPES the BMC
+# network config, so a BMC on a static IP drops off the network. This wrapper
+# therefore renders Never unless the entry sets the field explicitly; set
+# OnInitialization only for BMCs whose IP is a DHCP reservation.
+{{- range $conf := .Values.dpuDevices }}
+---
+apiVersion: provisioning.dpu.nvidia.com/v1alpha1
+kind: DPUDevice
+metadata:
+  name: {{ $conf.name | quote }}
+  namespace: dpf-operator-system
+  {{- if $conf.labels }}
+  labels: {{ $conf.labels | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  {{- $spec := omit $conf "name" "labels" }}
+  {{- if not (hasKey $spec "bmcFactoryResetPolicy") }}
+  {{- $_ := set $spec "bmcFactoryResetPolicy" "Never" }}
+  {{- end }}
+  {{- $_ := required "dpuDevices[].serialNumber is required" $spec.serialNumber }}
+  {{- $spec | toYaml | nindent 2 }}
+{{- end }}

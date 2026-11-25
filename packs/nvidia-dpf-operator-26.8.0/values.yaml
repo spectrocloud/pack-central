@@ -1,0 +1,178 @@
+pack:
+  releaseNameOverride:
+      dpf-operator: dpf-operator
+      dpf-operator-config: dpf-operator-config
+  namespace: dpf-operator-system
+  namespaceLabels:
+    "dpf-operator-system": "pod-security.kubernetes.io/enforce=privileged,pod-security.kubernetes.io/enforce-version=latest"
+  content:
+    images:
+      # dpf-operator chart
+      - image: nvcr.io/nvidia/doca/dpf-system:v26.8.0
+      - image: ghcr.io/ahrtr/etcd-defrag:v0.22.0
+      # Deployed by the operator on the MANAGEMENT cluster at runtime (not chart
+      # templates; observed on a 26.8 zero-trust cluster 2026-11-01, all amd64+arm64)
+      - image: nvcr.io/nvidia/doca/bfb-registry:v26.8.0
+      - image: nvcr.io/nvidia/doca/dpf-keepalived:v26.8.0
+      - image: alpine:3.20.3@sha256:1e42bbe2508154c9126d48c2b8a75420c3544343bf86fd041fb7527e017a4b4a
+      - image: ghcr.io/mellanox/nvidia-k8s-ipam:v0.4.0@sha256:4b984dd345754e28ff964a209d76bff71ed31bb392b25aa5ddccf3925ac4e2ce
+      - image: registry.k8s.io/coredns/coredns:v1.12.1
+      - image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0@sha256:1545919b72e3ae035454fc054131e8d0f14b42ef6fc5b2ad5c751cafa6b2130e
+      # kamaji tenant control plane of the DPU cluster (26.8 default version v1.35.6)
+      - image: registry.k8s.io/kube-apiserver:v1.35.6
+      - image: registry.k8s.io/kube-controller-manager:v1.35.6
+      - image: registry.k8s.io/kube-scheduler:v1.35.6
+      # Host Trusted only (host workers): DMS host agent + DPF SR-IOV device plugin
+      - image: nvcr.io/nvidia/doca/hostdriver:v26.8.0
+      - image: nvcr.io/nvidia/mellanox/sriov-network-device-plugin:network-operator-v26.1.0
+      # ----------------------------------------------------------------------
+      # DPU-cluster images (arm64, pulled by the DPUs through their registry
+      # mirror). Uncomment for airgapped installs so the content bundle mirrors
+      # them. Source: NGC chart dpu-networking v26.8.0, which DPF pulls at
+      # runtime via Argo CD from helm.ngc.nvidia.com/nvidia/doca (airgap: mirror
+      # that chart too). dpf-system and nvidia-k8s-ipam/coredns/KSM above also
+      # run on the DPUs.
+      # ----------------------------------------------------------------------
+      #- image: nvcr.io/nvidia/doca/dpf-cni-installer:v26.8.0
+      #- image: ghcr.io/flannel-io/flannel:v0.27.2
+      #- image: ghcr.io/flannel-io/flannel-cni-plugin:v1.7.1-flannel1
+      #- image: ghcr.io/k8snetworkplumbingwg/multus-cni:v3.9.3@sha256:c173235642a10055db53bc43898fc1058cc6b97178fc3472ce4dafdd6d940d0b
+      #- image: ghcr.io/k8snetworkplumbingwg/sriov-network-device-plugin:v3.11.0@sha256:7c5901727d4500f103f038c178b41dc6450afa6f324306c1973495c9a7c4f5a5
+      #- image: registry.k8s.io/node-problem-detector/node-problem-detector:v1.35.1@sha256:c380751accc5e15973f7bf98a3725c3c30826b36ae407903c34297be47b73bc6
+      #- image: registry.k8s.io/networking/kube-network-policies:v0.7.0
+      #- image: otel/opentelemetry-collector-contrib:0.146.1@sha256:f6e429c1052ab50f85a7afa5f7e32f25931697751622b0e1f453d10f79a1df3c
+      #- image: ghcr.io/spiffe/spiffe-csi-driver:0.2.7@sha256:9dfe4f0caff096164fd921aa7f15319804df2fc0325f1d90bc793ef3256ab1cd
+      #- image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.4@sha256:ab6c4603d8da43d9f33361a5716552080e3f72badfad099d76fcf4b59e547d80
+      #- image: quay.io/kata-containers/kata-deploy:3.30.0@sha256:b31cf13addbaf49af9e211bf6ab38335299015a754e2bc0341aa4ba47d8cb395
+      # SNAP storage DPUServices only:
+      #- image: nvcr.io/nvidia/doca/storage-system:v26.8.0
+      #- image: nvcr.io/nvidia/doca/storage-host:v26.8.0
+
+charts:
+  # ---------------------------------------------------------------------------
+  # dpf-operator-config  (Spectro wrapper 1.3.0 -> DPFOperatorConfig CR, v1alpha1)
+  # Every key here maps 1:1 to a DPFOperatorConfig.spec field in DPF v26.8.0.
+  #
+  # Pick the deployment mode with the "Deployment Mode" preset group:
+  #   Host Trusted         - host is a cluster worker, BFB via host rshim (default below)
+  #   Zero Trust           - BMC/Redfish install, DPUDiscovery crawler creates DPUNodes
+  #                          (NVIDIA zero-trust passthrough reference)
+  #   Zero Trust - Hostless - BMC/Redfish install, no host node, hand-declared DPUDevices
+  #                          labelled provisioning.dpu.nvidia.com/hostless=true
+  # deploymentMode is REQUIRED and IMMUTABLE in 26.8: once the CR exists the mode
+  # cannot change without deleting the CR and reprovisioning every DPU.
+  # ---------------------------------------------------------------------------
+  dpf-operator-config:
+    deploymentMode: host-trusted
+    # Host Trusted keeps the DPU detector (host rshim/DMS path). The Zero Trust
+    # presets set disable: true.
+    dpuDetector:
+      disable: false
+    #imagePullSecrets:
+    #  - dockerio-secret
+    overrides:
+      # "auto" looks up the API server VIP from the kube-public/cluster-info
+      # ConfigMap (kubeadm/CAPI clusters). RKE2 edge clusters have NO cluster-info
+      # ConfigMap (verified 2026-11-01), so "auto" renders empty there and DPF
+      # (zero-trust requires this field) stalls: on Palette agent/appliance (edge)
+      # mode use "{{ .spectro.system.cluster.kubevip }}".
+      kubernetesAPIServerVIP: "auto"
+      kubernetesAPIServerPort: 6443
+    provisioningController:
+      dmsTimeout: 900
+      # Zero Trust only (set by the Zero Trust presets): installInterface.installViaRedfish.
+      # 26.8 CEL: zero-trust REQUIRES installViaRedfish, host-trusted FORBIDS it.
+      # bfbPVCName (optional): a PVC YOU create for BFB storage; unset = host
+      # storage, as in NVIDIA's references.
+      #bfbPVCName: "bfb-pvc"
+    kamajiClusterManager:
+      disable: false
+    # Host Trusted (NVIDIA hbn-ovnk reference): DPF's SR-IOV device plugin for host VFs.
+    nodeSRIOVDevicePluginController:
+      disable: false
+    networking:
+      # CRD defaults, kept by NVIDIA's references. Zero Trust caps controlPlaneMTU
+      # at 1500 (26.8 CEL: DPU OOB is 1 GbE, no jumbo).
+      controlPlaneMTU: 1500
+      highSpeedMTU: 1500
+    # DPU-cluster monitoring: see the "DPU Cluster Monitoring" preset group.
+    # Empty = DPF default (kube-state-metrics + node-problem-detector, no OTEL).
+    monitoring: {}
+    # New DPFOperatorConfig.spec fields in v26.8.0 (set only if needed):
+    #coreDNS: {}        # DPU-cluster CoreDNS on the host cluster; enabled by default
+    #security: {}       # kata, spiffe (zero-trust only), vaultKMS, privilegedPodEnforcement (default true)
+    # Optional on single-node clusters: 26.8 raised these replica defaults to 2
+    # (preferred anti-affinity, so one node still schedules both):
+    #dpuServiceController: {replicas: 1}
+    #serviceSetController: {replicas: 1}
+    #staticClusterManager: {replicas: 1}
+    #nvipam: {replicas: 1}
+    #nodeSRIOVDevicePluginController: {disable: false, replicas: 1}
+
+  # ---------------------------------------------------------------------------
+  # dpf-operator  (upstream NVIDIA chart, v26.8.0)
+  # ---------------------------------------------------------------------------
+  dpf-operator:
+    controllerManager:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      image:
+        repository: "nvcr.io/nvidia/doca/dpf-system"
+        tag: "v26.8.0"
+      replicas: 1
+      # New in the 26.8 chart. Only ConfigPortsOverHighSpeed (alpha, OVN-K only)
+      # is settable here; see the chart values.yaml.
+      featureGates: {}
+      serviceAccount:
+        annotations: {}
+    imagePullSecrets: []
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: Exists
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    ## New in the 26.8 chart: ValidatingAdmissionPolicies that WARN (never block)
+    ## when deprecated CR fields are set. Needs admissionregistration.k8s.io/v1
+    ## ValidatingAdmissionPolicy (K8s >= 1.30; DPF 26.8 needs >= 1.33 anyway).
+    deprecationWarnings:
+      enabled: true
+    ## enableNodeFeatureRules decides whether additional NodeFeatureRules for DPF will be created.
+    ## Note: NFD must be installed (see nvidia-dpf-prereqs pack) to support this.
+    ## Zero Trust presets set this to false: the dpu-detection-rule re-labels any host
+    ## with a BlueField dpu-enabled, which brings back the host rshim/DMS pod that
+    ## steals rshim from the DPU BMC (still true in 26.8).
+    enableNodeFeatureRules: true
+    ## IsOpenShift templates OpenShift-only resources (e.g. SCC ClusterRoleBindings).
+    isOpenshift: false
+    ## kube-state-metrics custom-resource-state metrics for DPF CRs.
+    kubeStateMetricsCRDMetrics:
+      enabled: true
+    ## Grafana dashboards for the DPF Operator.
+    grafanaDashboards:
+      enabled: true
+    ## Secure metrics endpoint for Prometheus scraping.
+    prometheusSecureMetrics:
+      enabled: true
+    ## etcd-defrag CronJob for the Kamaji-hosted DPUCluster etcd.
+    kamajiEtcdDefrag:
+      enabled: true
+      releaseName: kamaji-etcd
+      replicas: 3
+      clientPort: 2379
+      schedule: 0 0 * * *
+      image: ghcr.io/ahrtr/etcd-defrag:v0.22.0
+      defragRule: "dbQuotaUsage > 0.8 || dbSize - dbSizeInUse > 200*1024*1024"
+      successfulJobsHistoryLimit: 3
+      backoffLimit: 6

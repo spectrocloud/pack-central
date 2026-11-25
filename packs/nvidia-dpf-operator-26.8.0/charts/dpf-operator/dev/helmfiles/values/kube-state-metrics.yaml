@@ -1,0 +1,77 @@
+# Kube State Metrics configuration
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/master"
+              operator: Exists
+        - matchExpressions:
+            - key: "node-role.kubernetes.io/control-plane"
+              operator: Exists
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+extraArgs:
+  - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+  - --metric-labels-allowlist=pods=[svc.dpu.nvidia.com/service],daemonsets=[svc.dpu.nvidia.com/service],deployments=[svc.dpu.nvidia.com/service]
+# Only run the collectors for resources that are relevant for observing DPF.
+# These are all low-cardinality; the pod metrics are the main cardinality
+# driver and are further filtered in the ServiceMonitor. The DPF resource
+# state metrics come from the custom resource state config and are not
+# affected by this list.
+collectors:
+  - cronjobs
+  - daemonsets
+  - deployments
+  - endpoints
+  - jobs
+  - namespaces
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - replicasets
+  - resourcequotas
+  - services
+  - statefulsets
+volumes:
+  - configMap:
+      defaultMode: 420
+      name: dpf-operator-customresourcestate-config
+    name: customresourcestate-config
+volumeMounts:
+  - mountPath: /etc/customresourcestate
+    name: customresourcestate-config
+    readOnly: true
+prometheus:
+  monitor:
+    enabled: true
+    http:
+      honorLabels: true
+      # Keep the DPF custom resource state metrics and the kube_* metrics of
+      # the low-cardinality resources. Pod metrics are the main cardinality
+      # driver and are limited to the ones consumed by the DPF dashboards and
+      # alert/recording rules.
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          action: keep
+          regex: dpf_(bfb|dpfoperatorconfig|dpu[a-z]*)_.+|kube_pod_info|kube_pod_labels|kube_pod_status_phase|kube_pod_status_ready|kube_pod_container_info|kube_pod_container_status_restarts_total|kube_pod_container_status_waiting_reason|kube_(cronjob|daemonset|deployment|endpoint|job|namespace|node|persistentvolumeclaim|persistentvolume|replicaset|resourcequota|service|statefulset)(_.+)?
+rbac:
+  extraRules:
+    - apiGroups:
+        - svc.dpu.nvidia.com
+        - operator.dpu.nvidia.com
+        - provisioning.dpu.nvidia.com
+        - storage.dpu.nvidia.com
+        - vpc.dpu.nvidia.com
+      resources:
+        - '*'
+      verbs: ["list", "watch"]
+    - apiGroups: ["apiextensions.k8s.io"]
+      resources: ["customresourcedefinitions"]
+      verbs: ["list", "watch"]
