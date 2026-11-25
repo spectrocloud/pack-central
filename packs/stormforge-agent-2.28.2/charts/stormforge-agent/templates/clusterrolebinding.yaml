@@ -1,0 +1,51 @@
+{{- if .Values.rbac.create -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "stormforge-agent.fullname" . }}
+  labels:
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "stormforge-agent.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "stormforge-agent.fullname" . }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-crd" (include "stormforge-agent.fullname" .) }}
+  labels:
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "stormforge-agent.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ printf "%s-crd" (include "stormforge-agent.fullname" .) }}
+
+{{ if .Values.rbac.useViewRole -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "stormforge-agent.roleBindingViewName" . }}
+  labels:
+    {{- include "stormforge-agent.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "stormforge-agent.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+{{- end }}
+{{- end }}

@@ -1,0 +1,53 @@
+{{ if .Values.networkPolicies.create -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-workload-controller" (include "stormforge-agent.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  policyTypes:
+  - Ingress
+  {{- if .Values.networkPolicies.additionalEgressRules }}
+  - Egress
+  {{- end }}
+  podSelector:
+    matchLabels: {{- include "stormforge-agent.agentSelectorLabels" . | nindent 6 }}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Release.Namespace }}
+      podSelector:
+        matchLabels: {{- include "stormforge-agent.metricsForwarderSelectorLabels" . | nindent 10 }}
+  {{- with .Values.networkPolicies.additionalIngressRules }}
+  {{- . | toYaml | nindent 2 }}
+  {{- end }}
+  {{- with .Values.networkPolicies.additionalEgressRules }}
+  egress: {{- . | toYaml | nindent 2 }}
+  {{- end }}
+{{- if or .Values.networkPolicies.additionalIngressRules .Values.networkPolicies.additionalEgressRules }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-metrics-forwarder" (include "stormforge-agent.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  policyTypes:
+  {{- if .Values.networkPolicies.additionalIngressRules }}
+  - Ingress
+  {{- end }}
+  {{- if .Values.networkPolicies.additionalEgressRules }}
+  - Egress
+  {{- end }}
+  podSelector:
+    matchLabels: {{- include "stormforge-agent.metricsForwarderSelectorLabels" . | nindent 6 }}
+  {{- with .Values.networkPolicies.additionalIngressRules }}
+  ingress: {{- . | toYaml | nindent 2 }}
+  {{- end }}
+  {{- with .Values.networkPolicies.additionalEgressRules }}
+  egress: {{- . | toYaml | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
