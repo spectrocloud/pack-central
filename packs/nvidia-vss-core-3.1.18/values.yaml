@@ -1,0 +1,138 @@
+# spectrocloud.com/enabled-presets: VSS Platform:DGX-SPARK
+#
+# ┌─ VSS 3.x PLATFORM MATRIX (canonical — keep identical across all VSS 3.x packs) ─
+# │ Set ONE profile variable VSS_PLATFORM and select the matching "VSS Platform"
+# │ preset in every VSS 3.x pack. In 3.x ALL FIVE packs are in every profile
+# │ (data-infrastructure + nims + vllm + core + ingress) — the vLLM pack is the LLM
+# │ for all platforms (no NIM-LLM in 3.x), so there is no include/omit hazard.
+# │ 3.x decode is NATIVE (VIOS/rt-cv); there is NO --disable-decoding.
+# │
+# │ Platform          LLM (vLLM model)        VLM            decode   vss-core tags
+# │ DGX-SPARK         nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0-sbsa
+# │ OTHER             nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0
+# │ H100              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ L40S              nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ RTXPRO6000BW      nemotron-nano-9b-v2-fp8 cosmos NIM     dGPU     3.1.0 (x86)
+# │ AGX-THOR/IGX-THOR nano-9b-fp8 (jetson img) rt-vlm        Tegra*   3.1.0 + runtimeClassName
+# │ * Tegra: runtimeClassName nvidia via extraPodSpecs; NVIDIA container runtime injects L4T.
+# │ Only DGX-SPARK is the migration target; all rows UNVALIDATED (no hardware, unverified tags).
+# └──────────────────────────────────────────────────────────────────────────────
+#
+# NVIDIA VSS 3.x core — decomposed application microservices (manifest-only pack).
+# Manifests are Go-templated against the top-level value keys below
+# (.Values.namespace, .Values.vssAgent.*, .Values.vssAgentUi.*,
+#  .Values.vssViosSensor.*, .Values.vssViosStreamprocessing.*, .Values.vssViosMcp.*).
+#
+# install-priority 15 → after data-infrastructure (5, creates hf-token-secret),
+# nims (10), and vllm (12), before ingress (18). The "VSS Platform" presets flip
+# the imageTag of the two services that ship a -sbsa variant (vss-vios-sensor +
+# vss-vios-streamprocessing) to 3.1.0-sbsa on DGX-SPARK; vss-agent/ui/mcp are
+# multiarch 3.1.0 (no -sbsa) so their tag is constant across platforms.
+
+pack:
+  namespace: nvidia-vss
+  spectrocloud.com/install-priority: "15"
+  content:
+    images:
+      # BUILD-ON-DEPLOY (0/0): only public wolfi-base is pack content. All 7 gated nvcr
+      # vss-core images are crane-fetched as runtime DATA at deploy and run on wolfi-base
+      # via the matched-ld swap (CPU services GB10-validated: nat/node/python; GPU VST
+      # services author-equivalent, live validation pending a free GPU slot).
+      - image: cgr.dev/chainguard/wolfi-base:latest
+
+# Shared namespace (every manifest renders metadata.namespace from this).
+namespace: nvidia-vss
+
+# Public 0/0 base that crane-fetches + runs the gated vss-core binaries at deploy.
+baseImage: cgr.dev/chainguard/wolfi-base:latest
+
+# ── vss-agent — orchestrator (Service "vss-agent":8000) ───────────────────────────
+vssAgent:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-agent:3.1.0
+  # Multiarch image, no -sbsa variant.
+  imageTag: "3.1.0"
+  # Path the agent reads its config from (mountPath/config.yml). The compose value
+  # was a host path under MDX_SAMPLE_APPS_DIR (dev-profile-base/vss-agent/configs/config.yml).
+  # TODO(verify): confirm the in-cluster VSS_AGENT_CONFIG_FILE path for the edge/k8s deploy.
+  configFile: "/vss-agent/configs/config.yml"
+  configDir: "/vss-agent/configs"
+  # URL rewriting / NAT. EXTERNAL_IP is the node's browser-reachable address; on a
+  # single-node edge box this is the node IP. TODO(verify): set to the node's reachable
+  # IP (or an ingress address) at deploy time — ClusterIP DNS is not browser-reachable.
+  externalIp: ""
+  hostIp: ""
+  llmMode: "openai"
+  vlmMode: "nim"
+  llmModelType: "openai"
+  vlmModelType: "nim"
+  # Phoenix telemetry — data-infra ClusterIP "phoenix":6006.
+  phoenixEndpoint: "http://phoenix:6006"
+  # VST endpoints — in-cluster Service DNS (this pack's services + ingress pack).
+  # TODO(verify): VST_INTERNAL_URL was the VST ingress data plane in compose; confirm
+  #   it targets the ingress pack's vst service (e.g. http://vss-vios-ingress:30888) vs sensor.
+  vstInternalUrl: "http://vss-vios-ingress:30888"
+  vstMcpUrl: "http://vst-mcp:8001"
+  # LLM endpoint — vllm pack (Service llm-nim-svc:8000, OpenAI API). vLLM advertises
+  # the model id EXACTLY as the vllm pack's hfModel (no --served-model-name override),
+  # so this MUST match nvidia-vss-vllm-3.1.0 manifests.llm-vllm.hfModel verbatim.
+  llmName: "nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8"
+  llmBaseUrl: "http://llm-nim-svc:8000"
+  # VLM endpoint — nims pack cosmos NIM (Service cosmos-reason2-8b, port servicePort=30082).
+  vlmName: "nvidia/cosmos-reason2-8b"
+  vlmBaseUrl: "http://cosmos-reason2-8b:30082"
+  # rtvi VLM base URL (rt-vlm path; not in base — rtvi-embed is SEARCH-only/disabled).
+  # Points at the rtvi-embed Service port (8017). TODO(verify): rt-vlm vs rt-embed target.
+  rtviVlmBaseUrl: "http://rtvi-embed:8017/v1"
+  # 3.x agent object store default is in_memory (no MinIO in the 3.x data layer).
+  objectStoreType: "local_object_store"
+  streamMode: "other"
+
+# ── vss-agent-ui — web UI (Service "vss-agent-ui":3000) ───────────────────────────
+vssAgentUi:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-agent-ui:3.1.0
+  # Multiarch image, no -sbsa variant.
+  imageTag: "3.1.0"
+  appTitle: "NVIDIA VSS"
+  appSubtitle: "Video Search and Summarization"
+  # Browser-facing endpoints. In compose these used EXTERNAL_IP (node IP). In k8s they
+  # must resolve from the user's browser, so they need a NodePort/LoadBalancer/ingress
+  # address — NOT ClusterIP service DNS.
+  # TODO(verify): set these to the node-reachable agent + VST addresses at deploy time.
+  wsAgentUrl: ""
+  httpAgentUrl: ""
+  agentApiUrlBase: ""
+  vstApiUrl: ""
+
+# ── vss-vios-sensor — VST sensor microservice (Service "sensor-ms":30000) ─────────
+# HAS a -sbsa variant: DGX-SPARK preset flips imageTag to 3.1.0-sbsa.
+vssViosSensor:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-sensor:3.1.0-sbsa
+  imageTag: "3.1.0-sbsa"
+  # Stream processor module endpoint — compose pointed at http://HOST_IP:10000; here
+  # the in-cluster streamprocessing Service. TODO(verify): port — compose used 10000,
+  #   the streamprocessing Service exposes 30001; confirm which the sensor expects.
+  streamProcessorModuleEndpoint: "http://streamprocessing-ms:30001"
+
+# ── vss-vios-streamprocessing — NVDEC/DeepStream decode (Service "streamprocessing-ms":30001/30554) ─
+# HAS a -sbsa variant: DGX-SPARK preset flips imageTag to 3.1.0-sbsa.
+vssViosStreamprocessing:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-streamprocessing:3.1.0-sbsa
+  imageTag: "3.1.0-sbsa"
+  sensorModuleEndpoint: "http://sensor-ms:30000"
+  # VST ingress data plane — ingress pack. TODO(verify): confirm the ingress Service/port.
+  vstIngressEndpoint: "http://vss-vios-ingress:30888"
+
+# ── vss-vios-mcp — VST MCP gateway (Service "vst-mcp":8001) ───────────────────────
+# Multiarch, no -sbsa variant (tag kept for uniformity).
+vssViosMcp:
+  gatedImage: nvcr.io/nvidia/vss-core/vss-vios-mcp:3.1.0
+  imageTag: "3.1.0"
+  # CPP API base → VST ingress data plane (/vst on 30888). TODO(verify): confirm target.
+  cppApiBaseUrl: "http://vss-vios-ingress:30888"
+
+# NOTE: the vst-config ConfigMap (mounted by sensor + streamprocessing) and the
+# vss-agent-config ConfigMap (config.yml) are NOT fabricated here — the manifests
+# carry placeholder/optional ConfigMaps. The real VST configs tree (vst_config_*.json)
+# and the agent config.yml / config_edge.yml must be populated from the upstream
+# NVIDIA-AI-Blueprints/video-search-and-summarization repo before a working deploy.
+# TODO(verify): inline those blobs (see the TODO notes in each manifest).

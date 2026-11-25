@@ -1,0 +1,3 @@
+# NVIDIA VSS Core (vss-agent + VST vios)
+
+NVIDIA VSS 3.x core — the decomposed VSS application microservices: vss-agent (orchestrator), vss-agent-ui (web UI), the VST vios sensor and stream-processing/decode microservices, and the VST MCP gateway. Manifest-only pack; references the ngc-pull-secret / hf-token-secret created by the data-infrastructure pack and reaches the LLM (vllm pack) and VLM/embed (nims pack) by in-cluster Service DNS. vss-vios-sensor and vss-vios-streamprocessing have a 3.1.0-sbsa variant (DGX-SPARK); vss-agent/ui/mcp are multiarch 3.1.0. install-priority 15. Part of the VSS 3.x five-pack set (data-infrastructure + nims + vllm + core + ingress); all five belong in every profile.
