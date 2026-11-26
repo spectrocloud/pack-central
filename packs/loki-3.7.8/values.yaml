@@ -51,10 +51,6 @@ charts:
       storage:
         type: s3
 
-        bucketNames:
-          chunks: FIXME
-          ruler: FIXME
-
         s3:
           endpoint: FIXME
           accessKeyId: FIXME
