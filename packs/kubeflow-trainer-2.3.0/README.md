@@ -1,0 +1,191 @@
+# kubeflow-trainer
+
+![Version: 2.3.0](https://img.shields.io/badge/Version-2.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+
+A Helm chart for deploying Kubeflow Trainer on Kubernetes.
+
+**Homepage:** <https://github.com/kubeflow/trainer>
+
+## Introduction
+
+This chart bootstraps a [Kubernetes Trainer](https://github.com/kubeflow/trainer) deployment using the [Helm](https://helm.sh) package manager.
+
+## Prerequisites
+
+- Helm >= 3
+- Kubernetes >= 1.31
+
+## Usage
+
+### Install the Helm Chart
+
+Install the released version:
+
+```bash
+export VERSION=v2.1.0
+helm install kubeflow-trainer oci://ghcr.io/kubeflow/charts/kubeflow-trainer \
+    --namespace kubeflow-system \
+    --create-namespace \
+    --version ${VERSION#v}
+```
+
+For the latest changes run
+([where `48e7a93`](https://github.com/kubeflow/trainer/commit/48e7a93) is the desired commit):
+
+```bash
+helm install kubeflow-trainer oci://ghcr.io/kubeflow/charts/kubeflow-trainer \
+    --namespace kubeflow-system \
+    --create-namespace \
+    --version 0.0.0-sha-48e7a93
+```
+
+> [!NOTE]
+> The Trainer CRDs (`TrainJob`, `TrainingRuntime`, `ClusterTrainingRuntime`) are installed by the chart by default.
+> If you manage the CRDs out-of-band (previously via Helm's `--skip-crds` flag), set `--set crds.enabled=false` to skip
+> installing them with the chart.
+
+### Install with ClusterTrainingRuntimes
+
+You can enable the default ClusterTrainingRuntimes together with the control plane in a single
+step. A post-install Helm hook applies the runtimes once the CRDs and controller are ready:
+
+```bash
+helm install kubeflow-trainer oci://ghcr.io/kubeflow/charts/kubeflow-trainer \
+    --namespace kubeflow-system \
+    --create-namespace \
+    --version ${VERSION#v} \
+    --set runtimes.defaultEnabled=true
+```
+
+To enable specific runtimes instead of all of them:
+
+```bash
+helm install kubeflow-trainer oci://ghcr.io/kubeflow/charts/kubeflow-trainer \
+    --namespace kubeflow-system \
+    --create-namespace \
+    --version ${VERSION#v} \
+    --set runtimes.torchDistributed.enabled=true \
+    --set runtimes.deepspeedDistributed.enabled=true
+```
+
+You can also enable runtimes on an existing installation with `helm upgrade` using the same
+`--set` flags. The hook reconciles runtimes on every upgrade: newly enabled runtimes are applied
+and disabled ones are removed. Disabling *all* runtimes removes the installer itself, so in that
+case delete any remaining runtimes manually or with `helm uninstall`.
+
+### Uninstall the chart
+
+```shell
+helm uninstall [RELEASE_NAME]
+```
+
+This removes all the Kubernetes resources associated with the chart and deletes the release, except for the `crds`, those will have to be removed manually.
+
+See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall) for command documentation.
+
+### Istio sidecar configuration
+
+If you are running Istio and need to exclude the manager webhook port from sidecar interception, configure the annotation via `manager.podAnnotations`:
+
+```yaml
+manager:
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "9443"
+```
+
+## Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| nameOverride | string | `""` | String to partially override release name. |
+| fullnameOverride | string | `""` | String to fully override release name. |
+| crds.enabled | bool | `true` | Whether to install the Trainer CRDs (TrainJob, TrainingRuntime, ClusterTrainingRuntime) with the chart. Set to `false` if you manage the CRDs outside of the chart (for example, applying them separately). This replaces Helm's built-in `--skip-crds` flag, which no longer applies now that the CRDs are chart templates. |
+| jobset.install | bool | `true` | Whether to install jobset as a dependency managed by trainer. This must be set to `false` if jobset controller/webhook has already been installed into the cluster. |
+| jobset.fullnameOverride | string | `"jobset"` | String to fully override jobset release name. |
+| commonLabels | object | `{}` | Common labels to add to the resources. |
+| image.registry | string | `"ghcr.io"` | Image registry. |
+| image.repository | string | `"kubeflow/trainer/trainer-controller-manager"` | Image repository. |
+| image.tag | string | `""` | Image tag. Defaults to the chart version formatted for the appropriate image tag. |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| image.pullSecrets | list | `[]` | Image pull secrets for private image registry. |
+| manager.replicas | int | `1` | Number of replicas of manager. |
+| manager.selectorLabels | object | `{}` | Selector labels for the manager Deployment and pods. These labels are used for both `spec.selector.matchLabels` and `spec.template.metadata.labels`. NOTE: Deployment selectors are immutable once created. |
+| manager.podAnnotations | object | `{}` | Pod annotations applied to manager pods. |
+| manager.labels | object | `{}` | Extra labels for manager resources (including the Deployment and pods). |
+| manager.volumes | list | `[]` | Volumes for manager pods. |
+| manager.nodeSelector | object | `{}` | Node selector for manager pods. |
+| manager.affinity | object | `{}` | Affinity for manager pods. |
+| manager.tolerations | list | `[]` | List of node taints to tolerate for manager pods. |
+| manager.env | list | `[]` | Environment variables for manager containers. |
+| manager.envFrom | list | `[]` | Environment variable sources for manager containers. |
+| manager.volumeMounts | list | `[]` | Volume mounts for manager containers. |
+| manager.resources | object | `{}` | Pod resource requests and limits for manager containers. |
+| manager.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for manager containers. |
+| manager.config | object | `{"certManagement":{"enable":true,"webhookSecretName":"","webhookServiceName":""},"clientConnection":{"burst":100,"qps":50},"controller":{"groupKindConcurrency":{"clusterTrainingRuntime":1,"trainJob":5,"trainingRuntime":1}},"featureGates":{},"health":{"healthProbeBindAddress":":8081","livenessEndpointName":"healthz","readinessEndpointName":"readyz"},"leaderElection":{"leaderElect":true,"leaseDuration":"15s","renewDeadline":"10s","resourceName":"trainer.kubeflow.org","resourceNamespace":"","retryPeriod":"2s"},"metrics":{"bindAddress":":8443","secureServing":true},"statusServer":{"burst":10,"port":10443,"qps":5},"webhook":{"host":"","port":9443}}` | Controller manager configuration. This configuration is used to generate the ConfigMap for the controller manager. |
+| manager.config.clientConnection.qps | int | `50` | QPS rate limit for the manager's Kubernetes API client. Accepts fractional values (e.g. 0.5). |
+| manager.config.clientConnection.burst | int | `100` | Burst rate limit for the manager's Kubernetes API client |
+| manager.config.statusServer.port | int | `10443` | Port that the TrainJob status server serves on. |
+| manager.config.statusServer.qps | int | `5` | QPS rate limit for the TrainJob Status Server api client |
+| manager.config.statusServer.burst | int | `10` | Burst rate limit for the TrainJob Status Server api client |
+| webhook.failurePolicy | string | `"Fail"` | Specifies how unrecognized errors are handled. Available options are `Ignore` or `Fail`. |
+| dataCache.enabled | bool | `false` | Enable/disable data cache support (LWS dependency, ClusterRole). Set to `true` to install data cache components. |
+| dataCache.lws.install | bool | `true` | Whether to install LeaderWorkerSet as a dependency. Set to `false` if LeaderWorkerSet is already installed in the cluster. |
+| dataCache.lws.fullnameOverride | string | `"lws"` | String to fully override LeaderWorkerSet release name. |
+| dataCache.cacheImage.registry | string | `"ghcr.io"` | Data cache image registry |
+| dataCache.cacheImage.repository | string | `"kubeflow/trainer/data-cache"` | Data cache image repository |
+| dataCache.cacheImage.tag | string | `""` | Data cache image tag. Defaults to chart version if empty. |
+| dataCache.runtimes.torchDistributedWithCache | object | `{"enabled":false}` | PyTorch distributed training with data cache support |
+| dataCache.runtimes.torchDistributedWithCache.enabled | bool | `false` | Enable deployment of torch-distributed-with-cache runtime |
+| runtimes | object | `{"commonLabels":{"trainer.kubeflow.org/webhook-validation":"disabled"},"deepspeedDistributed":{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/deepspeed-runtime","tag":""}},"defaultEnabled":false,"installer":{"affinity":{},"image":{"registry":"docker.io","repository":"alpine","tag":"3.21"},"imagePullSecrets":[],"nodeSelector":{},"resources":{},"tolerations":[]},"jaxDistributed":{"enabled":false},"mlxDistributed":{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/mlx-runtime","tag":""}},"torchDistributed":{"enabled":false},"torchtuneDistributed":{"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/torchtune-trainer","tag":""},"llama3_2_1B":{"enabled":false},"llama3_2_3B":{"enabled":false},"qwen2_5_1_5B":{"enabled":false}},"xgboostDistributed":{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/xgboost-runtime","tag":""}}}` | ClusterTrainingRuntimes configuration These are optional runtime templates that can be deployed with the Helm chart. Each runtime provides a blueprint for different ML frameworks and configurations. |
+| runtimes.defaultEnabled | bool | `false` | Enable all default runtimes (torch, deepspeed, mlx, jax, torchtune) when set to true. Individual runtime settings will be ignored if this is enabled. |
+| runtimes.commonLabels | object | `{"trainer.kubeflow.org/webhook-validation":"disabled"}` | Common labels applied to every built-in runtime. The built-in ClusterTrainingRuntime are validated ahead of time. |
+| runtimes.installer | object | `{"affinity":{},"image":{"registry":"docker.io","repository":"alpine","tag":"3.21"},"imagePullSecrets":[],"nodeSelector":{},"resources":{},"tolerations":[]}` | Configuration for the runtimes installer. The built-in runtimes are applied by a post-install/post-upgrade Helm hook Job so that the ClusterTrainingRuntime CRD is registered before the runtimes are created. The same Job re-applies (server-side) the runtimes on `helm upgrade`. |
+| runtimes.installer.image.registry | string | `"docker.io"` | Installer image registry. The image only needs a shell and a package manager; `kubectl` is installed by the Job at runtime. |
+| runtimes.installer.image.repository | string | `"alpine"` | Installer image repository. |
+| runtimes.installer.image.tag | string | `"3.21"` | Installer image tag. |
+| runtimes.installer.imagePullSecrets | list | `[]` | Image pull secrets for the installer Job. |
+| runtimes.installer.resources | object | `{}` | Pod resource requests and limits for the installer Job. |
+| runtimes.installer.nodeSelector | object | `{}` | Node selector for the installer Job pods. |
+| runtimes.installer.affinity | object | `{}` | Affinity for the installer Job pods. |
+| runtimes.installer.tolerations | list | `[]` | Tolerations for the installer Job pods. |
+| runtimes.torchDistributed | object | `{"enabled":false}` | PyTorch distributed training runtime (no custom images required) |
+| runtimes.torchDistributed.enabled | bool | `false` | Enable deployment of torch-distributed runtime |
+| runtimes.deepspeedDistributed | object | `{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/deepspeed-runtime","tag":""}}` | DeepSpeed distributed training runtime |
+| runtimes.deepspeedDistributed.enabled | bool | `false` | Enable deployment of deepspeed-distributed runtime |
+| runtimes.deepspeedDistributed.image.registry | string | `"ghcr.io"` | DeepSpeed runtime image registry |
+| runtimes.deepspeedDistributed.image.repository | string | `"kubeflow/trainer/deepspeed-runtime"` | DeepSpeed runtime image repository |
+| runtimes.deepspeedDistributed.image.tag | string | `""` | DeepSpeed runtime image tag. Defaults to chart version if empty. |
+| runtimes.mlxDistributed | object | `{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/mlx-runtime","tag":""}}` | MLX distributed training runtime |
+| runtimes.mlxDistributed.enabled | bool | `false` | Enable deployment of mlx-distributed runtime |
+| runtimes.mlxDistributed.image.registry | string | `"ghcr.io"` | MLX runtime image registry |
+| runtimes.mlxDistributed.image.repository | string | `"kubeflow/trainer/mlx-runtime"` | MLX runtime image repository |
+| runtimes.mlxDistributed.image.tag | string | `""` | MLX runtime image tag. Defaults to chart version if empty. |
+| runtimes.jaxDistributed | object | `{"enabled":false}` | JAX distributed training runtime (no custom images required) |
+| runtimes.jaxDistributed.enabled | bool | `false` | Enable deployment of jax-distributed runtime |
+| runtimes.xgboostDistributed | object | `{"enabled":false,"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/xgboost-runtime","tag":""}}` | XGBoost distributed training runtime |
+| runtimes.xgboostDistributed.enabled | bool | `false` | Enable deployment of xgboost-distributed runtime |
+| runtimes.xgboostDistributed.image.registry | string | `"ghcr.io"` | XGBoost runtime image registry |
+| runtimes.xgboostDistributed.image.repository | string | `"kubeflow/trainer/xgboost-runtime"` | XGBoost runtime image repository |
+| runtimes.xgboostDistributed.image.tag | string | `""` | XGBoost runtime image tag. Defaults to chart version if empty. |
+| runtimes.torchtuneDistributed | object | `{"image":{"registry":"ghcr.io","repository":"kubeflow/trainer/torchtune-trainer","tag":""},"llama3_2_1B":{"enabled":false},"llama3_2_3B":{"enabled":false},"qwen2_5_1_5B":{"enabled":false}}` | TorchTune distributed training runtime |
+| runtimes.torchtuneDistributed.image.registry | string | `"ghcr.io"` | TorchTune runtime image registry |
+| runtimes.torchtuneDistributed.image.repository | string | `"kubeflow/trainer/torchtune-trainer"` | TorchTune runtime image repository |
+| runtimes.torchtuneDistributed.image.tag | string | `""` | TorchTune runtime image tag. Defaults to chart version if empty. |
+| runtimes.torchtuneDistributed.llama3_2_1B | object | `{"enabled":false}` | Llama 3.2 1B model configuration |
+| runtimes.torchtuneDistributed.llama3_2_1B.enabled | bool | `false` | Enable deployment of Llama 3.2 1B runtime |
+| runtimes.torchtuneDistributed.llama3_2_3B | object | `{"enabled":false}` | Llama 3.2 3B model configuration |
+| runtimes.torchtuneDistributed.llama3_2_3B.enabled | bool | `false` | Enable deployment of Llama 3.2 3B runtime |
+| runtimes.torchtuneDistributed.qwen2_5_1_5B | object | `{"enabled":false}` | Qwen 2.5 1.5B model configuration |
+| runtimes.torchtuneDistributed.qwen2_5_1_5B.enabled | bool | `false` | Enable deployment of Qwen 2.5 1.5B runtime |
+
+## Maintainers
+
+| Name | Url |
+| ---- | --- |
+| andreyvelich | <https://github.com/andreyvelich> |
+| ChenYi015 | <https://github.com/ChenYi015> |
+| gaocegege | <https://github.com/gaocegege> |
+| Jeffwan | <https://github.com/Jeffwan> |
+| johnugeorge | <https://github.com/johnugeorge> |
+| tenzen-y | <https://github.com/tenzen-y> |
+| terrytangyuan | <https://github.com/terrytangyuan> |

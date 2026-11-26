@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 1.5.1-rc.1
+description: Fleet Intelligence Agent daemonset
+name: fleet-intelligence-agent
+type: application
+version: 1.5.1-rc.1

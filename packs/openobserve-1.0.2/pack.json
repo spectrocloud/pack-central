@@ -1,0 +1,39 @@
+{
+  "addonType": "monitoring",
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "OpenObserve",
+  "charts": [
+    "charts/openobserve-1.0.2.tgz"
+  ],
+  "kubeManifests": [
+    "manifests/cluster-level.yaml",
+    "manifests/namespace-level.yaml",
+    "manifests/pod-level.yaml",
+    "manifests/pods.yaml",
+    "manifests/objects.yaml",
+    "manifests/spectro-clusters.yaml",
+    "manifests/dashboard-import-job.yaml"
+  ],
+  "layer": "addon",
+  "name": "openobserve",
+  "version": "1.0.2",
+  "annotations": {
+    "source": "community",
+    "architecture": "amd64,arm64",
+    "airgap": "true",
+    "revision": "20260930"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.29",
+        "maxVersion": "",
+        "type": "optional"
+      }
+    ]
+  }
+}

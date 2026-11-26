@@ -1,0 +1,210 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "fleet-intelligence-agent.fullname" . }}
+  labels:
+    {{- include "fleet-intelligence-agent.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "fleet-intelligence-agent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "fleet-intelligence-agent.selectorLabels" . | nindent 8 }}
+    spec:
+      hostPID: {{ .Values.hostPID }}
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
+      {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name | quote }}
+      {{- else if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "fleet-intelligence-agent.fullname" . }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.enroll.enabled .Values.enroll.unenroll }}
+      {{- fail "enroll.enabled and enroll.unenroll cannot both be true" }}
+      {{- end }}
+      {{- if or .Values.enroll.enabled .Values.enroll.unenroll }}
+      initContainers:
+      {{- if .Values.enroll.enabled }}
+        - name: enroll
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - >
+              /usr/bin/fleetint enroll
+              --endpoint {{ required "enroll.endpoint is required when enroll.enabled=true" .Values.enroll.endpoint | quote }}
+              --token "${FLEETINT_TOKEN}"
+              {{- if .Values.enroll.force }}
+              --force
+              {{- end }}
+              {{- if hasKey .Values.enroll "nodeGroup" }}
+              --node-group {{ .Values.enroll.nodeGroup | quote }}
+              {{- end }}
+              {{- if hasKey .Values.enroll "computeZone" }}
+              --compute-zone {{ .Values.enroll.computeZone | quote }}
+              {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- range $name, $value := .Values.env }}
+            {{- if ne (toString $value) "" }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+            - name: FLEETINT_TOKEN
+              {{- if .Values.enroll.tokenSecretName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.enroll.tokenSecretName | quote }}
+                  key: {{ .Values.enroll.tokenSecretKey | quote }}
+              {{- else }}
+              value: {{ required "enroll.tokenValue or enroll.tokenSecretName is required when enroll.enabled=true" .Values.enroll.tokenValue | quote }}
+              {{- end }}
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: os-release
+              mountPath: /etc/os-release
+              readOnly: true
+            - name: machine-id
+              mountPath: /etc/machine-id
+              readOnly: true
+            - name: state
+              mountPath: /var/lib/fleetint
+      {{- else if .Values.enroll.unenroll }}
+        - name: unenroll
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/bin/fleetint
+          args:
+            - unenroll
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+            - name: state
+              mountPath: /var/lib/fleetint
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: fleet-intelligence-agent
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - run
+            - {{ printf "--log-level=%s" .Values.logLevel | quote }}
+            - {{ printf "--listen-address=%s" .Values.listenAddress | quote }}
+            - {{ printf "--retention-period=%s" .Values.retentionPeriod | quote }}
+            - {{ printf "--components=%s" .Values.components | quote }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- range $name, $value := .Values.env }}
+            {{- if ne (toString $value) "" }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: IS_RUNTIME_K8S
+              value: "true"
+            {{- if .Values.otelGateway.enabled }}
+            - name: FLEETINT_COLLECTOR_ENDPOINT
+              value: {{ printf "http://%s-otel-gateway:%d" (include "fleet-intelligence-agent.fullname" .) (int .Values.otelGateway.service.port) | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.http }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+            - name: sys
+              mountPath: /sys
+            - name: os-release
+              mountPath: /etc/os-release
+              readOnly: true
+            - name: machine-id
+              mountPath: /etc/machine-id
+              readOnly: true
+            - name: pstore
+              mountPath: /var/lib/systemd/pstore
+              readOnly: true
+            - name: fabricmanager-log
+              mountPath: /var/log/fabricmanager.log
+              readOnly: true
+            - name: state
+              mountPath: /var/lib/fleetint
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: os-release
+          hostPath:
+            path: /etc/os-release
+            type: File
+        - name: machine-id
+          hostPath:
+            path: /etc/machine-id
+            type: File
+        - name: pstore
+          hostPath:
+            path: /var/lib/systemd/pstore
+        - name: fabricmanager-log
+          hostPath:
+            path: /var/log/fabricmanager.log
+            type: FileOrCreate
+        - name: state
+          hostPath:
+            path: /var/lib/fleetint
+            type: DirectoryOrCreate

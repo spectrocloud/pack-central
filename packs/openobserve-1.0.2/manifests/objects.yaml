@@ -1,0 +1,285 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    openobserve_folder: Kubernetes Monitoring
+  labels:
+    openobserve_dashboard: "1"
+  name: kubernetes-objects
+  namespace: openobserve
+data:
+  objects.json: |-
+    {
+      "version": 5,
+      "dashboardId": "7343878486269889113",
+      "title": "Kubernetes / Namespace (Objects)",
+      "description": "Deployments, Statefulsets, Daemonsets, Cronjobs, Events",
+      "role": "",
+      "owner": "admin@openobserve.dev",
+      "created": "2025-06-26T05:52:39.996Z",
+      "tabs": [
+        {
+          "tabId": "default",
+          "name": "Default",
+          "panels": [
+            {
+              "id": "Panel_ID9755810",
+              "type": "gauge",
+              "title": "Deployments",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (deployment) (kube_deployment_status_replicas_available{cluster=\"$cluster\", namespace=\"$k8s_namespace_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_deployment_status_replicas_available",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{deployment}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 10
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 9,
+                "i": 1,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID2873410",
+              "type": "gauge",
+              "title": "Statefulsets",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (statefulset) (kube_statefulset_status_replicas_current{cluster=\"$cluster\", namespace=\"$k8s_namespace_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_statefulset_status_replicas_current",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{statefulset}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 10
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 9,
+                "w": 24,
+                "h": 9,
+                "i": 2,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID2467010",
+              "type": "gauge",
+              "title": "Daemonsets",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (daemonset) (kube_daemonset_status_number_available{cluster=\"$cluster\", namespace=\"$k8s_namespace_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_daemonset_status_number_available",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{daemonset}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 25
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 0,
+                "w": 24,
+                "h": 9,
+                "i": 3,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID811410",
+              "type": "gauge",
+              "title": "Cron Jobs",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (cronjob) (kube_cronjob_status_active{cluster=\"$cluster\", namespace=\"$k8s_namespace_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_cronjob_status_active",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{cronjob}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 5
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 9,
+                "w": 24,
+                "h": 9,
+                "i": 4,
+                "moved": false
+              }
+            }
+          ]
+        }
+      ],
+      "variables": {
+        "list": [
+          {
+            "type": "query_values",
+            "name": "cluster",
+            "label": "",
+            "query_data": {
+              "stream_type": "metrics",
+              "stream": "k8s_pod_cpu_usage",
+              "field": "cluster",
+              "max_record_size": 100
+            },
+            "value": "",
+            "options": []
+          },
+          {
+            "type": "query_values",
+            "name": "k8s_namespace_name",
+            "label": "",
+            "query_data": {
+              "stream_type": "metrics",
+              "stream": "k8s_pod_cpu_usage",
+              "field": "namespace",
+              "max_record_size": 100,
+              "filter": [
+                {
+                  "name": "cluster",
+                  "operator": "=",
+                  "value": "$cluster"
+                }
+              ]
+            },
+            "value": "",
+            "options": []
+          }
+        ]
+      }
+    }

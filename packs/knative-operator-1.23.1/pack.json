@@ -1,0 +1,30 @@
+{
+  "addonType": "ai",
+  "annotations": {
+    "docsURL": "https://knative.dev/docs/install/operator/",
+    "source": "community",
+    "contributor": "spectrocloud",
+    "architecture": "amd64,arm64",
+    "airgap": "true"
+  },
+  "constraints": {
+    "dependencies": [
+      {
+        "packName": "kubernetes",
+        "layer": "k8s",
+        "minVersion": "1.25",
+        "maxVersion": ""
+      }
+    ]
+  },
+  "cloudTypes": [
+    "all"
+  ],
+  "displayName": "Knative Operator",
+  "charts": [
+    "charts/knative-operator-1.23.1.tgz"
+  ],
+  "layer": "addon",
+  "name": "knative-operator",
+  "version": "1.23.1"
+}

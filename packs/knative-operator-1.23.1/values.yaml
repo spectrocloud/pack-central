@@ -1,0 +1,97 @@
+# Knative Operator — Palette pack configuration.
+#
+# Wraps the upstream knative-operator chart (charts/knative-operator-1.23.1.tgz,
+# packaged from the extracted tree in charts/knative-operator/).
+#
+# pack.content.images mirrors the two images the chart pulls with its default
+# values, plus the two cluster-inventory-api plugin images the chart documents
+# for multi-cluster support (knative_operator.multicluster.plugins), which are
+# only mounted when that feature is switched on. The chart's values.yaml below
+# is upstream and unmodified.
+
+pack:
+  releaseNameOverride:
+    knative-operator: knative-operator
+  namespace: "knative-operator"
+  content:
+    images:
+      - image: gcr.io/knative-releases/knative.dev/operator/cmd/operator:v1.23.1
+      - image: gcr.io/knative-releases/knative.dev/operator/cmd/webhook:v1.23.1
+      - image: registry.k8s.io/cluster-inventory-api/kubeconfig-secretreader:v0.1.3
+      - image: registry.k8s.io/cluster-inventory-api/secretreader:v0.1.3
+
+charts:
+  knative-operator:
+    knative_operator:
+      # Multi-cluster support via Cluster Inventory API.
+      multicluster:
+        enabled: false
+        accessProvidersConfig: {}
+        # accessProvidersConfig:
+        #   providers:
+        #     - name: secretreader
+        #       execConfig:
+        #         apiVersion: client.authentication.k8s.io/v1
+        #         command: /access-plugins/secretreader/bin/secretreader-plugin
+        #         interactiveMode: Never
+        #         provideClusterInfo: true
+        #     - name: kubeconfig-secretreader
+        #       execConfig:
+        #         apiVersion: client.authentication.k8s.io/v1
+        #         command: /access-plugins/kubeconfig-secretreader/bin/kubeconfig-secretreader-plugin
+        #         interactiveMode: Never
+        #         provideClusterInfo: true
+        # plugins[] uses the Kubernetes "image" volume type. Each mountPath must be
+        # absolute, and each execConfig.command must point under one of these paths.
+        plugins: []
+        # plugins:
+        #   - name: secretreader
+        #     image: registry.k8s.io/cluster-inventory-api/secretreader:v0.1.3
+        #     mountPath: /access-plugins/secretreader
+        #   - name: kubeconfig-secretreader
+        #     image: registry.k8s.io/cluster-inventory-api/kubeconfig-secretreader:v0.1.3
+        #     mountPath: /access-plugins/kubeconfig-secretreader
+        # Polling cadence for spoke deployment readiness.
+        remoteDeploymentsPollInterval: 10s
+      knative_operator:
+        image: gcr.io/knative-releases/knative.dev/operator/cmd/operator
+        tag: v1.23.1
+        affinity: {}
+        tolerations: []
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 1000m
+            memory: 1000Mi
+      operator_webhook:
+        image: gcr.io/knative-releases/knative.dev/operator/cmd/webhook
+        tag: v1.23.1
+        affinity:
+          # To avoid node becoming SPOF, spread our replicas to different nodes.
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app: operator-webhook
+                  topologyKey: kubernetes.io/hostname
+                weight: 100
+        tolerations: []
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 500m
+            memory: 500Mi
+      kubernetes_min_version: v1.25.0

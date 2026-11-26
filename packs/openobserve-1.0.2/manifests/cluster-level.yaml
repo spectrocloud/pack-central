@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    openobserve_folder: Kubernetes Monitoring
+  labels:
+    openobserve_dashboard: "1"
+  name: kubernetes-cluster-level
+  namespace: openobserve
+data:
+  cluster-level.json: |-
+    {
+      "version": 5,
+      "dashboardId": "7343944107770776181",
+      "title": "Kubernetes",
+      "description": "",
+      "role": "",
+      "owner": "admin@openobserve.dev",
+      "created": "2025-06-26T10:13:44.343Z",
+      "tabs": [
+        {
+          "tabId": "default",
+          "name": "Default",
+          "panels": [
+            {
+              "id": "Panel_ID9871011",
+              "type": "gauge",
+              "title": "Memory Utilization",
+              "description": "Shows memory utilization percentage for each cluster",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percentage",
+                "base_map": null,
+                "map_view": null
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "avg by (cluster_name) ((1 - (node_memory_memavailable_bytes / node_memory_memtotal_bytes)) * 100)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "node_memory_memtotal_bytes",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "OR",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{cluster_name}"
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 72,
+                "h": 10,
+                "i": 3,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID7030010",
+              "type": "gauge",
+              "title": "CPU Utilization",
+              "description": "Shows CPU utilization percentage for each cluster",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percentage",
+                "base_map": null,
+                "map_view": null
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "avg by (cluster_name) ((1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "node_cpu_seconds_total",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "OR",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{cluster_name}"
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 10,
+                "w": 68,
+                "h": 10,
+                "i": 5,
+                "moved": false
+              }
+            }
+          ]
+        }
+      ],
+      "variables": {
+        "list": [],
+        "showDynamicFilters": false
+      },
+      "defaultDatetimeDuration": {
+        "type": "relative",
+        "relativeTimePeriod": "15m",
+        "startTime": 1746777590006000,
+        "endTime": 1746778490006000
+      }
+    } 

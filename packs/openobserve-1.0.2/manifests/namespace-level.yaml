@@ -1,0 +1,638 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    openobserve_folder: Kubernetes Monitoring
+  labels:
+    openobserve_dashboard: "1"
+  name: kubernetes-namespace-level
+  namespace: openobserve
+data:
+  namespace-level.json: |-
+    {
+      "version": 5,
+      "dashboardId": "7343868884778223747",
+      "title": "Kubernetes  / Namespaces",
+      "description": "Saturation metrics (CPU, Memory, Network) for all namespaces.",
+      "role": "",
+      "owner": "admin@openobserve.dev",
+      "created": "2025-06-26T05:14:37.242Z",
+      "tabs": [
+        {
+          "tabId": "default",
+          "name": "Default",
+          "panels": [
+            {
+              "id": "Panel_ID3097710",
+              "type": "area-stacked",
+              "title": "Memory usage",
+              "description": "The amount of memory being used by each Kubernetes pod.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "bytes",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum(k8s_pod_memory_usage{cluster=\"$cluster\"}) by (namespace)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "k8s_pod_memory_rss",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 0,
+                "w": 24,
+                "h": 6,
+                "i": 6,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID6215710",
+              "type": "area-stacked",
+              "title": "CPU utilization",
+              "description": "The amount of CPU used by resources in each namespace in the cluster. CPU is reported as the average core usage measured in cpu units. 1 cpu, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers, and 1 hyper-thread on bare-metal Intel processors.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by (namespace) (\n  rate(container_cpu_usage_seconds_total{cluster=\"$cluster\"}[5m])\n)\n/\nsum by (namespace) (\n  kube_pod_container_resource_requests{cluster=\"$cluster\", resource=\"cpu\"}\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_cpu_usage_seconds_total",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 6,
+                "i": 7,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID62210",
+              "type": "line",
+              "title": "Storage: PVC usage (%)",
+              "description": "Storage utilized on the persistent volume claims.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "bottom",
+                "unit": "percent-1",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "(\n  sum by(namespace)(\n    k8s_volume_capacity{cluster=\"$cluster\", k8s_persistentvolumeclaim_name!=\"\"}\n    - k8s_volume_available{cluster=\"$cluster\", k8s_persistentvolumeclaim_name!=\"\"}\n  )\n) / (\n  sum by(namespace)(\n    k8s_volume_capacity{cluster=\"$cluster\", k8s_persistentvolumeclaim_name!=\"\"}\n  )\n)\n",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "k8s_volume_capacity",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 18,
+                "w": 16,
+                "h": 6,
+                "i": 8,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID4566510",
+              "type": "area-stacked",
+              "title": "Network: Receive bandwidth (primary interface)",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "bps",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum(irate(k8s_pod_network_io{cluster=\"$cluster\", direction=\"receive\", direction=\"receive\"}[5m])) by (namespace)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "k8s_pod_network_io",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 24,
+                "w": 24,
+                "h": 7,
+                "i": 9,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID400510",
+              "type": "area-stacked",
+              "title": "Network: Transmit bandwidth (primary interface)",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "bps",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum(irate(k8s_pod_network_io{cluster=\"$cluster\", direction=\"transmit\"}[5m])) by(namespace)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "k8s_pod_network_io",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 24,
+                "w": 24,
+                "h": 7,
+                "i": 10,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID2258110",
+              "type": "area-stacked",
+              "title": "Storage: IOPS(Reads+Writes)",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "ceil(sum by(namespace) (rate(container_fs_reads_total{cluster=\"$cluster\", container!=\"\", device=~\"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)\"}[$__rate_interval]) + rate(container_fs_writes_total{cluster=\"$cluster\", container!=\"\", device=~\"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)\"}[$__rate_interval])))",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_fs_reads_total",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 16,
+                "y": 18,
+                "w": 16,
+                "h": 6,
+                "i": 11,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID2533410",
+              "type": "area-stacked",
+              "title": "Storage: ThroughPut(Read+Write)",
+              "description": "",
+              "config": {
+                "show_legends": true,
+                "legends_position": null,
+                "unit": "bps",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by(namespace)(\n  rate(container_fs_reads_bytes_total{\n    cluster=\"$cluster\",\n    container!= \"\",\n    device=~\"(/dev/)?(mmcblk[0-9]p[0-9]+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)\"\n  }[$__rate_interval])\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "cadvisor_version_info",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 32,
+                "y": 18,
+                "w": 16,
+                "h": 6,
+                "i": 12,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID1364410",
+              "type": "line",
+              "title": "CPU Utilization (From Limits)",
+              "description": "When a CPU Limit is present in a pod configuration, this chart shows how much CPU each pod uses as a percentage against that limit.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percent-1",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by (namespace) (\n  rate(container_cpu_usage_seconds_total{cluster=\"$cluster\"}[5m])\n)\n/\nsum by (namespace) (\n  kube_pod_container_resource_limits{cluster=\"$cluster\", resource=\"cpu\"}\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_cpu_usage_seconds_total",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 6,
+                "w": 24,
+                "h": 6,
+                "i": 13,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID3607010",
+              "type": "line",
+              "title": "CPU Utilization (From Requests)",
+              "description": "When a CPU Request is present in a pod configuration, this chart shows how much CPU each pod uses as a percentage against that request.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percent-1",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by (namespace) (\n  rate(container_cpu_usage_seconds_total{cluster=\"$cluster\"}[5m])\n)\n/\nsum by (namespace) (\n  kube_pod_container_resource_requests{cluster=\"$cluster\", resource=\"cpu\"}\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_cpu_usage_seconds_total",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 12,
+                "w": 24,
+                "h": 6,
+                "i": 14,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID4327510",
+              "type": "line",
+              "title": "Memory Utilization (From Requests)",
+              "description": "When a Memory Request is present in a pod configuration, this chart shows how much memory each pod uses as a percentage against that request value.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percent-1",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by (namespace) (\n  rate(container_memory_working_set_bytes{cluster=\"$cluster\"}[5m])\n)\n/\nsum by (namespace) (\n  kube_pod_container_resource_requests{cluster=\"$cluster\", resource=\"memory\"}\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_memory_working_set_bytes",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 6,
+                "w": 24,
+                "h": 6,
+                "i": 15,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID1975310",
+              "type": "line",
+              "title": "Memory Utilization (From Limits)",
+              "description": "When a Memory Limit is present in a pod configuration, this chart shows how much memory each pod uses as a percentage against that limit value.",
+              "config": {
+                "show_legends": true,
+                "legends_position": "right",
+                "unit": "percent-1",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "sum by (namespace) (\n  rate(container_memory_working_set_bytes{cluster=\"$cluster\"}[5m])\n)\n/\nsum by (namespace) (\n  kube_pod_container_resource_limits{cluster=\"$cluster\", resource=\"memory\"}\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "container_memory_working_set_bytes",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{namespace}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1,
+                    "limit": 0,
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              ],
+              "layout": {
+                "x": 24,
+                "y": 12,
+                "w": 24,
+                "h": 6,
+                "i": 16,
+                "moved": false
+              }
+            }
+          ]
+        }
+      ],
+      "variables": {
+        "list": [
+          {
+            "type": "query_values",
+            "name": "cluster",
+            "label": "",
+            "query_data": {
+              "stream_type": "metrics",
+              "stream": "k8s_pod_cpu_usage",
+              "field": "cluster",
+              "max_record_size": 100
+            },
+            "value": "",
+            "options": []
+          }
+        ]
+      }
+    }

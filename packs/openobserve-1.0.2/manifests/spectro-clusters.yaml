@@ -1,0 +1,611 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    openobserve_folder: Spectro Cloud
+  labels:
+    openobserve_dashboard: "1"
+  name: spectro-clusters
+  namespace: openobserve
+data:
+  spectro-clusters.json: |-
+    {
+      "version": 5,
+      "dashboardId": "7345346960422865831",
+      "title": "Spectro Clusters - OpenObserve",
+      "description": "dashboard for monitoring Spectro clusters",
+      "role": "",
+      "owner": "admin@openobserve.dev",
+      "created": "2025-06-30T07:07:36.038Z",
+      "tabs": [
+        {
+          "tabId": "default",
+          "name": "Default",
+          "panels": [
+            {
+              "id": "Panel_ID_cluster_health",
+              "type": "area-stacked",
+              "title": "Cluster Health",
+              "description": "Health status of clusters over time",
+              "config": {
+                "show_legends": true,
+                "legends_position": "bottom",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (cluster_name) (cluster_health{cluster_name=~\"$cluster_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "cluster_health",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{cluster_name}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "w": 16,
+                "h": 4,
+                "i": 1,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_pods_stat",
+              "type": "gauge",
+              "title": "Pods",
+              "description": "Total number of pods",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "count(\n  count by (pod) (\n    kube_pod_info{cluster_name=\"$cluster_name\"}\n  )\n)",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_pod_info",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "Total Pods",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 16,
+                "y": 0,
+                "w": 4,
+                "h": 4,
+                "i": 2,
+                "moved": false
+              }
+            },
+            {
+              "id": "cluster tag",
+              "type": "area-stacked",
+              "title": "Cluster Tags",
+              "description": "List of cluster tags",
+              "config": {
+                "show_legends": true,
+                "legends_position": "bottom",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (name) (cluster_tag{cluster_name=~\"$cluster_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "cluster_tag",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{name}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 8,
+                "w": 7,
+                "h": 4,
+                "i": 16,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_pods_table",
+              "type": "table",
+              "title": "Pods",
+              "description": "Detailed pod information",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "sql",
+              "queries": [
+                {
+                  "query": "SELECT pod as \"Pod\", namespace as \"Namespace\", node as \"Node\", created_by_kind as \"Created By Kind\", created_by_name as \"Created By Name\" FROM \"kube_pod_info\" WHERE cluster_name = '$cluster_name' GROUP BY pod, namespace, node, created_by_kind, created_by_name ORDER BY namespace, pod",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_pod_info",
+                    "stream_type": "metrics",
+                    "x": [
+                      {
+                        "label": "Pod",
+                        "alias": "Pod",
+                        "column": "Pod",
+                        "color": null
+                      },
+                      {
+                        "label": "Namespace",
+                        "alias": "Namespace",
+                        "column": "Namespace",
+                        "color": null
+                      },
+                      {
+                        "label": "Node",
+                        "alias": "Node",
+                        "column": "Node",
+                        "color": null
+                      },
+                      {
+                        "label": "Created By Kind",
+                        "alias": "Created By Kind",
+                        "column": "Created By Kind",
+                        "color": null
+                      },
+                      {
+                        "label": "Created By Name",
+                        "alias": "Created By Name",
+                        "column": "Created By Name",
+                        "color": null
+                      }
+                    ],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 20,
+                "y": 0,
+                "w": 20,
+                "h": 20,
+                "i": 3,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_services_stat",
+              "type": "gauge",
+              "title": "Services",
+              "description": "Total number of services",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "count(max by (service) (kube_service_info{cluster_name=~\"$cluster_name\"}))",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_service_info",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "Total Services",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 4,
+                "w": 5,
+                "h": 4,
+                "i": 6,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_deployments_stat",
+              "type": "gauge",
+              "title": "Deployments",
+              "description": "Total number of deployments",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "count(max by (deployment) (kube_deployment_created{cluster_name=~\"$cluster_name\"}))",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_deployment_created",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "Total Deployments",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 15,
+                "y": 4,
+                "w": 5,
+                "h": 4,
+                "i": 7,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_statefulsets_stat",
+              "type": "gauge",
+              "title": "StatefulSets",
+              "description": "Total number of statefulsets",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "count(max by (statefulset) (kube_statefulset_created{cluster_name=~\"$cluster_name\"}))",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_statefulset_created",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "Total StatefulSets",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 5,
+                "y": 4,
+                "w": 5,
+                "h": 4,
+                "i": 8,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_daemonsets_stat",
+              "type": "gauge",
+              "title": "DaemonSets",
+              "description": "Total number of daemonsets",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "count(max by (daemonset) (kube_daemonset_created{cluster_name=~\"$cluster_name\"}))",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "kube_daemonset_created",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "Total DaemonSets",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 10,
+                "y": 4,
+                "w": 5,
+                "h": 4,
+                "i": 9,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_application_health",
+              "type": "area-stacked",
+              "title": "Application Health",
+              "description": "Application health status over time",
+              "config": {
+                "show_legends": true,
+                "legends_position": "bottom",
+                "unit": "",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "max by (name) (application_health{cluster_name=~\"$cluster_name\"})",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "application_health",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{name}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 0,
+                "y": 13,
+                "w": 20,
+                "h": 8,
+                "i": 14,
+                "moved": false
+              }
+            },
+            {
+              "id": "Panel_ID_node_uptime",
+              "type": "area",
+              "title": "Node Uptime",
+              "description": "Node uptime in days",
+              "config": {
+                "show_legends": false,
+                "legends_position": "right",
+                "unit": "d",
+                "base_map": {
+                  "type": "osm"
+                },
+                "map_view": {
+                  "zoom": 1,
+                  "lat": 0,
+                  "lng": 0
+                }
+              },
+              "queryType": "promql",
+              "queries": [
+                {
+                  "query": "(max by (node) (node_time_seconds{cluster_name=~\"$cluster_name\"}) - max by (node) (node_boot_time_seconds{cluster_name=~\"$cluster_name\"}))/86400",
+                  "vrlFunctionQuery": null,
+                  "customQuery": true,
+                  "fields": {
+                    "stream": "node_time_seconds",
+                    "stream_type": "metrics",
+                    "x": [],
+                    "y": [],
+                    "z": [],
+                    "breakdown": [],
+                    "filter": {
+                      "filterType": "group",
+                      "logicalOperator": "AND",
+                      "conditions": []
+                    }
+                  },
+                  "config": {
+                    "promql_legend": "{node}",
+                    "layer_type": "scatter",
+                    "weight_fixed": 1
+                  }
+                }
+              ],
+              "layout": {
+                "x": 7,
+                "y": 8,
+                "w": 12,
+                "h": 5,
+                "i": 15,
+                "moved": false
+              }
+            }
+          ]
+        }
+      ],
+      "variables": {
+        "list": [
+          {
+            "type": "query_values",
+            "name": "cluster_name",
+            "label": "Cluster",
+            "query_data": {
+              "stream_type": "metrics",
+              "stream": "kube_node_info",
+              "field": "cluster_name",
+              "max_record_size": 100
+            },
+            "value": "",
+            "options": [],
+            "multiSelect": false,
+            "hideOnDashboard": false,
+            "selectAllValueForMultiSelect": "first",
+            "customMultiSelectValue": []
+          }
+        ],
+        "showDynamicFilters": false
+      }
+    }

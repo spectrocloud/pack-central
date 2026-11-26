@@ -1,0 +1,17 @@
+{
+    "addonType": "ai",
+    "annotations": {
+      "source": "community",
+      "contributor" : "spectrocloud"
+    },    
+    "cloudTypes": [
+      "all"
+    ],
+    "displayName": "kubeflow-trainer",
+    "charts": [
+      "charts/kubeflow-trainer-2.2.1.tgz"
+    ],
+    "layer":"addon",
+    "name": "kubeflow-trainer",
+    "version": "2.2.1"
+  }

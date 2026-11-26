@@ -1,0 +1,36 @@
+{{- if .Values.enablePrometheus }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: controller-manager-metrics-monitor
+    control-plane: controller-manager
+    {{- include "lws.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor }}
+    {{- with .extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  name: {{ include "lws.fullname" . }}-controller-manager-metrics-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      path: /metrics
+      port: https
+      scheme: https
+      tlsConfig:
+        {{- if .Values.enableCertManager }}
+        serverName: {{ include "lws.fullname" . }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+        insecureSkipVerify: false
+        ca:
+          secret:
+            name: lws-metrics-server-cert
+            key: ca.crt
+        {{- else }}
+          insecureSkipVerify: true
+        {{- end }}
+  selector:
+    matchLabels:
+      {{- include "lws.labels" . | nindent 6 }}
+{{- end }}

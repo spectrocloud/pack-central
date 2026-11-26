@@ -1,0 +1,91 @@
+---
+# ClusterImagePolicy for verifying NVSentinel container images
+#
+# SCOPE: This policy ONLY applies to images matching ghcr.io/nvidia/nvsentinel/**
+#        - Other images in the namespace are NOT verified or blocked
+#        - Development images (localhost:*) are NOT subject to this policy
+#        - Third-party images (databases, sidecars, etc.) are NOT affected
+#
+# This policy uses Sigstore Policy Controller to verify that NVSentinel images
+# have valid SBOM (CycloneDX) attestations signed by the official GitHub Actions
+# workflow using keyless signing.
+#
+# Note: SLSA Build Provenance verification is handled separately by
+# must-have-slsa.yaml policy.
+#
+# Multi-platform support:
+# - Images are built for linux/amd64 and linux/arm64
+# - Each platform has its own attestations
+# - Policy Controller automatically verifies the platform-specific digest
+#   that matches the node architecture
+#
+# Configuration required:
+# 1. Label namespace: kubectl label namespace nvsentinel policy.sigstore.dev/include=true
+# 2. Configure no-match-policy to allow non-matching images:
+#    kubectl create configmap config-policy-controller -n cosign-system \
+#      --from-literal=no-match-policy=allow --dry-run=client -o yaml | kubectl apply -f -
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: verify-nvsentinel-sbom
+  annotations:
+    description: >-
+      Verifies that NVSentinel container images have valid SBOM attestations 
+      signed by the official GitHub Actions workflow. Ensures images have proper 
+      Software Bill of Materials documentation before allowing them to run in the 
+      cluster. Only applies to ghcr.io/nvidia/nvsentinel/** images.
+    category: Supply Chain Security
+    severity: high
+spec:
+  # WARN MODE: Currently in warn mode due to bundle format v0.3 incompatibility
+  # Policy Controller 0.10.5 cannot read Sigstore bundle format v0.3
+  # Both SLSA and SBOM attestations have the same issue
+  # Will be changed to enforce mode when Policy Controller adds v0.3 support
+  mode: warn
+  
+  # Match ONLY official NVSentinel images from GHCR
+  # This glob pattern ensures only NVSentinel images are verified
+  # All other images (third-party, development, etc.) are not affected
+  images:
+    - glob: "ghcr.io/nvidia/nvsentinel/**"
+  
+  # Define the authorities that can sign the images
+  authorities:
+    - name: github-actions-keyless
+      keyless:
+        # Use public Sigstore Fulcio instance
+        url: https://fulcio.sigstore.dev
+        # Match the GitHub Actions OIDC identity
+        # Matches both branch refs (refs/heads/*) and tag refs (refs/tags/*)
+        identities:
+          - issuer: https://token.actions.githubusercontent.com
+            subjectRegExp: ^https://github\.com/NVIDIA/NVSentinel/\.github/workflows/publish\.yml@refs/(heads|tags)/
+      # Use public Sigstore Rekor instance for transparency log
+      ctlog:
+        url: https://rekor.sigstore.dev
+      # Validate SBOM attestation only
+      attestations:
+        # SBOM (Software Bill of Materials) - verifies components are documented
+        - name: sbom-cyclonedx
+          # Cosign uses this predicate type for CycloneDX SBOMs
+          predicateType: https://cyclonedx.org/bom
+          policy:
+            type: cue
+            data: |
+              // Validate this is a CycloneDX SBOM
+              predicateType: "https://cyclonedx.org/bom"
+              
+              // Validate SBOM has required fields
+              predicate: {
+                // Must have bomFormat and specVersion
+                bomFormat: "CycloneDX"
+                specVersion: =~"^1\\."
+                
+                // Must have at least one component listed
+                components: [...{
+                  // Each component should have a name
+                  name: string
+                  // Components should have types (library, application, etc.)
+                  type: string
+                }]
+              }

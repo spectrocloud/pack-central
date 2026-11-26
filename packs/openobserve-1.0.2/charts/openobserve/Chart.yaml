@@ -1,0 +1,41 @@
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://openobserve.ai/docs/
+    - name: Source
+      url: https://github.com/openobserve/openobserve-helm-chart
+apiVersion: v2
+appVersion: v1.0.1
+dependencies:
+- condition: nats.enabled
+  name: nats
+  repository: https://nats-io.github.io/k8s/helm/charts/
+  version: 2.14.2
+- condition: minio.enabled
+  name: minio
+  repository: https://charts.min.io
+  version: 5.3.0
+description: Logs, Metrics and Traces, Dashboards, RUM, Error tracking, Session replay
+  etc. Elasticsearch API compatibility.
+home: https://openobserve.ai
+icon: https://openobserve.ai/img/logo/logo.svg
+keywords:
+- openobserve
+- observability
+- logs
+- metrics
+- traces
+- rum
+- elasticsearch
+maintainers:
+- email: hello@openobserve.ai
+  name: OpenObserve
+  url: https://openobserve.ai
+name: openobserve
+sources:
+- https://github.com/openobserve/openobserve
+- https://github.com/openobserve/openobserve-helm-chart
+type: application
+version: 1.0.2
