@@ -1,0 +1,300 @@
+{{- if and .Values.gateway.enabled }}
+{{- $isEnvoy := eq .Values.gateway.type "envoy" }}
+{{- $gatewayImage := ternary .Values.gateway.envoy.image .Values.gateway.image $isEnvoy }}
+{{- $livenessProbe := deepCopy .Values.gateway.livenessProbe }}
+{{- $readinessProbe := deepCopy .Values.gateway.readinessProbe }}
+{{- $startupProbe := deepCopy .Values.gateway.startupProbe }}
+{{- $hasEnvoyLogLevelArg := false }}
+{{- range .Values.gateway.extraArgs }}
+  {{- $arg := toString . }}
+  {{- if or (eq $arg "-l") (eq $arg "--log-level") (hasPrefix "--log-level=" $arg) }}
+    {{- $hasEnvoyLogLevelArg = true }}
+  {{- end }}
+{{- end }}
+{{- if $isEnvoy }}
+  {{- if empty $livenessProbe }}
+    {{- $livenessProbe = dict "httpGet" (dict "path" "/livez" "port" "http") "initialDelaySeconds" 15 "timeoutSeconds" 1 }}
+  {{- end }}
+  {{- $readinessGet := get $readinessProbe "httpGet" }}
+  {{- if and (kindIs "map" $readinessGet) (eq (get $readinessGet "path") "/") (eq (toString (get $readinessGet "port")) "http") (not (hasKey $readinessGet "scheme")) }}
+    {{- $_ := set $readinessGet "path" "/ready" }}
+    {{- $_ := set $readinessGet "port" .Values.gateway.envoyConfig.adminPort }}
+    {{- $_ := set $readinessGet "scheme" "HTTP" }}
+  {{- end }}
+{{- end }}
+{{- if and $isEnvoy .Values.gateway.envoyConfig.tls.enabled }}
+  {{- $adminPort := toString .Values.gateway.envoyConfig.adminPort }}
+  {{- $dataPort := toString .Values.gateway.containerPort }}
+  {{- range $probe := list $livenessProbe $readinessProbe $startupProbe }}
+    {{- $httpGet := get $probe "httpGet" }}
+    {{- if and (kindIs "map" $httpGet) (not (hasKey $httpGet "scheme")) }}
+      {{- $probePort := toString (get $httpGet "port") }}
+      {{- if or (eq $probePort "http-metrics") (eq $probePort $adminPort) }}
+        {{- $_ := set $httpGet "scheme" "HTTP" }}
+      {{- else if or (eq $probePort "http") (eq $probePort $dataPort) }}
+        {{- $_ := set $httpGet "scheme" "HTTPS" }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loki.gatewayFullname" . }}
+  namespace: {{ include "loki.namespace" . }}
+  labels:
+    {{- include "loki.gatewayLabels" . | nindent 4 }}
+  {{- if or (not (empty .Values.loki.annotations)) (not (empty .Values.gateway.annotations))}}
+  annotations:
+    {{- with .Values.loki.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.gateway.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+{{- if and (not .Values.gateway.autoscaling.enabled) (not .Values.gateway.kedaAutoscaling.enabled) }}
+  replicas: {{ .Values.gateway.replicas }}
+{{- end }}
+{{- with .Values.gateway.deploymentStrategy }}
+  strategy:
+{{ toYaml . | trim | indent 4 }}
+{{- end }}
+  revisionHistoryLimit: {{ .Values.loki.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "loki.gatewaySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "loki.configMapOrSecretContentHash" (dict "ctx" . "name" "/gateway/configmap.yaml") }}
+        {{- with .Values.gateway.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- with .Values.loki.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.gateway.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- include "loki.gatewaySelectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "loki.serviceAccountName" (dict "ctx" . "component" .Values.gateway "target" "gateway" ) }}
+      {{- if (kindIs "bool" .Values.gateway.automountServiceAccountToken) }}
+      automountServiceAccountToken: {{ .Values.gateway.automountServiceAccountToken }}
+      {{- else if (kindIs "bool" .Values.defaults.automountServiceAccountToken) }}
+      automountServiceAccountToken: {{ .Values.defaults.automountServiceAccountToken }}
+      {{- end }}
+      {{- $esl := include "loki.enableServiceLinks" (dict "component" .Values.gateway "ctx" .) }}
+      {{- if $esl }}
+      {{ $esl }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end -}}
+      {{- if and (semverCompare ">=1.33-0" (include "loki.kubeVersion" .)) (kindIs "bool" .Values.gateway.hostUsers) }}
+      hostUsers: {{ .Values.gateway.hostUsers }}
+      {{- end }}
+      {{- include "loki.gatewayPriorityClassName" . | nindent 6 }}
+      securityContext:
+        {{- toYaml .Values.gateway.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.gateway.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ .Values.gateway.type }}
+          image: {{ include "loki.image" (dict "ctx" . "component" $gatewayImage) }}
+          imagePullPolicy: {{ $gatewayImage.pullPolicy }}
+          {{- if $isEnvoy }}
+          args:
+            - -c
+            - /etc/envoy/envoy.yaml
+            - --service-cluster
+            - {{ include "loki.gatewayFullname" . }}
+            {{- if not $hasEnvoyLogLevelArg }}
+            - --log-level
+            - warning
+            {{- end }}
+            {{- range .Values.gateway.extraArgs }}
+            - {{ toString . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.gateway.containerPort }}
+              protocol: TCP
+            {{- if and $isEnvoy .Values.gateway.metrics.enabled }}
+            - name: http-metrics
+              containerPort: {{ .Values.gateway.envoyConfig.adminPort }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.gateway.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.gateway.containerSecurityContext | nindent 12 }}
+          {{- with .Values.gateway.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ ternary "/etc/envoy" "/etc/nginx" $isEnvoy }}
+            {{- if .Values.gateway.basicAuth.enabled }}
+            - name: auth
+              mountPath: {{ ternary "/etc/envoy/secrets" "/etc/nginx/secrets" $isEnvoy }}
+              readOnly: true
+            {{- end }}
+            {{- if and $isEnvoy .Values.gateway.envoyConfig.tls.enabled }}
+            - name: envoy-tls
+              mountPath: /etc/envoy/tls
+              readOnly: true
+            {{- end }}
+            {{- if and $isEnvoy .Values.gateway.envoyConfig.jwt.enabled }}
+            - name: envoy-kubernetes
+              mountPath: /etc/envoy/kubernetes
+              readOnly: true
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
+            {{- if not $isEnvoy }}
+            - name: docker-entrypoint-d-override
+              mountPath: /docker-entrypoint.d
+            {{- end }}
+            {{- if .Values.gateway.extraVolumeMounts }}
+            {{- toYaml .Values.gateway.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          {{- with (coalesce .Values.gateway.resources .Values.defaults.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.resizePolicy }}
+          resizePolicy:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- if and (not $isEnvoy) .Values.gateway.metrics.enabled }}
+        - name: exporter
+          image: {{ include "loki.image" (dict "ctx" . "component" .Values.gateway.metrics.image) }}
+          imagePullPolicy: {{ .Values.gateway.metrics.image.pullPolicy }}
+          ports:
+            - containerPort: 4040
+              name: http-metrics
+            - containerPort: 8514
+              name: syslog
+          args:
+            - --nginx.scrape-url
+            - http://127.0.0.1:{{ .Values.gateway.containerPort }}/stub_status
+            - --preset
+            - loki
+            {{- with .Values.gateway.metrics.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.gateway.metrics.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.metrics.resizePolicy }}
+          resizePolicy:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.metrics.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.metrics.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.metrics.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gateway.metrics.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /config.yaml
+              subPath: access-log-exporter.yaml
+      {{- end }}
+        {{- if .Values.gateway.extraContainers }}
+        {{- toYaml .Values.gateway.extraContainers | nindent 8}}
+        {{- end }}
+      {{- with .Values.gateway.affinity }}
+      affinity:
+        {{- tpl ( . | toYaml) $ | nindent 8 }}
+      {{- end }}
+      {{- with (coalesce .Values.gateway.dnsConfig .Values.defaults.dnsConfig .Values.loki.dnsConfig) }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (coalesce .Values.gateway.nodeSelector .Values.defaults.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.gateway.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- tpl ( . | toYaml) $ | nindent 8 }}
+      {{- end }}
+      {{- with (coalesce .Values.gateway.tolerations .Values.defaults.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "loki.gatewayFullname" . }}
+        {{- if .Values.gateway.basicAuth.enabled }}
+        - name: auth
+          secret:
+            secretName: {{ include "loki.gatewayAuthSecret" . }}
+        {{- end }}
+        {{- if and $isEnvoy .Values.gateway.envoyConfig.tls.enabled }}
+        - name: envoy-tls
+          secret:
+            secretName: {{ required "gateway.envoyConfig.tls.existingSecret is required when Envoy TLS is enabled" .Values.gateway.envoyConfig.tls.existingSecret }}
+        {{- end }}
+        {{- if and $isEnvoy .Values.gateway.envoyConfig.jwt.enabled }}
+        - name: envoy-kubernetes
+          projected:
+            sources:
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              {{- if eq (include "loki.gatewayEnvoyJwksBearerTokenFile" .) (include "loki.gatewayEnvoyJwksProjectedTokenFile" .) }}
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              {{- end }}
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+        {{- if not $isEnvoy }}
+        - name: docker-entrypoint-d-override
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.gateway.extraVolumes }}
+        {{- toYaml .Values.gateway.extraVolumes | nindent 8 }}
+        {{- end }}
+{{- end }}
