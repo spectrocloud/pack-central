@@ -1,0 +1,9 @@
+dependencies:
+- name: minio
+  repository: https://charts.min.io/
+  version: 5.4.0
+- name: rollout-operator
+  repository: oci://ghcr.io/grafana/helm-charts
+  version: 0.52.0
+digest: sha256:c819f1d4efb942b17557958b94c6f6b90082502c0d38c47f81efaeefdfcbe6c3
+generated: "2026-09-27T21:06:10.532388266Z"
