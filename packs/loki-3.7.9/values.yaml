@@ -1,0 +1,213 @@
+pack:
+  content:
+    images:
+      - image: docker.io/grafana/loki:3.7.9
+      - image: docker.io/grafana/loki-canary:3.7.9
+      - image: docker.io/grafana/loki-helm-test:3.7.9
+      - image: docker.io/nginx/nginx-unprivileged:1.31-alpine
+      - image: docker.io/envoyproxy/envoy:distroless-v1.39.1
+      - image: ghcr.io/jkroepke/access-log-exporter:1.0.2
+      - image: docker.io/library/memcached:1.6.45-alpine
+      - image: docker.io/prom/memcached-exporter:v0.18.0
+      - image: docker.io/kiwigrid/k8s-sidecar:2.14.3
+      - image: registry.k8s.io/kubectl:v1.37.0
+
+    charts:
+      - repo: https://grafana-community.github.io/helm-charts
+        name: loki
+        version: 21.2.2
+
+  namespace: "loki"
+
+charts:
+  loki:
+    # ==========================================================
+    # DEPLOYMENT MODE
+    # ==========================================================
+    # Monolithic: keep singleBinary.replicas: 1 and Distributed: 0.
+    # Distributed: switch to Distributed, set singleBinary.replicas to 0,
+    # and configure the distributed replicas as indicated below.
+    deploymentMode: Monolithic
+
+    # ==========================================================
+    # COMMON LOKI CONFIGURATION
+    # ==========================================================
+    commonLabels:
+      labelA: valueA
+      labelB: valueB
+
+    loki:
+      auth_enabled: false
+
+      image:
+        registry: docker.io
+        repository: grafana/loki
+        tag: 3.7.9
+
+      limits_config:
+        allow_structured_metadata: true
+
+      commonConfig:
+        replication_factor: 1
+
+      schemaConfig:
+        configs:
+          - from: "2024-04-01"
+            store: tsdb
+            object_store: s3
+            schema: v13
+            index:
+              prefix: loki_index_
+              period: 24h
+
+      storage:
+        type: s3
+        # Fill in these values ​​using your S3-compatible storage.
+        bucketNames:
+          chunks: FIXME
+          ruler: FIXME
+        s3:
+          endpoint: FIXME
+          accessKeyId: FIXME
+          secretAccessKey: FIXME
+
+      ingester:
+        chunk_encoding: snappy
+
+      tracing:
+        enabled: true
+
+      querier:
+        # Monolithic reference: 2
+        # Distributed reference: 4
+        max_concurrent: 2
+
+    # ==========================================================
+    # MONOLITHIC
+    # ==========================================================
+    # Based on monolithic-values.yaml.
+    # For Distributed, change replicas to 0.
+    singleBinary:
+      replicas: 1
+      resources:
+        limits:
+          cpu: 3
+          memory: 4Gi
+        requests:
+          cpu: 2
+          memory: 2Gi
+      extraEnv:
+        - name: GOMEMLIMIT
+          value: 3750MiB
+
+    chunksCache:
+      writebackSizeLimit: 10MB
+
+    # ==========================================================
+    # DISTRIBUTED
+    # ==========================================================
+    # Based on monolithic-values.yaml.
+    # For Distributed, change replicas to 0.
+    ingester:
+      replicas: 0
+    querier:
+      replicas: 0
+      maxUnavailable: 2
+    queryFrontend:
+      replicas: 0
+      maxUnavailable: 1
+    queryScheduler:
+      replicas: 0
+    distributor:
+      replicas: 0
+      maxUnavailable: 2
+    compactor:
+      replicas: 0
+    indexGateway:
+      replicas: 0
+      maxUnavailable: 1
+
+    # Experimental optional components of the Distributed example.
+    bloomPlanner:
+      replicas: 0
+    bloomBuilder:
+      replicas: 0
+    bloomGateway:
+      replicas: 0
+
+    # ==========================================================
+    # OTHER MODES: SIMPLE SCALABLE
+    # ==========================================================
+    # Keep them at zero to not deploy these components.
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+
+    # ==========================================================
+    # GATEWAY AND AUXILIARY IMAGES
+    # ==========================================================
+    gateway:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: nginxinc/nginx-unprivileged
+        tag: 1.31-alpine
+
+    lokiCanary:
+      image:
+        registry: docker.io
+        repository: grafana/loki-canary
+        tag: 3.7.9
+
+    test:
+      image:
+        registry: docker.io
+        repository: grafana/loki-helm-test
+        tag: 3.7.9
+
+    memcached:
+      image:
+        registry: docker.io
+        repository: memcached
+        tag: 1.6.45-alpine
+
+    memcachedExporter:
+      image:
+        registry: quay.io
+        repository: prometheus/memcached-exporter
+        tag: v0.18.0
+
+    sidecar:
+      image:
+        registry: docker.io
+        repository: kiwigrid/k8s-sidecar
+        tag: 2.14.3
+
+# ==============================================================
+# CHANGES TO ACTIVATE DISTRIBUTED
+# ==============================================================
+# 1. charts.loki.deploymentMode: Distributed
+# 2. charts.loki.singleBinary.replicas: 0
+# 3. Change the replicas of these components:
+#      ingester.replicas: 3
+#      querier.replicas: 3
+#      queryFrontend.replicas: 2
+#      queryScheduler.replicas: 2
+#      distributor.replicas: 3
+#      compactor.replicas: 1
+#      indexGateway.replicas: 2
+# 4. En loki.querier.max_concurrent usa 4 (según el ejemplo Distributed).
+# 5. Keep the S3 storage and fill in bucketNames, endpoint,
+#    accessKeyId and secretAccessKey with the real data from your provider.
+#
+# To return to Monolithic, set deploymentMode: Monolithic,
+# singleBinary.replicas: 1 and the replicas of the distributed components
+# to 0; use loki.querier.max_concurrent: 2.
+#
+# NOTE: The two reference files have repeated keys (ingester and
+# querier appear inside loki and also at the root of the chart). Here they are
+# kept at their corresponding levels: Loki parameters under loki
+# and workload replicas at the root of charts.loki.
