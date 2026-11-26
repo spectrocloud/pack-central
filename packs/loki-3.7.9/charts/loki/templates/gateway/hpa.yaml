@@ -1,3 +1,0 @@
-{{- if .Values.gateway.autoscaling.enabled }}
-{{- include "loki.hpa" (dict "target" "gateway" "component" .Values.gateway "ctx" . "kind" "Deployment") }}
-{{- end }}

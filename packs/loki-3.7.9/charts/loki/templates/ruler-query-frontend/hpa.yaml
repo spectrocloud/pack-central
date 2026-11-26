@@ -1,3 +1,0 @@
-{{- if eq (include "loki.ruler.dedicatedQueryPathEnabled" .) "true" }}
-{{- include "loki.hpa" (dict "target" "ruler-query-frontend" "component" .Values.rulerQueryFrontend "ctx" . "kind" "Deployment") }}
-{{- end }}

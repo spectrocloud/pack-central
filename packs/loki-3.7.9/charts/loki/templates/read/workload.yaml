@@ -1,4 +1,0 @@
-{{- $isSimpleScalable := eq (include "loki.deployment.isScalable" .) "true" -}}
-{{- if $isSimpleScalable }}
-{{- include "loki.component" (dict "ctx" . "component" .Values.read "target" "read") }}
-{{- end }}

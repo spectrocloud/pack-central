@@ -1,4 +1,0 @@
-{{- $isSimpleScalable := eq (include "loki.deployment.isScalable" .) "true" -}}
-{{- if $isSimpleScalable }}
-{{- include "loki.hpa" (dict "target" "write" "component" .Values.write "ctx" .) }}
-{{- end }}

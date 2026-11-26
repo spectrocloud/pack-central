@@ -1,3 +1,0 @@
-{{- if .Values.memcached.enabled }}
-{{- include "loki.memcached.pdb" (dict "ctx" $ "memcacheConfig" .Values.resultsCache "valuesSection" "resultsCache" "component" "results-cache") }}
-{{- end }}
